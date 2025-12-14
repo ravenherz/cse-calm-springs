@@ -1,0 +1,104 @@
+.div-wide-100 {
+    border-radius: 5px;
+    width: 100%;
+    padding-left: 5px;
+    padding-right: 5px;
+}
+
+.div-height-auto {
+    height: auto;
+}
+
+.temporary-glow {
+    -webkit-box-shadow: 0px 0px 20px 12px rgba(255, 255, 255, 0.65);
+    -moz-box-shadow: 0px 0px 20px 12px rgba(255, 255, 255, 0.65);
+    box-shadow: 0px 0px 20px 12px rgba(255, 255, 255, 0.65);
+}
+
+.div-margin-right-5px {
+    margin-right: 5px;
+}
+
+.div-margin-left-5px {
+    margin-left: 5px;
+}
+
+table {
+    webkit-box-shadow: 0px 2px 3px 0px rgba(0, 0, 0, 0.15);
+    -moz-box-shadow: 0px 2px 3px 0px rgba(0, 0, 0, 0.15);
+    box-shadow: 0px 2px 3px 0px rgba(0, 0, 0, 0.15);
+    width: 100%;
+    margin-bottom: 10px;
+}
+
+.tg {
+    border-collapse: collapse;
+    border-spacing: 0;
+    margin-bottom: 4px;
+}
+
+.tg:hover {
+    background-color: #FFFFFF11;
+}
+
+.tg td {
+    vertical-align: top;
+    padding: 0px 5px 5px;
+    overflow: hidden;
+    word-break: normal;
+}
+
+.tg .td65 {
+    width: 65%;
+    text-align: justify;
+    text-justify: inter-word;
+}
+
+.tg .td30 {
+    text-align: right;
+    width: 34%;
+}
+
+.tg th {
+    padding: 0px 1px;
+    overflow: hidden;
+    word-break: normal;
+}
+
+.tg-yw4l {
+    background-color: var(--color-item-header-bg);
+    /*border-radius: 2px 0 0 2px;*/
+    margin-right: 30px;
+}
+
+.tg-yw4t {
+    width: 100%;
+    text-align: center;
+    padding-bottom: 2px;
+    padding-top: 5px;
+    background-color: var(--color-item-header-bg);
+
+    text-shadow: 1px 3px 2px rgba(0, 0, 0, 0.13);
+    font-weight: bolder;
+    font-size: 11px;
+
+    margin-bottom: -1px;
+    /*border-radius:  0 2px 0 0;*/
+}
+
+.rotate {
+    text-align: center;
+    white-space: nowrap;
+    vertical-align: middle;
+    width: 0.6em;
+}
+
+.rotate div {
+    -moz-transform: rotate(-90.0deg);
+    -o-transform: rotate(-90.0deg);
+    -webkit-transform: rotate(-90.0deg);
+    filter: progid:DXImageTransform.Microsoft.BasicImage(rotation=0.083);
+    -ms-filter: progid:DXImageTransform.Microsoft.BasicImage(rotation=0.083);
+    margin-left: -10em;
+    margin-right: -10em;
+}

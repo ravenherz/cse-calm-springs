@@ -1,0 +1,98 @@
+<div id="dbms-setup" class="container-fluid">
+    <div class="row content">
+        <div class="col-sm-2">
+        </div>
+        <div class="col-sm-8">
+            <table class="tg">
+                <tr class="tg">
+                    <th class="tg-yw4l" rowspan="5"></th>
+                    <th class="tg-yw4t" colspan="2">Database management system</th>
+                </tr>
+                <tr class="tg">
+                    <td class="tg td30 transition">
+                        <label for="dbms-instance-type">DBMS type*</label>
+                        <select class="transition collectible" id="dbms-instance-type" size=1>
+                            <option selected value="mongodb">Mongo DB (default)</option>
+                        </select>
+                    </td>
+                    <td class="tg td65 transition">
+                        <b>rhz-we</b> runs <a href="https://github.com/mongodb">MongoDB</a> by default. And I'm not
+                        quite sure that I will add support for something else except this particular DBMS
+                    </td>
+                </tr>
+                <tr class="tg">
+                    <td class="tg td30 transition">
+                        <label for="dbms-instance-address">DBMS address*</label>
+                        <input class="transition collectible" id="dbms-instance-address" title="dbms-instance-address" type="text"
+                               placeholder="Input address (127.0.0.1 for localhost)"
+                               title="Address where some kind of expected DBMS is running" required
+                               value="localhost">
+                    </td>
+                    <td class="tg td65 transition">
+                        If <a href="https://tomcat.apache.org/">Apache Tomcat 7</a> runs on the same machine as <a
+                            href="https://github.com/mongodb">MongoDB</a> does then just use <b>localhost</b> or <b>127.0.0.1</b>
+                        (no protocol)
+                    </td>
+                </tr>
+                <tr class="tg">
+                    <td class="tg td30 transition">
+                        <label for="dbms-instance-port">DBMS port*</label>
+                        <input class="transition collectible" id="dbms-instance-port" title="dbms-instance-port" type="text"
+                               placeholder="Input port (default 27017)"
+                               title="Port on server, which is being listened by DMBS" required value="27017">
+                    </td>
+                    <td class="tg td65 transition">
+                        By default, <a href="https://github.com/mongodb">MongoDB</a> runs at port <b>27017</b>, but
+                        if your setup differs from the default one, please provide the correct one
+                    </td>
+                </tr>
+                <tr class="tg">
+                    <td class="tg td30 transition">
+                        <label for="dbms-instance-dbname">Database title*</label>
+                        <input class="transition collectible" id="dbms-instance-dbname" title="dbms-instance-dbname" type="text"
+                               placeholder="Input database title (should exist)"
+                               title="Make this database already exists, 'xe' for Oracle XE, i.e." required
+                               value="rhz-we-site">
+                    </td>
+                    <td class="tg td65 transition">
+                        Please specify the correct previously created database title, all collections needed by <b>rhz-we</b>
+                        will be located within this database
+                    </td>
+                </tr>
+            </table>
+            <table class="tg">
+                <tr class="tg">
+                    <th class="tg-yw4l" rowspan="3"></th>
+                    <th class="tg-yw4t" colspan="2">Privileged user credentials (DBMS and database access)</th>
+                </tr>
+                <tr class="tg">
+                    <td class="tg td30 transition">
+                        <label for="dbms-access-user">Username*</label>
+                        <input class="transition collectible" id="dbms-access-user" title="dbms-system-psw" type="text"
+                               placeholder="Enter username" title="Password for SYSTEM/ROOT user" required
+                               value="rhzweuser">
+                    </td>
+                    <td class="tg td65 transition">
+                        Needless to say, you should enable authentication on your mongo configuration. The user with
+                        the specified login has to be created before the next step
+                    </td>
+                </tr>
+                <tr class="tg">
+                    <td class="tg td30 transition">
+                        <label for="dbms-access-pswd">Password*</label>
+                        <input class="transition collectible" id="dbms-access-pswd" title="dbms-system-psw" type="password"
+                               placeholder="Enter password" title="Password for SYSTEM/ROOT user" required value="">
+                    </td>
+                    <td class="tg td65 transition">
+                        Please, avoid of using short insecure passwords
+                    </td>
+                </tr>
+            </table>
+            <button class="transition" id="dbms-test-connection-button" onclick="testConnection()" hidden=true>Test
+                connection
+            </button>
+        </div>
+        <div class="col-sm-3">
+        </div>
+    </div>
+</div>

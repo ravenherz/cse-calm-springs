@@ -1,0 +1,93 @@
+<script type="text/javascript" >
+	let adminUsername = document.getElementById("admin-username");
+	let myInput = document.getElementById("admin-password");
+	let myMessage = document.getElementById("message");
+	let myButton = document.getElementById("button");
+	let setupMessage = document.getElementById("setup");
+	let postMessage = document.getElementById("post-message");
+	let letter = document.getElementById("letter");
+	let capital = document.getElementById("capital");
+	let number = document.getElementById("number");
+	let length = document.getElementById("length");
+  let upperCaseLetters = /[A-Z]/g;
+	let numbers = /[0-9]/g;
+	let lowerCaseLetters = /[a-z]/g;
+
+	myInput.addEventListener("keyup", function () {					
+		if(myInput.value.match(lowerCaseLetters)) { 
+			letter.classList.remove("invalid");
+			letter.classList.add("valid");
+		} else {
+			letter.classList.remove("valid");
+			letter.classList.add("invalid");
+		}
+
+		if(myInput.value.match(numbers)) { 
+			number.classList.remove("invalid");
+			number.classList.add("valid");
+		} else {
+			number.classList.remove("valid");
+			number.classList.add("invalid");
+		}
+		if(myInput.value.match(upperCaseLetters)) { 
+			capital.classList.remove("invalid");
+			capital.classList.add("valid");
+		} else {
+			capital.classList.remove("valid");
+			capital.classList.add("invalid");
+		}
+		if(myInput.value.length >= 8) {
+			length.classList.remove("invalid");
+			length.classList.add("valid");
+		} else {
+			length.classList.remove("valid");
+			length.classList.add("invalid");
+		}
+		if ((length.classList.contains("valid"))
+			&& (capital.classList.contains("valid"))
+			&& (number.classList.contains("valid"))
+			&& (letter.classList.contains("valid"))
+			&& (adminUsername.value.length >= 2)) {
+			myMessage.style.display = "none";
+			myButton.style.display = "block";
+		} else {
+			myMessage.style.display = "block";
+			myButton.style.display = "none";
+		}
+	});
+	
+	myButton.addEventListener("click", function () {
+		console.log("click");
+		setupMessage.style.display = "none";
+		postMessage.style.display = "block";
+	})
+</script>
+<div id="setup">
+	<div class = "container-fluid">
+		<div class="row content">
+			<div class="col-sm-3">
+			</div>
+			<div class="col-sm-6">
+				<label for="input-admin-username">Admin account username*</label>
+				<input class="transition collectible" id="input-admin-username" type="text" placeholder="Enter Username" title="There is no way to change username in early builds, maybe in further releases" required value="admin">
+				<label for="input-admin-password">Admin account password*</label>
+				<input class="transition collectible" id="input-admin-password" type="password" placeholder="Enter Password" pattern="(?=.*\d)(?=.*[a-z])(?=.*[A-Z]).{8,}" title="Must contain at least one number and one uppercase and lowercase letter, and at least 8 or more characters" required value="Admin123">
+				<div id="message">
+					Password must contain the following:
+					<p id="letter" class="invalid">A <b>lowercase</b> letter</p>
+					<p id="capital" class="invalid">A <b>capital (uppercase)</b> letter</p>
+					<p id="number" class="invalid">A <b>number</b></p>
+					<p id="length" class="invalid">Minimum <b>8 characters</b></p>
+				</div>
+				<br>			
+				<button id="button" class="transition" onclick="createUser()" hidden="true">Create</button>
+			</div>
+			<div class="col-sm-3">
+			</div>
+		</div>
+	</div>
+</div>
+<div id="post-message" hidden="true">
+	Setting up admin account.<br>
+	Please, be patient.
+</div>

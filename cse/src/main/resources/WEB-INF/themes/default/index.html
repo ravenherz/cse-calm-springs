@@ -1,0 +1,544 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+    "http://www.w3.org/TR/html4/loose.dtd">
+<html xmlns:th="http://www.w3.org/1999/xhtml">
+<head>
+  <base href="${pageContext.request.contextPath}"/>
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+  <meta name="viewport" content="width=device-width, height=device-height, initial-scale=1">
+  <!--/* page refresh is enabled only if configured */-->
+<!--  <meta th:if="${isNotError} and ${configured}"-->
+<!--        http-equiv="refresh"-->
+<!--        content="15;URL='./"/>-->
+  <title th:text="${htmlTitle}">Title</title>
+  <!--/* Styles */-->
+  <link id="styles-theme" rel="stylesheet" type="text/css"
+        th:href="@{/content-public/themes/__${stylesTheme}__/css/styles.css}"
+        href="../static/content-public/themes/default/css/styles.css"/>
+  <link id="styles-schema" rel="stylesheet" type="text/css"
+        th:href="@{/content-public/themes/__${stylesTheme}__/css/color-schemas/__${stylesSchema}__.css}"
+        href="../static/content-public/themes/default/css/color-schemas/snowy.css"/>
+  <link id="styles-system" rel="stylesheet" type="text/css"
+        th:href="@{/content-public/rhz-we-core/css/system.css}"
+        href="../static/content-public/rhz-we-core/css/system.css"/>
+  <link rel="icon"
+        th:href="@{/content-public/rhz-we-core/images/favicon.ico}"
+        href="/content-public/rhz-we-core/images/favicon.ico"
+        type="image/x-icon"/>
+  <!--/* rhz-we scripts */-->
+  <script id="script-rhz-we-error" type="text/javascript"
+          th:unless="${isNotError}"
+          th:src="@{/content-public/js/rhz-we-error.js}"
+          src="../static/content-public/js/rhz-we-error.js"></script>
+  <script id="script-rhz-we-setup" type="text/javascript"
+          th:unless="${configured}"
+          th:src="@{/content-public/js/rhz-we-setup.js}"
+          src="../static/content-public/js/rhz-we-setup.js"></script>
+  <script id="script-rhz-we-lp" type="text/javascript"
+          th:if="${configured} and ${loginPanel}"
+          th:src="@{/content-public/js/rhz-we-lp.js}"
+          src="../static/content-public/js/rhz-we-lp.js"></script>
+  <script id="script-rhz-we-tiny" type="text/javascript"
+          th:if="${configured} and ${loginPanel}"
+          th:src="@{/content-public/js/rhz-we-tiny.js}"
+          src="../static/content-public/js/rhz-we-tiny.js"></script>
+  <!--/* dist scripts and stylesheets */-->
+  <script id="script-rhz-we-dist-quill"
+          th:src="@{/content-public/js/dist/quill.min.js}"
+          src="//cdn.quilljs.com/1.3.6/quill.min.js"></script>
+  <link rel="stylesheet" type="text/css"
+        th:href="@{/content-public/js/dist/quill.snow.css}"
+        href="//cdn.quilljs.com/1.3.6/quill.snow.css">
+  <script id="script-rhz-we-dist-jquery" type="text/javascript"
+          th:src="@{/content-public/js/dist/jquery.min.js}"
+          src="../static/content-public/js/dist/jquery.min.js"></script>
+  <script id="script-rhz-we-dist-sha512" type="text/javascript"
+          th:src="@{/content-public/js/dist/sha512.js}"
+          src="../static/content-public/js/dist/sha512.js"></script>
+  <script id="script-rhz-we-dist-bootstrap" type="text/javascript"
+          th:src="@{/content-public/js/dist/bootstrap.min.js}"
+          src="../static/content-public/js/dist/bootstrap.min.js"></script>
+  <link rel="stylesheet" type="text/css"
+        th:href="@{/content-public/js/dist/bootstrap.min.css}"
+        href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css"/>
+</head>
+<body id="page-body">
+<wrapper>
+  <div class="page-content">
+    <div class="container-fluid">
+      <div class="row content">
+        <div class="col-sm-3">
+          <div class="row">
+            <div class="offset-sidenav"></div>
+            <div th:if="${isNotError}" class="left-column"
+                 id="left-column">
+              <div class="col-sm-12">
+                <div class="item-container">
+                  <div class="item-description">
+                    <div class="item-header" th:utext="${TagWelcomeTitle}+${TagWelcomeMessage}">
+                      <h4 name="highlightable" style="display: block" id="welcome-title-container">
+                        <b id="welcome-title">Welcome!</b>
+                      </h4>
+                      <h6 name="highlightable" style="display: block"
+                          id="welcome-message-container">
+                        <plain id="welcome-message">This guide will help you to make initial
+                          settings
+                        </plain>
+                      </h6>
+                    </div>
+                    <div class="item-description-content">
+                      <div th:utext="${TagWelcomeDescription}">
+                        <h6 id="welcome-description"><b>rhz-we</b> is supposed to be light-weight
+                          CMS,
+                          written in Java.</h6>
+                      </div>
+                      <div th:if="${configured} and ${loginPanel}" class="div-wide-100">
+                        <div th:unless="${authenticated}" id="loginpanel-guest">
+                          <div id="loginpanel-guest-default">
+                            <h6>In order to use full functionality of this site you have to be a <b>registred</b>
+                              user, please register or sign in</h6>
+                            <button id="loginpanel-button-register" class="transition">New account
+                            </button>
+                            <button id="loginpanel-button-ihaveanaccount" class="transition">I have
+                              an account
+                            </button>
+                            <br>
+                          </div>
+                          <div id="loginpanel-guest-signin" hidden="hidden">
+                            <label for="loginpanel-username">Username</label>
+                            <input class="transition" name="loginpanel-input"
+                                   id="loginpanel-username" type="text" placeholder="Enter username"
+                                   required>
+                            <label for="loginpanel-password">Password</label>
+                            <input class="transition" name="loginpanel-input"
+                                   id="loginpanel-password" type="password"
+                                   placeholder="Enter password" required>
+                            <button id="loginpanel-button-signin" class="transition"
+                                    hidden="hidden">Sign in
+                            </button>
+                            <div id="loginpanel-notification-failure" class="notification failure"
+                                 hidden="true">
+                              <div class="container-fluid">
+                                <div class="row content">
+                                  <div class="icon"><h1>&#x24D8</h1></div>
+                                  <div class="text"><u><i
+                                      id="loginpanel-notification-header">Error</i></u><br>
+                                    <div id="loginpanel-notification-description">Wrong credentials,<br>try
+                                      again
+                                    </div>
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
+                            <button id="loginpanel-button-idonthaveanaccount" class="transition">I
+                              don't have an account
+                            </button>
+                          </div>
+                          <script type="text/javascript">
+                              $(document).ready(function () {
+                                  loginPanelInit();
+                              });
+                          </script>
+                        </div>
+                        <div th:if="${authenticated}" id="loginpanel-user">
+                          <h6>Welcome, <a class="transition" href="./user" th:utext="${username}">username</a>!
+                          </h6>
+                          <button id="loginpanel-button-logout" class="transition"
+                                  onclick="loginPanelLogout()">Logout
+                          </button>
+                        </div>
+                        <div id="popup-registration-container" hidden="hidden">
+                          <div id="registration-window" class="row lots-editor">
+                            <div class="col-sm-4">
+                            </div>
+                            <div class="col-sm-4">
+                              <div class="row">
+                                <div id="registration-window-content" class="col-sm-12"
+                                     style="margin-top: 50px">
+                                  <div class="item">
+                                    <div class="item-description">
+                                      <div class="item-description-content">
+                                        <br>
+                                        <b>Dear guest</b>,<br><br>
+                                        <p>Please fullfill the following form by data to create a
+                                          new account.</p>
+                                        <br>
+                                        <div id="registration-window-form">
+
+                                        </div>
+                                        <script type="text/javascript">
+                                            $(document).ready(function () {
+                                                registerForm("registration-window-form",
+                                                    "form-account-register");
+                                            });
+                                        </script>
+                                        <button id="registration-window-button-cancel"
+                                                class="transition">Cancel
+                                        </button>
+                                        <div id="registration-window-notification-failure"
+                                             class="notification failure" hidden="hidden">
+                                          <div class="container-fluid">
+                                            <div class="row content">
+                                              <div class="icon"><h1>&#x24D8</h1></div>
+                                              <div class="text"><span style="text-decoration: underline;"><i
+                                                  id="registration-window-notification-header">Error</i></span><br>
+                                                <div
+                                                    id="registration-window-notification-description">
+                                                  Something went wrong<br>Server-side
+                                                </div>
+                                              </div>
+                                            </div>
+                                          </div>
+                                        </div>
+                                      </div>
+                                    </div>
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
+                            <div class="col-sm-4">
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div class="col-sm-12">
+                <div class="item-container" th:if="${configured} and ${hasNavigation}">
+                  <div class="item-description">
+                    <div class="item-header">
+                      <h4 name="highlightable" style="display: block"><b id="navigation-title">Navigation</b>
+                      </h4>
+                      <h6 name="highlightable" style="display: block" id="navigation-subtitle">
+                        <plain id="navigation-message">Grouped by categories</plain>
+                      </h6>
+                    </div>
+                    <div class="item-description-content">
+                      <div class="row" th:utext="${TagNavigationVertical}">
+                        <div class="item-description-content">
+                          <div class="navigation">
+                            <div class="col-sm-12">
+                              <div title="Software (DSP... et cetera):">Software (DSP... et cetera):
+                                <ul>
+                                  <li><a href="?name=dvc-1"
+                                         title="Software [Rack Extension, 2016]" class="transition">DVC-1
+                                    Digital Voltage Comparator</a></li>
+                                  <li><a href="?name=deg-2" title="subheader-test"
+                                         class="transition">DEG-2 Dual Envelope Generator</a></li>
+                                </ul>
+                              </div>
+                              <div title="some shit beneath this depth">Some crap
+                                <ul>
+                                  <li><a href="?name=pagetitle" title="Page subheader"
+                                         class="transition">Page title</a></li>
+                                </ul>
+                              </div>
+                              <div title="Everything considering music releases">Music releases
+                                <ul>
+                                  <li><a href="?name=host" title="Page subheader"
+                                         class="transition">Host 2015</a></li>
+                                  <li><a href="?name=safeplace" title="Page subheader"
+                                         class="transition">Safe place 2014</a></li>
+                                </ul>
+                              </div>
+                              <div title="fuck">fuck
+                                <ul>
+                                  <li><a href="?name=duck2" title="subheader-test"
+                                         class="transition">duck2</a></li>
+                                </ul>
+                              </div>
+                              <div title="fuck2">fuck2
+                                <ul>
+                                  <li><a href="?name=kksdfgdshgfl sdfg dsfg dsfg"
+                                         title="subheader-test" class="transition">safdgdsfhg dsfhds
+                                    fhdsfh dsfh</a></li>
+                                </ul>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="col-sm-9">
+          <div class="offset-content"></div>
+          <div th:unless="${isNotError}" class="row">
+            <div class="col-sm-3">
+            </div>
+            <div class="col-sm-6">
+              <div class="error">
+                <div class="row">
+                  <div class="col-sm-12">
+                    <div id="errorPage-errorClass" class="error-type">
+                      Unkwnown error
+                    </div>
+                  </div>
+                </div>
+                <div class="item-container">
+                  <div class="item-picture">
+                  </div>
+                  <div class="item-description">
+                    <div class="item-header">
+                      <div class="container-fluid">
+                        <div class="row content">
+                          <div class="col-sm-3">
+                            <h1><span id="errorPage-code"></span></h1>
+                          </div>
+                          <div class="col-sm-9">
+                            <h4><b><span id="errorPage-name"> </span></b></h4>
+                            <h6><span id="errorPage-description"> </span></h6>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                    <div class="item-description-content">
+                      <br>
+                      <br>
+                      <br>
+                      <br>
+                      <br>
+                      You will be redirected automatically...
+                      <br>
+                      <br>
+                      <br>
+                    </div>
+                    <script id="error-page-scripts" type="text/javascript">
+                        $(document).ready(function () {
+                            getErrorDescription();
+                        });
+                    </script>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="col-sm-3">
+            </div>
+          </div>
+          <div th:unless="${configured} or ${isNotError}"
+               class="row">
+            <div class="col-sm-12">
+              <div class="item">
+                <div class="row">
+                  <div class="col-sm-12">
+                    <div class="item-type">
+                      Setup guide
+                    </div>
+                  </div>
+                </div>
+                <div class="item-container">
+                  <div class="item-picture">
+                  </div>
+                  <div class="item-description">
+                    <div class="item-header">
+                      <h4><b>rhz-we</b></h4><h6> Lightweight Spring MVC web-platform</h6>
+                    </div>
+                    <div class="item-description-content">
+                      <h4 id="setupDialogue-stageTitle"></h4>
+                      <div id="setup-progressbar-border" class="progressbar-border">
+                        <div id="setupDialogue-stageProgress"
+                             class="progressbar-progress transition" style="width: 0%;"></div>
+                      </div>
+                      <br>
+                      <div id="setupDialogue-stageSummary"></div>
+                      <br>
+                      <div id="setupDialogue-stageContent"></div>
+
+                      <div id="dbms-notification" class="container-fluid">
+                        <div class="row content">
+                          <div class="col-sm-3">
+                          </div>
+                          <div class="col-sm-6">
+                            <div id="notification-success" class="notification success"
+                                 style="display: none">
+                              <div class="container-fluid">
+                                <div class="row content">
+                                  <div class="icon"><h1>&#x24D8</h1></div>
+                                  <div class="text"><u><i>Connection established.</i></u><br>However
+                                    you can change these
+                                    credentials in <b><i>configdbms-access.json</i></b> file at
+                                    /content-private/configuration/
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
+                            <div id="notification-failure" class="notification failure"
+                                 style="display: none">
+                              <div class="container-fluid">
+                                <div class="row content">
+                                  <div class="icon"><h1>&#x24D8</h1></div>
+                                  <div class="text"><u><i>Cannot establish connection.</i></u><br>Wrong
+                                    password, port,
+                                    address or DBMS don't working at all
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                          <div class="col-sm-3">
+                          </div>
+                        </div>
+                      </div>
+                      <div id="user-setup" class="container-fluid">
+                        <div class="row content">
+                          <div class="col-sm-3">
+                          </div>
+                          <div class="col-sm-6">
+                            <button class="transition"
+                                    id="setupDialogue-controlButton"
+                                    style="display: none"
+                                    onclick="collectAndGo(true)">Create user and service
+                            </button>
+                          </div>
+                          <div class="col-sm-3">
+                          </div>
+                        </div>
+                      </div>
+                      <script id="setup-page-scripts" type="text/javascript">
+                          $(document).ready(function () {
+                              collectAndGo(false);
+                          });
+                      </script>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div th:if="${configured} and ${isNotError}"
+               class="row align-items-start">
+            <div th:each="group : ${pages}"
+                 th:classappend="${#lists.size(pages) == 2}? 'col-sm-6' : ''">
+              <div th:each="page : ${group}" class="item"
+                   th:classappend="${#lists.size(pages) == 2} ? '' : (${#lists.size(group) == 1} ? 'col-sm-12' : 'col-xs-6')">
+                <div class="row">
+                  <div class="col-sm-12">
+                    <div th:utext="${page.categoryItemName}" class="item-type"></div>
+                  </div>
+                </div>
+                <div class="item-container">
+                  <div class="item-picture">
+                    <div th:if="${page.imageLinkFull != null}" class="picture">
+                      <a th:href="${page.pageLink}"><img th:src="${page.imageLinkFull}"></a>
+                      <div th:if="${page.tags} != null" class="item-tags">
+                        <a th:each="tag : ${page.tags}" th:href="@{./?tag=__${tag}__}">
+                        <span class="item-tag"
+                              th:classappend="${tag} == ${selectedTag} ? 'selected' : 'normal'"
+                              th:text="${tag}"></span>
+                        </a>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="item-description">
+                    <div class="item-header">
+                      <h4><b><span th:utext="${page.header}"> </span></b></h4>
+                      <h6><span th:utext="${page.subHeader}"> </span></h6>
+                    </div>
+                    <div th:utext="${page.description}" class="item-description-content">
+                    </div>
+                  </div>
+                </div>
+                <div th:if="${page.pageComments} != null" class="item-comments">
+                  <div th:each="comment : ${page.pageComments}" class="item-comment row">
+                    <div class="col-sm-4">
+                      <h5 th:text="${comment.author}"></h5>
+                      <h6 th:text="${comment.date}"></h6>
+                      <h6 th:text="@{at __${comment.time}__}"></h6>
+                    </div>
+                    <div class="col-sm-8">
+                      <div th:utext="${comment.message}"></div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div id="footer" class="footer">
+    <div class="footer-stripline-gradient"></div>
+    <div class="footer-container">
+      <div class="footer-container-up">
+        <div class="footer-navigation" th:if="${isNotError}"
+             th:utext="${TagNavigationHorizontal}">
+        </div>
+        <div class="footer-organization"
+             th:utext="${TagCompanyName}+${TagCompanyPhysicalAddress}+${TagCompanyPhone}+${TagCompanyEmailAddress}+${TagCompanySocialLinks}">
+          <div name="highlightable" style="display:inline-block" id="company-title-container"
+               class="div-wide-100">
+            <h4><b id="company-title">company</b></h4>
+          </div>
+          <div name="highlightable" style="display:inline-block" id="company-address-container"
+               class="div-wide-100">
+            <b>Located at:</b> <label id="company-address">adress 25-768</label>
+          </div>
+          <div name="highlightable" style="display:inline-block" id="company-phone-container"
+               class="div-wide-100">
+            <b>Phone:</b> <label id="company-phone">+3 632 643 246</label>
+          </div>
+          <div name="highlightable" style="display:inline-block" id="company-email-container"
+               class="div-wide-100">
+            <b>E-mail:</b> <a id="company-email" href="mailto://some@some.com">click</a>
+          </div>
+          <div name="highlightable" style="display:inline-block" id="company-social-container"
+               class="div-wide-100">
+            <a style="display:inline-block" id="company-social-vk-1261026071-container"
+               href="https://vk.com/ravenherz" class="company-social" target="_blank">
+              <img border="0" src="./rhz-we __ setup_files/vk.png" alt="vk" width="24"
+                   title="Follow me at VK: ravenherz" height="24">
+            </a>
+          </div>
+        </div>
+      </div>
+      <div class="footer-divider"></div>
+      <div class="footer-container-down">
+        <div class="footer-copyright" th:utext="${TagCopyrightHolder}+${TagCopyrightComment}">
+          <div name="highlightable" style="display:inline-block" id="copyright-holder-container"
+               class="div-wide-100">
+            <b>
+              <b id="copyright-holder">Someone</b> © 2004-2008</b>
+          </div>
+          <div name="highlightable" style="display:inline-block" id="copyright-comment-container"
+               class="div-wide-100">
+            <label id="copyright-comment">No rights</label>
+          </div>
+        </div>
+        <div class="footer-studio" th:utext="${TagBuilderLink}+${TagSoftVersion}">
+          <div name="highlightable" style="display:inline-block" id="builder-title-container"
+               class="div-wide-100">
+            <b>Built by <a id="builder-title" href="https://ravenherz.com/" target="_blank">ravenherz</a></b>
+          </div>
+          <div style="display:inline-block" id="DUMMY-container" class="div-margin-right-5px">
+            <div>
+              <div class="soft-version"
+                   th:utext="'${versionProduct}' + '<br>' + ${versionVersion} + ' ' + ${versionBranch}">
+                rhz-we<br>0.2.6.1128.RELEASE
+              </div>
+              <div style="display:inline-block; padding-left:5px">
+                <a style="display:inline-block"
+                   id="DUMMY2-container"
+                   href="https://ravenherz.com/?page=rhz-we"
+                   class="company-social"
+                   target="_blank"><img border="0"
+                                        src="./rhz-we __ setup_files/logo.png"
+                                        alt="logo"
+                                        width="24"
+                                        height="24">
+                </a>
+            </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</wrapper>
+</body>
+</html>

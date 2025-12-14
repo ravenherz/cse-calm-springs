@@ -1,0 +1,11 @@
+{
+  "id" : "form-setup-get-started",
+  "formType" : "LIST",
+  "button" : {
+    "text": "Get started",
+    "rest": "./rest/setup",
+    "onclick": "CollectAndGo(true)"
+  },
+  "groups": [
+  ]
+}

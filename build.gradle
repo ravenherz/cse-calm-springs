@@ -1,0 +1,15 @@
+allprojects {
+
+    group = 'com.ravenherz'
+
+    ["prepareKotlinBuildScriptModel"].forEach {
+        project.gradle.startParameter.excludedTaskNames.add(it)
+    }
+}
+
+subprojects {
+
+}
+
+
+

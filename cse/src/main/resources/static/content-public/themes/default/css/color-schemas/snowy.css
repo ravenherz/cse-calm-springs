@@ -1,0 +1,55 @@
+:root {
+
+  --color-default-text: #666666;
+
+  /* ACCENT-colors for stripline, for inputs, buttons etc. */
+
+  --color-default-accent-one: var(--color-item-link-hover);
+  --color-default-accent-one-alter: var(--color-footer-link-active);
+  --color-default-accent-two: var(--color-item-type-text);
+
+  /* Body background color */
+
+  --color-body-bg: #444444;
+  --color-footer-bg: var(--color-item-type-bg);
+  --color-footer-text: #8e8e8e;
+  --color-footer-text-accent: #000000;
+
+  --color-footer-link-hover: #ffffff;
+  --color-footer-link-active: #ffffff;
+  --color-footer-link-normal: #bdbdbd;
+  --color-footer-link-visited: #afafaf;
+
+  --color-notification-failure-text: #f58484;
+  --color-notification-success-text: #3d583e;
+  --color-notification-neutral-text: #292929;
+  --color-notification-success-bg: #b6fdd9;
+  --color-notification-failure-bg: #713232;
+  --color-notification-neutral-bg: #d0d0d0;
+
+  --color-item-type-bg: rgb(43, 41, 37);
+  --color-item-type-text: #ffffff;
+  --color-item-header-bg: rgb(219, 219, 219);
+  --color-item-header-text-big: rgb(255, 255, 255);
+  --color-item-header-text: var(--color-default-text);
+  --color-item-body-bg: rgb(245, 245, 244);
+  --color-item-body-text: var(--color-default-text);
+
+  --color-item-link-hover: #a59696;
+  --color-item-link-active: #552424;
+  --color-item-link-normal: #552424;
+  --color-item-link-visited: #1f0a0a;
+
+  --color-error-type-bg: rgba(59,58,54,1);
+  --color-error-type-text: #ffb114;
+  --color-error-header-bg: #f69829;
+  --color-error-header-text: var(--color-default-text);
+  --color-error-body-bg: #424140;
+  --color-error-body-text: var(--color-error-header-bg);
+  --color-special-expired-item: #f64500;
+
+  /* errors are ok, they been caused by relative path*/
+
+  --bg-main: url("../images/body-background-electricity-flat-logo.jpg");
+  --bg-footer: url("../images/footer-background-vertex-green.png");
+}

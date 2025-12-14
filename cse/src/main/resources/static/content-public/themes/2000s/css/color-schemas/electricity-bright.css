@@ -1,0 +1,52 @@
+:root {
+
+    --color-default-text: #878787;
+
+    /* ACCENT-colors for stripline, for inputs, buttons etc. */
+    --color-default-accent-one: var(--color-footer-link-active);
+    --color-default-accent-one-alter: var(--color-footer-link-active);
+    --color-default-accent-two: var(--color-item-type-text);
+
+    /* Body background color */
+    --color-body-bg: #e3e3e3;
+
+    --color-footer-bg: var(--color-item-type-bg);
+    --color-footer-text: #949494;
+    --color-footer-text-accent: #ffefef;
+    --color-footer-link-hover: #fbc86e;
+    --color-footer-link-active: #dbcf8a;
+    --color-footer-link-normal: #a88181;
+    --color-footer-link-visited: #7b6969;
+
+    --color-notification-failure-text: #f58484;
+    --color-notification-success-text: #3d583e;
+    --color-notification-neutral-text: #292929;
+    --color-notification-success-bg: #b6fdd9;
+    --color-notification-failure-bg: #713232;
+    --color-notification-neutral-bg: #d0d0d0;
+
+    --color-item-type-bg: rgb(51, 51, 51);
+    --color-item-type-text:#727272;
+    --color-item-header-bg: #c0c0c0;
+    --color-item-header-text: var(--color-default-text);
+    --color-item-body-bg: #f2f2f2;
+    --color-item-body-text: var(--color-default-text);
+    --color-item-link-hover: var(--color-footer-link-hover);
+    --color-item-link-active: var(--color-footer-link-active);
+    --color-item-link-normal: var(--color-footer-link-normal);
+    --color-item-link-visited: var(--color-footer-link-visited);
+
+    --color-error-type-bg: rgb(87, 87, 87);
+    --color-error-type-text: #ffb114;
+    --color-error-header-bg: #f69829;
+    --color-error-header-text: var(--color-default-text);
+    --color-error-body-bg: #534642;
+    --color-error-body-text: var(--color-error-header-bg);
+
+    --color-special-expired-item: #f64500;
+
+    /* errors are ok, the caused by relative path*/
+    --bg-main: url("../images/body-background-electricity-flat-bright.jpg");
+    --bg-footer: url("../images/footer-background-vertex-green.png");
+
+}

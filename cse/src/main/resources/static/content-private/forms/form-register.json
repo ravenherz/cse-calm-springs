@@ -1,0 +1,61 @@
+{
+  "id" : "form-account-register",
+  "formType" : "LIST",
+  "button" : {
+    "text": "Register",
+    "rest": "./account/register"
+  },
+  "groups": [
+    {
+      "groupId":"",
+      "groupTitle":"",
+      "elements": [
+        {
+          "contentType":"text",
+          "id" : "ACCOUNT_LOGIN",
+          "elementType" : "INPUT",
+          "required" : true,
+          "regexp": "REGEX_LOGIN",
+          "label": "Account login",
+          "placeholder" : "Enter desired login"
+        },
+        {
+          "contentType":"password",
+          "id" : "ACCOUNT_PASSWORD",
+          "elementType" : "INPUT",
+          "required" : true,
+          "regexp": "ACCOUNT_PASSWORD",
+          "label": "Account password",
+          "placeholder" : "Enter the password"
+        },
+        {
+          "contentType":"password",
+          "id" : "ACCOUNT_PASSWORD_RETYPE",
+          "elementType" : "INPUT",
+          "required" : true,
+          "label": "Repeat password",
+          "matchOtherField" : "ACCOUNT_PASSWORD",
+          "placeholder" : "Retype the password"
+        },
+        {
+          "contentType":"email",
+          "id" : "ACCOUNT_EMAIL",
+          "elementType" : "INPUT",
+          "required" : true,
+          "regexp": "REGEX_EMAIL",
+          "label": "E-Mail",
+          "placeholder" : "Enter your email"
+        },
+        {
+          "contentType":"text",
+          "id" : "ACCOUNT_SHOWN_NAME",
+          "elementType" : "INPUT",
+          "required" : false,
+          "regexp": "REGEX_SHOWN_NAME",
+          "label": "Shown name",
+          "placeholder" : "This name will be displayed instead of login"
+        }
+      ]
+    }
+  ]
+}
