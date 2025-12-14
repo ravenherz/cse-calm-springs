@@ -16,8 +16,9 @@ class CargoContextResolver {
 
     CargoContextResolver(Boolean isRemoteDeploy = true, Project projectLocal) {
         this.isRemoteDeploy = isRemoteDeploy
-        this.whereToDeploy = "release" == 'release' ? "production" : "testing" // todo: add call for getGitBranch
+        this.whereToDeploy = GitHelper.gitBranch == 'main' ? "production" : "staging" // todo: add call for getGitBranch
         this.cargoDataContainer = new JsonSlurper().parseText(projectLocal.file('./build-info/cargo-remote.json').text)
+        System.out.println("deploying to '${whereToDeploy}'")
     }
 
     private static class ResolveNullToDefault implements Resolver {

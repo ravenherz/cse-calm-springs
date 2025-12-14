@@ -1,9 +1,10 @@
 package com.ravenherz.cse;
 
-import com.ravenherz.rhzwe.filters.CacheProtectionFilter;
 import com.ravenherz.rhzwe.filters.ContentPrivateFilter;
+import org.apache.catalina.connector.Connector;
 import org.apache.coyote.ProtocolHandler;
 import org.apache.coyote.http11.AbstractHttp11Protocol;
+import org.apache.coyote.http2.Http2Protocol;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.autoconfigure.data.mongo.MongoDataAutoConfiguration;
@@ -22,6 +23,7 @@ import org.thymeleaf.spring6.templateresolver.SpringResourceTemplateResolver;
 import org.thymeleaf.templatemode.TemplateMode;
 
 import java.util.Arrays;
+
 
 @SpringBootApplication(exclude = {
 		/*
@@ -75,6 +77,16 @@ public class CalmSpringsEngineApplication {
 
 		return registrationBean;
 	}
+
+//	@Bean
+//	public WebServerFactoryCustomizer<TomcatServletWebServerFactory> getWebServerFactoryCustomizer() {
+//		return factory -> {
+//			Connector httpConnector = new Connector(TomcatServletWebServerFactory.DEFAULT_PROTOCOL);
+//			httpConnector.setPort(8080);
+//			factory.addConnectorCustomizers(connector -> connector.addUpgradeProtocol(new Http2Protocol()));
+//			factory.addAdditionalTomcatConnectors(httpConnector);
+//		};
+//	}
 
 	@Bean
 	public WebServerFactoryCustomizer<TomcatServletWebServerFactory> servletContainerCustomizer() {

@@ -6,7 +6,7 @@ logging:
   level:
     root: DEBUG
     org.mongodb: INFO
-    org.springframework.web: TRACE
+    org.springframework.web: INFO
     dev.morphia.mapping.codec.pojo: INFO
   file:
     name: "./logs/cse.log"

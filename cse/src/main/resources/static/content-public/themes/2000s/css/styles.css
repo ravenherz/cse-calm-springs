@@ -330,7 +330,7 @@ wrapper {
     width: auto;
     max-width: inherit;
     height: auto;
-    padding: 7px;
+    padding: 1%;
     background-color: var(--color-item-type-bg);
     background-size: cover;
     float: none;
