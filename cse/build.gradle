@@ -107,6 +107,8 @@ compileJava.dependsOn(buildPreparations)
 cargo {
     var deployRemote = true
     var cargoParamResolver = new CargoContextResolver(deployRemote, project)
+    System.out.println("deploying to '${cargoParamResolver.getWhereToDeploy()}'")
+
     containerId = cargoParamResolver.getByKey('containerId').orDefault("tomcat10x")
     port = cargoParamResolver.getByKey('port').orDefault(8080) as Integer
 

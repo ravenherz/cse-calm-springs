@@ -94,10 +94,6 @@ public abstract class AbstractController {
 
     }
 
-    protected void error(int code, HttpServletRequest request, HttpServletResponse response) throws IOException {
-        response.sendRedirect(request.getContextPath() + String.format("/?error=%s", code));
-    }
-
     protected String getCookieByKey(HttpServletRequest request, String key) {
         if (request.getCookies() != null && key != null) {
             for (Cookie cookie : request.getCookies()) {
@@ -135,6 +131,10 @@ public abstract class AbstractController {
             cookie.setMaxAge(maxAge);
             response.addCookie(cookie);
         });
+    }
+
+    protected void error(int code, HttpServletRequest request, HttpServletResponse response) throws IOException {
+        response.sendRedirect(request.getContextPath() + String.format("/?error=%s", code));
     }
 
 }

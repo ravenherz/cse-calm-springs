@@ -10,3 +10,9 @@ logging:
     dev.morphia.mapping.codec.pojo: INFO
   file:
     name: "./logs/cse.log"
+
+server:
+  error:
+    path: "/error"
+    whitelabel:
+      enabled: false

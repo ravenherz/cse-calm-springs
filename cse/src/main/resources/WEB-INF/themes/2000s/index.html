@@ -5,11 +5,33 @@
   <base href="${pageContext.request.contextPath}"/>
   <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
   <meta name="viewport" content="width=device-width, height=device-height, initial-scale=1">
-  <!--/* page refresh is enabled only if configured */-->
-  <!--  <meta th:if="${isNotError} and ${configured}"-->
-  <!--        http-equiv="refresh"-->
-  <!--        content="15;URL='./"/>-->
+<!--  <meta th:if="${isNotError} and ${configured}"-->
+<!--        http-equiv="refresh"-->
+<!--        content="15;URL='./"/>-->
   <title th:text="${htmlTitle}">Title</title>
+  <!--/* dist scripts and stylesheets */-->
+  <script id="script-rhz-we-dist-quill"
+          th:src="@{/content-public/js/dist/quill.min.js}"
+          src="//cdn.quilljs.com/1.3.6/quill.min.js"></script>
+  <link rel="stylesheet" type="text/css"
+        th:href="@{/content-public/js/dist/quill.snow.css}"
+        href="//cdn.quilljs.com/1.3.6/quill.snow.css">
+  <script id="script-rhz-we-dist-jquery" type="text/javascript"
+          th:src="@{/content-public/js/dist/jquery.min.js}"
+          src="../static/content-public/js/dist/jquery.min.js"></script>
+  <script id="script-rhz-we-dist-sha512" type="text/javascript"
+          th:src="@{/content-public/js/dist/sha512.js}"
+          src="../static/content-public/js/dist/sha512.js"></script>
+  <script id="script-rhz-we-dist-bootstrap" type="text/javascript"
+          th:src="@{/content-public/js/dist/bootstrap.min.js}"
+          src="../static/content-public/js/dist/bootstrap.min.js"></script>
+  <link rel="stylesheet" type="text/css"
+        th:href="@{/content-public/js/dist/bootstrap.min.css}"
+        href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css"/>
+  <!--/* Fonts */-->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@200..700&display=swap" rel="stylesheet">
   <!--/* Styles */-->
   <link id="styles-theme" rel="stylesheet" type="text/css"
         th:href="@{/content-public/themes/__${stylesTheme}__/css/styles.css}"
@@ -41,25 +63,7 @@
           th:if="${configured} and ${loginPanel}"
           th:src="@{/content-public/js/rhz-we-tiny.js}"
           src="../static/content-public/js/rhz-we-tiny.js"></script>
-  <!--/* dist scripts and stylesheets */-->
-  <script id="script-rhz-we-dist-quill"
-          th:src="@{/content-public/js/dist/quill.min.js}"
-          src="//cdn.quilljs.com/1.3.6/quill.min.js"></script>
-  <link rel="stylesheet" type="text/css"
-        th:href="@{/content-public/js/dist/quill.snow.css}"
-        href="//cdn.quilljs.com/1.3.6/quill.snow.css">
-  <script id="script-rhz-we-dist-jquery" type="text/javascript"
-          th:src="@{/content-public/js/dist/jquery.min.js}"
-          src="../static/content-public/js/dist/jquery.min.js"></script>
-  <script id="script-rhz-we-dist-sha512" type="text/javascript"
-          th:src="@{/content-public/js/dist/sha512.js}"
-          src="../static/content-public/js/dist/sha512.js"></script>
-  <script id="script-rhz-we-dist-bootstrap" type="text/javascript"
-          th:src="@{/content-public/js/dist/bootstrap.min.js}"
-          src="../static/content-public/js/dist/bootstrap.min.js"></script>
-  <link rel="stylesheet" type="text/css"
-        th:href="@{/content-public/js/dist/bootstrap.min.css}"
-        href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css"/>
+
 </head>
 <body id="page-body">
 <wrapper>
