@@ -3,6 +3,8 @@ package com.ravenherz.rhzwe.dal.dao;
 import com.mongodb.DuplicateKeyException;
 import com.ravenherz.rhzwe.dal.DataProvider;
 import com.ravenherz.rhzwe.dal.dto.BasicEntity;
+import com.ravenherz.rhzwe.dal.dto.basic.Event;
+import com.ravenherz.rhzwe.dal.dto.basic.HistoryData;
 import dev.morphia.query.filters.Filters;
 import org.slf4j.LoggerFactory;
 import org.slf4j.Logger;
@@ -49,8 +51,8 @@ public abstract class BasicService implements Service {
 
     @Override
     public boolean replace(BasicEntity entity) {
-        dataProvider.getDatastore().merge(entity);
-        return entity.equals(getById(entity.getClass(), entity.getId()));
+        BasicEntity t = dataProvider.getDatastore().replace(entity);
+        return true; // todo rework
     }
 
     @Override

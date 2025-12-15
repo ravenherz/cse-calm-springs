@@ -1,13 +1,13 @@
 {
     "artifact": {
         "latest": {
-            "name": "cse-0.3.1.2295.feature-error-page-rework.war"
+            "name": "cse-0.3.1.2320.feature-more-css-pt2.war"
         },
         "release": {
             "name": "rhz-we-0.2.6.1056-master.war"
         }
     },
     "build": {
-        "number": 2295
+        "number": 2320
     }
 }

@@ -21,6 +21,8 @@ public final class Event implements Serializable {
 
     }
 
+    public Event(EventType eventType) {}
+
     public Event(EventType eventType, LocalDateTime localDateTime, AccountEntity owner) {
         this.eventType = eventType;
         this.localDateTime = localDateTime;
