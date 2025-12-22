@@ -296,32 +296,7 @@ wrapper {
     /*z-index: -100;*/
 }
 
-.item-type {
-    color: var(--color-item-type-text);
-}
 
-.error-type {
-    color: var(--color-error-type-text);
-}
-
-.item-type, .error-type {
-    z-index: 100;
-    position: relative;
-
-    padding: 9px 9px 0px 9px;
-
-    background: -moz-linear-gradient(45deg, var(--color-item-type-bg) 39%, rgba(0, 0, 0, 0) 39%, rgba(0, 0, 0, 0) 99%, rgba(0, 0, 0, 0) 100%); /* FF3.6-15 */
-    background: -webkit-linear-gradient(45deg, var(--color-item-type-bg) 39%, rgba(0, 0, 0, 0) 39%, rgba(0, 0, 0, 0) 99%, rgba(0, 0, 0, 0) 100%); /* Chrome10-25,Safari5.1-6 */
-    background: linear-gradient(45deg, var(--color-item-type-bg) 39%, rgba(0, 0, 0, 0) 39%, rgba(0, 0, 0, 0) 99%, rgba(0, 0, 0, 0) 100%); /* W3C, IE10+, FF16+, Chrome26+, Opera12+, Safari7+ */
-    filter: progid:DXImageTransform.Microsoft.gradient(startColorstr='#000000', endColorstr='#00000000', GradientType=1); /* IE6-9 fallback on horizontal gradient */
-    /*width: auto 40%;*/
-
-    text-shadow: 1px 3px 2px rgba(0, 0, 0, 0.2);
-    font-weight: bolder;
-    font-size: 11px;
-
-    margin-bottom: -2px;
-}
 
 .item-type-text {
     width: 34%;

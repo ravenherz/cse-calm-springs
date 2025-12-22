@@ -72,13 +72,10 @@ public final class TagNavigation
                 .sorted(Comparator.comparingLong(o -> o.getDateTimeCreated().toEpochSecond(ZoneOffset.UTC)))
                 .forEachOrdered(e -> {
                     switch (e.getType()) {
-                        case CATEGORY:
-                            readyListsAsHtmlString.add(makeCategoryHtml(e).getCode());
-                            break;
-                        case PAGE:
-                            readyListsAsHtmlString.add(makePageHtml(e).getCode());
-                            break;
-                        default:
+                        case CATEGORY -> readyListsAsHtmlString.add(makeCategoryHtml(e).getCode());
+                        case PAGE -> readyListsAsHtmlString.add(makePageHtml(e).getCode());
+                        default -> {
+                        }
                     }
                 });
 
@@ -96,22 +93,14 @@ public final class TagNavigation
             ) {
                 HTMLElement colElem = new HTMLElement(Strings.ELEM_NAME_DIV, col);
                 switch (numOfCols) {
-                    case 2:
-                        colElem.addAttribute(Strings.ATTR_NAME_CLASS,
-                                Strings.ATTR_VALUE_CLASS_BOOTSTRAP_COL_SM_6);
-                        break;
-                    case 3:
-                        colElem.addAttribute(Strings.ATTR_NAME_CLASS,
-                                Strings.ATTR_VALUE_CLASS_BOOTSTRAP_COL_SM_4);
-                        break;
-                    case 4:
-                        colElem.addAttribute(Strings.ATTR_NAME_CLASS,
-                                Strings.ATTR_VALUE_CLASS_BOOTSTRAP_COL_SM_3);
-                        break;
-                    default:
-                        colElem.addAttribute(Strings.ATTR_NAME_CLASS,
-                                Strings.ATTR_VALUE_CLASS_BOOTSTRAP_COL_SM_2);
-                        break;
+                    case 2 -> colElem.addAttribute(Strings.ATTR_NAME_CLASS,
+                            Strings.ATTR_VALUE_CLASS_BOOTSTRAP_COL_SM_6);
+                    case 3 -> colElem.addAttribute(Strings.ATTR_NAME_CLASS,
+                            Strings.ATTR_VALUE_CLASS_BOOTSTRAP_COL_SM_4);
+                    case 4 -> colElem.addAttribute(Strings.ATTR_NAME_CLASS,
+                            Strings.ATTR_VALUE_CLASS_BOOTSTRAP_COL_SM_3);
+                    default -> colElem.addAttribute(Strings.ATTR_NAME_CLASS,
+                            Strings.ATTR_VALUE_CLASS_BOOTSTRAP_COL_SM_2);
                 }
 
                 categoriesString.append(colElem.getCode());

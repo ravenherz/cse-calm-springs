@@ -2,14 +2,18 @@ package com.ravenherz.rhzwe.dal.dto;
 
 import com.mongodb.lang.Nullable;
 import com.ravenherz.rhzwe.dal.EntityUtils;
+import com.ravenherz.rhzwe.dal.dto.basic.Event;
 import com.ravenherz.rhzwe.dal.dto.basic.HistoryData;
 import com.ravenherz.rhzwe.dal.dto.basic.SecurityData;
 import com.ravenherz.rhzwe.dal.dto.basic.enums.AccessType;
+import com.ravenherz.rhzwe.dal.dto.basic.enums.EventType;
 import com.ravenherz.rhzwe.dal.dto.basic.enums.SecurityLevel;
 import dev.morphia.annotations.Id;
 import org.bson.types.ObjectId;
 
 import java.io.Serializable;
+import java.time.LocalDateTime;
+import java.util.Arrays;
 import java.util.Map;
 import java.util.Objects;
 
@@ -98,5 +102,12 @@ public abstract class BasicEntity implements Serializable, EntityUtils {
 
     public void setEntityVersion(String entityVersion) {
         this.entityVersion = entityVersion;
+    }
+
+    public LocalDateTime selectCreationLocalDateTime() {
+        return Arrays.stream(this.getHistoryData().getEvents())
+                .filter(event -> EventType.ENTITY_CREATED.equals(event.getEventType()))
+                .map(Event::getLocalDateTime)
+                .findFirst().orElse(LocalDateTime.now());
     }
 }

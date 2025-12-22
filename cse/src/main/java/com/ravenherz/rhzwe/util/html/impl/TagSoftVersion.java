@@ -61,12 +61,6 @@ public final class TagSoftVersion
         String outStr = Strings.STR_EMPTY;
         if (productInfo != null) {
             outStr += productInfo;
-            if (spring != null) {
-                outStr += "<br>";
-            }
-        }
-        if (spring != null) {
-            outStr += spring;
         }
 
         HTMLElement text = new HTMLElement(Strings.ELEM_NAME_DIV, outStr);

@@ -1,7 +1,6 @@
 package com.ravenherz.rhzwe.filters;
 
 import jakarta.servlet.*;
-import org.springframework.context.annotation.ComponentScan;
 
 import java.io.IOException;
 

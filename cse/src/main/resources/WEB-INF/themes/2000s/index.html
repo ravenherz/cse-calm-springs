@@ -1,6 +1,6 @@
 <!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
         "http://www.w3.org/TR/html4/loose.dtd">
-<html xmlns:th="http://www.w3.org/1999/xhtml">
+<html xmlns:th="http://www.w3.org/1999/xhtml" lang="en">
 <head>
   <base href="${pageContext.request.contextPath}"/>
   <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
@@ -12,19 +12,19 @@
   <!--/* dist scripts and stylesheets */-->
   <script id="script-rhz-we-dist-quill"
           th:src="@{/content-public/js/dist/quill.min.js}"
-          src="//cdn.quilljs.com/1.3.6/quill.min.js"></script>
+          src="//cdn.quilljs.com/1.3.6/quill.min.js" type="text/javascript"></script>
   <link rel="stylesheet" type="text/css"
         th:href="@{/content-public/js/dist/quill.snow.css}"
         href="//cdn.quilljs.com/1.3.6/quill.snow.css">
   <script id="script-rhz-we-dist-jquery" type="text/javascript"
           th:src="@{/content-public/js/dist/jquery.min.js}"
-          src="../static/content-public/js/dist/jquery.min.js"></script>
+          src="../../../static/content-public/js/dist/jquery.min.js"></script>
   <script id="script-rhz-we-dist-sha512" type="text/javascript"
           th:src="@{/content-public/js/dist/sha512.js}"
-          src="../static/content-public/js/dist/sha512.js"></script>
+          src="../../../static/content-public/js/dist/sha512.js"></script>
   <script id="script-rhz-we-dist-bootstrap" type="text/javascript"
           th:src="@{/content-public/js/dist/bootstrap.min.js}"
-          src="../static/content-public/js/dist/bootstrap.min.js"></script>
+          src="../../../static/content-public/js/dist/bootstrap.min.js"></script>
   <link rel="stylesheet" type="text/css"
         th:href="@{/content-public/js/dist/bootstrap.min.css}"
         href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css"/>
@@ -33,15 +33,15 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@200..700&display=swap" rel="stylesheet">
   <!--/* Styles */-->
-  <link id="styles-theme" rel="stylesheet" type="text/css"
-        th:href="@{/content-public/themes/__${stylesTheme}__/css/styles.css}"
-        href="../static/content-public/themes/default/css/styles.css"/>
-  <link id="styles-schema" rel="stylesheet" type="text/css"
-        th:href="@{/content-public/themes/__${stylesTheme}__/css/color-schemas/__${stylesSchema}__.css}"
-        href="../static/content-public/themes/default/css/color-schemas/snowy.css"/>
   <link id="styles-system" rel="stylesheet" type="text/css"
         th:href="@{/content-public/rhz-we-core/css/system.css}"
-        href="../static/content-public/rhz-we-core/css/system.css"/>
+        href="../../../static/content-public/rhz-we-core/css/system.css"/>
+  <link id="styles-theme" rel="stylesheet" type="text/css"
+        th:href="@{/content-public/themes/__${stylesTheme}__/css/styles.css}"
+        href="../../../static/content-public/themes/default/css/styles.css"/>
+  <link id="styles-schema" rel="stylesheet" type="text/css"
+        th:href="@{/content-public/themes/__${stylesTheme}__/css/color-schemas/__${stylesSchema}__.css}"
+        href="../../../static/content-public/themes/default/css/color-schemas/snowy.css"/>
   <link rel="icon"
         th:href="@{/content-public/rhz-we-core/images/favicon.ico}"
         href="/content-public/rhz-we-core/images/favicon.ico"
@@ -50,19 +50,19 @@
   <script id="script-rhz-we-error" type="text/javascript"
           th:unless="${isNotError}"
           th:src="@{/content-public/js/rhz-we-error.js}"
-          src="../static/content-public/js/rhz-we-error.js"></script>
+          src="../../../static/content-public/js/rhz-we-error.js"></script>
   <script id="script-rhz-we-setup" type="text/javascript"
           th:unless="${configured}"
           th:src="@{/content-public/js/rhz-we-setup.js}"
-          src="../static/content-public/js/rhz-we-setup.js"></script>
+          src="../../../static/content-public/js/rhz-we-setup.js"></script>
   <script id="script-rhz-we-lp" type="text/javascript"
           th:if="${configured} and ${loginPanel}"
           th:src="@{/content-public/js/rhz-we-lp.js}"
-          src="../static/content-public/js/rhz-we-lp.js"></script>
+          src="../../../static/content-public/js/rhz-we-lp.js"></script>
   <script id="script-rhz-we-tiny" type="text/javascript"
           th:if="${configured} and ${loginPanel}"
           th:src="@{/content-public/js/rhz-we-tiny.js}"
-          src="../static/content-public/js/rhz-we-tiny.js"></script>
+          src="../../../static/content-public/js/rhz-we-tiny.js"></script>
 
 </head>
 <body id="page-body">
@@ -161,33 +161,34 @@
                                   <div class="item">
                                     <div class="item-description">
                                       <div class="item-description-content">
-                                        <br>
-                                        <b>Dear guest</b>,<br><br>
-                                        <p>Please fullfill the following form by data to create a
-                                          new account.</p>
-                                        <br>
-                                        <div id="registration-window-form">
+                                        <div class="text-region">
+                                          <br>
+                                          <b>Dear guest</b>,<br><br>
+                                          <p>Please provide registrational data</p>
+                                          <br>
+                                          <div id="registration-window-form">
 
-                                        </div>
-                                        <script type="text/javascript">
-                                          $(document).ready(function () {
-                                            registerForm("registration-window-form",
-                                                    "form-account-register");
-                                          });
-                                        </script>
-                                        <button id="registration-window-button-cancel"
-                                                class="transition">Cancel
-                                        </button>
-                                        <div id="registration-window-notification-failure"
-                                             class="notification failure" hidden="hidden">
-                                          <div class="container-fluid">
-                                            <div class="row content">
-                                              <div class="icon"><h1>&#x24D8</h1></div>
-                                              <div class="text"><span style="text-decoration: underline;"><i
-                                                      id="registration-window-notification-header">Error</i></span><br>
-                                                <div
-                                                        id="registration-window-notification-description">
-                                                  Something went wrong<br>Server-side
+                                          </div>
+                                          <script type="text/javascript">
+                                            $(document).ready(function () {
+                                              registerForm("registration-window-form",
+                                                      "form-account-register");
+                                            });
+                                          </script>
+                                          <button id="registration-window-button-cancel"
+                                                  class="transition">Cancel
+                                          </button>
+                                          <div id="registration-window-notification-failure"
+                                               class="notification failure" hidden="hidden">
+                                            <div class="container-fluid">
+                                              <div class="row content">
+                                                <div class="icon"><h1>&#x24D8</h1></div>
+                                                <div class="text"><span style="text-decoration: underline;"><i
+                                                        id="registration-window-notification-header">Error</i></span><br>
+                                                  <div
+                                                          id="registration-window-notification-description">
+                                                    Something went wrong<br>Server-side
+                                                  </div>
                                                 </div>
                                               </div>
                                             </div>
@@ -428,7 +429,7 @@
                 <div class="item-container">
                   <div class="item-picture">
                     <div th:if="${page.imageLinkFull != null}" class="picture">
-                      <a th:href="${page.pageLink}"><img th:src="${page.imageLinkFull}"></a>
+                      <a th:href="${page.pageLink}"><img th:src="${page.imageLinkFull}" alt="img" src=""></a>
                       <div th:if="${page.tags} != null" class="item-tags">
                         <a th:each="tag : ${page.tags}" th:href="@{./?tag=__${tag}__}">
                         <span class="item-tag"

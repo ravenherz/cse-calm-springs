@@ -18,11 +18,8 @@ import java.util.Scanner;
 @DependsOn(value = {"settings"})
 public class FileUtils {
 
-    private Settings settings;
-
     @Lazy @Autowired
     public void setSettings(Settings settings) {
-        this.settings = settings;
     }
 
     public String readFileAsString(String relativePath) throws IOException {

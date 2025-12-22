@@ -5,25 +5,22 @@ import org.springframework.context.annotation.Scope;
 import org.springframework.stereotype.Service;
 
 import java.util.HashMap;
+import java.util.Map;
 
 @Lazy
 @Service
 @Scope(value = "singleton")
 public class HttpErrorHelper {
 
-    public class HttpErrorDescription {
+    public static class HttpErrorDescription {
 
-        private int code;
-        private String errorClass;
-        private String name;
-        private String description;
+        private final int code;
+        private final String errorClass;
+        private final String name;
+        private final String description;
 
         public int getCode() {
             return code;
-        }
-
-        public String getErrorClass() {
-            return errorClass;
         }
 
         public String getName() {
@@ -39,20 +36,14 @@ public class HttpErrorHelper {
             this.name = name;
             this.description = description;
             switch ((int) Math.floor(code / 100.f)) {
-                case 4:
-                    this.errorClass = "Client error";
-                    break;
-                case 5:
-                    this.errorClass = "Server error";
-                    break;
-                default:
-                    this.errorClass = "Unknown";
-                    break;
+                case 4 -> this.errorClass = "Client error";
+                case 5 -> this.errorClass = "Server error";
+                default -> this.errorClass = "Unknown";
             }
         }
     }
 
-    private HashMap<Integer, HttpErrorDescription> errorDescriptions;
+    private final Map<Integer, HttpErrorDescription> errorDescriptions;
 
     public HttpErrorDescription getHttpErrorDescByCode(int code) {
         return errorDescriptions.getOrDefault(code,

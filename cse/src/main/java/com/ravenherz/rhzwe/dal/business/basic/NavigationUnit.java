@@ -2,6 +2,7 @@ package com.ravenherz.rhzwe.dal.business.basic;
 
 import java.time.LocalDateTime;
 import java.util.LinkedList;
+import java.util.List;
 
 public class NavigationUnit {
 
@@ -25,11 +26,11 @@ public class NavigationUnit {
     private final String name;
     private final String title;
     private final String description;
-    private final LinkedList<NavigationUnit> children;
+    private final List<NavigationUnit> children;
     private final LocalDateTime dateTimeCreated;
 
     public NavigationUnit(NavigationUnitType type, String name, String title, String description,
-            LinkedList<NavigationUnit> children, LocalDateTime dateTimeCreated) {
+            List<NavigationUnit> children, LocalDateTime dateTimeCreated) {
         this.type = type;
         this.name = name;
         this.title = title;
@@ -43,6 +44,10 @@ public class NavigationUnit {
         if (type.equals(NavigationUnitType.CATEGORY)) {
             children.add(child);
         }
+    }
+
+    public void addChildren(List<NavigationUnit> children) {
+        children.forEach(this::addChild);
     }
 
     public NavigationUnitType getType() {
@@ -61,7 +66,7 @@ public class NavigationUnit {
         return description;
     }
 
-    public LinkedList<NavigationUnit> getChildren() {
+    public List<NavigationUnit> getChildren() {
         return children;
     }
 

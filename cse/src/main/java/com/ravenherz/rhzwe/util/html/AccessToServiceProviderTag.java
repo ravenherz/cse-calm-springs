@@ -11,7 +11,7 @@ import org.springframework.stereotype.Component;
 @Component
 @DependsOn(value = "serviceProvider")
 public abstract class AccessToServiceProviderTag extends AccessToSettingsTag {
-    private static Logger LOGGER = LoggerFactory.getLogger(AccessToServiceProviderTag.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(AccessToServiceProviderTag.class);
     private static ServiceProvider serviceProvider;
 
     @Autowired @Lazy

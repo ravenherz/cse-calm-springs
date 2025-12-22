@@ -23,7 +23,7 @@
   --color-notification-failure-text: #f58484;
   --color-notification-success-text: #3d583e;
   --color-notification-neutral-text: #292929;
-  --color-notification-success-bg: #b6fdd9;
+  --color-notification-success-bg: #3d583e; /* #b6fdd9;*/
   --color-notification-failure-bg: #713232;
   --color-notification-neutral-bg: #d0d0d0;
 

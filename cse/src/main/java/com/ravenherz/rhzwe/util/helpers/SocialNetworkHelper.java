@@ -11,7 +11,6 @@ import org.springframework.stereotype.Service;
 
 import javax.annotation.PostConstruct;
 import java.util.*;
-import java.util.stream.Collectors;
 
 /**
  * SocialHelper provides methods, which are being used to
@@ -24,12 +23,12 @@ import java.util.stream.Collectors;
 @DependsOn(value = "socialNetworkDefinitionLoader")
 public class SocialNetworkHelper {
 
-    public class SocialNetworkData {
+    public static class SocialNetworkData {
 
-        private String logo;
-        private String url;
-        private String tooltip;
-        private String name;
+        private final String logo;
+        private final String url;
+        private final String tooltip;
+        private final String name;
 
         public SocialNetworkData(String id, SocialNetworkDefinition def) {
             this.url = String.format(def.getProtocol() + "://" + def.getAddress(), id);
@@ -76,9 +75,6 @@ public class SocialNetworkHelper {
         }
     }
 
-    private Integer cachedHash = null;
-    private List<SocialNetworkData> cachedData = null;
-
     private SocialNetworkDefinitionLoader socialNetworkDefinitionLoader;
     private HashMap<String, SocialNetworkDefinition> definitions = new HashMap<>();
 
@@ -96,22 +92,17 @@ public class SocialNetworkHelper {
     public SocialNetworkHelper() {
     }
 
-    public boolean isSocialNetworkDefinition(String name) {
-        return definitions.containsKey(name);
-    }
-
     public List<SocialNetworkData> makeSocialNetworkDataFromString(String rawString) {
         synchronized (SocialNetworkHelper.class) {
             ArrayList<SocialNetworkData> socialNetworkDefinitions = new ArrayList<>();
             rawString = rawString.replaceAll(":+", Strings.STR_DELIM_COLON);
-            List<String> filteredStrings = Arrays.asList(rawString.split(Strings.STR_DELIM_WS))
-                    .stream()
+            List<String> filteredStrings = Arrays.stream(rawString.split(Strings.STR_DELIM_WS))
                     .filter(item -> (item.length() != 0))
                     .filter(item -> (item.split(Strings.STR_DELIM_COLON).length > 1))
-                    .filter(item -> definitions.keySet()
-                            .contains(item.split(Strings.STR_DELIM_COLON)[0]))
+                    .filter(item -> definitions
+                            .containsKey(item.split(Strings.STR_DELIM_COLON)[0]))
                     .filter(item -> (item.split(Strings.STR_DELIM_COLON)[0].length() > 0))
-                    .collect(Collectors.toList());
+                    .toList();
             for (String source : filteredStrings
                     ) {
                 String plugin = source.split(Strings.STR_DELIM_COLON)[0];
@@ -123,9 +114,7 @@ public class SocialNetworkHelper {
                     socialNetworkDefinitions.add(result);
                 }
             }
-            cachedData = socialNetworkDefinitions;
-            cachedHash = rawString.hashCode();
-            return cachedData;
+            return socialNetworkDefinitions;
         }
     }
 }

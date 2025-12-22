@@ -173,11 +173,7 @@ public class HTMLElement {
     }
 
     private static Boolean isVoid(String elementType) {
-        if (voidElements.contains(elementType)) {
-            return true;
-        } else {
-            return false;
-        }
+        return voidElements.contains(elementType);
     }
 
     public HTMLElement surroundByContainer(String dynamicElementTitle,
