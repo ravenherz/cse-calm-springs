@@ -1,10 +1,10 @@
 {
     "artifact": {
         "latest": {
-            "name": "cse-0.3.1.2353.feature-deploy-ru.war"
+            "name": "cse-0.3.1.2355.feature-deploy-ru.war"
         }
     },
     "build": {
-        "number": 2353
+        "number": 2355
     }
 }

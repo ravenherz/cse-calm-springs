@@ -8,15 +8,11 @@ import com.ravenherz.rhzwe.dal.dto.basic.enums.AccessType;
 import com.ravenherz.rhzwe.dal.dto.events.PageEvent;
 import com.ravenherz.rhzwe.dal.dto.events.PageEvent.PageEventConverter;
 import com.ravenherz.rhzwe.util.html.impl.TagNavigation;
-import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpServletResponse;
-import org.slf4j.LoggerFactory;
-import org.slf4j.Logger;
+import jakarta.servlet.http.*;
+import org.slf4j.*;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestMethod;
-import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.*;
 
 import java.io.IOException;
 import java.time.ZoneOffset;
@@ -123,7 +119,7 @@ public class IndexController extends AbstractController {
         }
 
         model.addAttribute("configured", settings.isConfigured());
-        model.addAttribute("loginPanel", true);
+        model.addAttribute("loginPanel", false);
         model.addAttribute("isNotError", request.getParameter("error") == null);
         model.addAttribute("selectedTag", request.getParameter("tag"));
         model.addAttribute("request", request);
