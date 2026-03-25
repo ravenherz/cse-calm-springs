@@ -1,13 +1,10 @@
 {
     "artifact": {
         "latest": {
-            "name": "cse-0.3.1.2351.main.war"
-        },
-        "release": {
-            "name": "rhz-we-0.2.6.1056-master.war"
+            "name": "cse-0.3.1.2353.feature-deploy-ru.war"
         }
     },
     "build": {
-        "number": 2351
+        "number": 2353
     }
 }

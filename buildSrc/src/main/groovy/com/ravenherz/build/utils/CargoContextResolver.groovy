@@ -16,7 +16,14 @@ class CargoContextResolver {
 
     CargoContextResolver(Boolean isRemoteDeploy = true, Project projectLocal) {
         this.isRemoteDeploy = isRemoteDeploy
-        this.whereToDeploy = GitHelper.gitBranch == 'main' ? "production" : "staging" // todo: add call for getGitBranch
+        this.whereToDeploy = {
+
+        }
+
+        if (GitHelper.gitBranch == 'main') this.whereToDeploy = "production"
+        else if (GitHelper.gitBranch == 'stage') this.whereToDeploy = "staging"
+        else this.whereToDeploy = "dev"
+
         this.cargoDataContainer = new JsonSlurper().parseText(projectLocal.file('./build-info/cargo-remote.json').text)
     }
 
