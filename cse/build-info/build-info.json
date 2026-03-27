@@ -1,10 +1,10 @@
 {
     "artifact": {
         "latest": {
-            "name": "cse-0.3.1.2355.feature-deploy-ru.war"
+            "name": "cse-0.3.1.2374.config-mandatory-https.war"
         }
     },
     "build": {
-        "number": 2355
+        "number": 2374
     }
 }

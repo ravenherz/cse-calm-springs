@@ -28,7 +28,7 @@ apply plugin: 'com.bmuschko.cargo'
 
 
 group = 'com.ravenherz'
-description = 'Demo project for Spring Boot'
+description = 'calm-springs-engine'
 
 repositories {
     mavenCentral()
