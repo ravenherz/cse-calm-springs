@@ -1,10 +1,10 @@
 {
     "artifact": {
         "latest": {
-            "name": "cse-0.3.1.2375.main.war"
+            "name": "cse-0.3.1.2365.fix-error-pages.war"
         }
     },
     "build": {
-        "number": 2375
+        "number": 2365
     }
 }

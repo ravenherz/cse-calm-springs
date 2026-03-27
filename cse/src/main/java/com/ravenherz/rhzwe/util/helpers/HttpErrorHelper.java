@@ -47,7 +47,7 @@ public class HttpErrorHelper {
 
     public HttpErrorDescription getHttpErrorDescByCode(int code) {
         return errorDescriptions.getOrDefault(code,
-                new HttpErrorDescription(666, "Void", "Totally shit on serverside"));
+                new HttpErrorDescription(500, "Void", "Server-side issues"));
     }
 
     public HttpErrorHelper() {
