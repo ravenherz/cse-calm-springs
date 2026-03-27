@@ -3,12 +3,8 @@ package com.ravenherz.cse;
 import com.ravenherz.rhzwe.filters.ContentPrivateFilter;
 import jakarta.servlet.*;
 import jakarta.servlet.annotation.ServletSecurity;
-import org.apache.catalina.Context;
-import org.apache.catalina.connector.Connector;
 import org.apache.coyote.ProtocolHandler;
 import org.apache.coyote.http11.AbstractHttp11Protocol;
-import org.apache.tomcat.util.descriptor.web.SecurityCollection;
-import org.apache.tomcat.util.descriptor.web.SecurityConstraint;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.autoconfigure.data.mongo.MongoDataAutoConfiguration;
@@ -21,11 +17,9 @@ import org.springframework.boot.web.embedded.tomcat.TomcatServletWebServerFactor
 import org.springframework.boot.web.server.ErrorPage;
 import org.springframework.boot.web.server.WebServerFactoryCustomizer;
 import org.springframework.boot.web.servlet.FilterRegistrationBean;
-import org.springframework.boot.web.servlet.server.ServletWebServerFactory;
 import org.springframework.boot.web.servlet.support.SpringBootServletInitializer;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
-import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -148,14 +142,6 @@ public class CalmSpringsEngineApplication extends SpringBootServletInitializer {
 							.stream(httpHandler.findSslHostConfigs())
 							.forEach(sslHostConfig -> sslHostConfig.setHonorCipherOrder(true));
 				}
-			});
-			factory.addContextCustomizers(context -> {
-				SecurityConstraint constraint = new SecurityConstraint();
-				constraint.setUserConstraint("CONFIDENTIAL");
-				SecurityCollection collection = new SecurityCollection();
-				collection.addPattern("/*");
-				constraint.addCollection(collection);
-				context.addConstraint(constraint);
 			});
 		};
 	}
