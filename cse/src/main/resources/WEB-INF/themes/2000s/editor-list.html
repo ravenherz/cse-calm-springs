@@ -40,7 +40,10 @@
   <div class="editor-container">
     <div class="editor-header">
       <h1>Editor</h1>
-      <a href="./">Back to site</a>
+      <div>
+        <a th:href="@{/editor/resources}">Resources</a> | 
+        <a href="./">Back to site</a>
+      </div>
     </div>
     
     <div th:if="${items.empty}" class="empty-message">

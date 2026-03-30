@@ -5,9 +5,12 @@ import com.ravenherz.rhzwe.dal.EntityUtils;
 import com.ravenherz.rhzwe.dal.dto.AccountEntity;
 import com.ravenherz.rhzwe.dal.dto.BasicEntity;
 import com.ravenherz.rhzwe.dal.dto.ItemEntity;
+import com.ravenherz.rhzwe.dal.dto.ResourceEntity;
 import com.ravenherz.rhzwe.dal.dto.basic.PageData;
+import com.ravenherz.rhzwe.dal.dto.basic.ResourceData;
 import com.ravenherz.rhzwe.dal.dto.basic.enums.AccessType;
 import com.ravenherz.rhzwe.dal.dto.basic.enums.EventType;
+import com.ravenherz.rhzwe.dal.dto.basic.enums.ResourceType;
 import com.ravenherz.rhzwe.dal.dto.basic.HistoryData;
 import com.ravenherz.rhzwe.dal.dto.basic.Event;
 import jakarta.servlet.http.HttpServletRequest;
@@ -17,6 +20,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
 import java.time.LocalDateTime;
@@ -170,5 +174,181 @@ public class EditorController extends AbstractController {
 
         response.sendRedirect(request.getContextPath() + "/editor/edit?name=" + name);
         return null;
+    }
+
+    @GetMapping("/resources")
+    public String resourcesPage(Model model, HttpServletRequest request, HttpServletResponse response) throws IOException {
+        AccountEntity accessor = getAccessor(request, response);
+        if (accessor == null) {
+            response.sendRedirect(request.getContextPath() + "/?error=401");
+            return null;
+        }
+
+        try {
+            List<BasicEntity> allResources = serviceProvider.getResourceService().getAll();
+            if (allResources != null) {
+                List<ResourceEntity> resources = allResources.stream()
+                        .filter(r -> r instanceof ResourceEntity)
+                        .map(r -> (ResourceEntity) r)
+                        .collect(Collectors.toList());
+                model.addAttribute("resources", resources);
+            }
+        } catch (Exception e) {
+            LOGGER.error("Failed to load resources: " + e.getMessage(), e);
+        }
+
+        model.addAttribute("username", accessor.getAccountData().getLogin());
+        return "/2000s/editor-resources";
+    }
+
+    @PostMapping("/resources/upload")
+    public String uploadResource(@RequestParam("resourceId") String resourceId,
+                                 @RequestParam("file") MultipartFile file,
+                                 Model model, HttpServletRequest request, HttpServletResponse response) throws IOException {
+        AccountEntity accessor = getAccessor(request, response);
+        if (accessor == null) {
+            response.sendRedirect(request.getContextPath() + "/?error=401");
+            return null;
+        }
+
+        if (resourceId == null || resourceId.trim().isEmpty()) {
+            model.addAttribute("error", "Resource ID is required");
+            return loadResourcesWithError(model, accessor);
+        }
+
+        if (file == null || file.isEmpty()) {
+            model.addAttribute("error", "File is required");
+            return loadResourcesWithError(model, accessor);
+        }
+
+        String originalFilename = file.getOriginalFilename();
+        if (originalFilename == null || !originalFilename.contains(".")) {
+            model.addAttribute("error", "File must have an extension");
+            return loadResourcesWithError(model, accessor);
+        }
+
+        ResourceType resourceType = ResourceType.getByFileName(originalFilename);
+        if (resourceType == ResourceType.INVALID) {
+            model.addAttribute("error", "Invalid file type. Supported: jpg, png, mp3");
+            return loadResourcesWithError(model, accessor);
+        }
+
+        String extension = originalFilename.substring(originalFilename.lastIndexOf(".") + 1).toLowerCase();
+
+        String userId = accessor.getAccountData().getLogin();
+        String pathPublic = String.format("/%s/res/%s/%s.%s", userId, resourceType.getPath(), resourceId.trim(), extension);
+
+        ResourceEntity existing = serviceProvider.getResourceService().getByPublicPath(pathPublic);
+        if (existing != null) {
+            model.addAttribute("error", "Resource with this ID already exists");
+            return loadResourcesWithError(model, accessor);
+        }
+
+        byte[] content = file.getBytes();
+        long sizeInBytes = content.length;
+
+        String pathProtected = generateUniqueProtectedPath(resourceId.trim(), extension);
+
+        ResourceData resourceData = new ResourceData();
+        resourceData.setType(resourceType);
+        resourceData.setSizeInBytes(sizeInBytes);
+        resourceData.setPathPublic(pathPublic);
+        resourceData.setPathProtected(pathProtected);
+        resourceData.setContentRaw(java.util.Base64.getEncoder().encodeToString(content));
+
+        ResourceEntity resourceEntity = new ResourceEntity(resourceData, accessor);
+        serviceProvider.getResourceService().insert(resourceEntity);
+
+        response.sendRedirect(request.getContextPath() + "/editor/resources");
+        return null;
+    }
+
+    @PostMapping("/resources/delete")
+    public String deleteResource(@RequestParam("pathPublic") String pathPublic,
+                                 Model model, HttpServletRequest request, HttpServletResponse response) throws IOException {
+        AccountEntity accessor = getAccessor(request, response);
+        if (accessor == null) {
+            response.sendRedirect(request.getContextPath() + "/?error=401");
+            return null;
+        }
+
+        if (pathPublic == null || pathPublic.trim().isEmpty()) {
+            model.addAttribute("error", "Resource path is required");
+            return loadResourcesWithError(model, accessor);
+        }
+
+        ResourceEntity existing = serviceProvider.getResourceService().getByPublicPath(pathPublic);
+        if (existing == null) {
+            model.addAttribute("error", "Resource not found");
+            return loadResourcesWithError(model, accessor);
+        }
+
+        LOGGER.info("Deleting resource: " + pathPublic + " with id: " + existing.getId());
+        try {
+            serviceProvider.getResourceService().deleteByPublicPath(pathPublic);
+        } catch (Exception e) {
+            LOGGER.error("Failed to delete resource: " + e.getMessage(), e);
+            model.addAttribute("error", "Failed to delete resource");
+            return loadResourcesWithError(model, accessor);
+        }
+
+        response.sendRedirect(request.getContextPath() + "/editor/resources");
+        return null;
+    }
+
+    private String loadResourcesWithError(Model model, AccountEntity accessor) {
+        try {
+            List<BasicEntity> allResources = serviceProvider.getResourceService().getAll();
+            if (allResources != null) {
+                List<ResourceEntity> resources = allResources.stream()
+                        .filter(r -> r instanceof ResourceEntity)
+                        .map(r -> (ResourceEntity) r)
+                        .collect(Collectors.toList());
+                model.addAttribute("resources", resources);
+            }
+        } catch (Exception e) {
+            LOGGER.error("Failed to load resources: " + e.getMessage(), e);
+        }
+        model.addAttribute("username", accessor.getAccountData().getLogin());
+        return "/2000s/editor-resources";
+    }
+
+    private String generateProtectedPrefix() {
+        String chars = "abcdefghijklmnopqrstuvwxyz0123456789";
+        java.util.Random random = new java.util.Random();
+        int numSlashes = 3 + random.nextInt(2);
+        StringBuilder prefix = new StringBuilder();
+        int position = 0;
+        while (position < 32) {
+            if (prefix.length() > 0 && prefix.charAt(prefix.length() - 1) != '/' && numSlashes > 0 && random.nextInt(10) < 2) {
+                prefix.append('/');
+                numSlashes--;
+            } else {
+                prefix.append(chars.charAt(random.nextInt(chars.length())));
+                position++;
+            }
+        }
+        while (numSlashes > 0) {
+            int idx = 1 + random.nextInt(prefix.length() - 2);
+            if (prefix.charAt(idx) != '/' && prefix.charAt(idx - 1) != '/' && prefix.charAt(idx + 1) != '/') {
+                prefix.setCharAt(idx, '/');
+                numSlashes--;
+            }
+        }
+        return prefix.toString();
+    }
+
+    private String generateUniqueProtectedPath(String resourceId, String extension) {
+        String pathProtected = null;
+        int maxAttempts = 10;
+        for (int i = 0; i < maxAttempts; i++) {
+            pathProtected = "/" + generateProtectedPrefix() + "/" + resourceId + "." + extension;
+            ResourceEntity existing = serviceProvider.getResourceService().getByProtectedPath(pathProtected);
+            if (existing == null) {
+                return pathProtected;
+            }
+        }
+        LOGGER.error("Failed to generate unique protected path after " + maxAttempts + " attempts");
+        return pathProtected;
     }
 }

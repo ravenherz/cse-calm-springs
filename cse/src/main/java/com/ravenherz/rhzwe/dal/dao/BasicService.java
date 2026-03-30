@@ -57,6 +57,18 @@ public abstract class BasicService implements Service {
 
     @Override
     public boolean remove(ObjectId id) {
-        return false;
+        try {
+            BasicEntity entity = dataProvider.getDatastore().find(BasicEntity.class)
+                    .filter(dev.morphia.query.filters.Filters.eq("id", id))
+                    .first();
+            if (entity != null) {
+                dataProvider.getDatastore().delete(entity);
+                return true;
+            }
+            return false;
+        } catch (Exception e) {
+            LOGGER.error("Failed to remove entity: " + e.getMessage(), e);
+            return false;
+        }
     }
 }
