@@ -31,7 +31,14 @@ public final class ResourceEntity extends BasicEntity {
     }
 
     public byte[] getRawBytes() {
-        return Base64.getDecoder().decode(resourceData.getContentRaw());
+        if (resourceData.isLargeFile() && resourceData.getDataChunkIds() != null && !resourceData.getDataChunkIds().isEmpty()) {
+            return null;
+        }
+        String contentRaw = resourceData.getContentRaw();
+        if (contentRaw == null || contentRaw.isEmpty()) {
+            return null;
+        }
+        return Base64.getDecoder().decode(contentRaw);
     }
 
     public byte[] getPreviewBytes() {

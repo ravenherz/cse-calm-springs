@@ -5,11 +5,18 @@ import com.ravenherz.rhzwe.dal.dto.basic.enums.ResourceType;
 import com.ravenherz.rhzwe.util.StringUtils;
 import dev.morphia.annotations.Entity;
 import dev.morphia.annotations.Indexed;
+import org.bson.types.ObjectId;
 
+import java.util.ArrayList;
 import java.util.Base64;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 @Entity
 public final class ResourceData {
+
+    private static final int CHUNK_SIZE = 7000000;
 
     private ResourceType type;
     private long sizeInBytes;
@@ -18,7 +25,10 @@ public final class ResourceData {
     @Indexed
     private String pathProtected;
     private String contentRaw;
-    private String contentPreview; // todo make preview logic for image/audio
+    private String contentPreview;
+    private boolean largeFile;
+    private List<ObjectId> dataChunkIds;
+    private Map<String, String> metadata;
 
     public ResourceData() {
     }
@@ -29,12 +39,58 @@ public final class ResourceData {
             throw new Error("Broken logic. It couldn't happen");
         }
         this.sizeInBytes = content.length;
-        this.contentRaw = Base64.getEncoder().encodeToString(content);
+        String base64Content = Base64.getEncoder().encodeToString(content);
+        if (base64Content.length() > CHUNK_SIZE) {
+            this.largeFile = true;
+            this.dataChunkIds = new ArrayList<>();
+            this.contentRaw = null;
+        } else {
+            this.largeFile = false;
+            this.contentRaw = base64Content;
+        }
         this.type = ResourceType.getByFileName(fileName);
         this.pathPublic = String
                 .format("/%s/res/%s/%s", accessor.getAccountData().getLogin(), type.getPath(),
                         uniqueName);
         this.pathProtected = StringUtils.generateRandomPath(uniqueName);
+    }
+
+    public boolean isLargeFile() {
+        return largeFile;
+    }
+
+    public void setLargeFile(boolean largeFile) {
+        this.largeFile = largeFile;
+    }
+
+    public List<ObjectId> getDataChunkIds() {
+        return dataChunkIds;
+    }
+
+    public void setDataChunkIds(List<ObjectId> dataChunkIds) {
+        this.dataChunkIds = dataChunkIds;
+    }
+
+    public void addDataChunkId(ObjectId chunkId) {
+        if (this.dataChunkIds == null) {
+            this.dataChunkIds = new ArrayList<>();
+        }
+        this.dataChunkIds.add(chunkId);
+    }
+
+    public Map<String, String> getMetadata() {
+        return metadata;
+    }
+
+    public void setMetadata(Map<String, String> metadata) {
+        this.metadata = metadata;
+    }
+
+    public void addMetadata(String key, String value) {
+        if (this.metadata == null) {
+            this.metadata = new HashMap<>();
+        }
+        this.metadata.put(key, value);
     }
 
     public ResourceType getType() {

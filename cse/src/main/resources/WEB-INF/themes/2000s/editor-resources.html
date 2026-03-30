@@ -55,6 +55,11 @@
     .drop-zone input[type="file"] { display: none; }
     .btn-delete { background: #442222; color: #ff8888; border: none; padding: 4px 10px; cursor: pointer; font-size: 0.75rem; margin-top: 5px; }
     .btn-delete:hover { background: #662222; }
+    .chunk-badge { background: #334433; color: #88ff88; padding: 2px 6px; font-size: 0.7rem; margin-left: 5px; }
+    .chunk-info { position: relative; display: inline-block; }
+    .chunk-tooltip { visibility: hidden; background: #222; border: 1px solid #444; color: #aaa; padding: 8px; font-size: 0.7rem; position: absolute; bottom: 100%; left: 0; z-index: 10; min-width: 200px; box-shadow: 0 2px 8px rgba(0,0,0,0.5); }
+    .chunk-info:hover .chunk-tooltip { visibility: visible; }
+    .chunk-tooltip div { margin: 2px 0; }
   </style>
 </head>
 <body>
@@ -83,6 +88,7 @@
           <label for="resourceId">Resource ID</label>
           <input type="text" id="resourceId" name="resourceId" placeholder="my-picture" required/>
         </div>
+        <input type="hidden" id="metadata" name="metadata"/>
         <button type="submit" class="btn-upload">Upload</button>
       </form>
     </div>
@@ -104,6 +110,19 @@
         <div class="resource-info">
           <span class="type" th:text="${resource.resourceData.type.name()}">TYPE</span>
           <span class="size" th:text="${resource.resourceData.sizeInBytes + ' bytes'}">0 bytes</span>
+          <div th:if="${not #maps.isEmpty(resource.resourceData.metadata)}" class="metadata-info">
+            <span th:each="entry : ${resource.resourceData.metadata}" th:text="${entry.key + ': ' + entry.value}" style="display:block;font-size:0.75rem;color:#888;">key: value</span>
+          </div>
+          <span th:if="${resource.resourceData.largeFile}" class="chunk-badge">
+            <span class="chunk-info">
+              <span th:text="${resource.resourceData.dataChunkIds.size() + ' chunks'}">0 chunks</span>
+              <div class="chunk-tooltip" th:unless="${#lists.isEmpty(resource.resourceData.dataChunkIds)}">
+                <div th:each="chunkId, iter : ${resource.resourceData.dataChunkIds}">
+                  Chunk <span th:text="${iter.index + 1}">1</span>: <span th:text="${chunkId.toString()}">id</span>
+                </div>
+              </div>
+            </span>
+          </span>
           <div class="path" th:text="${resource.resourceData.pathPublic}">/path</div>
           <form th:action="@{/editor/resources/delete}" method="post" style="margin-top: 8px;">
             <input type="hidden" name="pathPublic" th:value="${resource.resourceData.pathPublic}"/>
@@ -157,6 +176,35 @@
         var baseName = fileName.substring(0, lastDot);
         baseName = baseName.toLowerCase().replace(/[^a-z0-9-]/g, '_');
         resourceIdInput.value = baseName;
+      }
+      extractMetadata(file);
+    }
+
+    function extractMetadata(file) {
+      var metadata = {};
+      var extension = file.name.split('.').pop().toLowerCase();
+      var fileUrl = URL.createObjectURL(file);
+
+      if (['jpg', 'jpeg', 'png', 'gif', 'webp'].indexOf(extension) !== -1) {
+        var img = new Image();
+        img.onload = function() {
+          metadata.width = this.width;
+          metadata.height = this.height;
+          document.getElementById('metadata').value = JSON.stringify(metadata);
+          URL.revokeObjectURL(fileUrl);
+        };
+        img.src = fileUrl;
+      } else if (['mp3', 'wav', 'ogg', 'm4a'].indexOf(extension) !== -1) {
+        var audio = new Audio();
+        audio.addEventListener('loadedmetadata', function() {
+          metadata.duration = Math.round(audio.duration);
+          if (file.size && audio.duration) {
+            metadata.bitrate = Math.round((file.size * 8) / audio.duration);
+          }
+          document.getElementById('metadata').value = JSON.stringify(metadata);
+          URL.revokeObjectURL(fileUrl);
+        });
+        audio.src = fileUrl;
       }
     }
   </script>

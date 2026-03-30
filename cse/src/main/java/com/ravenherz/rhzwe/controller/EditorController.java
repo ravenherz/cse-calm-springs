@@ -4,6 +4,7 @@ import com.ravenherz.rhzwe.constants.Strings;
 import com.ravenherz.rhzwe.dal.EntityUtils;
 import com.ravenherz.rhzwe.dal.dto.AccountEntity;
 import com.ravenherz.rhzwe.dal.dto.BasicEntity;
+import com.ravenherz.rhzwe.dal.dto.DataChunkEntity;
 import com.ravenherz.rhzwe.dal.dto.ItemEntity;
 import com.ravenherz.rhzwe.dal.dto.ResourceEntity;
 import com.ravenherz.rhzwe.dal.dto.basic.PageData;
@@ -27,7 +28,11 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
+
+import com.google.gson.Gson;
+import com.google.gson.reflect.TypeToken;
 
 @Controller
 @RequestMapping("/editor")
@@ -204,6 +209,7 @@ public class EditorController extends AbstractController {
     @PostMapping("/resources/upload")
     public String uploadResource(@RequestParam("resourceId") String resourceId,
                                  @RequestParam("file") MultipartFile file,
+                                 @RequestParam(value = "metadata", required = false) String metadataJson,
                                  Model model, HttpServletRequest request, HttpServletResponse response) throws IOException {
         AccountEntity accessor = getAccessor(request, response);
         if (accessor == null) {
@@ -246,6 +252,7 @@ public class EditorController extends AbstractController {
 
         byte[] content = file.getBytes();
         long sizeInBytes = content.length;
+        String base64Content = java.util.Base64.getEncoder().encodeToString(content);
 
         String pathProtected = generateUniqueProtectedPath(resourceId.trim(), extension);
 
@@ -254,7 +261,34 @@ public class EditorController extends AbstractController {
         resourceData.setSizeInBytes(sizeInBytes);
         resourceData.setPathPublic(pathPublic);
         resourceData.setPathProtected(pathProtected);
-        resourceData.setContentRaw(java.util.Base64.getEncoder().encodeToString(content));
+
+        if (metadataJson != null && !metadataJson.trim().isEmpty()) {
+            try {
+                Gson gson = new Gson();
+                Map<String, String> metadata = gson.fromJson(metadataJson, new TypeToken<Map<String, String>>() {}.getType());
+                resourceData.setMetadata(metadata);
+            } catch (Exception e) {
+                LOGGER.warn("Failed to parse metadata: " + e.getMessage());
+            }
+        }
+
+        if (base64Content.length() > 7000000) {
+            resourceData.setLargeFile(true);
+            int chunkSize = 7000000;
+            int totalChunks = (int) Math.ceil((double) base64Content.length() / chunkSize);
+            for (int i = 0; i < totalChunks; i++) {
+                int start = i * chunkSize;
+                int end = Math.min(start + chunkSize, base64Content.length());
+                String chunkData = base64Content.substring(start, end);
+                DataChunkEntity chunk = new DataChunkEntity(chunkData);
+                serviceProvider.getResourceService().saveDataChunk(chunk);
+                resourceData.addDataChunkId(chunk.getId());
+            }
+            resourceData.setContentRaw(null);
+        } else {
+            resourceData.setLargeFile(false);
+            resourceData.setContentRaw(base64Content);
+        }
 
         ResourceEntity resourceEntity = new ResourceEntity(resourceData, accessor);
         serviceProvider.getResourceService().insert(resourceEntity);

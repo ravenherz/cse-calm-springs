@@ -3,14 +3,18 @@ package com.ravenherz.rhzwe.dal.dao.impl;
 import com.ravenherz.rhzwe.dal.dao.BasicService;
 import com.ravenherz.rhzwe.dal.dao.ResourceService;
 import com.ravenherz.rhzwe.dal.dto.BasicEntity;
+import com.ravenherz.rhzwe.dal.dto.DataChunkEntity;
 import com.ravenherz.rhzwe.dal.dto.ResourceEntity;
 import dev.morphia.query.filters.Filters;
+import org.bson.types.ObjectId;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.context.annotation.Scope;
 import org.springframework.stereotype.Repository;
 
+import java.util.ArrayList;
+import java.util.Base64;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -56,8 +60,63 @@ public class ResourceServiceImpl extends BasicService implements ResourceService
             } else {
                 LOGGER.warn("Cache file does not exist: " + filePath);
             }
+
+            if (entity.getResourceData().isLargeFile() && entity.getResourceData().getDataChunkIds() != null) {
+                for (ObjectId chunkId : entity.getResourceData().getDataChunkIds()) {
+                    DataChunkEntity chunk = dataProvider.getDatastore().find(DataChunkEntity.class)
+                            .filter(Filters.eq("id", chunkId))
+                            .first();
+                    if (chunk != null) {
+                        dataProvider.getDatastore().delete(chunk);
+                        LOGGER.info("Deleted data chunk: " + chunkId);
+                    }
+                }
+            }
+
             dataProvider.getDatastore().delete(entity);
         }
+    }
+
+    @Override
+    public List<DataChunkEntity> getDataChunks(List<ObjectId> chunkIds) {
+        if (chunkIds == null || chunkIds.isEmpty()) {
+            return new ArrayList<>();
+        }
+        List<DataChunkEntity> chunks = new ArrayList<>();
+        for (ObjectId id : chunkIds) {
+            DataChunkEntity chunk = dataProvider.getDatastore().find(DataChunkEntity.class)
+                    .filter(Filters.eq("id", id))
+                    .first();
+            if (chunk != null) {
+                chunks.add(chunk);
+            }
+        }
+        return chunks;
+    }
+
+    @Override
+    public byte[] getRawBytesFromChunks(List<ObjectId> chunkIds) {
+        if (chunkIds == null || chunkIds.isEmpty()) {
+            return null;
+        }
+        StringBuilder sb = new StringBuilder();
+        for (ObjectId id : chunkIds) {
+            DataChunkEntity chunk = dataProvider.getDatastore().find(DataChunkEntity.class)
+                    .filter(Filters.eq("id", id))
+                    .first();
+            if (chunk != null && chunk.getData() != null) {
+                sb.append(chunk.getData());
+            }
+        }
+        if (sb.length() == 0) {
+            return null;
+        }
+        return Base64.getDecoder().decode(sb.toString());
+    }
+
+    @Override
+    public void saveDataChunk(DataChunkEntity chunk) {
+        dataProvider.getDatastore().save(chunk);
     }
 
 }
