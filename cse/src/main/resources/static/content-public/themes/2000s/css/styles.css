@@ -243,6 +243,67 @@ wrapper {
     margin: 0 auto;
 }
 
+#popup-editor-container {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0,0,0,0.8);
+    z-index: 1000;
+    display: none;
+}
+
+#popup-editor-container.active {
+    display: block;
+}
+
+.editor-modal-content {
+    background: #1a1a1a;
+    border: 1px solid #333;
+    max-width: 800px;
+    margin: 50px auto;
+    padding: 40px 20px 20px;
+    position: relative;
+    max-height: 90vh;
+    overflow-y: auto;
+}
+
+.editor-modal-close {
+    position: absolute;
+    top: 10px;
+    right: 15px;
+    font-size: 24px;
+    color: #888;
+    cursor: pointer;
+    background: #333;
+    border: none;
+    width: 30px;
+    height: 30px;
+    line-height: 24px;
+    text-align: center;
+    border-radius: 4px;
+    z-index: 10;
+}
+
+.editor-modal-close:hover {
+    background: #555;
+    color: #fff;
+}
+
+.editor-modal-content h3 {
+    margin-top: 0;
+    padding-right: 40px;
+}
+
+.editor-modal-close:hover {
+    color: #fff;
+}
+
+#editor-page-select {
+    margin-bottom: 15px;
+}
+
 .item-inactive {
     z-index: 5;
     width: 100%;
@@ -602,7 +663,6 @@ h6 {
 
 .item-description-content button {
     margin-top: 5px;
-    width: 100%;
     background-color: var(--color-item-body-bg);
     border: 1px var(--color-item-header-bg) solid;
 }
@@ -610,6 +670,12 @@ h6 {
 .item-description-content button:hover {
     color: var(--color-default-accent-one);
     border: 1px var(--color-default-accent-one) solid;
+}
+
+#loginpanel-guest-default button,
+#loginpanel-guest-signin button,
+#loginpanel-user button {
+    width: 100%;
 }
 
 .item-description-content label {
@@ -808,6 +874,7 @@ dd .link {
     text-decoration: none;
     margin-left: 10px;
     vertical-align: middle;
+    cursor: pointer;
 }
 
 .edit-page-btn:hover {

@@ -2,6 +2,7 @@ package com.ravenherz.rhzwe.dal.dao.impl;
 
 import com.ravenherz.rhzwe.dal.dao.BasicService;
 import com.ravenherz.rhzwe.dal.dao.ItemService;
+import com.ravenherz.rhzwe.dal.dto.BasicEntity;
 import com.ravenherz.rhzwe.dal.dto.CategoryEntity;
 import com.ravenherz.rhzwe.dal.dto.ItemEntity;
 import dev.morphia.aggregation.expressions.impls.Expression;
@@ -18,6 +19,11 @@ import java.util.stream.Collectors;
 @Repository(value = "itemService")
 @Scope(value = "singleton")
 public class ItemServiceImpl extends BasicService implements ItemService {
+
+    @Override
+    public List<BasicEntity> getAll() {
+        return getPageEntities().stream().collect(Collectors.toList());
+    }
 
     @Override
     public List<ItemEntity> getAllByCategory(CategoryEntity categoryEntity) {

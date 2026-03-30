@@ -70,6 +70,32 @@
 
 </head>
 <body id="page-body">
+<div class="fixed-player">
+  <div class="player-row">
+    <span class="title"></span>
+    <span class="artist"></span>
+  </div>
+  <div class="player-row controls">
+    <div class="control-btns">
+      <button class="replay-btn" title="Repeat">↺</button>
+      <button class="play-btn" title="Play">▶</button>
+      <button class="queue-btn" title="Queue">☰</button>
+    </div>
+    <div class="progress-bar">
+      <div class="progress"></div>
+    </div>
+    <span class="time-current">0:00</span>
+  </div>
+</div>
+<div class="queue-panel">
+  <div class="queue-header">
+    <h3>Queue</h3>
+    <button class="clear-queue-btn">Clear & Close</button>
+  </div>
+  <ul class="queue-list">
+    <li class="queue-empty">Queue is empty</li>
+  </ul>
+</div>
 <wrapper>
   <div class="page-content">
     <div class="container-fluid">
@@ -150,6 +176,7 @@
                         <div th:if="${authenticated}" id="loginpanel-user">
                           <h6>Welcome, <a class="transition" href="./user" th:utext="${username}">username</a>!
                           </h6>
+                          <button id="loginpanel-button-editor" class="transition" onclick="window.location.href='/rhz-we/editor'">Editor</button>
                           <button id="loginpanel-button-logout" class="transition"
                                   onclick="loginPanelLogout()">Logout
                           </button>
@@ -205,6 +232,44 @@
                               </div>
                             </div>
                             <div class="col-sm-4">
+                            </div>
+                          </div>
+                        </div>
+                        <div id="popup-editor-container" hidden="hidden">
+                          <div class="editor-modal-content">
+                            <button class="editor-modal-close" onclick="closeEditorModal()">&times;</button>
+                            <h3>Quick Editor</h3>
+                            <select id="editor-page-select" onchange="loadPageForEditor(this.value)" style="width:100%;padding:10px;background:#222;border:1px solid #333;color:#ccc;margin-bottom:15px;">
+                              <option value="">Select a page to edit...</option>
+                            </select>
+                            <div id="editor-form-container" style="display:none;">
+                              <input type="hidden" id="editor-page-name"/>
+                              <div class="form-group">
+                                <label>Title</label>
+                                <input type="text" id="editor-title" style="width:100%;padding:10px;background:#222;border:1px solid #333;color:#ccc;"/>
+                              </div>
+                              <div class="form-group">
+                                <label>Header</label>
+                                <input type="text" id="editor-header" style="width:100%;padding:10px;background:#222;border:1px solid #333;color:#ccc;"/>
+                              </div>
+                              <div class="form-group">
+                                <label>Sub Header</label>
+                                <input type="text" id="editor-subheader" style="width:100%;padding:10px;background:#222;border:1px solid #333;color:#ccc;"/>
+                              </div>
+                              <div class="form-group">
+                                <label>Tags (comma separated)</label>
+                                <input type="text" id="editor-tags" style="width:100%;padding:10px;background:#222;border:1px solid #333;color:#ccc;"/>
+                              </div>
+                              <div class="form-group">
+                                <label>Content (HTML)</label>
+                                <textarea id="editor-description" rows="15" style="width:100%;background:#222;border:1px solid #333;color:#ccc;padding:10px;font-family:monospace;"></textarea>
+                              </div>
+                              <div class="form-group">
+                                <label>Preview</label>
+                                <div id="editor-preview" style="background:#222;border:1px solid #333;padding:15px;min-height:100px;"></div>
+                              </div>
+                              <button onclick="savePageFromModal()" class="btn btn-primary" style="padding:10px 20px;background:#444;color:#ccc;border:none;cursor:pointer;">Save</button>
+                              <button onclick="closeEditorModal()" class="btn btn-secondary" style="padding:10px 20px;background:#444;color:#ccc;border:none;cursor:pointer;margin-left:10px;">Close</button>
                             </div>
                           </div>
                         </div>
@@ -446,7 +511,7 @@
                   <div class="item-description">
                     <div class="item-header">
                       <h4><b><span th:utext="${page.header}"> </span></b>
-                        <a th:if="${authenticated}" th:href="@{/editor/edit(name=${page.uniqueUriName})}" class="edit-page-btn" title="Edit page">[Edit]</a>
+                        <a th:if="${authenticated}" href="#" class="edit-page-btn" title="Edit page" th:data-page="${page.uniqueUriName}" onclick="openEditorModalForPage(this.getAttribute('data-page')); return false;">[Edit]</a>
                       </h4>
                       <h6><span th:utext="${page.subHeader}"> </span></h6>
                     </div>
@@ -554,5 +619,51 @@
 <script id="script-audio-player" type="text/javascript"
         th:src="@{/content-public/js/audio-player.js}"
         src="../../../static/content-public/js/audio-player.js"></script>
+<script>
+  document.addEventListener('DOMContentLoaded', () => {
+    const trackItems = document.querySelectorAll('.track-item');
+    const tracks = Array.from(trackItems).map(item => ({
+      src: item.dataset.src,
+      title: item.dataset.title,
+      artist: item.dataset.artist
+    }));
+
+    trackItems.forEach((item, index) => {
+      const queueBtn = item.querySelector('.add-to-queue-btn');
+      if (queueBtn) {
+        queueBtn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          const added = player.addToQueue(tracks[index]);
+          if (added) {
+            queueBtn.textContent = '✓ Added';
+            setTimeout(() => {
+              queueBtn.textContent = '+ Queue';
+            }, 1500);
+          } else {
+            queueBtn.textContent = '✓ In Queue';
+            setTimeout(() => {
+              queueBtn.textContent = '+ Queue';
+            }, 1500);
+          }
+        });
+      }
+    });
+
+    const addAllBtn = document.querySelector('.add-all-btn');
+    if (addAllBtn) {
+      addAllBtn.addEventListener('click', () => {
+        player.addAllToQueue(tracks);
+        addAllBtn.textContent = '✓ Added All';
+        setTimeout(() => {
+          addAllBtn.textContent = '+ Add All to Queue';
+        }, 1500);
+      });
+    }
+
+    player.loadPlaylist(tracks);
+    player.loadPlaylistDurations(tracks);
+  });
+</script>
 </body>
+
 </html>

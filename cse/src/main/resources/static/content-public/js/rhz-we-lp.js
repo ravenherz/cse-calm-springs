@@ -48,6 +48,124 @@ function loginPanelLogout() {
     });
 }
 
+function openEditorModal() {
+    var container = document.getElementById("popup-editor-container");
+    container.removeAttribute("hidden");
+    container.classList.add("active");
+    loadPageListForEditor();
+}
+
+function openEditorModalForPage(pageName) {
+    var container = document.getElementById("popup-editor-container");
+    container.removeAttribute("hidden");
+    container.classList.add("active");
+    loadPageListForEditor();
+    loadPageForEditor(pageName);
+}
+
+function closeEditorModal() {
+    var container = document.getElementById("popup-editor-container");
+    container.classList.remove("active");
+}
+
+function loadPageListForEditor() {
+    var select = document.getElementById('editor-page-select');
+    select.innerHTML = '<option value="">Select a page to edit...</option>';
+    var editButtons = document.querySelectorAll('.edit-page-btn');
+    if (editButtons.length === 0) {
+        var option = document.createElement('option');
+        option.textContent = 'No editable pages found';
+        select.appendChild(option);
+        return;
+    }
+    editButtons.forEach(function(btn) {
+        var pageName = btn.getAttribute('data-page');
+        if (pageName) {
+            var parent = btn.closest('.item-container, .item-description');
+            var titleEl = parent ? parent.querySelector('h4 b, .item-title') : null;
+            var title = titleEl ? titleEl.textContent : pageName;
+            var option = document.createElement('option');
+            option.value = pageName;
+            option.textContent = title + ' (' + pageName + ')';
+            select.appendChild(option);
+        }
+    });
+}
+
+function loadPageForEditor(name) {
+    if (!name) {
+        document.getElementById('editor-form-container').style.display = 'none';
+        return;
+    }
+    var basePath = window.location.pathname.replace(/\/[^/]*$/, '');
+    var url = basePath + '/editor/edit?name=' + encodeURIComponent(name);
+    $.ajax({
+        url: url,
+        type: 'GET',
+        success: function(data) {
+            var parser = new DOMParser();
+            var doc = parser.parseFromString(data, 'text/html');
+            document.getElementById('editor-page-name').value = name;
+            var titleInput = doc.querySelector('input[name="title"]');
+            var headerInput = doc.querySelector('input[name="header"]');
+            var subHeaderInput = doc.querySelector('input[name="subHeader"]');
+            var tagsInput = doc.querySelector('input[name="tags"]');
+            var descInput = doc.querySelector('textarea[name="description"]');
+            if (titleInput) document.getElementById('editor-title').value = titleInput.value;
+            if (headerInput) document.getElementById('editor-header').value = headerInput.value;
+            if (subHeaderInput) document.getElementById('editor-subheader').value = subHeaderInput.value;
+            if (tagsInput) document.getElementById('editor-tags').value = tagsInput.value;
+            if (descInput) {
+                document.getElementById('editor-description').value = descInput.value;
+                document.getElementById('editor-preview').innerHTML = descInput.value;
+            }
+            document.getElementById('editor-form-container').style.display = 'block';
+            setupEditorPreviewListener();
+        },
+        error: function(xhr, status, error) {
+            alert('Failed to load page data: ' + error);
+        }
+    });
+}
+
+function savePageFromModal() {
+    var name = document.getElementById('editor-page-name').value;
+    var title = document.getElementById('editor-title').value;
+    var header = document.getElementById('editor-header').value;
+    var subHeader = document.getElementById('editor-subheader').value;
+    var tags = document.getElementById('editor-tags').value;
+    var description = document.getElementById('editor-description').value;
+    var basePath = window.location.pathname.replace(/\/[^/]*$/, '');
+    $.ajax({
+        url: basePath + '/editor/save',
+        type: 'POST',
+        data: {
+            name: name,
+            title: title,
+            header: header,
+            subHeader: subHeader,
+            tags: tags,
+            description: description
+        },
+        success: function() {
+            alert('Page saved successfully!');
+            document.getElementById('editor-preview').innerHTML = description;
+        },
+        error: function() {
+            alert('Failed to save page');
+        }
+    });
+}
+
+function setupEditorPreviewListener() {
+    var desc = document.getElementById('editor-description');
+    if (desc) {
+        desc.addEventListener('input', function() {
+            document.getElementById('editor-preview').innerHTML = this.value;
+        });
+    }
+}
+
 function loginPanelInit () {
     //console.log("ready");
 
