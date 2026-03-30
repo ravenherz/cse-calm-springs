@@ -801,3 +801,15 @@ dd .link {
 .input-correct {
     color: fuchsia;
 }
+
+.edit-page-btn {
+    font-size: 0.6em;
+    color: #888;
+    text-decoration: none;
+    margin-left: 10px;
+    vertical-align: middle;
+}
+
+.edit-page-btn:hover {
+    color: #fff;
+}

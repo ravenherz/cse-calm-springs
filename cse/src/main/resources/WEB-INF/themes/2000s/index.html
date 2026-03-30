@@ -28,6 +28,7 @@
   <link rel="stylesheet" type="text/css"
         th:href="@{/content-public/js/dist/bootstrap.min.css}"
         href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css"/>
+
   <!--/* Fonts */-->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -42,6 +43,9 @@
   <link id="styles-schema" rel="stylesheet" type="text/css"
         th:href="@{/content-public/themes/__${stylesTheme}__/css/color-schemas/__${stylesSchema}__.css}"
         href="../../../static/content-public/themes/default/css/color-schemas/snowy.css"/>
+  <link id="styles-audio-player" rel="stylesheet" type="text/css"
+        th:href="@{/content-public/themes/default/css/audio-player.css}"
+        href="../../../static/content-public/themes/default/css/audio-player.css"/>
   <link rel="icon"
         th:href="@{/content-public/rhz-we-core/images/favicon.ico}"
         href="/content-public/rhz-we-core/images/favicon.ico"
@@ -441,7 +445,9 @@
                   </div>
                   <div class="item-description">
                     <div class="item-header">
-                      <h4><b><span th:utext="${page.header}"> </span></b></h4>
+                      <h4><b><span th:utext="${page.header}"> </span></b>
+                        <a th:if="${authenticated}" th:href="@{/editor/edit(name=${page.uniqueUriName})}" class="edit-page-btn" title="Edit page">[Edit]</a>
+                      </h4>
                       <h6><span th:utext="${page.subHeader}"> </span></h6>
                     </div>
                     <div th:utext="${page.description}" class="item-description-content">
@@ -545,5 +551,8 @@
     </div>
   </div>
 </wrapper>
+<script id="script-audio-player" type="text/javascript"
+        th:src="@{/content-public/js/audio-player.js}"
+        src="../../../static/content-public/js/audio-player.js"></script>
 </body>
 </html>

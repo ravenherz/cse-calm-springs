@@ -119,7 +119,7 @@ public class IndexController extends AbstractController {
         }
 
         model.addAttribute("configured", settings.isConfigured());
-        model.addAttribute("loginPanel", false);
+        model.addAttribute("loginPanel", true);
         model.addAttribute("isNotError", request.getParameter("error") == null);
         model.addAttribute("selectedTag", request.getParameter("tag"));
         model.addAttribute("request", request);

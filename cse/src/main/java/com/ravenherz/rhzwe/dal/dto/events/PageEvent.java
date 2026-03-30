@@ -68,6 +68,7 @@ public class PageEvent extends PageData {
     private LocalDateTime created;
     private String id;
     private String categoryItemName;
+    private String uniqueUriName;
     private String imageLinkFull;
     private String pageLink;
     private List<String> tags;
@@ -80,6 +81,7 @@ public class PageEvent extends PageData {
                 pageData.getSubHeader(),
                 pageData.getDescription(),
                 pageData.getTags());
+        this.uniqueUriName = uniqueUriName;
         this.pageLink = "./?page=" + uniqueUriName;
         if (pageData.getRefImage() != null) {
             this.imageLinkFull = "./content-protected" + pageData.getRefImage().getResourceData()
@@ -113,6 +115,10 @@ public class PageEvent extends PageData {
 
     public String getId() {
         return id;
+    }
+
+    public String getUniqueUriName() {
+        return uniqueUriName;
     }
 
     public LocalDateTime getCreated() {
