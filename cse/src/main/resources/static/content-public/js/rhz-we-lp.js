@@ -155,7 +155,9 @@ function loadPageForEditor(name) {
             if (tagsInput) document.getElementById('editor-tags').value = tagsInput.value;
             if (descInput) {
                 document.getElementById('editor-description').value = descInput.value;
-                document.getElementById('editor-preview').innerHTML = descInput.value;
+                renderMarkdownPreview(descInput.value, function(html) {
+                    document.getElementById('editor-preview').innerHTML = html;
+                });
             }
             if (categorySelect) {
                 var selectedCategory = categorySelect.querySelector('option:checked');
@@ -215,10 +217,32 @@ function savePageFromModal() {
         },
         success: function() {
             alert('Page saved successfully!');
-            document.getElementById('editor-preview').innerHTML = description;
+            renderMarkdownPreview(description, function(html) {
+                document.getElementById('editor-preview').innerHTML = html;
+            });
         },
         error: function() {
             alert('Failed to save page');
+        }
+    });
+}
+
+function renderMarkdownPreview(markdown, callback) {
+    var basePath = window.location.pathname.replace(/\/[^/]*$/, '');
+    $.ajax({
+        url: basePath + '/rest/markdown/render',
+        type: 'POST',
+        contentType: 'application/json',
+        data: JSON.stringify({ markdown: markdown }),
+        success: function(response) {
+            if (response.status === 200) {
+                callback(response.data);
+            } else {
+                callback(markdown);
+            }
+        },
+        error: function() {
+            callback(markdown);
         }
     });
 }
@@ -227,7 +251,10 @@ function setupEditorPreviewListener() {
     var desc = document.getElementById('editor-description');
     if (desc) {
         desc.addEventListener('input', function() {
-            document.getElementById('editor-preview').innerHTML = this.value;
+            var markdown = this.value;
+            renderMarkdownPreview(markdown, function(html) {
+                document.getElementById('editor-preview').innerHTML = html;
+            });
         });
     }
 }

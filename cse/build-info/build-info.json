@@ -1,10 +1,10 @@
 {
     "artifact": {
         "latest": {
-            "name": "cse-0.4.0.2489.feature-editor.war"
+            "name": "cse-0.4.0.2493.feature-editor.war"
         }
     },
     "build": {
-        "number": 2489
+        "number": 2493
     }
 }

@@ -8,10 +8,10 @@
   <title>Edit: <span th:text="${item.pageData?.title}">Page</span> - rhz-we</title>
   <link rel="stylesheet" type="text/css"
         th:href="@{/content-public/themes/__${stylesTheme}__/css/styles.css}"
-        href="../static/content-public/themes/default/css/styles.css"/>
+        href="../static/content-public/themes/2000s/css/styles.css"/>
   <link rel="stylesheet" type="text/css"
         th:href="@{/content-public/themes/__${stylesTheme}__/css/color-schemas/__${stylesSchema}__.css}"
-        href="../static/content-public/themes/default/css/color-schemas/snowy.css"/>
+        href="../static/content-public/themes/2000s/css/color-schemas/snowy.css"/>
   <link rel="stylesheet" type="text/css"
         th:href="@{/content-public/rhz-we-core/css/system.css}"
         href="../static/content-public/rhz-we-core/css/system.css"/>
@@ -102,14 +102,38 @@
   </div>
   
   <script type="text/javascript" th:inline="javascript">
+    function renderMarkdownPreview(markdown, callback) {
+      $.ajax({
+        url: '/rhz-we/rest/markdown/render',
+        type: 'POST',
+        contentType: 'application/json',
+        data: JSON.stringify({ markdown: markdown }),
+        success: function(response) {
+          if (response.status === 200) {
+            callback(response.data);
+          } else {
+            callback(markdown);
+          }
+        },
+        error: function() {
+          callback(markdown);
+        }
+      });
+    }
+
     $(document).ready(function() {
       var rawContent = /*[[${item.pageData?.description}]]*/ '';
       if (rawContent) {
         $('#description').val(rawContent);
-        $('#preview').html(rawContent);
+        renderMarkdownPreview(rawContent, function(html) {
+          $('#preview').html(html);
+        });
       }
       $('#description').on('input', function() {
-        $('#preview').html($(this).val());
+        var markdown = $(this).val();
+        renderMarkdownPreview(markdown, function(html) {
+          $('#preview').html(html);
+        });
       });
     });
   </script>
