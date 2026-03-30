@@ -1,0 +1,69 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html xmlns:th="http://www.w3.org/1999/xhtml" lang="en">
+<head>
+  <base href="${pageContext.request.contextPath}"/>
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+  <meta name="viewport" content="width=device-width, height=device-height, initial-scale=1">
+  <title>Categories - rhz-we</title>
+  <link rel="stylesheet" type="text/css"
+        th:href="@{/content-public/themes/default/css/styles.css}"
+        href="../static/content-public/themes/default/css/styles.css"/>
+  <link rel="stylesheet" type="text/css"
+        th:href="@{/content-public/themes/default/css/color-schemas/snowy.css}"
+        href="../static/content-public/themes/default/css/color-schemas/snowy.css"/>
+  <link rel="stylesheet" type="text/css"
+        th:href="@{/content-public/rhz-we-core/css/system.css}"
+        href="../static/content-public/rhz-we-core/css/system.css"/>
+  <link rel="stylesheet" type="text/css"
+        th:href="@{/content-public/themes/2000s/css/editor.css}"
+        href="../static/content-public/themes/2000s/css/editor.css"/>
+  <link rel="icon"
+        th:href="@{/content-public/rhz-we-core/images/favicon.ico}"
+        href="/content-public/rhz-we-core/images/favicon.ico"
+        type="image/x-icon"/>
+</head>
+<body>
+  <div class="editor-wrapper">
+    <div class="editor-header">
+      <h1>Admin console</h1>
+      <a th:href="@{/}" class="btn btn-secondary">Back to website</a>
+    </div>
+
+    <div class="editor-nav">
+      <a th:href="@{/editor/resources}">Resources</a>
+      <a th:href="@{/editor/categories}">Categories</a>
+      <a th:href="@{/editor/category/create}">Create category</a>
+      <a th:href="@{/editor/pages}">Pages</a>
+      <a th:href="@{/editor/create}">Create page</a>
+    </div>
+
+    <div th:if="${categories.empty}" class="empty-message">
+      No categories found.
+    </div>
+    
+    <ul class="item-list" th:unless="${categories.empty}">
+      <li th:each="cat : ${categories}">
+        <a th:href="@{/editor/category/edit(id=${cat.id})}" class="item-link">
+          <div class="item-info">
+            <div class="item-title" th:text="${cat.categoryData?.itemName}">Category Name</div>
+            <div class="item-meta">
+              <span th:text="${cat.id}">category-id</span>
+              <span th:if="${cat.categoryData?.navigationTitle}"> | Nav: <span th:text="${cat.categoryData.navigationTitle}">nav title</span></span>
+            </div>
+            <div class="item-meta">
+              <span th:if="${cat.categoryData?.isVisible}" class="category-badge">Visible</span>
+              <span th:if="${cat.categoryData?.isActive}" class="category-badge-active">Active</span>
+              <span th:unless="${cat.categoryData?.isVisible or cat.categoryData?.isActive}" class="category-badge-inactive">Hidden</span>
+            </div>
+          </div>
+        </a>
+        <form th:action="@{/editor/category/delete}" method="post" class="item-form">
+          <input type="hidden" name="id" th:value="${cat.id}"/>
+          <button type="submit" class="delete-btn" onclick="return confirm('Delete this category?')">Delete</button>
+        </form>
+      </li>
+    </ul>
+  </div>
+</body>
+</html>

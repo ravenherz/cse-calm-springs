@@ -44,8 +44,8 @@
         th:href="@{/content-public/themes/__${stylesTheme}__/css/color-schemas/__${stylesSchema}__.css}"
         href="../../../static/content-public/themes/default/css/color-schemas/snowy.css"/>
   <link id="styles-audio-player" rel="stylesheet" type="text/css"
-        th:href="@{/content-public/themes/default/css/audio-player.css}"
-        href="../../../static/content-public/themes/default/css/audio-player.css"/>
+        th:href="@{/content-public/themes/2000s/css/audio-player.css}"
+        href="../../../static/content-public/themes/2000s/css/audio-player.css"/>
   <link rel="icon"
         th:href="@{/content-public/rhz-we-core/images/favicon.ico}"
         href="/content-public/rhz-we-core/images/favicon.ico"
@@ -244,6 +244,8 @@
                             </select>
                             <div id="editor-form-container" style="display:none;">
                               <input type="hidden" id="editor-page-name"/>
+                              <input type="hidden" id="editor-category"/>
+                              <input type="hidden" id="editor-image"/>
                               <div class="form-group">
                                 <label>Title</label>
                                 <input type="text" id="editor-title" style="width:100%;padding:10px;background:#222;border:1px solid #333;color:#ccc;"/>
@@ -255,6 +257,18 @@
                               <div class="form-group">
                                 <label>Sub Header</label>
                                 <input type="text" id="editor-subheader" style="width:100%;padding:10px;background:#222;border:1px solid #333;color:#ccc;"/>
+                              </div>
+                              <div class="form-group">
+                                <label>Category</label>
+                                <select id="editor-category-select" onchange="document.getElementById('editor-category').value = this.value" style="width:100%;padding:10px;background:#222;border:1px solid #333;color:#ccc;">
+                                  <option value="">-- No Category --</option>
+                                </select>
+                              </div>
+                              <div class="form-group">
+                                <label>Featured Image</label>
+                                <select id="editor-image-select" onchange="document.getElementById('editor-image').value = this.value" style="width:100%;padding:10px;background:#222;border:1px solid #333;color:#ccc;">
+                                  <option value="">-- No Image --</option>
+                                </select>
                               </div>
                               <div class="form-group">
                                 <label>Tags (comma separated)</label>

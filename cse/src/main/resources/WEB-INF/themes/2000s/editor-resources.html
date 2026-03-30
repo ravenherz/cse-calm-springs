@@ -15,69 +15,34 @@
   <link rel="stylesheet" type="text/css"
         th:href="@{/content-public/rhz-we-core/css/system.css}"
         href="../static/content-public/rhz-we-core/css/system.css"/>
+  <link rel="stylesheet" type="text/css"
+        th:href="@{/content-public/themes/2000s/css/editor.css}"
+        href="../static/content-public/themes/2000s/css/editor.css"/>
   <link rel="icon"
         th:href="@{/content-public/rhz-we-core/images/favicon.ico}"
         href="/content-public/rhz-we-core/images/favicon.ico"
         type="image/x-icon"/>
-  <style>
-    * { box-sizing: border-box; }
-    body { margin: 0; padding: 0; background: #1a1a1a; color: #ccc; font-family: 'Inter', sans-serif; }
-    .editor-wrapper { max-width: 1200px; margin: 0 auto; padding: 20px; }
-    .editor-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; padding-bottom: 15px; border-bottom: 1px solid #333; }
-    .editor-header h1 { color: #fff; margin: 0; font-size: 1.5rem; }
-    .editor-header a { color: #888; text-decoration: none; }
-    .editor-header a:hover { color: #fff; }
-    .editor-nav { display: flex; gap: 15px; margin-bottom: 20px; }
-    .editor-nav a { color: #888; text-decoration: none; padding: 8px 16px; background: #222; border: 1px solid #333; }
-    .editor-nav a:hover { color: #ccc; border-color: #555; }
-    .editor-nav a.active { color: #fff; background: #333; border-color: #555; }
-    .resources-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 15px; }
-    .resource-card { background: #222; border: 1px solid #333; padding: 10px; }
-    .resource-card img { max-width: 100%; height: auto; display: block; margin-bottom: 10px; }
-    .resource-info { font-size: 0.8rem; color: #888; }
-    .resource-info .type { color: #fff; font-weight: bold; }
-    .resource-info .size { color: #666; display: block; margin-top: 5px; }
-    .resource-info .path { color: #aaa; word-break: break-all; margin-top: 5px; }
-    .empty-message { text-align: center; color: #666; padding: 40px; }
-    .upload-section { background: #222; border: 1px solid #333; padding: 20px; margin-bottom: 30px; }
-    .upload-section h3 { color: #fff; margin: 0 0 15px 0; font-size: 1rem; }
-    .upload-form { display: flex; gap: 15px; align-items: flex-end; flex-wrap: wrap; }
-    .form-group { display: flex; flex-direction: column; gap: 5px; }
-    .form-group label { color: #888; font-size: 0.8rem; }
-    .form-group input, .form-group select { padding: 8px 12px; background: #111; border: 1px solid #333; color: #ccc; font-size: 0.9rem; }
-    .form-group input:focus, .form-group select:focus { outline: none; border-color: #555; }
-    .btn-upload { padding: 8px 20px; background: #fff; color: #1a1a1a; border: none; cursor: pointer; font-size: 0.9rem; }
-    .btn-upload:hover { background: #ddd; }
-    .error-message { background: #4a2222; border: 1px solid #662222; color: #ff8888; padding: 10px 15px; margin-bottom: 20px; }
-    .drop-zone { border: 2px dashed #444; padding: 30px; text-align: center; cursor: pointer; margin-bottom: 15px; }
-    .drop-zone:hover, .drop-zone.dragover { border-color: #666; background: #2a2a2a; }
-    .drop-zone-text { color: #666; }
-    .drop-zone input[type="file"] { display: none; }
-    .btn-delete { background: #442222; color: #ff8888; border: none; padding: 4px 10px; cursor: pointer; font-size: 0.75rem; margin-top: 5px; }
-    .btn-delete:hover { background: #662222; }
-    .chunk-badge { background: #334433; color: #88ff88; padding: 2px 6px; font-size: 0.7rem; margin-left: 5px; }
-    .chunk-info { position: relative; display: inline-block; }
-    .chunk-tooltip { visibility: hidden; background: #222; border: 1px solid #444; color: #aaa; padding: 8px; font-size: 0.7rem; position: absolute; bottom: 100%; left: 0; z-index: 10; min-width: 200px; box-shadow: 0 2px 8px rgba(0,0,0,0.5); }
-    .chunk-info:hover .chunk-tooltip { visibility: visible; }
-    .chunk-tooltip div { margin: 2px 0; }
-  </style>
 </head>
 <body>
   <div class="editor-wrapper">
     <div class="editor-header">
-      <h1>Resources</h1>
-      <a th:href="@{/editor}" class="btn btn-secondary">Back to editor</a>
+      <h1>Admin console</h1>
+      <a th:href="@{/}" class="btn btn-secondary">Back to website</a>
     </div>
 
     <div class="editor-nav">
-      <a th:href="@{/editor}">Pages</a>
-      <a th:href="@{/editor/resources}" class="active">Resources</a>
+      <a th:href="@{/editor/resources}">Resources</a>
+      <a th:href="@{/editor/categories}">Categories</a>
+      <a th:href="@{/editor/category/create}">Create category</a>
+      <a th:href="@{/editor/pages}">Pages</a>
+      <a th:href="@{/editor/create}">Create page</a>
     </div>
+
 
     <div class="upload-section">
       <h3>Upload New Resource</h3>
       <form th:action="@{/editor/resources/upload}" method="post" enctype="multipart/form-data" class="upload-form">
-        <div class="form-group" style="flex: 1;">
+        <div class="form-group flex-1">
           <label>File</label>
           <div class="drop-zone" id="dropZone">
             <span class="drop-zone-text">Click to select or drag and drop file (jpg, png, mp3)</span>
@@ -104,14 +69,14 @@
              src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7"
              alt="Resource preview"/>
         <div th:unless="${resource.resourceData.type.name() == 'IMAGE'}" 
-             style="background:#111;height:120px;display:flex;align-items:center;justify-content:center;color:#555;">
+             class="audio-placeholder">
           Audio
         </div>
         <div class="resource-info">
           <span class="type" th:text="${resource.resourceData.type.name()}">TYPE</span>
           <span class="size" th:text="${resource.resourceData.sizeInBytes + ' bytes'}">0 bytes</span>
           <div th:if="${not #maps.isEmpty(resource.resourceData.metadata)}" class="metadata-info">
-            <span th:each="entry : ${resource.resourceData.metadata}" th:text="${entry.key + ': ' + entry.value}" style="display:block;font-size:0.75rem;color:#888;">key: value</span>
+            <span th:each="entry : ${resource.resourceData.metadata}" th:text="${entry.key + ': ' + entry.value}">key: value</span>
           </div>
           <span th:if="${resource.resourceData.largeFile}" class="chunk-badge">
             <span class="chunk-info">
@@ -124,7 +89,7 @@
             </span>
           </span>
           <div class="path" th:text="${resource.resourceData.pathPublic}">/path</div>
-          <form th:action="@{/editor/resources/delete}" method="post" style="margin-top: 8px;">
+          <form th:action="@{/editor/resources/delete}" method="post" class="resource-form">
             <input type="hidden" name="pathPublic" th:value="${resource.resourceData.pathPublic}"/>
             <button type="submit" class="btn-delete" onclick="return confirm('Delete this resource?')">Delete</button>
           </form>

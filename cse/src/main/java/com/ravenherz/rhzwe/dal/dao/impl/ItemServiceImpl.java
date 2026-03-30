@@ -47,6 +47,13 @@ public class ItemServiceImpl extends BasicService implements ItemService {
                 .collect(Collectors.toList());
     }
 
+    @Override
+    public void delete(ItemEntity item) {
+        if (item != null) {
+            dataProvider.getDatastore().delete(item);
+        }
+    }
+
     private Query<ItemEntity> getPageEntities() {
         return dataProvider.getDatastore().find(ItemEntity.class);
     }

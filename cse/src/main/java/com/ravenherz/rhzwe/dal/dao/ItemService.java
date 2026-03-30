@@ -34,4 +34,6 @@ public interface ItemService extends Service {
 
     ItemEntity getByName(String name);
 
+    void delete(ItemEntity item);
+
 }

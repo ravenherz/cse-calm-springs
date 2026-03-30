@@ -2,6 +2,7 @@ package com.ravenherz.rhzwe.dal.dao.impl;
 
 import com.ravenherz.rhzwe.dal.dao.BasicService;
 import com.ravenherz.rhzwe.dal.dao.CategoryService;
+import com.ravenherz.rhzwe.dal.dto.BasicEntity;
 import com.ravenherz.rhzwe.dal.dto.CategoryEntity;
 import dev.morphia.query.filters.Filters;
 import org.springframework.context.annotation.Lazy;
@@ -15,6 +16,20 @@ import java.util.stream.Collectors;
 @Repository(value = "categoryService")
 @Scope(value = "singleton")
 public class CategoryServiceImpl extends BasicService implements CategoryService {
+
+    @Override
+    public void delete(CategoryEntity category) {
+        if (category != null) {
+            dataProvider.getDatastore().delete(category);
+        }
+    }
+
+    @Override
+    public List<BasicEntity> getAll() {
+        return dataProvider.getDatastore().find(CategoryEntity.class)
+                .stream()
+                .collect(Collectors.toList());
+    }
 
     @Override
     public List<CategoryEntity> getAllByVisibility(boolean isVisible) {

@@ -15,6 +15,9 @@
   <link rel="stylesheet" type="text/css"
         th:href="@{/content-public/rhz-we-core/css/system.css}"
         href="../static/content-public/rhz-we-core/css/system.css"/>
+  <link rel="stylesheet" type="text/css"
+        th:href="@{/content-public/themes/2000s/css/editor.css}"
+        href="../static/content-public/themes/2000s/css/editor.css"/>
   <link rel="icon"
         th:href="@{/content-public/rhz-we-core/images/favicon.ico}"
         href="/content-public/rhz-we-core/images/favicon.ico"
@@ -22,39 +25,20 @@
   <script type="text/javascript"
           th:src="@{/content-public/js/dist/jquery.min.js}"
           src="//code.jquery.com/jquery-3.6.0.min.js"></script>
-  <style>
-    * { box-sizing: border-box; }
-    body { margin: 0; padding: 0; background: #1a1a1a; color: #ccc; font-family: 'Inter', sans-serif; }
-    .editor-wrapper { max-width: 1200px; margin: 0 auto; padding: 20px; }
-    .editor-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; padding-bottom: 15px; border-bottom: 1px solid #333; }
-    .editor-header h1 { color: #fff; margin: 0; font-size: 1.5rem; }
-    .editor-header a { color: #888; text-decoration: none; }
-    .editor-header a:hover { color: #fff; }
-    .editor-actions { display: flex; gap: 10px; }
-    .btn { padding: 8px 16px; border: none; cursor: pointer; font-size: 0.9rem; text-decoration: none; display: inline-block; }
-    .btn-primary { background: #fff; color: #1a1a1a; }
-    .btn-primary:hover { background: #ddd; }
-    .btn-secondary { background: #333; color: #ccc; }
-    .btn-secondary:hover { background: #444; }
-    .form-group { margin-bottom: 20px; }
-    .form-group label { display: block; margin-bottom: 8px; color: #888; font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.05em; }
-    .form-group input[type="text"] { width: 100%; padding: 10px; background: #222; border: 1px solid #333; color: #ccc; font-size: 1rem; }
-    .form-group input[type="text"]:focus { outline: none; border-color: #555; }
-    .form-row { display: flex; gap: 20px; }
-    .form-row .form-group { flex: 1; }
-    .preview-container { margin-top: 30px; padding-top: 20px; border-top: 1px solid #333; }
-    .preview-container h3 { color: #888; margin-bottom: 15px; font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.05em; }
-    .preview-content { background: #222; padding: 20px; border: 1px solid #333; min-height: 100px; }
-  </style>
 </head>
 <body>
   <div class="editor-wrapper">
     <div class="editor-header">
-      <h1>Edit: <span th:text="${item.pageData?.title}">Page Title</span></h1>
-      <div class="editor-actions">
-        <a th:href="@{/editor}" class="btn btn-secondary">Back to list</a>
-        <a th:href="@{/(page=${item.uniqueUriName})}" class="btn btn-secondary" target="_blank">View page</a>
-      </div>
+      <h1>Admin console</h1>
+      <a th:href="@{/}" class="btn btn-secondary">Back to website</a>
+    </div>
+
+    <div class="editor-nav">
+      <a th:href="@{/editor/resources}">Resources</a>
+      <a th:href="@{/editor/categories}">Categories</a>
+      <a th:href="@{/editor/category/create}">Create category</a>
+      <a th:href="@{/editor/pages}">Pages</a>
+      <a th:href="@{/editor/create}">Create page</a>
     </div>
     
     <form th:action="@{/editor/save}" method="post">
@@ -77,6 +61,23 @@
           <input type="text" id="subHeader" name="subHeader" th:value="${item.pageData?.subHeader}"/>
         </div>
         <div class="form-group">
+          <label for="categoryId">Category</label>
+          <select id="categoryId" name="categoryId">
+            <option value="">-- No Category --</option>
+            <option th:each="cat : ${categories}" th:value="${cat.id}" th:text="${cat.categoryData?.itemName != null ? cat.categoryData.itemName : cat.id}" th:selected="${item.refCategory?.id?.toString() == cat.id?.toString()}">Category Name</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label for="imageId">Featured Image</label>
+          <select id="imageId" name="imageId">
+            <option value="">-- No Image --</option>
+            <option th:each="img : ${images}" th:value="${img.id}" th:text="${img.resourceData?.pathPublic}" th:selected="${item.pageData?.refImage?.id?.toString() == img.id?.toString()}">/path</option>
+          </select>
+        </div>
+        <div class="form-group">
           <label for="tags">Tags (comma separated)</label>
           <input type="text" id="tags" name="tags" th:value="${#strings.listJoin(item.pageData?.tags, ', ')}"/>
         </div>
@@ -84,7 +85,7 @@
       
       <div class="form-group">
         <label>Content (Markdown/HTML)</label>
-        <textarea id="description" name="description" th:text="${item.pageData?.description}" rows="20" style="width:100%;background:#222;border:1px solid #333;color:#ccc;padding:10px;font-family:monospace;font-size:14px;"></textarea>
+        <textarea id="description" name="description" th:text="${item.pageData?.description}" rows="20" class="editor-textarea"></textarea>
       </div>
       
       <div class="editor-actions">

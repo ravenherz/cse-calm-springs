@@ -53,6 +53,41 @@ function openEditorModal() {
     container.removeAttribute("hidden");
     container.classList.add("active");
     loadPageListForEditor();
+    loadCategoriesAndImagesForEditor();
+}
+
+function loadCategoriesAndImagesForEditor() {
+    var basePath = window.location.pathname.replace(/\/[^/]*$/, '');
+    var categorySelect = document.getElementById('editor-category-select');
+    var imageSelect = document.getElementById('editor-image-select');
+    categorySelect.innerHTML = '<option value="">-- No Category --</option>';
+    imageSelect.innerHTML = '<option value="">-- No Image --</option>';
+    $.ajax({
+        url: basePath + '/editor/data',
+        type: 'GET',
+        dataType: 'json',
+        success: function(data) {
+            if (data.categories) {
+                data.categories.forEach(function(cat) {
+                    var option = document.createElement('option');
+                    option.value = cat.id;
+                    option.textContent = cat.name;
+                    categorySelect.appendChild(option);
+                });
+            }
+            if (data.images) {
+                data.images.forEach(function(img) {
+                    var option = document.createElement('option');
+                    option.value = img.id;
+                    option.textContent = img.name;
+                    imageSelect.appendChild(option);
+                });
+            }
+        },
+        error: function(xhr, status, error) {
+            console.error('Failed to load categories and images: ' + error);
+        }
+    });
 }
 
 function openEditorModalForPage(pageName) {
@@ -61,6 +96,7 @@ function openEditorModalForPage(pageName) {
     container.classList.add("active");
     loadPageListForEditor();
     loadPageForEditor(pageName);
+    loadCategoriesAndImagesForEditor();
 }
 
 function closeEditorModal() {
@@ -111,6 +147,8 @@ function loadPageForEditor(name) {
             var subHeaderInput = doc.querySelector('input[name="subHeader"]');
             var tagsInput = doc.querySelector('input[name="tags"]');
             var descInput = doc.querySelector('textarea[name="description"]');
+            var categorySelect = doc.querySelector('select[name="categoryId"]');
+            var imageSelect = doc.querySelector('select[name="imageId"]');
             if (titleInput) document.getElementById('editor-title').value = titleInput.value;
             if (headerInput) document.getElementById('editor-header').value = headerInput.value;
             if (subHeaderInput) document.getElementById('editor-subheader').value = subHeaderInput.value;
@@ -118,6 +156,30 @@ function loadPageForEditor(name) {
             if (descInput) {
                 document.getElementById('editor-description').value = descInput.value;
                 document.getElementById('editor-preview').innerHTML = descInput.value;
+            }
+            if (categorySelect) {
+                var selectedCategory = categorySelect.querySelector('option:checked');
+                var catValue = selectedCategory ? selectedCategory.value : '';
+                document.getElementById('editor-category').value = catValue;
+                var catSelect = document.getElementById('editor-category-select');
+                for (var i = 0; i < catSelect.options.length; i++) {
+                    if (catSelect.options[i].value === catValue) {
+                        catSelect.selectedIndex = i;
+                        break;
+                    }
+                }
+            }
+            if (imageSelect) {
+                var selectedImage = imageSelect.querySelector('option:checked');
+                var imgValue = selectedImage ? selectedImage.value : '';
+                document.getElementById('editor-image').value = imgValue;
+                var imgSelect = document.getElementById('editor-image-select');
+                for (var i = 0; i < imgSelect.options.length; i++) {
+                    if (imgSelect.options[i].value === imgValue) {
+                        imgSelect.selectedIndex = i;
+                        break;
+                    }
+                }
             }
             document.getElementById('editor-form-container').style.display = 'block';
             setupEditorPreviewListener();
@@ -135,6 +197,8 @@ function savePageFromModal() {
     var subHeader = document.getElementById('editor-subheader').value;
     var tags = document.getElementById('editor-tags').value;
     var description = document.getElementById('editor-description').value;
+    var categoryId = document.getElementById('editor-category').value;
+    var imageId = document.getElementById('editor-image').value;
     var basePath = window.location.pathname.replace(/\/[^/]*$/, '');
     $.ajax({
         url: basePath + '/editor/save',
@@ -145,7 +209,9 @@ function savePageFromModal() {
             header: header,
             subHeader: subHeader,
             tags: tags,
-            description: description
+            description: description,
+            categoryId: categoryId,
+            imageId: imageId
         },
         success: function() {
             alert('Page saved successfully!');

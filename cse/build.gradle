@@ -78,7 +78,7 @@ tasks.named('test') {
     useJUnitPlatform()
 }
 
-def currentVersion = '0.3.2'
+def currentVersion = '0.4.0'
 
 tasks.register('buildPreparations') {
     doFirst {
