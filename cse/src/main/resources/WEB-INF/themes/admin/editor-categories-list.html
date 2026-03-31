@@ -8,19 +8,19 @@
   <title>Categories - rhz-we</title>
   <link rel="stylesheet" type="text/css"
         th:href="@{/content-public/themes/2000s/css/styles.css}"
-        href="../static/content-public/themes/2000s/css/styles.css"/>
+        href="../../../static/content-public/themes/2000s/css/styles.css"/>
   <link rel="stylesheet" type="text/css"
         th:href="@{/content-public/themes/2000s/css/color-schemas/snowy.css}"
-        href="../static/content-public/themes/2000s/css/color-schemas/snowy.css"/>
+        href="../../../static/content-public/themes/2000s/css/color-schemas/snowy.css"/>
   <link rel="stylesheet" type="text/css"
         th:href="@{/content-public/rhz-we-core/css/system.css}"
-        href="../static/content-public/rhz-we-core/css/system.css"/>
+        href="../../../static/content-public/rhz-we-core/css/system.css"/>
   <link rel="stylesheet" type="text/css"
-        th:href="@{/content-public/themes/2000s/css/editor.css}"
-        href="../static/content-public/themes/2000s/css/editor.css"/>
+        th:href="@{/content-public/admin/css/editor.css}"
+        href="../../../static/content-public/admin/css/editor.css"/>
   <link rel="icon"
         th:href="@{/content-public/rhz-we-core/images/favicon.ico}"
-        href="/content-public/rhz-we-core/images/favicon.ico"
+        href="../../../static/content-public/rhz-we-core/images/favicon.ico"
         type="image/x-icon"/>
 </head>
 <body>
@@ -33,9 +33,10 @@
     <div class="editor-nav">
       <a th:href="@{/editor/resources}">Resources</a>
       <a th:href="@{/editor/categories}">Categories</a>
-      <a th:href="@{/editor/category/create}">Create category</a>
       <a th:href="@{/editor/pages}">Pages</a>
-      <a th:href="@{/editor/create}">Create page</a>
+    </div>
+    <div class="editor-nav">
+      <a th:href="@{/editor/category/create}">+</a>
     </div>
 
     <div th:if="${categories.empty}" class="empty-message">

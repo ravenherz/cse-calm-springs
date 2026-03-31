@@ -216,10 +216,7 @@ function savePageFromModal() {
             imageId: imageId
         },
         success: function() {
-            alert('Page saved successfully!');
-            renderMarkdownPreview(description, function(html) {
-                document.getElementById('editor-preview').innerHTML = html;
-            });
+            location.reload();
         },
         error: function() {
             alert('Failed to save page');
@@ -228,20 +225,24 @@ function savePageFromModal() {
 }
 
 function renderMarkdownPreview(markdown, callback) {
-    var basePath = window.location.pathname.replace(/\/[^/]*$/, '');
+    var pathParts = window.location.pathname.split('/');
+    var basePath = pathParts.length > 1 ? '/' + pathParts[1] : '';
     $.ajax({
         url: basePath + '/rest/markdown/render',
         type: 'POST',
         contentType: 'application/json',
         data: JSON.stringify({ markdown: markdown }),
+        dataType: 'json',
         success: function(response) {
-            if (response.status === 200) {
-                callback(response.data);
+            console.log('Markdown render response:', response);
+            if (response && response.status === 200) {
+                callback(response.restObject || response.data || response);
             } else {
                 callback(markdown);
             }
         },
-        error: function() {
+        error: function(xhr, status, error) {
+            console.error('Markdown render error:', error);
             callback(markdown);
         }
     });

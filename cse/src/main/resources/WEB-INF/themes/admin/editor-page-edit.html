@@ -8,16 +8,16 @@
   <title>Edit: <span th:text="${item.pageData?.title}">Page</span> - rhz-we</title>
   <link rel="stylesheet" type="text/css"
         th:href="@{/content-public/themes/__${stylesTheme}__/css/styles.css}"
-        href="../static/content-public/themes/2000s/css/styles.css"/>
+        href="../../../static/content-public/themes/2000s/css/styles.css"/>
   <link rel="stylesheet" type="text/css"
         th:href="@{/content-public/themes/__${stylesTheme}__/css/color-schemas/__${stylesSchema}__.css}"
-        href="../static/content-public/themes/2000s/css/color-schemas/snowy.css"/>
+        href="../../../static/content-public/themes/2000s/css/color-schemas/snowy.css"/>
   <link rel="stylesheet" type="text/css"
         th:href="@{/content-public/rhz-we-core/css/system.css}"
-        href="../static/content-public/rhz-we-core/css/system.css"/>
+        href="../../../static/content-public/rhz-we-core/css/system.css"/>
   <link rel="stylesheet" type="text/css"
-        th:href="@{/content-public/themes/2000s/css/editor.css}"
-        href="../static/content-public/themes/2000s/css/editor.css"/>
+        th:href="@{/content-public/admin/css/editor.css}"
+        href="../../../static/content-public/admin/css/editor.css"/>
   <link rel="icon"
         th:href="@{/content-public/rhz-we-core/images/favicon.ico}"
         href="/content-public/rhz-we-core/images/favicon.ico"
@@ -36,9 +36,7 @@
     <div class="editor-nav">
       <a th:href="@{/editor/resources}">Resources</a>
       <a th:href="@{/editor/categories}">Categories</a>
-      <a th:href="@{/editor/category/create}">Create category</a>
       <a th:href="@{/editor/pages}">Pages</a>
-      <a th:href="@{/editor/create}">Create page</a>
     </div>
     
     <form th:action="@{/editor/save}" method="post">
@@ -103,19 +101,24 @@
   
   <script type="text/javascript" th:inline="javascript">
     function renderMarkdownPreview(markdown, callback) {
+      var pathParts = window.location.pathname.split('/');
+      var basePath = pathParts.length > 1 ? '/' + pathParts[1] : '';
       $.ajax({
-        url: '/rhz-we/rest/markdown/render',
+        url: basePath + '/rest/markdown/render',
         type: 'POST',
         contentType: 'application/json',
         data: JSON.stringify({ markdown: markdown }),
+        dataType: 'json',
         success: function(response) {
-          if (response.status === 200) {
-            callback(response.data);
+          console.log('Markdown render response:', response);
+          if (response && response.status === 200) {
+            callback(response.restObject || response.data || response);
           } else {
             callback(markdown);
           }
         },
-        error: function() {
+        error: function(xhr, status, error) {
+          console.error('Markdown render error:', error);
           callback(markdown);
         }
       });

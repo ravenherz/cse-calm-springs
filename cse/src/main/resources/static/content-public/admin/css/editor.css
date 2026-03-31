@@ -6,7 +6,7 @@ body { margin: 0; padding: 0; background: #1a1a1a; color: #ccc; font-family: 'In
 .editor-header a { color: #888; text-decoration: none; }
 .editor-header a:hover { color: #fff; }
 .editor-actions { display: flex; gap: 10px; }
-.editor-nav { display: flex; gap: 15px; margin-bottom: 20px; }
+.editor-nav { display: flex; gap: 5px; margin-bottom: 20px; }
 .editor-nav a { color: #888; text-decoration: none; padding: 8px 16px; background: #222; border: 1px solid #333; }
 .editor-nav a:hover { color: #ccc; border-color: #555; }
 .editor-nav a.active { color: #fff; background: #333; border-color: #555; }

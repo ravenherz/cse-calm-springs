@@ -82,7 +82,7 @@ public class EditorController extends AbstractController {
 
             model.addAttribute("items", editableItems);
             model.addAttribute("username", accessor.getAccountData().getLogin());
-            return "/2000s/editor-pages-list";
+            return "/admin/editor-pages-list";
         } catch (Exception e) {
             LOGGER.error("Editor list error: " + e.getMessage(), e);
             response.sendRedirect(request.getContextPath() + "/?error=500");
@@ -107,7 +107,7 @@ public class EditorController extends AbstractController {
         model.addAttribute("stylesTheme", theme);
         model.addAttribute("stylesSchema", schema);
 
-        return "/2000s/editor-page-create";
+        return "/admin/editor-page-create";
     }
 
     @GetMapping("/data")
@@ -238,7 +238,7 @@ public class EditorController extends AbstractController {
         model.addAttribute("stylesTheme", theme);
         model.addAttribute("stylesSchema", schema);
 
-        return "/2000s/editor-page-create";
+        return "/admin/editor-page-create";
     }
 
     @GetMapping("/edit")
@@ -285,7 +285,7 @@ public class EditorController extends AbstractController {
         model.addAttribute("stylesTheme", theme);
         model.addAttribute("stylesSchema", schema);
 
-        return "/2000s/editor-page-edit";
+        return "/admin/editor-page-edit";
     }
 
     @PostMapping("/save")
@@ -436,7 +436,7 @@ public class EditorController extends AbstractController {
         }
 
         model.addAttribute("username", accessor.getAccountData().getLogin());
-        return "/2000s/editor-resources";
+        return "/admin/editor-resources";
     }
 
     @PostMapping("/resources/upload")
@@ -577,7 +577,7 @@ public class EditorController extends AbstractController {
             LOGGER.error("Failed to load resources: " + e.getMessage(), e);
         }
         model.addAttribute("username", accessor.getAccountData().getLogin());
-        return "/2000s/editor-resources";
+        return "/admin/editor-resources";
     }
 
     private String generateProtectedPrefix() {
@@ -636,7 +636,7 @@ public class EditorController extends AbstractController {
         model.addAttribute("stylesTheme", theme);
         model.addAttribute("stylesSchema", schema);
 
-        return "/2000s/editor-categories-list";
+        return "/admin/editor-categories-list";
     }
 
     @GetMapping("/category/create")
@@ -654,7 +654,7 @@ public class EditorController extends AbstractController {
         model.addAttribute("stylesTheme", theme);
         model.addAttribute("stylesSchema", schema);
 
-        return "/2000s/editor-category-create";
+        return "/admin/editor-category-create";
     }
 
     @PostMapping("/category/create")
@@ -673,7 +673,7 @@ public class EditorController extends AbstractController {
         if (itemName == null || itemName.trim().isEmpty()) {
             model.addAttribute("error", "Category Name is required");
             loadCategoryCreatePageWithError(model, accessor);
-            return "/2000s/editor-category-create";
+            return "/admin/editor-category-create";
         }
 
         CategoryData categoryData = new CategoryData();
@@ -691,7 +691,7 @@ public class EditorController extends AbstractController {
             LOGGER.error("Failed to create category: " + e.getMessage(), e);
             model.addAttribute("error", "Failed to create category: " + e.getMessage());
             loadCategoryCreatePageWithError(model, accessor);
-            return "/2000s/editor-category-create";
+            return "/admin/editor-category-create";
         }
 
         response.sendRedirect(request.getContextPath() + "/editor/categories");
@@ -742,7 +742,7 @@ public class EditorController extends AbstractController {
         model.addAttribute("stylesTheme", theme);
         model.addAttribute("stylesSchema", schema);
 
-        return "/2000s/editor-category-edit";
+        return "/admin/editor-category-edit";
     }
 
     @PostMapping("/category/save")
