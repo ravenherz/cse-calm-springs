@@ -72,7 +72,7 @@ public class CalmSpringsEngineApplication extends SpringBootServletInitializer {
 	@Bean
 	public SpringResourceTemplateResolver templateResolver(){
         SpringResourceTemplateResolver templateResolver = new SpringResourceTemplateResolver();
-		templateResolver.setPrefix("classpath:WEB-INF/themes");
+		templateResolver.setPrefix("classpath:WEB-INF/themes/");
 		templateResolver.setSuffix(".html");
 		templateResolver.setTemplateMode(TemplateMode.HTML);
 		templateResolver.setCacheable(true);
@@ -80,9 +80,20 @@ public class CalmSpringsEngineApplication extends SpringBootServletInitializer {
 	}
 
 	@Bean
+	public SpringResourceTemplateResolver fragmentTemplateResolver(){
+        SpringResourceTemplateResolver fragmentResolver = new SpringResourceTemplateResolver();
+		fragmentResolver.setPrefix("classpath:WEB-INF/themes/fragments/");
+		fragmentResolver.setSuffix(".html");
+		fragmentResolver.setTemplateMode(TemplateMode.HTML);
+		fragmentResolver.setCacheable(false);
+		return fragmentResolver;
+	}
+
+	@Bean
 	public SpringTemplateEngine templateEngine(){
 		SpringTemplateEngine templateEngine = new SpringTemplateEngine();
 		templateEngine.setTemplateResolver(templateResolver());
+		templateEngine.addTemplateResolver(fragmentTemplateResolver());
 		templateEngine.setEnableSpringELCompiler(true);
 		return templateEngine;
 	}
