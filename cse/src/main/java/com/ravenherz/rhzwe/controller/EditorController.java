@@ -8,7 +8,9 @@ import com.ravenherz.rhzwe.dal.dto.DataChunkEntity;
 import com.ravenherz.rhzwe.dal.dto.ItemEntity;
 import com.ravenherz.rhzwe.dal.dto.CategoryEntity;
 import com.ravenherz.rhzwe.dal.dto.ResourceEntity;
+import com.ravenherz.rhzwe.dal.dto.ResourceGroupEntity;
 import com.ravenherz.rhzwe.dal.dto.basic.AccountDisplayDTO;
+import com.ravenherz.rhzwe.dal.dto.basic.ResourceGroupDisplayDTO;
 import com.ravenherz.rhzwe.dal.dto.basic.CategoryData;
 import com.ravenherz.rhzwe.dal.dto.basic.PageData;
 import com.ravenherz.rhzwe.dal.dto.basic.ResourceData;
@@ -425,13 +427,45 @@ public class EditorController extends AbstractController {
 
         try {
             List<BasicEntity> allResources = serviceProvider.getResourceService().getAll();
+            List<ResourceEntity> resources = new ArrayList<>();
             if (allResources != null) {
-                List<ResourceEntity> resources = allResources.stream()
+                resources = allResources.stream()
                         .filter(r -> r instanceof ResourceEntity)
                         .map(r -> (ResourceEntity) r)
                         .collect(Collectors.toList());
                 model.addAttribute("resources", resources);
             }
+            
+            List<ResourceGroupEntity> allGroups = serviceProvider.getResourceGroupService().getAllGroups();
+            List<ResourceGroupDisplayDTO> groupedResourceGroups = new ArrayList<>();
+            
+            for (ResourceGroupEntity group : allGroups) {
+                List<ResourceEntity> groupResources = resources.stream()
+                        .filter(r -> r.getRefResourceGroup() != null && r.getRefResourceGroup().getId().equals(group.getId()))
+                        .collect(Collectors.toList());
+                
+                ResourceGroupDisplayDTO dto = new ResourceGroupDisplayDTO();
+                dto.setId(group.getId().toString());
+                dto.setHumanReadableId(group.getResourceGroupData().getHumanReadableId());
+                dto.setResources(groupResources);
+                long totalSize = groupResources.stream().mapToLong(r -> r.getResourceData().getSizeInBytes()).sum();
+                dto.setTotalSize(totalSize);
+                groupedResourceGroups.add(dto);
+            }
+            
+            List<ResourceEntity> ungroupedResources = resources.stream()
+                    .filter(r -> r.getRefResourceGroup() == null)
+                    .collect(Collectors.toList());
+            
+            ResourceGroupDisplayDTO ungroupedDTO = new ResourceGroupDisplayDTO();
+            ungroupedDTO.setId("ungrouped");
+            ungroupedDTO.setHumanReadableId("Ungrouped");
+            ungroupedDTO.setResources(ungroupedResources);
+            long ungroupedSize = ungroupedResources.stream().mapToLong(r -> r.getResourceData().getSizeInBytes()).sum();
+            ungroupedDTO.setTotalSize(ungroupedSize);
+            groupedResourceGroups.add(ungroupedDTO);
+            
+            model.addAttribute("resourceGroups", groupedResourceGroups);
         } catch (Exception e) {
             LOGGER.error("Failed to load resources: " + e.getMessage(), e);
         }
@@ -564,16 +598,128 @@ public class EditorController extends AbstractController {
         return null;
     }
 
+    @PostMapping("/resources/assign-group")
+    public String assignResourceToGroup(@RequestParam("resourceId") String resourceId,
+                                        @RequestParam(value = "groupId", required = false) String groupId,
+                                        Model model, HttpServletRequest request, HttpServletResponse response) throws IOException {
+        AccountEntity accessor = getAccessor(request, response);
+        if (accessor == null) {
+            response.sendRedirect(request.getContextPath() + "/?error=401");
+            return null;
+        }
+
+        if (resourceId == null || resourceId.trim().isEmpty()) {
+            response.sendRedirect(request.getContextPath() + "/editor/resources");
+            return null;
+        }
+
+        try {
+            org.bson.types.ObjectId objId = new org.bson.types.ObjectId(resourceId.trim());
+            ResourceEntity resource = (ResourceEntity) serviceProvider.getResourceService().getById(ResourceEntity.class, objId);
+            
+            if (resource != null) {
+                if (groupId == null || groupId.trim().isEmpty()) {
+                    resource.setRefResourceGroup(null);
+                } else {
+                    org.bson.types.ObjectId groupObjId = new org.bson.types.ObjectId(groupId.trim());
+                    ResourceGroupEntity group = (ResourceGroupEntity) serviceProvider.getResourceGroupService().getById(ResourceGroupEntity.class, groupObjId);
+                    resource.setRefResourceGroup(group);
+                }
+                serviceProvider.getResourceService().replace(resource);
+            }
+        } catch (Exception e) {
+            LOGGER.error("Failed to assign resource to group: " + e.getMessage(), e);
+        }
+
+        response.sendRedirect(request.getContextPath() + "/editor/resources");
+        return null;
+    }
+
+    @PostMapping("/resources/group/delete")
+    public String deleteResourceGroup(@RequestParam("groupId") String groupId,
+                                       Model model, HttpServletRequest request, HttpServletResponse response) throws IOException {
+        AccountEntity accessor = getAccessor(request, response);
+        if (accessor == null) {
+            response.sendRedirect(request.getContextPath() + "/?error=401");
+            return null;
+        }
+
+        if (groupId == null || groupId.trim().isEmpty() || groupId.equals("ungrouped")) {
+            response.sendRedirect(request.getContextPath() + "/editor/resources");
+            return null;
+        }
+
+        try {
+            org.bson.types.ObjectId groupObjId = new org.bson.types.ObjectId(groupId.trim());
+            ResourceGroupEntity group = (ResourceGroupEntity) serviceProvider.getResourceGroupService().getById(ResourceGroupEntity.class, groupObjId);
+            
+            if (group != null) {
+                List<BasicEntity> allResources = serviceProvider.getResourceService().getAll();
+                List<ResourceEntity> resourcesInGroup = allResources.stream()
+                        .filter(r -> r instanceof ResourceEntity)
+                        .map(r -> (ResourceEntity) r)
+                        .filter(r -> r.getRefResourceGroup() != null && r.getRefResourceGroup().getId().equals(group.getId()))
+                        .collect(Collectors.toList());
+
+                for (ResourceEntity resource : resourcesInGroup) {
+                    String pathPublic = resource.getResourceData().getPathPublic();
+                    if (pathPublic != null) {
+                        serviceProvider.getResourceService().deleteByPublicPath(pathPublic);
+                    }
+                }
+
+                serviceProvider.getResourceGroupService().delete(group);
+            }
+        } catch (Exception e) {
+            LOGGER.error("Failed to delete resource group: " + e.getMessage(), e);
+        }
+
+        response.sendRedirect(request.getContextPath() + "/editor/resources");
+        return null;
+    }
+
     private String loadResourcesWithError(Model model, AccountEntity accessor) {
         try {
             List<BasicEntity> allResources = serviceProvider.getResourceService().getAll();
+            List<ResourceEntity> resources = new ArrayList<>();
             if (allResources != null) {
-                List<ResourceEntity> resources = allResources.stream()
+                resources = allResources.stream()
                         .filter(r -> r instanceof ResourceEntity)
                         .map(r -> (ResourceEntity) r)
                         .collect(Collectors.toList());
                 model.addAttribute("resources", resources);
             }
+            
+            List<ResourceGroupEntity> allGroups = serviceProvider.getResourceGroupService().getAllGroups();
+            List<ResourceGroupDisplayDTO> groupedResourceGroups = new ArrayList<>();
+            
+            for (ResourceGroupEntity group : allGroups) {
+                List<ResourceEntity> groupResources = resources.stream()
+                        .filter(r -> r.getRefResourceGroup() != null && r.getRefResourceGroup().getId().equals(group.getId()))
+                        .collect(Collectors.toList());
+                
+                ResourceGroupDisplayDTO dto = new ResourceGroupDisplayDTO();
+                dto.setId(group.getId().toString());
+                dto.setHumanReadableId(group.getResourceGroupData().getHumanReadableId());
+                dto.setResources(groupResources);
+                long totalSize = groupResources.stream().mapToLong(r -> r.getResourceData().getSizeInBytes()).sum();
+                dto.setTotalSize(totalSize);
+                groupedResourceGroups.add(dto);
+            }
+            
+            List<ResourceEntity> ungroupedResources = resources.stream()
+                    .filter(r -> r.getRefResourceGroup() == null)
+                    .collect(Collectors.toList());
+            
+            ResourceGroupDisplayDTO ungroupedDTO = new ResourceGroupDisplayDTO();
+            ungroupedDTO.setId("ungrouped");
+            ungroupedDTO.setHumanReadableId("Ungrouped");
+            ungroupedDTO.setResources(ungroupedResources);
+            long ungroupedSize = ungroupedResources.stream().mapToLong(r -> r.getResourceData().getSizeInBytes()).sum();
+            ungroupedDTO.setTotalSize(ungroupedSize);
+            groupedResourceGroups.add(ungroupedDTO);
+            
+            model.addAttribute("resourceGroups", groupedResourceGroups);
         } catch (Exception e) {
             LOGGER.error("Failed to load resources: " + e.getMessage(), e);
         }

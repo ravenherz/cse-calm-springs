@@ -4,6 +4,7 @@ import com.ravenherz.rhzwe.dal.dao.AccountService;
 import com.ravenherz.rhzwe.dal.dao.CategoryService;
 import com.ravenherz.rhzwe.dal.dao.ItemService;
 import com.ravenherz.rhzwe.dal.dao.ResourceService;
+import com.ravenherz.rhzwe.dal.dao.ResourceGroupService;
 
 public interface ServiceProvider {
 
@@ -14,4 +15,6 @@ public interface ServiceProvider {
     AccountService getAccountService();
 
     ResourceService getResourceService();
+
+    ResourceGroupService getResourceGroupService();
 }

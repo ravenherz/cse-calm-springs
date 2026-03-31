@@ -3,6 +3,8 @@ package com.ravenherz.rhzwe.dal.dto;
 import com.ravenherz.rhzwe.constants.Strings;
 import com.ravenherz.rhzwe.dal.dto.basic.ResourceData;
 import dev.morphia.annotations.Entity;
+import dev.morphia.annotations.Reference;
+import org.bson.types.ObjectId;
 
 import java.util.Base64;
 import java.util.Objects;
@@ -11,6 +13,9 @@ import java.util.Objects;
 public final class ResourceEntity extends BasicEntity {
 
     ResourceData resourceData;
+
+    @Reference
+    private ResourceGroupEntity refResourceGroup;
 
     public ResourceEntity () {
 
@@ -28,6 +33,18 @@ public final class ResourceEntity extends BasicEntity {
 
     public void setResourceData(ResourceData resourceData) {
         this.resourceData = resourceData;
+    }
+
+    public ResourceGroupEntity getRefResourceGroup() {
+        return refResourceGroup;
+    }
+
+    public void setRefResourceGroup(ResourceGroupEntity refResourceGroup) {
+        this.refResourceGroup = refResourceGroup;
+    }
+
+    public String getRefResourceGroupId() {
+        return refResourceGroup != null ? refResourceGroup.getId().toString() : null;
     }
 
     public byte[] getRawBytes() {
