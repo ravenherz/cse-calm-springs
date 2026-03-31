@@ -9,6 +9,7 @@ import com.ravenherz.rhzwe.dal.dto.ItemEntity;
 import com.ravenherz.rhzwe.dal.dto.CategoryEntity;
 import com.ravenherz.rhzwe.dal.dto.ResourceEntity;
 import com.ravenherz.rhzwe.dal.dto.ResourceGroupEntity;
+import com.ravenherz.rhzwe.dal.dto.basic.ResourceGroupData;
 import com.ravenherz.rhzwe.dal.dto.basic.AccountDisplayDTO;
 import com.ravenherz.rhzwe.dal.dto.basic.ResourceGroupDisplayDTO;
 import com.ravenherz.rhzwe.dal.dto.basic.CategoryData;
@@ -672,6 +673,45 @@ public class EditorController extends AbstractController {
             }
         } catch (Exception e) {
             LOGGER.error("Failed to delete resource group: " + e.getMessage(), e);
+        }
+
+        response.sendRedirect(request.getContextPath() + "/editor/resources");
+        return null;
+    }
+
+    @PostMapping("/resources/group/create")
+    public String createResourceGroup(@RequestParam("humanReadableId") String humanReadableId,
+                                       Model model, HttpServletRequest request, HttpServletResponse response) throws IOException {
+        AccountEntity accessor = getAccessor(request, response);
+        if (accessor == null) {
+            response.sendRedirect(request.getContextPath() + "/?error=401");
+            return null;
+        }
+
+        if (humanReadableId == null || humanReadableId.trim().isEmpty()) {
+            response.sendRedirect(request.getContextPath() + "/editor/resources");
+            return null;
+        }
+
+        try {
+            List<ResourceGroupEntity> existingGroups = serviceProvider.getResourceGroupService().getAllGroups();
+            boolean idExists = existingGroups.stream()
+                    .anyMatch(g -> g.getResourceGroupData().getHumanReadableId() != null 
+                                   && g.getResourceGroupData().getHumanReadableId().equalsIgnoreCase(humanReadableId.trim()));
+            
+            if (idExists) {
+                LOGGER.warn("Resource group with ID '{}' already exists", humanReadableId);
+                response.sendRedirect(request.getContextPath() + "/editor/resources?error=group_exists");
+                return null;
+            }
+
+            ResourceGroupData groupData = new ResourceGroupData();
+            groupData.setHumanReadableId(humanReadableId.trim());
+            
+            ResourceGroupEntity newGroup = new ResourceGroupEntity(groupData, accessor);
+            serviceProvider.getResourceGroupService().insert(newGroup);
+        } catch (Exception e) {
+            LOGGER.error("Failed to create resource group: " + e.getMessage(), e);
         }
 
         response.sendRedirect(request.getContextPath() + "/editor/resources");

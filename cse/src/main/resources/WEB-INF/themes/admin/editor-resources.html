@@ -10,20 +10,33 @@
     <div th:replace="~{fragments/shared :: shared-editor-nav}"></div>
 
     <div class="upload-section">
-      <h3>Upload New Resource</h3>
-      <form th:action="@{/editor/resources/upload}" method="post" enctype="multipart/form-data" class="upload-form">
-        <div class="form-group flex-1">
-          <label>File</label>
-          <div class="drop-zone" id="dropZone">
-            <span class="drop-zone-text">Click to select or drag and drop file (jpg, png, mp3)</span>
-            <input type="file" id="file" name="file" accept=".jpg,.jpeg,.png,.mp3" required/>
+      <div class="upload-form-container">
+        <h3>Upload New Resource</h3>
+        <form th:action="@{/editor/resources/upload}" method="post" enctype="multipart/form-data" class="upload-form">
+          <div class="form-group flex-1">
+            <label>File</label>
+            <div class="drop-zone" id="dropZone">
+              <span class="drop-zone-text">Click to select or drag and drop file (jpg, png, mp3)</span>
+              <input type="file" id="file" name="file" accept=".jpg,.jpeg,.png,.mp3" required/>
+            </div>
+            <label for="resourceId">Resource ID</label>
+            <input type="text" id="resourceId" name="resourceId" placeholder="my-picture" required/>
+            <input type="hidden" id="metadata" name="metadata"/>
+            <button type="submit" class="btn btn-secondary">Upload</button>
           </div>
-          <label for="resourceId">Resource ID</label>
-          <input type="text" id="resourceId" name="resourceId" placeholder="my-picture" required/>
-          <input type="hidden" id="metadata" name="metadata"/>
-          <button type="submit" class="btn btn-secondary">Upload</button>
-        </div>
-      </form>
+        </form>
+      </div>
+      
+      <div class="upload-form-container">
+        <h3>Create New Resource Group</h3>
+        <form th:action="@{/editor/resources/group/create}" method="post" class="upload-form">
+          <div class="form-group flex-1">
+            <label for="humanReadableId">HUMAN READABLE ID</label>
+            <input type="text" id="humanReadableId" name="humanReadableId" placeholder="My Group" required/>
+            <button type="submit" class="btn btn-secondary">Create</button>
+          </div>
+        </form>
+      </div>
     </div>
 
     <div th:if="${error}" class="error-message" th:text="${error}">
