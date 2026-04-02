@@ -4,12 +4,10 @@
 <head th:replace="~{fragments/shared :: shared-head}">
 </head>
 <body>
-  <div class="editor-wrapper">
-    <div th:replace="~{fragments/shared :: shared-editor-header}"></div>
-
-    <div th:replace="~{fragments/shared :: shared-editor-nav}"></div>
-
-    <div class="upload-section">
+  <div class="editor-layout">
+    <aside class="editor-sidebar" th:replace="~{fragments/shared :: shared-editor-sidebar}"></aside>
+    <main class="editor-main">
+      <div class="upload-section">
       <div class="upload-form-container">
         <h3>Upload New Resource</h3>
         <form th:action="@{/editor/resources/upload}" method="post" enctype="multipart/form-data" class="upload-form">

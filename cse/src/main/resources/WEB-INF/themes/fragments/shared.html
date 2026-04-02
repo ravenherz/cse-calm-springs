@@ -17,15 +17,20 @@
             src="//code.jquery.com/jquery-3.6.0.min.js"></script>
 </head>
 <body>
-    <div class="editor-header" th:fragment="shared-editor-header">
-        <h1>Admin console</h1>
-        <a th:href="@{/}" class="btn btn-secondary">Back to website</a>
-    </div>
-    <div class="editor-nav" th:fragment="shared-editor-nav">
-        <a th:href="@{/editor/resources}">Resources</a>
-        <a th:href="@{/editor/categories}">Categories</a>
-        <a th:href="@{/editor/pages}">Pages</a>
-        <a th:href="@{/editor/accounts}">Accounts</a>
+    <div class="editor-layout">
+        <aside class="editor-sidebar" th:fragment="shared-editor-sidebar">
+            <h1>Admin console</h1>
+            <nav class="editor-nav" th:fragment="shared-editor-nav">
+                <a th:href="@{/editor/resources}">Resources</a>
+                <a th:href="@{/editor/categories}">Categories</a>
+                <a th:href="@{/editor/pages}">Pages</a>
+                <a th:href="@{/editor/accounts}">Accounts</a>
+            </nav>
+            <a th:href="@{/}" class="back-link">Back to website</a>
+        </aside>
+        <main class="editor-main">
+            <!-- Page content goes here -->
+        </main>
     </div>
 </body>
 </html>

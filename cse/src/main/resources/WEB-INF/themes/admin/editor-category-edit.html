@@ -4,12 +4,10 @@
 <head th:replace="~{fragments/shared :: shared-head}">
 </head>
 <body>
-  <div class="editor-wrapper">
-    <div th:replace="~{fragments/shared :: shared-editor-header}"></div>
-
-    <div th:replace="~{fragments/shared :: shared-editor-nav}"></div>
-    
-    <form th:action="@{/editor/category/save}" method="post">
+  <div class="editor-layout">
+    <aside class="editor-sidebar" th:replace="~{fragments/shared :: shared-editor-sidebar}"></aside>
+    <main class="editor-main">
+      <form th:action="@{/editor/category/save}" method="post">
       <input type="hidden" name="id" th:value="${category.id}"/>
       
       <div class="form-group">
@@ -46,6 +44,7 @@
         <button type="submit" class="btn btn-secondary">Save</button>
       </div>
     </form>
+  </main>
   </div>
 </body>
 </html>

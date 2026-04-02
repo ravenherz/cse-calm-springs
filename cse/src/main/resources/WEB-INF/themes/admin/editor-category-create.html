@@ -4,11 +4,10 @@
 <head th:replace="~{fragments/shared :: shared-head}">
 </head>
 <body>
-  <div class="editor-wrapper">
-    <div th:replace="~{fragments/shared :: shared-editor-header}"></div>
-    <div th:replace="~{fragments/shared :: shared-editor-nav}"></div>
-
-    <div th:if="${error}" class="error-message" th:text="${error}">
+  <div class="editor-layout">
+    <aside class="editor-sidebar" th:replace="~{fragments/shared :: shared-editor-sidebar}"></aside>
+    <main class="editor-main">
+      <div th:if="${error}" class="error-message" th:text="${error}">
       Error message
     </div>
     <form th:action="@{/editor/category/create}" method="post">
@@ -42,6 +41,7 @@
         <button type="submit" class="btn btn-secondary">Create Category</button>
       </div>
     </form>
+  </main>
   </div>
 </body>
 </html>
