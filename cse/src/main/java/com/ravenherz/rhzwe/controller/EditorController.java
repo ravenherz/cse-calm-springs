@@ -40,6 +40,8 @@ import java.util.stream.Collectors;
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
 
+import org.springframework.beans.factory.annotation.Autowired;
+
 import static com.ravenherz.rhzwe.dal.dto.basic.enums.ResourceType.IMAGE;
 
 @Controller
@@ -47,6 +49,9 @@ import static com.ravenherz.rhzwe.dal.dto.basic.enums.ResourceType.IMAGE;
 public class EditorController extends AbstractController {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(EditorController.class);
+
+    @Autowired
+    private ContentProtectedAndCacheController contentCacheController;
 
     @GetMapping
     public String listPagesRedirect(HttpServletRequest request, HttpServletResponse response) throws IOException {
@@ -588,7 +593,15 @@ public class EditorController extends AbstractController {
 
         LOGGER.info("Deleting resource: " + pathPublic + " with id: " + existing.getId());
         try {
+            List<ItemEntity> itemsWithRefImage = serviceProvider.getItemService().getAllByRefImage(existing);
+            for (ItemEntity item : itemsWithRefImage) {
+                item.getPageData().setRefImage(null);
+                serviceProvider.getItemService().replace(item);
+                LOGGER.info("Cleared refImage on item: " + item.getUniqueUriName());
+            }
+
             serviceProvider.getResourceService().deleteByPublicPath(pathPublic);
+            contentCacheController.invalidateCacheForResource(pathPublic);
         } catch (Exception e) {
             LOGGER.error("Failed to delete resource: " + e.getMessage(), e);
             model.addAttribute("error", "Failed to delete resource");
@@ -599,7 +612,7 @@ public class EditorController extends AbstractController {
         return null;
     }
 
-    @PostMapping("/resources/assign-group")
+    @PostMapping("/resources/group/assign")
     public String assignResourceToGroup(@RequestParam("resourceId") String resourceId,
                                         @RequestParam(value = "groupId", required = false) String groupId,
                                         Model model, HttpServletRequest request, HttpServletResponse response) throws IOException {
@@ -666,6 +679,7 @@ public class EditorController extends AbstractController {
                     String pathPublic = resource.getResourceData().getPathPublic();
                     if (pathPublic != null) {
                         serviceProvider.getResourceService().deleteByPublicPath(pathPublic);
+                        contentCacheController.invalidateCacheForResource(pathPublic);
                     }
                 }
 

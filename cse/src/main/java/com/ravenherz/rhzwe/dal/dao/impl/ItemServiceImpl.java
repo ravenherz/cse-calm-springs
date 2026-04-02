@@ -5,6 +5,7 @@ import com.ravenherz.rhzwe.dal.dao.ItemService;
 import com.ravenherz.rhzwe.dal.dto.BasicEntity;
 import com.ravenherz.rhzwe.dal.dto.CategoryEntity;
 import com.ravenherz.rhzwe.dal.dto.ItemEntity;
+import com.ravenherz.rhzwe.dal.dto.ResourceEntity;
 import dev.morphia.aggregation.expressions.impls.Expression;
 import dev.morphia.query.Query;
 import dev.morphia.query.filters.Filters;
@@ -52,6 +53,14 @@ public class ItemServiceImpl extends BasicService implements ItemService {
         if (item != null) {
             dataProvider.getDatastore().delete(item);
         }
+    }
+
+    @Override
+    public List<ItemEntity> getAllByRefImage(ResourceEntity resource) {
+        return getPageEntities()
+                .filter(Filters.eq("pageData.refImage", resource))
+                .stream()
+                .collect(Collectors.toList());
     }
 
     private Query<ItemEntity> getPageEntities() {

@@ -74,7 +74,7 @@
                   </span>
                   <div class="path" th:text="${resource.resourceData.pathPublic}">/path</div>
                   <div class="resource-group-selector">
-                    <form th:action="@{/editor/resources/assign-group}" method="post">
+                    <form th:action="@{/editor/resources/group/assign}" method="post">
                       <input type="hidden" name="resourceId" th:value="${resource.id}"/>
                       <select name="groupId" onchange="this.form.submit()">
                         <option value="">No Group</option>
@@ -126,7 +126,7 @@
                   </span>
                   <div class="path" th:text="${resource.resourceData.pathPublic}">/path</div>
                   <div class="resource-group-selector">
-                    <form th:action="@{/editor/resources/assign-group}" method="post">
+                    <form th:action="@{/editor/resources/group/assign}" method="post">
                       <input type="hidden" name="resourceId" th:value="${resource.id}"/>
                       <select name="groupId" onchange="this.form.submit()">
                         <option value="">No Group</option>
