@@ -39,7 +39,7 @@ body { margin: 0; padding: 0; background: var(--bg-primary); color: var(--text-p
 .editor-sidebar .back-link:hover { color: var(--text-white); }
 
 .editor-nav { display: flex; flex-direction: column; gap: 5px; flex: 1; }
-.editor-nav a { color: var(--text-secondary); text-decoration: none; padding: 10px 15px; background: var(--bg-tertiary); border: 1px solid var(--border-default); border-radius: 4px; display: flex; align-items: center; gap: 10px; }
+.editor-nav a { color: var(--text-secondary); text-decoration: none; padding: 10px 15px; background: var(--bg-tertiary); border: 1px solid var(--border-default); display: flex; align-items: center; gap: 10px; }
 .editor-nav a:hover { color: var(--text-primary); border-color: var(--border-hover); }
 .editor-nav a.active { color: var(--text-white); background: var(--bg-tertiary); border-color: var(--border-hover); }
 .editor-nav .nav-icon, .editor-sidebar .back-link .nav-icon { width: 18px; height: 18px; flex-shrink: 0; }
