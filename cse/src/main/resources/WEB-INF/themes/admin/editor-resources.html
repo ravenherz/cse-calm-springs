@@ -1,0 +1,239 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html xmlns:th="http://www.w3.org/1999/xhtml" lang="en">
+<head th:replace="~{fragments/shared :: shared-head}">
+</head>
+<body>
+  <div class="editor-wrapper">
+    <div th:replace="~{fragments/shared :: shared-editor-header}"></div>
+
+    <div th:replace="~{fragments/shared :: shared-editor-nav}"></div>
+
+    <div class="upload-section">
+      <div class="upload-form-container">
+        <h3>Upload New Resource</h3>
+        <form th:action="@{/editor/resources/upload}" method="post" enctype="multipart/form-data" class="upload-form">
+          <div class="form-group flex-1">
+            <label>File</label>
+            <div class="drop-zone" id="dropZone">
+              <span class="drop-zone-text">Click to select or drag and drop file (jpg, png, mp3)</span>
+              <input type="file" id="file" name="file" accept=".jpg,.jpeg,.png,.mp3" required/>
+            </div>
+            <label for="resourceId">Resource ID</label>
+            <input type="text" id="resourceId" name="resourceId" placeholder="my-picture" required/>
+            <input type="hidden" id="metadata" name="metadata"/>
+            <button type="submit" class="btn btn-secondary">Upload</button>
+          </div>
+        </form>
+      </div>
+      
+      <div class="upload-form-container">
+        <h3>Create New Resource Group</h3>
+        <form th:action="@{/editor/resources/group/create}" method="post" class="upload-form">
+          <div class="form-group flex-1">
+            <label for="humanReadableId">HUMAN READABLE ID</label>
+            <input type="text" id="humanReadableId" name="humanReadableId" placeholder="My Group" required/>
+            <button type="submit" class="btn btn-secondary">Create</button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <div th:if="${error}" class="error-message" th:text="${error}">
+      Error message
+    </div>
+    
+    <div class="resource-groups">
+      <th:block th:each="group : ${resourceGroups}">
+        <div class="resource-group collapsed" th:id="${'group-' + group.id}" th:if="${group.id != 'ungrouped'}">
+          <div class="resource-group-header" onclick="toggleGroup(this)">
+            <span class="group-toggle">&#9658;</span>
+            <span class="group-title" th:text="${group.humanReadableId}">Group Name</span>
+            <span class="group-summary">
+              <span th:text="${#lists.size(group.resources)}">0</span> resources, 
+              <span th:text="${group.totalSize}">0</span> bytes
+            </span>
+            <form th:action="@{/editor/resources/group/delete}" method="post" class="group-delete-form">
+              <input type="hidden" name="groupId" th:value="${group.id}"/>
+              <button type="submit" class="delete-btn" onclick="return confirm('Delete this group and all its resources?')">Delete</button>
+            </form>
+          </div>
+          <div class="resource-group-content">
+            <div class="resources-grid">
+              <div th:each="resource : ${group.resources}" class="resource-card">
+                <img th:if="${resource.resourceData.type.name() == 'IMAGE'}"
+                     th:src="@{/content-protected{path}(path=${resource.resourceData.pathPublic})}"
+                     alt="Resource preview"/>
+                <div th:unless="${resource.resourceData.type.name() == 'IMAGE'}" 
+                     class="audio-placeholder">Audio</div>
+                <div class="resource-info">
+                  <span class="type" th:text="${resource.resourceData.type.name()}">TYPE</span>
+                  <span class="size" th:text="${resource.resourceData.sizeInBytes + ' bytes'}">0 bytes</span>
+                  <span th:if="${resource.resourceData.largeFile}" class="chunk-badge">
+                    <span class="chunk-info">
+                      <span th:text="${resource.resourceData.dataChunkIds.size() + ' chunks'}">0 chunks</span>
+                    </span>
+                  </span>
+                  <div class="path" th:text="${resource.resourceData.pathPublic}">/path</div>
+                  <div class="resource-group-selector">
+                    <form th:action="@{/editor/resources/assign-group}" method="post">
+                      <input type="hidden" name="resourceId" th:value="${resource.id}"/>
+                      <select name="groupId" onchange="this.form.submit()">
+                        <option value="">No Group</option>
+                        <th:block th:each="g : ${resourceGroups}">
+                          <option th:if="${g.id != 'ungrouped'}" 
+                                  th:value="${g.id}" 
+                                  th:text="${g.humanReadableId}"
+                                  th:selected="${resource.refResourceGroup != null and resource.refResourceGroup.id.toString() == g.id}">Group</option>
+                        </th:block>
+                      </select>
+                    </form>
+                  </div>
+                  <form th:action="@{/editor/resources/delete}" method="post" class="resource-form">
+                    <input type="hidden" name="pathPublic" th:value="${resource.resourceData.pathPublic}"/>
+                    <button type="submit" class="btn-delete" onclick="return confirm('Delete this resource?')">Delete</button>
+                  </form>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </th:block>
+      
+      <th:block th:each="group : ${resourceGroups}">
+        <div class="resource-group" th:if="${group.id == 'ungrouped'}">
+          <div class="resource-group-header" onclick="toggleGroup(this)">
+            <span class="group-toggle">&#9660;</span>
+            <span class="group-title" th:text="${group.humanReadableId}">Ungrouped</span>
+            <span class="group-summary">
+              <span th:text="${#lists.size(group.resources)}">0</span> resources, 
+              <span th:text="${group.totalSize}">0</span> bytes
+            </span>
+          </div>
+          <div class="resource-group-content">
+            <div class="resources-grid">
+              <div th:each="resource : ${group.resources}" class="resource-card">
+                <img th:if="${resource.resourceData.type.name() == 'IMAGE'}"
+                     th:src="@{/content-protected{path}(path=${resource.resourceData.pathPublic})}"
+                     alt="Resource preview"/>
+                <div th:unless="${resource.resourceData.type.name() == 'IMAGE'}" 
+                     class="audio-placeholder">Audio</div>
+                <div class="resource-info">
+                  <span class="type" th:text="${resource.resourceData.type.name()}">TYPE</span>
+                  <span class="size" th:text="${resource.resourceData.sizeInBytes + ' bytes'}">0 bytes</span>
+                  <span th:if="${resource.resourceData.largeFile}" class="chunk-badge">
+                    <span class="chunk-info">
+                      <span th:text="${resource.resourceData.dataChunkIds.size() + ' chunks'}">0 chunks</span>
+                    </span>
+                  </span>
+                  <div class="path" th:text="${resource.resourceData.pathPublic}">/path</div>
+                  <div class="resource-group-selector">
+                    <form th:action="@{/editor/resources/assign-group}" method="post">
+                      <input type="hidden" name="resourceId" th:value="${resource.id}"/>
+                      <select name="groupId" onchange="this.form.submit()">
+                        <option value="">No Group</option>
+                        <th:block th:each="g : ${resourceGroups}">
+                          <option th:if="${g.id != 'ungrouped'}" 
+                                  th:value="${g.id}" 
+                                  th:text="${g.humanReadableId}"
+                                  th:selected="${resource.refResourceGroup != null and resource.refResourceGroup.id.toString() == g.id}">Group</option>
+                        </th:block>
+                      </select>
+                    </form>
+                  </div>
+                  <form th:action="@{/editor/resources/delete}" method="post" class="resource-form">
+                    <input type="hidden" name="pathPublic" th:value="${resource.resourceData.pathPublic}"/>
+                    <button type="submit" class="btn-delete" onclick="return confirm('Delete this resource?')">Delete</button>
+                  </form>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </th:block>
+    </div>
+    
+    <div th:if="${#lists.isEmpty(resourceGroups)}" class="empty-message">
+      No resources uploaded yet.
+    </div>
+  </div>
+
+  <script>
+    var dropZone = document.getElementById('dropZone');
+    var fileInput = document.getElementById('file');
+    var resourceIdInput = document.getElementById('resourceId');
+
+    dropZone.addEventListener('click', function() {
+      fileInput.click();
+    });
+
+    dropZone.addEventListener('dragover', function(e) {
+      e.preventDefault();
+      dropZone.classList.add('dragover');
+    });
+
+    dropZone.addEventListener('dragleave', function() {
+      dropZone.classList.remove('dragover');
+    });
+
+    dropZone.addEventListener('drop', function(e) {
+      e.preventDefault();
+      dropZone.classList.remove('dragover');
+      if (e.dataTransfer.files.length > 0) {
+        fileInput.files = e.dataTransfer.files;
+        handleFileSelect(e.dataTransfer.files[0]);
+      }
+    });
+
+    fileInput.addEventListener('change', function() {
+      if (this.files.length > 0) {
+        handleFileSelect(this.files[0]);
+      }
+    });
+
+    function handleFileSelect(file) {
+      var fileName = file.name;
+      var lastDot = fileName.lastIndexOf('.');
+      if (lastDot > 0) {
+        var baseName = fileName.substring(0, lastDot);
+        baseName = baseName.toLowerCase().replace(/[^a-z0-9-]/g, '_');
+        resourceIdInput.value = baseName;
+      }
+      extractMetadata(file);
+    }
+
+    function extractMetadata(file) {
+      var metadata = {};
+      var extension = file.name.split('.').pop().toLowerCase();
+      var fileUrl = URL.createObjectURL(file);
+
+      if (['jpg', 'jpeg', 'png'].indexOf(extension) !== -1) {
+        var img = new Image();
+        img.onload = function() {
+          metadata.width = this.width;
+          metadata.height = this.height;
+          document.getElementById('metadata').value = JSON.stringify(metadata);
+          URL.revokeObjectURL(fileUrl);
+        };
+        img.src = fileUrl;
+      } else if (['mp3'].indexOf(extension) !== -1) {
+        var audio = new Audio();
+        audio.addEventListener('loadedmetadata', function() {
+          metadata.duration = Math.round(audio.duration);
+          if (file.size && audio.duration) {
+            metadata.bitrate = Math.round((file.size * 8) / audio.duration);
+          }
+          document.getElementById('metadata').value = JSON.stringify(metadata);
+          URL.revokeObjectURL(fileUrl);
+        });
+        audio.src = fileUrl;
+      }
+    }
+
+    function toggleGroup(header) {
+      var group = header.parentElement;
+      group.classList.toggle('collapsed');
+    }
+  </script>
+</body>
+</html>

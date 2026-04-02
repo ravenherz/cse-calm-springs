@@ -14,6 +14,4 @@ public interface Service {
     BasicEntity getById (Class<? extends BasicEntity> entityClass, ObjectId objectId);
 
     boolean replace (BasicEntity entity);
-
-    boolean remove (ObjectId id);
 }

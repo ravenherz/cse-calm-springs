@@ -54,9 +54,4 @@ public abstract class BasicService implements Service {
         BasicEntity t = dataProvider.getDatastore().replace(entity);
         return true; // todo rework
     }
-
-    @Override
-    public boolean remove(ObjectId id) {
-        return false;
-    }
 }

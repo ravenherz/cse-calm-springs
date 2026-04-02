@@ -7,6 +7,7 @@ import com.ravenherz.rhzwe.controller.objects.RestResponse;
 import com.ravenherz.rhzwe.dal.dto.AccountEntity;
 import com.ravenherz.rhzwe.dal.dto.basic.AccountData;
 import com.ravenherz.rhzwe.dal.dto.basic.AccountData.AccountSession;
+import com.ravenherz.rhzwe.util.MarkdownRenderer;
 import com.ravenherz.rhzwe.util.StringUtils;
 import com.ravenherz.rhzwe.util.helpers.HttpErrorHelper;
 import com.ravenherz.rhzwe.util.helpers.HttpErrorHelper.HttpErrorDescription;
@@ -99,6 +100,14 @@ public class RestController extends AbstractController {
         Map<String, String> json = getMapOfJsonBody(body);
         String responseObject = new TagForm().renderTag(json.getOrDefault("form","")).getCode();
         return new RestResponse(200, responseObject, null);
+    }
+
+    @RequestMapping(value = "/rest/markdown/render", method = RequestMethod.POST)
+    public @ResponseBody RestResponse renderMarkdown(@RequestBody String body) {
+        Map<String, String> json = getMapOfJsonBody(body);
+        String markdown = json.getOrDefault("markdown", "");
+        String html = MarkdownRenderer.render(markdown);
+        return new RestResponse(200, html, null);
     }
 
     @RequestMapping(value = "/rest/error", method = RequestMethod.POST)

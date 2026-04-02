@@ -1,0 +1,48 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html xmlns:th="http://www.w3.org/1999/xhtml" lang="en">
+<head th:replace="~{fragments/shared :: shared-head}">
+</head>
+<body>
+  <div class="editor-wrapper">
+    <div th:replace="~{fragments/shared :: shared-editor-header}"></div>
+
+    <div th:replace="~{fragments/shared :: shared-editor-nav}"></div>
+    <div class="editor-nav">
+      <a th:href="@{/editor/create}">+</a>
+    </div>
+
+    <div th:if="${items.empty}" class="empty-message">
+      No editable pages found.
+    </div>
+    
+    <ul class="item-list" th:unless="${items.empty}">
+      <li th:each="item : ${items}">
+        <a th:href="@{/editor/edit(name=${item.uniqueUriName})}" class="item-link">
+          <div class="item-info">
+            <div class="item-title" th:text="${item.pageData?.title}">Page Title</div>
+            <div class="item-meta">
+              <span th:text="${item.uniqueUriName}">uri-name</span>
+              <span th:if="${item.pageData?.tags}">Tags: <span th:text="${#strings.listJoin(item.pageData.tags, ', ')}">tag1, tag2</span></span>
+            </div>
+            <div class="item-meta" th:with="events=${item.historyData.events}">
+              <span th:if="${events != null and events.length > 0}">
+                Created: <span th:text="${#temporals.format(events[0].localDateTime, 'yyyy-MM-dd HH:mm')}">2024-01-01 12:00</span>
+                by <span th:text="${events[0].owner?.accountData?.login}">admin</span>
+              </span>
+              <span th:if="${events != null and events.length > 1}">
+                | Updated: <span th:text="${#temporals.format(events[events.length - 1].localDateTime, 'yyyy-MM-dd HH:mm')}">2024-01-02 12:00</span>
+                by <span th:text="${events[events.length - 1].owner?.accountData?.login}">admin</span>
+              </span>
+            </div>
+          </div>
+        </a>
+        <form th:action="@{/editor/delete}" method="post" class="item-form">
+          <input type="hidden" name="name" th:value="${item.uniqueUriName}"/>
+          <button type="submit" class="delete-btn" onclick="return confirm('Delete this page?')">Delete</button>
+        </form>
+      </li>
+    </ul>
+  </div>
+</body>
+</html>
