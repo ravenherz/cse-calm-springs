@@ -15,7 +15,7 @@ public class HttpErrorHelper {
     public static class HttpErrorDescription {
 
         private final int code;
-        private final String errorClass;
+        private String errorClass;
         private final String name;
         private final String description;
 
@@ -35,11 +35,11 @@ public class HttpErrorHelper {
             this.code = code;
             this.name = name;
             this.description = description;
-            switch ((int) Math.floor(code / 100.f)) {
+            this.errorClass = switch ((int) Math.floor(code / 100.f)) {
                 case 4 -> this.errorClass = "Client error";
                 case 5 -> this.errorClass = "Server error";
                 default -> this.errorClass = "Unknown";
-            }
+            };
         }
     }
 
@@ -47,7 +47,7 @@ public class HttpErrorHelper {
 
     public HttpErrorDescription getHttpErrorDescByCode(int code) {
         return errorDescriptions.getOrDefault(code,
-                new HttpErrorDescription(500, "Void", "Server-side issues"));
+                new HttpErrorDescription(500, "You've reached the void", "Server-side issues"));
     }
 
     public HttpErrorHelper() {
@@ -65,7 +65,7 @@ public class HttpErrorHelper {
         errorDescriptions.put(403, new HttpErrorDescription(
                 403,
                 "Forbidden",
-                "Authentication is required and has failed (not sufficient privilegies)"
+                "Authentication is required and has failed (not sufficient privileges)"
         ));
         errorDescriptions.put(404, new HttpErrorDescription(
                 404,

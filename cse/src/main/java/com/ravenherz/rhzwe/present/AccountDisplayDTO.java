@@ -1,4 +1,4 @@
-package com.ravenherz.rhzwe.dal.dto.basic;
+package com.ravenherz.rhzwe.present;
 
 import java.time.LocalDateTime;
 import java.util.List;
