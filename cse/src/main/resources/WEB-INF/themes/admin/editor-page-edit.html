@@ -4,12 +4,10 @@
 <head th:replace="~{fragments/shared :: shared-head}">
 </head>
 <body>
-  <div class="editor-wrapper">
-    <div th:replace="~{fragments/shared :: shared-editor-header}"></div>
-
-    <div th:replace="~{fragments/shared :: shared-editor-nav}"></div>
-    
-    <form th:action="@{/editor/save}" method="post">
+  <div class="editor-layout">
+    <aside class="editor-sidebar" th:replace="~{fragments/shared :: shared-editor-sidebar}"></aside>
+    <main class="editor-main">
+      <form th:action="@{/editor/save}" method="post">
       <input type="hidden" name="name" th:value="${item.uniqueUriName}"/>
       
       <div class="form-row">
@@ -58,59 +56,7 @@
       
       <div class="editor-actions">
         <button type="submit" class="btn btn-secondary">Save</button>
-      </div>
-    </form>
-    
-    <div class="preview-container">
-      <h3>Preview</h3>
-      <div class="preview-content" id="preview">
-        <th:block th:utext="${item.pageData?.description}"/>
-      </div>
-    </div>
+  </main>
   </div>
-  
-  <script type="text/javascript" th:inline="javascript">
-    function renderMarkdownPreview(markdown, callback) {
-      var pathParts = window.location.pathname.split('/');
-      var basePath = pathParts.length > 1 ? '/' + pathParts[1] : '';
-      $.ajax({
-        url: basePath + '/rest/markdown/render',
-        type: 'POST',
-        contentType: 'application/json',
-        data: JSON.stringify({ markdown: markdown }),
-        dataType: 'json',
-        success: function(response) {
-          console.log('Markdown render response:', response);
-          if (response && response.status === 200) {
-            callback(response.restObject || response.data || response);
-          } else {
-            callback(markdown);
-          }
-        },
-        error: function(xhr, status, error) {
-          console.error('Markdown render error:', error);
-          callback(markdown);
-        }
-      });
-    }
-
-    $(document).ready(function() {
-      var rawContent = /*[[${item.pageData?.description}]]*/ '';
-      var descriptionSelector = $('#description');
-      var previewSelector = $('#preview');
-      if (rawContent) {
-        descriptionSelector.val(rawContent);
-        renderMarkdownPreview(rawContent, function(html) {
-          previewSelector.html(html);
-        });
-      }
-      descriptionSelector.on('input', function() {
-        var markdown = $(this).val();
-        renderMarkdownPreview(markdown, function(html) {
-          previewSelector.html(html);
-        });
-      });
-    });
-  </script>
 </body>
 </html>

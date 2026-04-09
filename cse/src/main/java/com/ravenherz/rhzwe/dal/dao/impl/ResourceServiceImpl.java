@@ -48,29 +48,22 @@ public class ResourceServiceImpl extends BasicService implements ResourceService
     public void deleteByPublicPath(String publicPath) {
         ResourceEntity entity = getByPublicPath(publicPath);
         if (entity != null) {
-            String protectedPath = entity.getResourceData().getPathProtected();
-            String filePath = "/var/cse/content-cache" + protectedPath;
+            String filePath = "/var/cse/content-cache" + entity.getResourceData().getPathProtected();
             java.io.File cacheFile = new java.io.File(filePath);
             if (cacheFile.exists()) {
-                if (cacheFile.delete()) {
-                    LOGGER.info("Deleted cache file: " + filePath);
-                } else {
-                    LOGGER.warn("Failed to delete cache file: " + filePath);
-                }
-            } else {
-                LOGGER.warn("Cache file does not exist: " + filePath);
-            }
-
+                if (cacheFile.delete()) LOGGER.info("Deleted cache file: " + filePath);
+                else LOGGER.warn("Failed to delete cache file: " + filePath);
+            } else LOGGER.warn("Cache file does not exist: " + filePath);
             if (entity.getResourceData().isLargeFile() && entity.getResourceData().getDataChunkIds() != null) {
-                for (ObjectId chunkId : entity.getResourceData().getDataChunkIds()) {
+                entity.getResourceData().getDataChunkIds().forEach(id -> {
                     DataChunkEntity chunk = dataProvider.getDatastore().find(DataChunkEntity.class)
-                            .filter(Filters.eq("id", chunkId))
+                            .filter(Filters.eq("id", id))
                             .first();
                     if (chunk != null) {
                         dataProvider.getDatastore().delete(chunk);
-                        LOGGER.info("Deleted data chunk: " + chunkId);
+                        LOGGER.info("Deleted data chunk: " + id);
                     }
-                }
+                });
             }
 
             dataProvider.getDatastore().delete(entity);

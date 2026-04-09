@@ -1,4 +1,4 @@
-package com.ravenherz.rhzwe.dal.dto.basic;
+package com.ravenherz.rhzwe.present;
 
 import com.ravenherz.rhzwe.dal.dto.ResourceEntity;
 import java.util.List;

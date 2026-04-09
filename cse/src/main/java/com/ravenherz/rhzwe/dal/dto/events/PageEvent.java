@@ -88,7 +88,7 @@ public class PageEvent extends PageData {
             this.imageLinkFull = "./content-protected" + pageData.getRefImage().getResourceData()
                     .getPathPublic();
         } else {
-            this.imageLinkFull = "static/content-public/rhz-we-core/images/no-image.jpg";
+            this.imageLinkFull = "./content-public/rhz-we-core/images/no-image.jpg";
         }
         this.id = id;
         this.categoryItemName = categoryItemName;

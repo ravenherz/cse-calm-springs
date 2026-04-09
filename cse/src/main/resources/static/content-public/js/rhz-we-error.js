@@ -3,7 +3,6 @@ function getErrorDescription() {
     const code = "error";
     let url = new URL(window.location.href);
     let codeValue = url.searchParams.get(code);
-    console.log(codeValue);
     let data = {};
     data[code] = codeValue;
     $.ajax({
@@ -17,10 +16,7 @@ function getErrorDescription() {
             for (var key in data){
                 let name = "errorPage-"+key+"";
                 let elem = document.getElementById(name);
-                let atvl = data[key];
-                console.log(elem);
-                console.log(atvl);
-                elem.innerHTML = atvl;
+                elem.innerHTML = data[key];
             }
         }
     });

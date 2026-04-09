@@ -4,13 +4,12 @@
 <head th:replace="~{fragments/shared :: shared-head}">
 </head>
 <body>
-  <div class="editor-wrapper">
-    <div th:replace="~{fragments/shared :: shared-editor-header}"></div>
-
-    <div th:replace="~{fragments/shared :: shared-editor-nav}"></div>
-    <div class="editor-nav">
-      <a th:href="@{/editor/category/create}">+</a>
-    </div>
+  <div class="editor-layout">
+    <aside class="editor-sidebar" th:replace="~{fragments/shared :: shared-editor-sidebar}"></aside>
+    <main class="editor-main">
+      <div class="editor-nav">
+        <a th:href="@{/editor/category/create}">+</a>
+      </div>
 
     <div th:if="${categories.empty}" class="empty-message">
       No categories found.
@@ -38,6 +37,7 @@
         </form>
       </li>
     </ul>
+  </main>
   </div>
 </body>
 </html>

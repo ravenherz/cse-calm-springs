@@ -17,15 +17,35 @@
             src="//code.jquery.com/jquery-3.6.0.min.js"></script>
 </head>
 <body>
-    <div class="editor-header" th:fragment="shared-editor-header">
-        <h1>Admin console</h1>
-        <a th:href="@{/}" class="btn btn-secondary">Back to website</a>
-    </div>
-    <div class="editor-nav" th:fragment="shared-editor-nav">
-        <a th:href="@{/editor/resources}">Resources</a>
-        <a th:href="@{/editor/categories}">Categories</a>
-        <a th:href="@{/editor/pages}">Pages</a>
-        <a th:href="@{/editor/accounts}">Accounts</a>
+    <div class="editor-layout">
+        <aside class="editor-sidebar" th:fragment="shared-editor-sidebar">
+            <h1>Admin console</h1>
+            <nav class="editor-nav" th:fragment="shared-editor-nav">
+                <a th:href="@{/editor/resources}">
+                    <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>
+                    Resources
+                </a>
+                <a th:href="@{/editor/categories}">
+                    <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>
+                    Categories
+                </a>
+                <a th:href="@{/editor/pages}">
+                    <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+                    Pages
+                </a>
+                <a th:href="@{/editor/accounts}">
+                    <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                    Accounts
+                </a>
+            </nav>
+            <a th:href="@{/}" class="back-link">
+                <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
+                Back to website
+            </a>
+        </aside>
+        <main class="editor-main">
+            <!-- Page content goes here -->
+        </main>
     </div>
 </body>
 </html>

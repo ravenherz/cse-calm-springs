@@ -32,6 +32,8 @@ public interface ItemService extends Service {
 
     List<ItemEntity> getAllByTag(String tag);
 
+    List<ItemEntity> getAllByRefImage(com.ravenherz.rhzwe.dal.dto.ResourceEntity resource);
+
     ItemEntity getByName(String name);
 
     void delete(ItemEntity item);

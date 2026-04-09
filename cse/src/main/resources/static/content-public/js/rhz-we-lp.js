@@ -48,14 +48,6 @@ function loginPanelLogout() {
     });
 }
 
-function openEditorModal() {
-    var container = document.getElementById("popup-editor-container");
-    container.removeAttribute("hidden");
-    container.classList.add("active");
-    loadPageListForEditor();
-    loadCategoriesAndImagesForEditor();
-}
-
 function loadCategoriesAndImagesForEditor() {
     var basePath = window.location.pathname.replace(/\/[^/]*$/, '');
     var categorySelect = document.getElementById('editor-category-select');

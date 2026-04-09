@@ -26,7 +26,7 @@ import java.util.function.Supplier;
 @Scope(value = "singleton")
 public class ContentProtectedAndCacheController extends AbstractController {
 
-    private static final Map<String, String> cache = new HashMap<>();
+    private static Map<String, String> cache = new HashMap<>();
 
     private static final Logger LOGGER = LoggerFactory.getLogger(ContentProtectedAndCacheController.class);
 
@@ -37,7 +37,7 @@ public class ContentProtectedAndCacheController extends AbstractController {
             try {
                 return ResourceUtils.getFile(root);
             } catch (FileNotFoundException ex) {
-                LOGGER.info("File not found ''");
+                LOGGER.info("File not found '%s'".formatted(root));
                 throw new Error("Error in initialization");
             }
         }
@@ -100,6 +100,21 @@ public class ContentProtectedAndCacheController extends AbstractController {
             response.sendRedirect(request.getContextPath() + "/content-cache" + protectedPath);
         }
         return new byte[1];
+    }
+
+    public void invalidateCacheForResource(String publicPath) {
+        String protectedPath = cache.remove(publicPath);
+        if (protectedPath != null) {
+            try {
+                File cachedFile = new File(ContentCacheOperator.getRoot().getAbsolutePath() + "/content-cache" + protectedPath);
+                if (cachedFile.exists()) {
+                    cachedFile.delete();
+                    LOGGER.info("Deleted cached file: " + cachedFile.getAbsolutePath());
+                }
+            } catch (Exception e) {
+                LOGGER.warn("Failed to delete cached file for: " + publicPath, e);
+            }
+        }
     }
 
     private String getResourceUri(HttpServletRequest request) {

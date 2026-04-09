@@ -56,12 +56,7 @@ public class PageData extends ItemData implements Serializable {
 
     @Reference
     private ResourceEntity refImage;
-
-
-
     private String header;
-
-
     private String description;
     private List<String> tags;
     private List<Comment> comments;
@@ -86,14 +81,14 @@ public class PageData extends ItemData implements Serializable {
         this.description = description;
         this.tags = tags;
     }
-
-    public String getTitle() {
-        return title;
-    }
-
-    public void setTitle(String title) {
-        this.title = title;
-    }
+//
+//    public String getTitle() {
+//        return title;
+//    }
+//
+//    public void setTitle(String title) {
+//        this.title = title;
+//    }
 
     public String getHeader() {
         return header;
@@ -103,13 +98,13 @@ public class PageData extends ItemData implements Serializable {
         this.header = header;
     }
 
-    public String getSubHeader() {
-        return subHeader;
-    }
-
-    public void setSubHeader(String subHeader) {
-        this.subHeader = subHeader;
-    }
+//    public String getSubHeader() {
+//        return subHeader;
+//    }
+//
+//    public void setSubHeader(String subHeader) {
+//        this.subHeader = subHeader;
+//    }
 
     public String getDescription() {
         return description;
