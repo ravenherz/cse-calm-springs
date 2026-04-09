@@ -1,0 +1,66 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html xmlns:th="http://www.w3.org/1999/xhtml" lang="en">
+<head th:replace="~{fragments/shared :: shared-head}">
+</head>
+<body>
+  <div class="editor-layout">
+    <aside class="editor-sidebar" th:replace="~{fragments/shared :: shared-editor-sidebar}"></aside>
+    <main class="editor-main">
+      <div th:if="${accounts.empty}" class="empty-message">
+      No accounts found.
+    </div>
+    
+    <ul class="item-list" th:unless="${accounts.empty}">
+      <li th:each="acc : ${accounts}">
+        <div class="item-info">
+          <div class="item-title" th:text="${acc.login} ?: '[null]'">Login</div>
+          
+          <div class="item-meta-group">
+            <div class="meta-flex-row">
+              <span class="meta-label">Email:</span> 
+              <span th:text="${acc.emailAddress} ?: '[null]'">email</span>
+            </div>
+            <div class="meta-flex-row">
+              <span class="meta-label">Level:</span> 
+              <span th:text="${acc.level} ?: '[null]'">level</span>
+            </div>
+            <div class="meta-flex-row">
+              <span class="meta-label">Loginable:</span> 
+              <span th:if="${acc.loginable}" class="badge-yes">Yes</span>
+              <span th:unless="${acc.loginable}" class="badge-no">No</span>
+            </div>
+          </div>
+          
+          <div class="item-meta-group">
+            <div class="meta-flex-row">
+              <span th:if="${acc.sessionTotalCount == 0}">No sessions</span>
+              <th:block th:unless="${acc.sessionTotalCount == 0}">
+                <span th:text="${acc.sessionTotalCount}">0</span> total, 
+                <span th:text="${acc.sessionActiveCount}">0</span> active
+              </th:block>
+            </div>
+            <th:block th:if="${acc.sessionFirstDate != null}">
+              <div class="meta-flex-row">
+                <span class="meta-label">First:</span> 
+                <span class="session-info" th:title="${'Address: ' + acc.sessionFirstAddress + ', UA: ' + acc.sessionFirstUserAgent}" th:text="${#temporals.format(acc.sessionFirstDate, 'yyyy-MM-dd HH:mm')}">first</span>
+              </div>
+            </th:block>
+            <th:block th:if="${acc.sessionLastDate != null}">
+              <div class="meta-flex-row">
+                <span class="meta-label">Last:</span> 
+                <span class="session-info" th:title="${'Address: ' + acc.sessionLastAddress + ', UA: ' + acc.sessionLastUserAgent}" th:text="${#temporals.format(acc.sessionLastDate, 'yyyy-MM-dd HH:mm')}">last</span>
+              </div>
+            </th:block>
+          </div>
+        </div>
+        <form th:action="@{/editor/account/delete}" method="post" class="item-form">
+          <input type="hidden" name="id" th:value="${acc.id}"/>
+          <button type="submit" class="delete-btn" onclick="return confirm('Delete this account?')">Delete</button>
+        </form>
+      </li>
+    </ul>
+  </main>
+  </div>
+</body>
+</html>

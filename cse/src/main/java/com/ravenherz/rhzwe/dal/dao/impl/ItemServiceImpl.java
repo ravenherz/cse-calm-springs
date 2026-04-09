@@ -2,8 +2,10 @@ package com.ravenherz.rhzwe.dal.dao.impl;
 
 import com.ravenherz.rhzwe.dal.dao.BasicService;
 import com.ravenherz.rhzwe.dal.dao.ItemService;
+import com.ravenherz.rhzwe.dal.dto.BasicEntity;
 import com.ravenherz.rhzwe.dal.dto.CategoryEntity;
 import com.ravenherz.rhzwe.dal.dto.ItemEntity;
+import com.ravenherz.rhzwe.dal.dto.ResourceEntity;
 import dev.morphia.aggregation.expressions.impls.Expression;
 import dev.morphia.query.Query;
 import dev.morphia.query.filters.Filters;
@@ -18,6 +20,11 @@ import java.util.stream.Collectors;
 @Repository(value = "itemService")
 @Scope(value = "singleton")
 public class ItemServiceImpl extends BasicService implements ItemService {
+
+    @Override
+    public List<BasicEntity> getAll() {
+        return getPageEntities().stream().collect(Collectors.toList());
+    }
 
     @Override
     public List<ItemEntity> getAllByCategory(CategoryEntity categoryEntity) {
@@ -37,6 +44,21 @@ public class ItemServiceImpl extends BasicService implements ItemService {
     @Override public List<ItemEntity> getAllByTag(String tag) {
         return getPageEntities()
                 .filter(Filters.expr(new Expression(String.format("{'pageData.tags': {$elemMatch: {$eq: '%s'}}}", tag))))
+                .stream()
+                .collect(Collectors.toList());
+    }
+
+    @Override
+    public void delete(ItemEntity item) {
+        if (item != null) {
+            dataProvider.getDatastore().delete(item);
+        }
+    }
+
+    @Override
+    public List<ItemEntity> getAllByRefImage(ResourceEntity resource) {
+        return getPageEntities()
+                .filter(Filters.eq("pageData.refImage", resource))
                 .stream()
                 .collect(Collectors.toList());
     }

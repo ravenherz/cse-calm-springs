@@ -20,21 +20,37 @@ public interface EntityUtils {
             return true;
         }
 
-        AccountEntity owner = getOwner(obtainable);
+        try {
+            AccountEntity owner = getOwner(obtainable);
 
-        if (owner == null) {
+            if (owner == null) {
+                return switch (accessType) {
+                    case ACCESS_READ -> true;
+                    case ACCESS_EDIT -> false;
+                    case ACCESS_DELETE -> false;
+                };
+            }
+
+            SecurityLevel relativeSecurityLevel = accessor == null ? SecurityLevel.GUEST :
+                    owner.getId().equals(accessor.getId()) ? SecurityLevel.OWNER :
+                    (accessor.getAccountData().getLevel());
+            
+            if (obtainable.getSecurityData() == null || 
+                obtainable.getSecurityData().getAccessSettings() == null ||
+                obtainable.getSecurityData().getAccessSettings().get(accessType) == null) {
+                return switch (accessType) {
+                    case ACCESS_READ -> true;
+                    default -> false;
+                };
+            }
+            return (obtainable.getSecurityData().getAccessSettings().get(accessType).getIntLevel()
+                    <= relativeSecurityLevel.getIntLevel());
+        } catch (Exception e) {
             return switch (accessType) {
                 case ACCESS_READ -> true;
-                case ACCESS_EDIT -> false;
-                case ACCESS_DELETE -> false;
+                default -> false;
             };
         }
-
-        SecurityLevel relativeSecurityLevel = accessor == null ? SecurityLevel.GUEST :
-                owner.getId().equals(accessor.getId()) ? SecurityLevel.OWNER :
-                (accessor.getAccountData().getLevel());
-        return (obtainable.getSecurityData().getAccessSettings().get(accessType).getIntLevel()
-                <= relativeSecurityLevel.getIntLevel());
     }
 
     static AccountEntity getOwner(BasicEntity entity) {

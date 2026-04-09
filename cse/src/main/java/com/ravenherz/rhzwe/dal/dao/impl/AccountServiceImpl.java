@@ -3,10 +3,14 @@ package com.ravenherz.rhzwe.dal.dao.impl;
 import com.ravenherz.rhzwe.dal.dao.AccountService;
 import com.ravenherz.rhzwe.dal.dao.BasicService;
 import com.ravenherz.rhzwe.dal.dto.AccountEntity;
+import com.ravenherz.rhzwe.dal.dto.BasicEntity;
 import dev.morphia.query.filters.Filters;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.context.annotation.Scope;
 import org.springframework.stereotype.Repository;
+
+import java.util.List;
+import java.util.stream.Collectors;
 
 @Lazy
 @Repository(value = "accountService")
@@ -25,5 +29,19 @@ public class AccountServiceImpl extends BasicService implements AccountService {
         return dataProvider.getDatastore().find(AccountEntity.class)
                 .filter(Filters.eq("accountData.emailAddress", email))
                 .first();
+    }
+
+    @Override
+    public List<BasicEntity> getAll() {
+        return dataProvider.getDatastore().find(AccountEntity.class)
+                .stream()
+                .collect(Collectors.toList());
+    }
+
+    @Override
+    public void delete(AccountEntity account) {
+        if (account != null) {
+            dataProvider.getDatastore().delete(account);
+        }
     }
 }

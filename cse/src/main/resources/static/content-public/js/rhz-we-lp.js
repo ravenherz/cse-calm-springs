@@ -48,6 +48,210 @@ function loginPanelLogout() {
     });
 }
 
+function loadCategoriesAndImagesForEditor() {
+    var basePath = window.location.pathname.replace(/\/[^/]*$/, '');
+    var categorySelect = document.getElementById('editor-category-select');
+    var imageSelect = document.getElementById('editor-image-select');
+    categorySelect.innerHTML = '<option value="">-- No Category --</option>';
+    imageSelect.innerHTML = '<option value="">-- No Image --</option>';
+    $.ajax({
+        url: basePath + '/editor/data',
+        type: 'GET',
+        dataType: 'json',
+        success: function(data) {
+            if (data.categories) {
+                data.categories.forEach(function(cat) {
+                    var option = document.createElement('option');
+                    option.value = cat.id;
+                    option.textContent = cat.name;
+                    categorySelect.appendChild(option);
+                });
+            }
+            if (data.images) {
+                data.images.forEach(function(img) {
+                    var option = document.createElement('option');
+                    option.value = img.id;
+                    option.textContent = img.name;
+                    imageSelect.appendChild(option);
+                });
+            }
+        },
+        error: function(xhr, status, error) {
+            console.error('Failed to load categories and images: ' + error);
+        }
+    });
+}
+
+function openEditorModalForPage(pageName) {
+    var container = document.getElementById("popup-editor-container");
+    container.removeAttribute("hidden");
+    container.classList.add("active");
+    loadPageListForEditor();
+    loadPageForEditor(pageName);
+    loadCategoriesAndImagesForEditor();
+}
+
+function closeEditorModal() {
+    var container = document.getElementById("popup-editor-container");
+    container.classList.remove("active");
+}
+
+function loadPageListForEditor() {
+    var select = document.getElementById('editor-page-select');
+    select.innerHTML = '<option value="">Select a page to edit...</option>';
+    var editButtons = document.querySelectorAll('.edit-page-btn');
+    if (editButtons.length === 0) {
+        var option = document.createElement('option');
+        option.textContent = 'No editable pages found';
+        select.appendChild(option);
+        return;
+    }
+    editButtons.forEach(function(btn) {
+        var pageName = btn.getAttribute('data-page');
+        if (pageName) {
+            var parent = btn.closest('.item-container, .item-description');
+            var titleEl = parent ? parent.querySelector('h4 b, .item-title') : null;
+            var title = titleEl ? titleEl.textContent : pageName;
+            var option = document.createElement('option');
+            option.value = pageName;
+            option.textContent = title + ' (' + pageName + ')';
+            select.appendChild(option);
+        }
+    });
+}
+
+function loadPageForEditor(name) {
+    if (!name) {
+        document.getElementById('editor-form-container').style.display = 'none';
+        return;
+    }
+    var basePath = window.location.pathname.replace(/\/[^/]*$/, '');
+    var url = basePath + '/editor/edit?name=' + encodeURIComponent(name);
+    $.ajax({
+        url: url,
+        type: 'GET',
+        success: function(data) {
+            var parser = new DOMParser();
+            var doc = parser.parseFromString(data, 'text/html');
+            document.getElementById('editor-page-name').value = name;
+            var titleInput = doc.querySelector('input[name="title"]');
+            var headerInput = doc.querySelector('input[name="header"]');
+            var subHeaderInput = doc.querySelector('input[name="subHeader"]');
+            var tagsInput = doc.querySelector('input[name="tags"]');
+            var descInput = doc.querySelector('textarea[name="description"]');
+            var categorySelect = doc.querySelector('select[name="categoryId"]');
+            var imageSelect = doc.querySelector('select[name="imageId"]');
+            if (titleInput) document.getElementById('editor-title').value = titleInput.value;
+            if (headerInput) document.getElementById('editor-header').value = headerInput.value;
+            if (subHeaderInput) document.getElementById('editor-subheader').value = subHeaderInput.value;
+            if (tagsInput) document.getElementById('editor-tags').value = tagsInput.value;
+            if (descInput) {
+                document.getElementById('editor-description').value = descInput.value;
+                renderMarkdownPreview(descInput.value, function(html) {
+                    document.getElementById('editor-preview').innerHTML = html;
+                });
+            }
+            if (categorySelect) {
+                var selectedCategory = categorySelect.querySelector('option:checked');
+                var catValue = selectedCategory ? selectedCategory.value : '';
+                document.getElementById('editor-category').value = catValue;
+                var catSelect = document.getElementById('editor-category-select');
+                for (var i = 0; i < catSelect.options.length; i++) {
+                    if (catSelect.options[i].value === catValue) {
+                        catSelect.selectedIndex = i;
+                        break;
+                    }
+                }
+            }
+            if (imageSelect) {
+                var selectedImage = imageSelect.querySelector('option:checked');
+                var imgValue = selectedImage ? selectedImage.value : '';
+                document.getElementById('editor-image').value = imgValue;
+                var imgSelect = document.getElementById('editor-image-select');
+                for (var i = 0; i < imgSelect.options.length; i++) {
+                    if (imgSelect.options[i].value === imgValue) {
+                        imgSelect.selectedIndex = i;
+                        break;
+                    }
+                }
+            }
+            document.getElementById('editor-form-container').style.display = 'block';
+            setupEditorPreviewListener();
+        },
+        error: function(xhr, status, error) {
+            alert('Failed to load page data: ' + error);
+        }
+    });
+}
+
+function savePageFromModal() {
+    var name = document.getElementById('editor-page-name').value;
+    var title = document.getElementById('editor-title').value;
+    var header = document.getElementById('editor-header').value;
+    var subHeader = document.getElementById('editor-subheader').value;
+    var tags = document.getElementById('editor-tags').value;
+    var description = document.getElementById('editor-description').value;
+    var categoryId = document.getElementById('editor-category').value;
+    var imageId = document.getElementById('editor-image').value;
+    var basePath = window.location.pathname.replace(/\/[^/]*$/, '');
+    $.ajax({
+        url: basePath + '/editor/save',
+        type: 'POST',
+        data: {
+            name: name,
+            title: title,
+            header: header,
+            subHeader: subHeader,
+            tags: tags,
+            description: description,
+            categoryId: categoryId,
+            imageId: imageId
+        },
+        success: function() {
+            location.reload();
+        },
+        error: function() {
+            alert('Failed to save page');
+        }
+    });
+}
+
+function renderMarkdownPreview(markdown, callback) {
+    var pathParts = window.location.pathname.split('/');
+    var basePath = pathParts.length > 1 ? '/' + pathParts[1] : '';
+    $.ajax({
+        url: basePath + '/rest/markdown/render',
+        type: 'POST',
+        contentType: 'application/json',
+        data: JSON.stringify({ markdown: markdown }),
+        dataType: 'json',
+        success: function(response) {
+            console.log('Markdown render response:', response);
+            if (response && response.status === 200) {
+                callback(response.restObject || response.data || response);
+            } else {
+                callback(markdown);
+            }
+        },
+        error: function(xhr, status, error) {
+            console.error('Markdown render error:', error);
+            callback(markdown);
+        }
+    });
+}
+
+function setupEditorPreviewListener() {
+    var desc = document.getElementById('editor-description');
+    if (desc) {
+        desc.addEventListener('input', function() {
+            var markdown = this.value;
+            renderMarkdownPreview(markdown, function(html) {
+                document.getElementById('editor-preview').innerHTML = html;
+            });
+        });
+    }
+}
+
 function loginPanelInit () {
     //console.log("ready");
 

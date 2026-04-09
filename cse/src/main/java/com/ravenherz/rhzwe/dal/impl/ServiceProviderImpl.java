@@ -5,6 +5,7 @@ import com.ravenherz.rhzwe.dal.dao.AccountService;
 import com.ravenherz.rhzwe.dal.dao.CategoryService;
 import com.ravenherz.rhzwe.dal.dao.ItemService;
 import com.ravenherz.rhzwe.dal.dao.ResourceService;
+import com.ravenherz.rhzwe.dal.dao.ResourceGroupService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.DependsOn;
 import org.springframework.context.annotation.Lazy;
@@ -14,13 +15,14 @@ import org.springframework.stereotype.Service;
 @Lazy
 @Service(value = "serviceProvider")
 @Scope(value = "singleton")
-@DependsOn({"dataProvider", "categoryService", "itemService", "accountService", "resourceService"})
+@DependsOn({"dataProvider", "categoryService", "itemService", "accountService", "resourceService", "resourceGroupService"})
 public class ServiceProviderImpl implements ServiceProvider {
 
     private static AccountService accountService;
     private static CategoryService categoryService;
     private static ItemService itemService;
     private static ResourceService resourceService;
+    private static ResourceGroupService resourceGroupService;
 
     @Override
     public AccountService getAccountService() {
@@ -42,6 +44,11 @@ public class ServiceProviderImpl implements ServiceProvider {
         return categoryService;
     }
 
+    @Override
+    public ResourceGroupService getResourceGroupService() {
+        return resourceGroupService;
+    }
+
     @Autowired @Lazy
     public void setAccountService(AccountService accountServiceImpl) {
         accountService = accountServiceImpl;
@@ -60,5 +67,10 @@ public class ServiceProviderImpl implements ServiceProvider {
     @Autowired @Lazy
     public void setResourceService(ResourceService resourceServiceImpl) {
         resourceService = resourceServiceImpl;
+    }
+
+    @Autowired @Lazy
+    public void setResourceGroupService(ResourceGroupService resourceGroupServiceImpl) {
+        resourceGroupService = resourceGroupServiceImpl;
     }
 }

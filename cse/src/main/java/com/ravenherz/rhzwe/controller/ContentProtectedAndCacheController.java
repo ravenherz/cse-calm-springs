@@ -20,12 +20,13 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.function.Supplier;
 
 @Controller
 @Scope(value = "singleton")
 public class ContentProtectedAndCacheController extends AbstractController {
 
-    private static final Map<String, String> cache = new HashMap<>();
+    private static Map<String, String> cache = new HashMap<>();
 
     private static final Logger LOGGER = LoggerFactory.getLogger(ContentProtectedAndCacheController.class);
 
@@ -36,7 +37,7 @@ public class ContentProtectedAndCacheController extends AbstractController {
             try {
                 return ResourceUtils.getFile(root);
             } catch (FileNotFoundException ex) {
-                LOGGER.info("File not found ''");
+                LOGGER.info("File not found '%s'".formatted(root));
                 throw new Error("Error in initialization");
             }
         }
@@ -46,12 +47,16 @@ public class ContentProtectedAndCacheController extends AbstractController {
                     "/content-cache" + resourceEntity.getResourceData().getPathProtected());
         }
 
-        public static void prepareFile(ResourceEntity resourceEntity) throws IOException {
+        public static void prepareFile(ResourceEntity resourceEntity, java.util.function.Supplier<byte[]> chunkBytesSupplier) throws IOException {
             File file = getFile(resourceEntity);
             if (!file.exists()) {
                 LOGGER.info("Writing and caching file binary data to %s".formatted(file.getAbsolutePath()));
                 cache.put(resourceEntity.getResourceData().getPathPublic(), resourceEntity.getResourceData().getPathProtected());
-                FileUtils.writeByteArrayToFile(file, resourceEntity.getRawBytes());
+                byte[] bytes = resourceEntity.getRawBytes();
+                if (bytes == null && chunkBytesSupplier != null) {
+                    bytes = chunkBytesSupplier.get();
+                }
+                FileUtils.writeByteArrayToFile(file, bytes);
             } else {
                 cache.put(resourceEntity.getResourceData().getPathPublic(), resourceEntity.getResourceData().getPathProtected());
                 LOGGER.info("Cached: %s".formatted(file.getAbsolutePath()));
@@ -73,11 +78,43 @@ public class ContentProtectedAndCacheController extends AbstractController {
                 LOGGER.info("Entry already in cache: %s".formatted(resourceEntity.getResourceData().getPathProtected()));
             } else {
                 LOGGER.info("No cache entry for %s".formatted(resourceEntity.getResourceData().getPathProtected()));
-                ContentCacheOperator.prepareFile(resourceEntity);
+                Supplier<byte[]> chunkSupplier = null;
+                if (resourceEntity.getResourceData().isLargeFile() && resourceEntity.getResourceData().getDataChunkIds() != null) {
+                    LOGGER.info("Large file detected with " + resourceEntity.getResourceData().getDataChunkIds().size() + " chunks");
+                    chunkSupplier = () -> {
+                        byte[] bytes = serviceProvider.getResourceService().getRawBytesFromChunks(
+                                resourceEntity.getResourceData().getDataChunkIds());
+                        LOGGER.info("Retrieved " + (bytes != null ? bytes.length : 0) + " bytes from chunks");
+                        return bytes;
+                    };
+                }
+                ContentCacheOperator.prepareFile(resourceEntity, chunkSupplier);
             }
-            response.sendRedirect(request.getContextPath() + "/content-cache" + resourceEntity.getResourceData().getPathProtected());
+            String protectedPath = resourceEntity.getResourceData().getPathProtected();
+            LOGGER.info("Protected path for resource: " + protectedPath);
+            if (protectedPath == null) {
+                LOGGER.error("Protected path is null for resource: " + resourceEntity.getResourceData().getPathPublic());
+                response.sendRedirect(request.getContextPath() + "/?error=500");
+                return new byte[1];
+            }
+            response.sendRedirect(request.getContextPath() + "/content-cache" + protectedPath);
         }
         return new byte[1];
+    }
+
+    public void invalidateCacheForResource(String publicPath) {
+        String protectedPath = cache.remove(publicPath);
+        if (protectedPath != null) {
+            try {
+                File cachedFile = new File(ContentCacheOperator.getRoot().getAbsolutePath() + "/content-cache" + protectedPath);
+                if (cachedFile.exists()) {
+                    cachedFile.delete();
+                    LOGGER.info("Deleted cached file: " + cachedFile.getAbsolutePath());
+                }
+            } catch (Exception e) {
+                LOGGER.warn("Failed to delete cached file for: " + publicPath, e);
+            }
+        }
     }
 
     private String getResourceUri(HttpServletRequest request) {

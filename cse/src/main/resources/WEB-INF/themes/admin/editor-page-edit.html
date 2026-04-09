@@ -1,0 +1,62 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html xmlns:th="http://www.w3.org/1999/xhtml" lang="en">
+<head th:replace="~{fragments/shared :: shared-head}">
+</head>
+<body>
+  <div class="editor-layout">
+    <aside class="editor-sidebar" th:replace="~{fragments/shared :: shared-editor-sidebar}"></aside>
+    <main class="editor-main">
+      <form th:action="@{/editor/save}" method="post">
+      <input type="hidden" name="name" th:value="${item.uniqueUriName}"/>
+      
+      <div class="form-row">
+        <div class="form-group">
+          <label for="title">Title</label>
+          <input type="text" id="title" name="title" th:value="${item.pageData?.title}"/>
+        </div>
+        <div class="form-group">
+          <label for="header">Header</label>
+          <input type="text" id="header" name="header" th:value="${item.pageData?.header}"/>
+        </div>
+      </div>
+      
+      <div class="form-row">
+        <div class="form-group">
+          <label for="subHeader">Sub Header</label>
+          <input type="text" id="subHeader" name="subHeader" th:value="${item.pageData?.subHeader}"/>
+        </div>
+        <div class="form-group">
+          <label for="categoryId">Category</label>
+          <select id="categoryId" name="categoryId">
+            <option value="">-- No Category --</option>
+            <option th:each="cat : ${categories}" th:value="${cat.id}" th:text="${cat.categoryData?.itemName != null ? cat.categoryData.itemName : cat.id}" th:selected="${item.refCategory?.id?.toString() == cat.id?.toString()}">Category Name</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label for="imageId">Featured Image</label>
+          <select id="imageId" name="imageId">
+            <option value="">-- No Image --</option>
+            <option th:each="img : ${images}" th:value="${img.id}" th:text="${img.resourceData?.pathPublic}" th:selected="${item.pageData?.refImage?.id?.toString() == img.id?.toString()}">/path</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label for="tags">Tags (comma separated)</label>
+          <input type="text" id="tags" name="tags" th:value="${#strings.listJoin(item.pageData?.tags, ', ')}"/>
+        </div>
+      </div>
+      
+      <div class="form-group">
+        <label>Content (Markdown/HTML)</label>
+        <textarea id="description" name="description" th:text="${item.pageData?.description}" rows="20" class="editor-textarea"></textarea>
+      </div>
+      
+      <div class="editor-actions">
+        <button type="submit" class="btn btn-secondary">Save</button>
+  </main>
+  </div>
+</body>
+</html>

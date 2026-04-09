@@ -4,6 +4,7 @@ import com.ravenherz.rhzwe.dal.dto.ItemEntity;
 import com.ravenherz.rhzwe.dal.dto.basic.Event;
 import com.ravenherz.rhzwe.dal.dto.basic.PageData;
 import com.ravenherz.rhzwe.dal.dto.basic.enums.EventType;
+import com.ravenherz.rhzwe.util.MarkdownRenderer;
 import org.slf4j.LoggerFactory;
 import org.slf4j.Logger;
 
@@ -68,6 +69,7 @@ public class PageEvent extends PageData {
     private LocalDateTime created;
     private String id;
     private String categoryItemName;
+    private String uniqueUriName;
     private String imageLinkFull;
     private String pageLink;
     private List<String> tags;
@@ -78,14 +80,15 @@ public class PageEvent extends PageData {
         super(pageData.getTitle(),
                 pageData.getHeader(),
                 pageData.getSubHeader(),
-                pageData.getDescription(),
+                MarkdownRenderer.render(pageData.getDescription()),
                 pageData.getTags());
+        this.uniqueUriName = uniqueUriName;
         this.pageLink = "./?page=" + uniqueUriName;
         if (pageData.getRefImage() != null) {
             this.imageLinkFull = "./content-protected" + pageData.getRefImage().getResourceData()
                     .getPathPublic();
         } else {
-            this.imageLinkFull = "static/content-public/rhz-we-core/images/no-image.jpg";
+            this.imageLinkFull = "./content-public/rhz-we-core/images/no-image.jpg";
         }
         this.id = id;
         this.categoryItemName = categoryItemName;
@@ -113,6 +116,10 @@ public class PageEvent extends PageData {
 
     public String getId() {
         return id;
+    }
+
+    public String getUniqueUriName() {
+        return uniqueUriName;
     }
 
     public LocalDateTime getCreated() {

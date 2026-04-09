@@ -200,6 +200,7 @@ public class Strings {
 
     public static final String DATABASE_CATEGORIES = "rhz-we-categories";
     public static final String DATABASE_RESOURCES = "rhz-we-resources";
+    public static final String DATABASE_RESOURCE_GROUPS = "rhz-we-resource-groups";
     public static final String DATABASE_ITEMS = "rhz-we-items";
     public static final String DATABASE_ACCOUNTS = "rhz-we-accounts";
 

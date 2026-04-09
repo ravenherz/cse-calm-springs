@@ -1,0 +1,47 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html xmlns:th="http://www.w3.org/1999/xhtml" lang="en">
+<head th:replace="~{fragments/shared :: shared-head}">
+</head>
+<body>
+  <div class="editor-layout">
+    <aside class="editor-sidebar" th:replace="~{fragments/shared :: shared-editor-sidebar}"></aside>
+    <main class="editor-main">
+      <div th:if="${error}" class="error-message" th:text="${error}">
+      Error message
+    </div>
+    <form th:action="@{/editor/category/create}" method="post">
+      <div class="form-group">
+        <label for="itemName">Category Name (ID)</label>
+        <input type="text" id="itemName" name="itemName" placeholder="my-category" required/>
+      </div>
+      <div class="form-group">
+        <label for="navigationTitle">Navigation Title</label>
+        <input type="text" id="navigationTitle" name="navigationTitle"/>
+      </div>
+      <div class="form-group">
+        <label for="navigationDescription">Navigation Description</label>
+        <input type="text" id="navigationDescription" name="navigationDescription"/>
+      </div>
+      <div class="form-row">
+        <div class="form-group checkbox-group">
+          <label>
+            <input type="checkbox" name="isVisible" id="isVisible"/>
+            Visible in navigation
+          </label>
+        </div>
+        <div class="form-group checkbox-group">
+          <label>
+            <input type="checkbox" name="isActive" id="isActive"/>
+            Active
+          </label>
+        </div>
+      </div>
+      <div class="editor-actions">
+        <button type="submit" class="btn btn-secondary">Create Category</button>
+      </div>
+    </form>
+  </main>
+  </div>
+</body>
+</html>
