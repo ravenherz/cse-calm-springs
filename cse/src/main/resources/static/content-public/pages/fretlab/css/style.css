@@ -182,6 +182,32 @@ input[type="number"]:focus { border-color: var(--gold); }
 
 .shape-btn:hover { transform: scale(1.08); }
 
+.cat-tabs {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  flex: 1 1 100%;
+}
+
+.cat-tab {
+  background: transparent;
+  color: var(--muted);
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  padding: 4px 12px;
+  font-size: 11.5px;
+  cursor: pointer;
+  transition: all .15s;
+}
+
+.cat-tab:hover { color: var(--text); border-color: var(--line-strong); }
+
+.cat-tab.active {
+  color: var(--gold);
+  border-color: var(--gold);
+  background: color-mix(in srgb, var(--gold) 12%, transparent);
+}
+
 .hidden { display: none !important; }
 
 .custom-tuning { background: var(--panel2); }
@@ -443,6 +469,25 @@ button.mini:hover { border-color: var(--gold); color: var(--gold); }
   box-shadow: 0 2px 6px var(--shadow-soft);
 }
 
+.marker .cplus {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+  color: var(--gold);
+  font-weight: 900;
+  font-size: 17px;
+  line-height: 1;
+}
+
+.marker.ghost-plus {
+  pointer-events: none;
+  z-index: 4;
+  opacity: .85;
+  cursor: default;
+}
+
 .marker.soft {
   filter: saturate(.5) brightness(.9) opacity(.72);
 }
@@ -483,9 +528,74 @@ button.mini:hover { border-color: var(--gold); color: var(--gold); }
   box-shadow: 0 0 6px var(--swatch-glow);
 }
 
+.swatch-plus {
+  background: var(--plain-bg);
+  color: var(--gold);
+  font-weight: 900;
+  font-style: normal;
+  text-align: center;
+  line-height: 13px;
+  font-size: 12px;
+  box-shadow: none;
+}
+
 .hint { margin: 4px 0 0; font-size: 12px; color: var(--muted); line-height: 1.5; }
 
 .scale-details { margin-top: 14px; }
+
+.chord-result { margin-top: 14px; }
+.cr-head { display: flex; align-items: baseline; gap: 14px; flex-wrap: wrap; }
+.cr-name { font-size: 30px; font-weight: 900; letter-spacing: .5px; color: var(--gold); }
+.cr-sub { font-size: 13px; color: var(--muted); }
+.cr-chips { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 12px; }
+.cr-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 5px 11px;
+  border-radius: 8px;
+  font-size: 12px;
+  border: 1px solid var(--line);
+  background: var(--panel2);
+}
+.cr-chip b { font-size: 13px; font-weight: 800; }
+.cr-chip i { font-style: normal; font-size: 10.5px; opacity: .9; }
+.cr-chip.cr-root { border-color: var(--gold); background: rgba(255, 196, 61, .12); }
+.cr-chip.cr-root b { color: var(--gold); }
+.cr-chip.cr-in b { color: var(--chord-blue); }
+.cr-chip.cr-in { border-color: rgba(125, 211, 252, .45); background: rgba(125, 211, 252, .1); }
+.cr-chip.cr-out { color: var(--muted); }
+.cr-alt { margin-top: 10px; font-size: 12px; color: var(--muted); }
+.cr-empty { font-size: 12.5px; color: var(--muted); }
+.cr-scales { margin-top: 14px; padding-top: 12px; border-top: 1px solid var(--line); }
+.cr-scales-title { font-size: 12.5px; color: var(--muted); margin-bottom: 8px; display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap; }
+.cr-scales-title b { color: var(--chord-blue); }
+.cr-scales-row { display: flex; flex-wrap: wrap; gap: 6px; }
+.cr-scale-chip {
+  padding: 4px 11px;
+  border-radius: 999px;
+  font-size: 11.5px;
+  border: 1px solid var(--line);
+  background: var(--panel2);
+  color: var(--text);
+  font-family: inherit;
+  line-height: inherit;
+  cursor: pointer;
+  transition: border-color .12s ease, background .12s ease, color .12s ease;
+}
+.cr-scale-chip:hover { border-color: var(--chord-blue); color: var(--text); }
+.cr-scale-chip.active {
+  border-color: var(--chord-blue);
+  background: var(--chord-blue);
+  color: #0a1622;
+  font-weight: 700;
+}
+.cr-scale-chip.cr-scale-partial { color: var(--muted); opacity: .85; }
+.cr-scale-chip.cr-scale-partial.active { color: #0a1622; }
+.cr-scale-chip.cr-scale-more { border-style: dashed; color: var(--muted); cursor: default; pointer-events: none; }
+.cr-scales-partials { margin-top: 7px; }
+.cr-scale-hint { font-size: 11px; color: var(--blue); font-weight: 600; }
+
 .sd-head { display: flex; align-items: baseline; gap: 12px; margin-bottom: 10px; flex-wrap: wrap; }
 .sd-head h3 { margin: 0; font-size: 16px; color: var(--text); }
 .sd-parent { font-size: 12px; color: var(--muted); }

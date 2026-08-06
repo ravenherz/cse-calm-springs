@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Fretboard Lab — CAGED System &amp; Scales Visualizer</title>
+<link rel="icon" href="favicon.ico" type="image/x-icon">
 <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
@@ -16,6 +17,7 @@
   <nav class="tabs">
     <button id="tab-caged" class="tab active" data-tab="caged">CAGED System</button>
     <button id="tab-scales" class="tab" data-tab="scales">Scales &amp; Modes</button>
+    <button id="tab-chords" class="tab" data-tab="chords">Chord Analyzer</button>
   </nav>
 </header>
 
@@ -58,6 +60,7 @@
     </div>
 
     <div id="ctl-caged" class="control-group tab-controls">
+      <span id="caged-cats" class="cat-tabs"></span>
       <label>Key
         <select id="ctl-caged-key"></select>
       </label>
@@ -74,6 +77,7 @@
     </div>
 
     <div id="ctl-scales" class="control-group tab-controls hidden">
+      <span id="scale-cats" class="cat-tabs"></span>
       <label>Root
         <select id="ctl-scale-root"></select>
       </label>
@@ -83,6 +87,13 @@
       <label>Mode
         <select id="ctl-scale-mode"></select>
       </label>
+    </div>
+
+    <div id="ctl-chords" class="control-group tab-controls hidden">
+      <span class="lbl">Click the fretboard to place notes</span>
+      <span class="lbl" id="chord-count"></span>
+      <button id="btn-chord-play" class="mini">Play chord</button>
+      <button id="btn-chord-clear" class="mini">Clear notes</button>
     </div>
   </section>
 
@@ -122,6 +133,8 @@
     </div>
     <div id="tip"></div>
   </section>
+
+  <section class="card chord-result hidden" id="chord-result"></section>
 
   <section class="card scale-details" id="scale-details"></section>
 
