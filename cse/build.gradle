@@ -108,7 +108,7 @@ compileJava.dependsOn(buildPreparations)
 
 cargo {
     var deployRemote = true
-    String deployOverride = "dev"
+    String deployOverride = "stage"
     var cargoParamResolver = new CargoContextResolver(deployRemote, project, deployOverride)
     System.out.println("deploying to '${cargoParamResolver.getWhereToDeploy()}'")
 

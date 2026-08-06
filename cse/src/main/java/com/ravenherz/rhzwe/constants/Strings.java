@@ -136,6 +136,7 @@ public class Strings {
     public static final String PATH_SOCIAL_NETWORK_DEFINITIONS = "/static/content-public/extensions/social-networks/";
     public static final String PATH_CONFIGURATION = "/static/content-private/configuration/";
     public static final String PATH_SETUP_PAGES = "/static/content-private/page-blocks/html/setup/";
+    public static final String PATH_STATIC_PAGES = "/static/content-public/pages/";
 
     /*
         Postfixes

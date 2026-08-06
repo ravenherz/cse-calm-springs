@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Fretboard Lab — CAGED System &amp; Scales Visualizer</title>
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<header>
+  <div class="brand">
+    <h1>Fretboard Lab</h1>
+    <p>Interactive guitar fretboard — CAGED system, scales &amp; modes, custom tunings</p>
+  </div>
+  <nav class="tabs">
+    <button id="tab-caged" class="tab active" data-tab="caged">CAGED System</button>
+    <button id="tab-scales" class="tab" data-tab="scales">Scales &amp; Modes</button>
+  </nav>
+</header>
+
+<main>
+  <section class="card controls">
+    <div class="control-group">
+      <label>Strings
+        <select id="ctl-strings">
+          <option value="4">4</option>
+          <option value="5">5</option>
+          <option value="6" selected>6</option>
+          <option value="7">7</option>
+          <option value="8">8</option>
+          <option value="9">9</option>
+          <option value="10">10</option>
+        </select>
+      </label>
+      <label>Tuning
+        <select id="ctl-tuning"></select>
+      </label>
+      <label>Frets
+        <select id="ctl-frets">
+          <option value="12">12</option>
+          <option value="15" selected>15</option>
+          <option value="22">22</option>
+          <option value="24">24</option>
+        </select>
+      </label>
+      <label class="chk">Names <input type="checkbox" id="ctl-names" checked></label>
+      <label class="chk">Intervals <input type="checkbox" id="ctl-intervals" checked></label>
+      <label class="chk">Steps <input type="checkbox" id="ctl-steps" checked></label>
+      <label>Notes
+        <select id="ctl-flats">
+          <option value="0" selected>Sharps (C#)</option>
+          <option value="1">Flats (Db)</option>
+        </select>
+      </label>
+      <label class="chk">All notes <input type="checkbox" id="ctl-full"></label>
+      <label class="chk">Sound <input type="checkbox" id="ctl-sound" checked></label>
+    </div>
+
+    <div id="ctl-caged" class="control-group tab-controls">
+      <label>Key
+        <select id="ctl-caged-key"></select>
+      </label>
+      <label>Scale
+        <select id="ctl-caged-family"></select>
+      </label>
+      <label>Mode
+        <select id="ctl-caged-mode"></select>
+      </label>
+      <span class="lbl">Shapes</span>
+      <span id="shape-buttons" class="shape-buttons"></span>
+      <label class="chk">Chord tones <input type="checkbox" id="ctl-chordtones" checked></label>
+      <label class="chk">Root lines <input type="checkbox" id="ctl-rootlines" checked></label>
+    </div>
+
+    <div id="ctl-scales" class="control-group tab-controls hidden">
+      <label>Root
+        <select id="ctl-scale-root"></select>
+      </label>
+      <label>Scale
+        <select id="ctl-scale-family"></select>
+      </label>
+      <label>Mode
+        <select id="ctl-scale-mode"></select>
+      </label>
+    </div>
+  </section>
+
+  <section id="ctl-custom" class="card custom-tuning hidden">
+    <div class="custom-head">
+      <strong>Custom tuning</strong>
+      <span>low &#8594; high</span>
+      <button id="btn-custom-reset" class="mini">Reset to standard</button>
+    </div>
+    <div id="custom-selects" class="custom-selects"></div>
+  </section>
+
+  <section class="card playback" id="ctl-playback">
+    <div class="control-group">
+      <span class="lbl">Playback</span>
+      <label>BPM
+        <input type="number" id="ctl-bpm" min="40" max="300" step="5" value="120">
+      </label>
+      <label>Groove
+        <select id="ctl-groove">
+          <option value="downsideUp">Downside up</option>
+          <option value="upsideDown">Upside down</option>
+          <option value="bothFromDown">Both from down</option>
+          <option value="bothFromUp">Both from up</option>
+          <option value="lowestRoot">From the lowest root</option>
+          <option value="upperRoot">From the upper root</option>
+        </select>
+      </label>
+    </div>
+  </section>
+
+  <section class="card board-wrap" id="board-wrap">
+    <div id="fretboard">
+      <div id="string-numbers"></div>
+      <div id="string-labels"></div>
+      <div id="neck"></div>
+    </div>
+    <div id="tip"></div>
+  </section>
+
+  <section class="card scale-details" id="scale-details"></section>
+
+  <section class="card legend" id="legend"></section>
+
+  <section class="card tipbox" id="tipbox"></section>
+</main>
+
+<footer>
+  <p>Fretboard Lab · hover a note for details · click a note to hear it · move your mouse to explore</p>
+</footer>
+
+<script src="js/music.js"></script>
+<script src="js/app.js"></script>
+</body>
+</html>

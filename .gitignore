@@ -45,3 +45,5 @@ out/
 /cse/logs/
 /buildSrc/src/main/groovy/com/ravenherz/build/nonv/
 /cse/src/main/resources/static/content-private/configuration/config-dbms-*.json
+
+*/*/.git
