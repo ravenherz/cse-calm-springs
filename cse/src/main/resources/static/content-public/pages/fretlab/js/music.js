@@ -5,8 +5,42 @@
 })(typeof self !== 'undefined' ? self : this, function () {
   const SHARP = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'];
   const FLAT = ['C', 'Db', 'D', 'Eb', 'E', 'F', 'Gb', 'G', 'Ab', 'A', 'Bb', 'B'];
-  const INTERVALS = ['R', 'b2', '2', 'b3', '3', '4', 'b5', '5', 'b6', '6', 'b7', '7'];
+  const DEGREES = ['R', 'b2', '2', 'b3', '3', '4', 'b5', '5', 'b6', '6', 'b7', '7'];
+  const QUALITIES = ['P1', 'm2', 'M2', 'm3', 'M3', 'P4', 'TT', 'P5', 'm6', 'M6', 'm7', 'M7'];
+  const QUALITY_NAMES = [
+    'Perfect unison',
+    'Minor 2nd',
+    'Major 2nd',
+    'Minor 3rd',
+    'Major 3rd',
+    'Perfect 4th',
+    'Tritone',
+    'Perfect 5th',
+    'Minor 6th',
+    'Major 6th',
+    'Minor 7th',
+    'Major 7th'
+  ];
+  const INTERVALS = DEGREES;
+  function qualityFull(semis) {
+    const i = ((semis % 12) + 12) % 12;
+    return QUALITIES[i] + ' <span class="tip-full">(' + QUALITY_NAMES[i] + ')</span>';
+  }
   const CHORD_SYMBOL = ['1', 'b2', '2', 'b3', '3', '4', '#4', '5', 'b6', '6', 'b7', '7'];
+  function relLabel(semis, degreeOverride) {
+    const i = ((semis % 12) + 12) % 12;
+    return {
+      degree: degreeOverride != null ? degreeOverride : DEGREES[i],
+      quality: QUALITIES[i]
+    };
+  }
+  function formatRel(semis, showDegree, showQuality, degreeOverride, join) {
+    const r = relLabel(semis, degreeOverride);
+    const parts = [];
+    if (showDegree && r.degree) parts.push(r.degree);
+    if (showQuality) parts.push(r.quality);
+    return parts.join(join != null ? join : '<br>');
+  }
 
   const TUNINGS = [
     { id: 'std6', label: 'Standard (EADGBE)', strings: 6, midi: [40, 45, 50, 55, 59, 64] },
@@ -28,18 +62,18 @@
   ];
 
   const SCALE_CATS = [
-    { id: 'church', label: 'Church Modes', families: ['major'] },
-    { id: 'melodic', label: 'Melodic Minor Modes', families: ['melodicMinor'] },
-    { id: 'harmonic', label: 'Harmonic Minor Modes', families: ['harmonicMinor'] },
-    { id: 'harmMajor', label: 'Harmonic Major Modes', families: ['harmonicMajor'] },
-    { id: 'doubleHarm', label: 'Double Harmonic Modes', families: ['doubleHarmonic'] },
-    { id: 'neapolitan', label: 'Neapolitan Modes', families: ['neapolitanMajor', 'neapolitanMinor'] },
-    { id: 'symmetric', label: 'Symmetric & Limited Transposition', families: ['wholeTone', 'augmented', 'diminished', 'diminishedHW', 'chromatic', 'messiaen3', 'messiaen4', 'messiaen5', 'messiaen6', 'messiaen7'] },
-    { id: 'penta', label: 'Pentatonic', families: ['majorPentatonic', 'minorPentatonic', 'suspendedPentatonic', 'dominantPentatonic', 'hirajoshi', 'iwato', 'insen', 'pelog', 'marwa'] },
-    { id: 'hex', label: 'Hexatonic & Blues', families: ['blues', 'bluesMajor', 'hexatonicMajor', 'hexatonicMinor', 'prometheus'] },
-    { id: 'bebop', label: 'Bebop', families: ['bebopDominant', 'bebopMajor', 'bebopMinor', 'bebopDorian', 'bebopLocrian'] },
-    { id: 'jazz', label: 'Jazz & Dominant', families: ['dominant', 'minorSixDiminished', 'majorSixDiminished'] },
-    { id: 'world', label: 'World & Exotic', families: ['persian', 'enigmatic', 'spanishPhrygian', 'todi', 'purvi', 'phrygianNatural6', 'mixolydianAugmented', 'lydianMinor', 'hungarianMajor', 'locrianNatural2'] }
+    { id: 'church', families: ['major'] },
+    { id: 'melodic', families: ['melodicMinor'] },
+    { id: 'harmonic', families: ['harmonicMinor'] },
+    { id: 'harmMajor', families: ['harmonicMajor'] },
+    { id: 'doubleHarm', families: ['doubleHarmonic'] },
+    { id: 'neapolitan', families: ['neapolitanMajor', 'neapolitanMinor'] },
+    { id: 'symmetric', families: ['wholeTone', 'augmented', 'diminished', 'diminishedHW', 'chromatic', 'messiaen3', 'messiaen4', 'messiaen5', 'messiaen6', 'messiaen7'] },
+    { id: 'penta', families: ['majorPentatonic', 'minorPentatonic', 'suspendedPentatonic', 'dominantPentatonic', 'hirajoshi', 'iwato', 'insen', 'pelog', 'marwa'] },
+    { id: 'hex', families: ['blues', 'bluesMajor', 'hexatonicMajor', 'hexatonicMinor', 'prometheus'] },
+    { id: 'bebop', families: ['bebopDominant', 'bebopMajor', 'bebopMinor', 'bebopDorian', 'bebopLocrian'] },
+    { id: 'jazz', families: ['dominant', 'minorSixDiminished', 'majorSixDiminished'] },
+    { id: 'world', families: ['persian', 'enigmatic', 'spanishPhrygian', 'todi', 'purvi', 'phrygianNatural6', 'mixolydianAugmented', 'lydianMinor', 'hungarianMajor', 'locrianNatural2'] }
   ];
 
   const SCALES = {
@@ -164,7 +198,13 @@
   return {
     SHARP: SHARP,
     FLAT: FLAT,
+    DEGREES: DEGREES,
+    QUALITIES: QUALITIES,
+    QUALITY_NAMES: QUALITY_NAMES,
     INTERVALS: INTERVALS,
+    relLabel: relLabel,
+    formatRel: formatRel,
+    qualityFull: qualityFull,
     CHORD_SYMBOL: CHORD_SYMBOL,
     TUNINGS: TUNINGS,
     SCALES: SCALES,

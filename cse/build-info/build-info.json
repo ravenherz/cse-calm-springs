@@ -1,10 +1,10 @@
 {
     "artifact": {
         "latest": {
-            "name": "cse-0.4.0.2609.feature-editor-sidenav.war"
+            "name": "cse-0.4.0.2633.feature-editor-sidenav.war"
         }
     },
     "build": {
-        "number": 2609
+        "number": 2633
     }
 }

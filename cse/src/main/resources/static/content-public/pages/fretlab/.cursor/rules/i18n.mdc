@@ -1,0 +1,21 @@
+---
+description: Require i18n for all new user-facing UI, with English as the required fallback
+alwaysApply: true
+---
+
+# i18n is mandatory for new UI
+
+When adding or changing **any user-facing text** in Fretboard Lab (labels, buttons, titles, tips, errors, select options, aria/title attrs, scale/mode display names, note names, flavor copy):
+
+1. **Never hardcode display strings** in `js/*.js` or leave English-only HTML text for chrome that should switch language.
+2. **Add the English string first** under the matching key path in `i18n/en.json`. English is the source of truth and the runtime fallback.
+3. **Add the Russian override** (same key path) in `i18n/ru.json` when the string should localize. Partial `ru` is fine — missing keys fall back to English via `FretI18n` merge/`resolve`.
+4. **Regenerate** `i18n/en.js` and `i18n/ru.js` from the JSON sources after edits (script-tag registration; do not reintroduce `fetch` of JSON).
+5. **Wire the UI**:
+   - Static markup → `data-i18n` / `data-i18n-attr` (and `applyDom` on lang change).
+   - Dynamic UI → `t('dot.path', vars)` (or existing helpers like `scaleDisplayName`, `names()`, `theoryInfo`).
+6. **Identity vs display**: keep theory/engine identity keys in English in code (`Music.SCALES` mode names, family ids, CAGED shape letters). Put *display* names in vocab JSON.
+7. **Do not ship raw key paths** in the UI. If English is missing, fix `en.json` — do not leave `t()` falling through to `"some.key"`.
+8. **Exceptions** (may stay non-i18n): pure music-symbol marks used as lead-sheet grammar (`m`, `maj7`, `b5`…), numeric formulas, and intentionally language-native picker option labels (`English` / `Русский`).
+
+Fallback model (already implemented): `applyVocab` sets English as `fallback` and merges locale over a copy of English into `current`. `t()` / `raw()` resolve locale first, then English.

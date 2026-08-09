@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Fretboard Lab — Theory tests</title>
+<style>
+  :root {
+    --bg: #0e1016;
+    --panel: #161a24;
+    --text: #e8eaf2;
+    --muted: #8b93a7;
+    --ok: #22c55e;
+    --bad: #ef4444;
+    --known: #f59e0b;
+    --line: #262c3b;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font: 14px/1.45 ui-sans-serif, system-ui, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    padding: 24px 28px 48px;
+  }
+  h1 { font-size: 20px; font-weight: 600; margin: 0 0 6px; }
+  .hint { color: var(--muted); margin: 0 0 18px; max-width: 52rem; }
+  .summary {
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    padding: 12px 14px;
+    margin-bottom: 20px;
+  }
+  .summary.bad { border-color: rgba(239, 68, 68, 0.45); }
+  .summary.ok { border-color: rgba(34, 197, 94, 0.45); }
+  .badge {
+    display: inline-block;
+    margin-left: 8px;
+    padding: 2px 8px;
+    border-radius: 999px;
+    font-size: 12px;
+    font-weight: 600;
+  }
+  .badge.ok { background: rgba(34, 197, 94, 0.15); color: var(--ok); }
+  .badge.bad { background: rgba(239, 68, 68, 0.15); color: var(--bad); }
+  h2 {
+    font-size: 13px;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--muted);
+    margin: 22px 0 8px;
+  }
+  .case {
+    display: grid;
+    grid-template-columns: 72px 1fr minmax(12rem, 2fr);
+    gap: 10px;
+    align-items: baseline;
+    padding: 8px 10px;
+    border-bottom: 1px solid var(--line);
+  }
+  .tag {
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+  }
+  .case.pass .tag { color: var(--ok); }
+  .case.fail .tag { color: var(--bad); }
+  .case.known .tag { color: var(--known); }
+  .case.known-cleared .tag { color: var(--ok); }
+  .name { font-weight: 500; }
+  .detail { color: var(--muted); font-family: ui-monospace, Consolas, monospace; font-size: 12px; word-break: break-word; }
+  .case.fail .detail { color: #fca5a5; }
+  .case.known .detail { color: #fcd34d; }
+</style>
+</head>
+<body>
+  <h1>Fretboard Lab — Theory tests</h1>
+  <p class="hint">
+    Zero-build fixtures against <code>music.js</code> + <code>chords.js</code>.
+    <strong>lock</strong> cases must stay green when heuristics change.
+    <strong>known</strong> cases document desired fixes (amber until cleared).
+  </p>
+  <div id="summary" class="summary">Running…</div>
+  <div id="results"></div>
+
+  <script src="js/music.js"></script>
+  <script src="js/chords.js"></script>
+  <script src="js/tests/runner.js"></script>
+  <script src="js/tests/fixtures.js"></script>
+  <script>
+    window.TheoryTests.run(window.TheoryFixtures.suites);
+  </script>
+</body>
+</html>

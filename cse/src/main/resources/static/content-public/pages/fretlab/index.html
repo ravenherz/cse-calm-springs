@@ -3,123 +3,143 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Fretboard Lab — CAGED System &amp; Scales Visualizer</title>
+<title>Fretboard Lab — Explore, Chords &amp; Profiles</title>
 <link rel="icon" href="favicon.ico" type="image/x-icon">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@500;600;700&family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="css/style.css">
+<link id="theme-css" rel="stylesheet" href="css/dark.css">
+<script>
+(function () {
+  var theme = 'dark';
+  try {
+    var stored = localStorage.getItem('fretboard-lab-theme');
+    if (stored === 'light' || stored === 'dark') theme = stored;
+  } catch (e) {}
+  document.documentElement.setAttribute('data-theme', theme);
+  var link = document.getElementById('theme-css');
+  if (link) link.href = 'css/' + theme + '.css';
+})();
+</script>
 </head>
 <body>
 
 <header>
   <div class="brand">
-    <h1>Fretboard Lab</h1>
-    <p>Interactive guitar fretboard — CAGED system, scales &amp; modes, custom tunings</p>
+    <h1 data-i18n="app.brand">Fretboard Lab</h1>
+    <p data-i18n="app.tagline">Interactive guitar fretboard — explore scales &amp; CAGED, analyze chords, save your guitar profiles</p>
   </div>
-  <nav class="tabs">
-    <button id="tab-caged" class="tab active" data-tab="caged">CAGED System</button>
-    <button id="tab-scales" class="tab" data-tab="scales">Scales &amp; Modes</button>
-    <button id="tab-chords" class="tab" data-tab="chords">Chord Analyzer</button>
-  </nav>
+  <div class="header-right">
+    <nav class="tabs">
+      <button id="tab-explore" class="tab active" data-tab="explore" data-i18n="tabs.explore">Explore</button>
+      <button id="tab-chords" class="tab" data-tab="chords" data-i18n="tabs.chords">Chord Analyzer</button>
+      <button id="tab-profiles" class="tab" data-tab="profiles" data-i18n="tabs.profiles">Profiles</button>
+    </nav>
+    <label class="theme-picker">
+      <span class="theme-picker-label" data-i18n="theme.label">Theme</span>
+      <select id="ctl-theme" data-i18n="theme.aria" data-i18n-attr="aria-label" aria-label="Color theme">
+        <option value="dark" data-i18n="theme.dark">Dark</option>
+        <option value="light" data-i18n="theme.light">Light</option>
+      </select>
+    </label>
+    <label class="lang-picker">
+      <span class="lang-picker-label" data-i18n="lang.label">Language</span>
+      <select id="ctl-lang" data-i18n="lang.aria" data-i18n-attr="aria-label" aria-label="Language">
+        <option value="en">English</option>
+        <option value="ru">Русский</option>
+      </select>
+    </label>
+  </div>
 </header>
 
 <main>
-  <section class="card controls">
-    <div class="control-group">
-      <label>Strings
-        <select id="ctl-strings">
-          <option value="4">4</option>
-          <option value="5">5</option>
-          <option value="6" selected>6</option>
-          <option value="7">7</option>
-          <option value="8">8</option>
-          <option value="9">9</option>
-          <option value="10">10</option>
-        </select>
-      </label>
-      <label>Tuning
-        <select id="ctl-tuning"></select>
-      </label>
-      <label>Frets
-        <select id="ctl-frets">
-          <option value="12">12</option>
-          <option value="15" selected>15</option>
-          <option value="22">22</option>
-          <option value="24">24</option>
-        </select>
-      </label>
-      <label class="chk">Names <input type="checkbox" id="ctl-names" checked></label>
-      <label class="chk">Intervals <input type="checkbox" id="ctl-intervals" checked></label>
-      <label class="chk">Steps <input type="checkbox" id="ctl-steps" checked></label>
-      <label>Notes
-        <select id="ctl-flats">
-          <option value="0" selected>Sharps (C#)</option>
-          <option value="1">Flats (Db)</option>
-        </select>
-      </label>
-      <label class="chk">All notes <input type="checkbox" id="ctl-full"></label>
-      <label class="chk">Sound <input type="checkbox" id="ctl-sound" checked></label>
+  <section class="card controls" id="ctl-main-controls">
+    <div class="control-group" id="ctl-shared">
+      <details id="ctl-guitar" class="guitar-picker" data-i18n="app.guitarChip.title" data-i18n-attr="title" title="Choose which guitar to use on the fretboard"></details>
+      <div class="ctl-cluster" id="ctl-display">
+        <span class="ctl-cluster-label" data-i18n="controls.display.label">Display</span>
+        <label class="chk"><span data-i18n="controls.display.names">Names</span> <input type="checkbox" id="ctl-names" checked></label>
+        <label class="chk"><span data-i18n="controls.display.degrees">Degrees</span> <input type="checkbox" id="ctl-degrees" checked></label>
+        <label class="chk"><span data-i18n="controls.display.intervals">Intervals</span> <input type="checkbox" id="ctl-intervals"></label>
+        <label><span data-i18n="controls.display.notes">Notes</span>
+          <select id="ctl-flats">
+            <option value="0" selected data-i18n="controls.display.sharps">Sharps (C#)</option>
+            <option value="1" data-i18n="controls.display.flats">Flats (Db)</option>
+          </select>
+        </label>
+      </div>
+      <div class="ctl-cluster" id="ctl-sound-cluster">
+        <span class="ctl-cluster-label" data-i18n="controls.sound.label">Sound</span>
+        <label class="chk"><span data-i18n="controls.sound.on">On</span> <input type="checkbox" id="ctl-sound" checked></label>
+      </div>
+      <details class="ctl-more" id="ctl-more">
+        <summary data-i18n="controls.more.summary">More</summary>
+        <div class="ctl-more-body">
+          <label class="chk"><span data-i18n="controls.more.allNotes">All notes</span> <input type="checkbox" id="ctl-full"></label>
+        </div>
+      </details>
     </div>
 
-    <div id="ctl-caged" class="control-group tab-controls">
-      <span id="caged-cats" class="cat-tabs"></span>
-      <label>Key
-        <select id="ctl-caged-key"></select>
+    <div id="ctl-explore" class="control-group tab-controls">
+      <span class="lbl" data-i18n="controls.explore.label">Explore</span>
+      <span id="explore-cats" class="cat-tabs"></span>
+      <label><span data-i18n="controls.explore.root">Root</span>
+        <select id="ctl-explore-root"></select>
       </label>
-      <label>Scale
-        <select id="ctl-caged-family"></select>
+      <label><span data-i18n="controls.explore.scale">Scale</span>
+        <select id="ctl-explore-family"></select>
       </label>
-      <label>Mode
-        <select id="ctl-caged-mode"></select>
+      <label><span data-i18n="controls.explore.mode">Mode</span>
+        <select id="ctl-explore-mode"></select>
       </label>
-      <span class="lbl">Shapes</span>
-      <span id="shape-buttons" class="shape-buttons"></span>
-      <label class="chk">Chord tones <input type="checkbox" id="ctl-chordtones" checked></label>
-      <label class="chk">Root lines <input type="checkbox" id="ctl-rootlines" checked></label>
-    </div>
-
-    <div id="ctl-scales" class="control-group tab-controls hidden">
-      <span id="scale-cats" class="cat-tabs"></span>
-      <label>Root
-        <select id="ctl-scale-root"></select>
-      </label>
-      <label>Scale
-        <select id="ctl-scale-family"></select>
-      </label>
-      <label>Mode
-        <select id="ctl-scale-mode"></select>
-      </label>
+      <div class="ctl-cluster" id="ctl-explore-layers">
+        <span class="ctl-cluster-label" data-i18n="controls.explore.layers">Layers</span>
+        <label class="chk"><span data-i18n="controls.explore.cagedShapes">CAGED shapes</span> <input type="checkbox" id="ctl-caged-layer" checked></label>
+      </div>
     </div>
 
     <div id="ctl-chords" class="control-group tab-controls hidden">
-      <span class="lbl">Click the fretboard to place notes</span>
+      <span class="lbl" data-i18n="controls.chords.label">Chord Analyzer</span>
       <span class="lbl" id="chord-count"></span>
-      <button id="btn-chord-play" class="mini">Play chord</button>
-      <button id="btn-chord-clear" class="mini">Clear notes</button>
+      <button id="btn-chord-play" class="mini" data-i18n="controls.chords.playChord">Play chord</button>
+      <button id="btn-chord-clear" class="mini" data-i18n="controls.chords.clearNotes">Clear notes</button>
     </div>
-  </section>
-
-  <section id="ctl-custom" class="card custom-tuning hidden">
-    <div class="custom-head">
-      <strong>Custom tuning</strong>
-      <span>low &#8594; high</span>
-      <button id="btn-custom-reset" class="mini">Reset to standard</button>
-    </div>
-    <div id="custom-selects" class="custom-selects"></div>
   </section>
 
   <section class="card playback" id="ctl-playback">
-    <div class="control-group">
-      <span class="lbl">Playback</span>
-      <label>BPM
+    <div id="ctl-chord-opts" class="control-group hidden">
+      <span class="lbl" data-i18n="controls.chords.intervalsLabel">Chord intervals</span>
+      <label class="seg">
+        <select id="ctl-compound" data-i18n="controls.chords.compoundTitle" data-i18n-attr="title" title="Simple = within-octave (2, 4, 6). Compound = extensions (9, 11, 13) when the chord has them.">
+          <option value="0" data-i18n="controls.chords.simple">Simple (2 · 4 · 6)</option>
+          <option value="1" selected data-i18n="controls.chords.compound">Compound (9 · 11 · 13)</option>
+        </select>
+      </label>
+    </div>
+
+    <div id="ctl-caged-shapes" class="control-group">
+      <span class="ctl-shapes-layer">
+        <span class="lbl" data-i18n="controls.shapes.label">Shapes</span>
+        <span id="shape-buttons" class="shape-buttons"></span>
+      </span>
+      <label class="chk"><span data-i18n="controls.shapes.chordTones">Chord tones</span> <input type="checkbox" id="ctl-chordtones" checked></label>
+      <label class="chk ctl-shapes-layer"><span data-i18n="controls.shapes.rootLines">Root lines</span> <input type="checkbox" id="ctl-rootlines" checked></label>
+    </div>
+
+    <div id="ctl-playback-controls" class="control-group">
+      <span class="lbl" data-i18n="controls.playback.label">Playback</span>
+      <label><span data-i18n="controls.playback.bpm">BPM</span>
         <input type="number" id="ctl-bpm" min="40" max="300" step="5" value="120">
       </label>
-      <label>Groove
+      <label><span data-i18n="controls.playback.groove">Groove</span>
         <select id="ctl-groove">
-          <option value="downsideUp">Downside up</option>
-          <option value="upsideDown">Upside down</option>
-          <option value="bothFromDown">Both from down</option>
-          <option value="bothFromUp">Both from up</option>
-          <option value="lowestRoot">From the lowest root</option>
-          <option value="upperRoot">From the upper root</option>
+          <option value="downsideUp" data-i18n="controls.playback.downsideUp">Downside up</option>
+          <option value="upsideDown" data-i18n="controls.playback.upsideDown">Upside down</option>
+          <option value="bothFromDown" data-i18n="controls.playback.bothFromDown">Both from down</option>
+          <option value="bothFromUp" data-i18n="controls.playback.bothFromUp">Both from up</option>
+          <option value="lowestRoot" data-i18n="controls.playback.lowestRoot">From the lowest root</option>
+          <option value="upperRoot" data-i18n="controls.playback.upperRoot">From the upper root</option>
         </select>
       </label>
     </div>
@@ -131,7 +151,6 @@
       <div id="string-labels"></div>
       <div id="neck"></div>
     </div>
-    <div id="tip"></div>
   </section>
 
   <section class="card chord-result hidden" id="chord-result"></section>
@@ -141,13 +160,44 @@
   <section class="card legend" id="legend"></section>
 
   <section class="card tipbox" id="tipbox"></section>
+
+  <section class="card profile-panel hidden" id="profiles-panel">
+    <div class="profile-head">
+      <div>
+        <h2 data-i18n="profiles.title">My Guitars</h2>
+        <p class="profile-hint" data-i18n="profiles.hint">Save your instruments — body type, role, scale length, tuning and a photo.</p>
+      </div>
+      <div class="profile-head-actions">
+        <span id="prof-import-status" class="prof-import-status"></span>
+        <button type="button" id="prof-export" class="mini" data-i18n="profiles.export">Export (.zip)</button>
+        <button type="button" id="prof-import" class="mini" data-i18n="profiles.import">Import (.zip)</button>
+        <input type="file" id="prof-import-input" accept=".zip,application/zip" hidden>
+      </div>
+    </div>
+    <div id="profile-grid" class="profile-grid"></div>
+  </section>
 </main>
 
+<div class="modal-overlay hidden" id="modal-overlay">
+  <div class="modal" id="modal" role="dialog" aria-modal="true"></div>
+</div>
+
+<div id="tip"></div>
+<div id="ctx-menu"></div>
+
 <footer>
-  <p>Fretboard Lab · hover a note for details · click a note to hear it · move your mouse to explore</p>
+  <p data-i18n="app.footer">Fretboard Lab · hover a note for details · click a note to hear it · move your mouse to explore</p>
 </footer>
 
+<script src="js/i18n.js"></script>
+<script src="i18n/en.js"></script>
+<script src="i18n/ru.js"></script>
 <script src="js/music.js"></script>
+<script src="js/chords.js"></script>
+<script src="js/geometry.js"></script>
+<script src="js/audio.js"></script>
+<script src="js/caged.js"></script>
+<script src="js/profiles.js"></script>
 <script src="js/app.js"></script>
 </body>
 </html>
