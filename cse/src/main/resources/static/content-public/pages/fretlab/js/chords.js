@@ -25,14 +25,15 @@
     if (c.dim7 || c.dim) c.fifth = 6;
     else if (h[7]) c.fifth = 7;
     else if (h[8]) c.fifth = 8;
-    else if (h[6] && c.third === 4 && !c.seventh && !c.sixth) c.fifth = 0;
+    // Major triad / maj7 + tritone, no P5 → Lydian #11 (omit 5), not b5
+    else if (h[6] && c.third === 4 && (c.seventh === 11 || (!c.seventh && !c.sixth))) c.fifth = 0;
     else if (h[6]) c.fifth = 6;
     if (c.seventh === 10 || c.seventh === 11) {
       c.ext.b9 = h[1];
       c.ext.n9 = h[2] && c.sus !== '2';
       c.ext.sh9 = h[3] && c.third === 4;
       c.ext.n11 = h[5] && c.sus !== '4';
-      c.ext.sh11 = h[6] && c.fifth === 7;
+      c.ext.sh11 = h[6] && (c.fifth === 7 || (c.fifth === 0 && c.seventh === 11 && c.third === 4));
       c.ext.b13 = h[8] && c.fifth === 7;
       c.ext.n13 = h[9] && c.fifth !== 6 && c.fifth !== 8;
     } else if (c.sixth) {
@@ -302,12 +303,6 @@
     return pack(primary.root, desc, primary.c, primary.I, primary.root !== bassPc, alternatives);
   }
 
-  function allScaleKeys() {
-    const out = [];
-    M.SCALE_CATS.forEach((cat) => cat.families.forEach((fk) => out.push(fk)));
-    return out;
-  }
-
   function chordScales(rootPc, intervals, opts) {
     const scaleRoot = opts.scaleRoot != null ? opts.scaleRoot : rootPc;
     const toScale = (iv) => (rootPc + iv - scaleRoot + 12) % 12;
@@ -321,7 +316,7 @@
       const ivs = intervals.filter((iv) => !shell.has(iv) && !inScale(pcs, iv));
       return ivs.length ? t('chords.missingPrefix') + ivs.map((iv) => roleLabel(iv, c, opts.compoundIntervals)).join(', ') : '';
     };
-    allScaleKeys().forEach((fk) => {
+    M.allScaleKeys().forEach((fk) => {
       const fam = M.SCALES[fk];
       const n = fam.modes ? fam.modes.length : 1;
       for (let m = 0; m < n; m++) {

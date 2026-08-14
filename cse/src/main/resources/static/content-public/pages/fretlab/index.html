@@ -3,11 +3,13 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Fretboard Lab — Explore, Chords &amp; Profiles</title>
+<title>Fretboard Lab — Explore, Chords, Theory &amp; Profiles</title>
 <link rel="icon" href="favicon.ico" type="image/x-icon">
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@500;600;700&family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="theme-color" content="#0e1016">
+<meta name="mobile-web-app-capable" content="yes">
+<link rel="stylesheet" href="css/fonts.css">
 <link rel="stylesheet" href="css/style.css">
 <link id="theme-css" rel="stylesheet" href="css/dark.css">
 <script>
@@ -20,6 +22,10 @@
   document.documentElement.setAttribute('data-theme', theme);
   var link = document.getElementById('theme-css');
   if (link) link.href = 'css/' + theme + '.css';
+  try {
+    var meta = document.querySelector('meta[name="theme-color"]');
+    if (meta) meta.setAttribute('content', theme === 'light' ? '#eef1f6' : '#0e1016');
+  } catch (e2) {}
 })();
 </script>
 </head>
@@ -28,13 +34,15 @@
 <header>
   <div class="brand">
     <h1 data-i18n="app.brand">Fretboard Lab</h1>
-    <p data-i18n="app.tagline">Interactive guitar fretboard — explore scales &amp; CAGED, analyze chords, save your guitar profiles</p>
+    <p data-i18n="app.tagline">Interactive guitar fretboard — explore scales &amp; CAGED, analyze chords, learn theory, save your guitar profiles</p>
   </div>
   <div class="header-right">
-    <nav class="tabs">
-      <button id="tab-explore" class="tab active" data-tab="explore" data-i18n="tabs.explore">Explore</button>
-      <button id="tab-chords" class="tab" data-tab="chords" data-i18n="tabs.chords">Chord Analyzer</button>
-      <button id="tab-profiles" class="tab" data-tab="profiles" data-i18n="tabs.profiles">Profiles</button>
+    <nav class="tabs" role="tablist" data-i18n="tabs.aria" data-i18n-attr="aria-label" aria-label="Workspace">
+      <button id="tab-explore" class="tab active" role="tab" aria-selected="true" tabindex="0" data-tab="explore" data-i18n="tabs.explore">Explore</button>
+      <button id="tab-chords" class="tab" role="tab" aria-selected="false" tabindex="-1" data-tab="chords" data-i18n="tabs.chords">Chord Analyzer</button>
+      <button id="tab-drills" class="tab" role="tab" aria-selected="false" tabindex="-1" data-tab="drills" data-i18n="tabs.drills">Drills</button>
+      <button id="tab-theory" class="tab" role="tab" aria-selected="false" tabindex="-1" data-tab="theory" data-i18n="tabs.theory">Theory</button>
+      <button id="tab-profiles" class="tab" role="tab" aria-selected="false" tabindex="-1" data-tab="profiles" data-i18n="tabs.profiles">Profiles</button>
     </nav>
     <label class="theme-picker">
       <span class="theme-picker-label" data-i18n="theme.label">Theme</span>
@@ -59,51 +67,87 @@
       <details id="ctl-guitar" class="guitar-picker" data-i18n="app.guitarChip.title" data-i18n-attr="title" title="Choose which guitar to use on the fretboard"></details>
       <div class="ctl-cluster" id="ctl-display">
         <span class="ctl-cluster-label" data-i18n="controls.display.label">Display</span>
-        <label class="chk"><span data-i18n="controls.display.names">Names</span> <input type="checkbox" id="ctl-names" checked></label>
-        <label class="chk"><span data-i18n="controls.display.degrees">Degrees</span> <input type="checkbox" id="ctl-degrees" checked></label>
-        <label class="chk"><span data-i18n="controls.display.intervals">Intervals</span> <input type="checkbox" id="ctl-intervals"></label>
+        <label class="switch"><span data-i18n="controls.display.names">Names</span> <input type="checkbox" id="ctl-names" checked><span class="switch-track" aria-hidden="true"></span></label>
+        <label class="switch"><span data-i18n="controls.display.degrees">Degrees</span> <input type="checkbox" id="ctl-degrees" checked><span class="switch-track" aria-hidden="true"></span></label>
+        <label class="switch"><span data-i18n="controls.display.intervals">Intervals</span> <input type="checkbox" id="ctl-intervals"><span class="switch-track" aria-hidden="true"></span></label>
         <label><span data-i18n="controls.display.notes">Notes</span>
           <select id="ctl-flats">
-            <option value="0" selected data-i18n="controls.display.sharps">Sharps (C#)</option>
+            <option value="0" data-i18n="controls.display.sharps">Sharps (C#)</option>
             <option value="1" data-i18n="controls.display.flats">Flats (Db)</option>
+            <option value="2" selected data-i18n="controls.display.fitScale">Fit Scale</option>
           </select>
         </label>
       </div>
       <div class="ctl-cluster" id="ctl-sound-cluster">
         <span class="ctl-cluster-label" data-i18n="controls.sound.label">Sound</span>
-        <label class="chk"><span data-i18n="controls.sound.on">On</span> <input type="checkbox" id="ctl-sound" checked></label>
+        <label class="switch"><span data-i18n="controls.sound.on">On</span> <input type="checkbox" id="ctl-sound" checked><span class="switch-track" aria-hidden="true"></span></label>
       </div>
       <details class="ctl-more" id="ctl-more">
         <summary data-i18n="controls.more.summary">More</summary>
         <div class="ctl-more-body">
-          <label class="chk"><span data-i18n="controls.more.allNotes">All notes</span> <input type="checkbox" id="ctl-full"></label>
+          <label class="switch"><span data-i18n="controls.more.allNotes">All notes</span> <input type="checkbox" id="ctl-full"><span class="switch-track" aria-hidden="true"></span></label>
         </div>
       </details>
     </div>
 
     <div id="ctl-explore" class="control-group tab-controls">
       <span class="lbl" data-i18n="controls.explore.label">Explore</span>
+      <label class="explore-search">
+        <span class="explore-search-label" data-i18n="controls.explore.search">Find scale</span>
+        <span class="explore-search-field">
+          <input type="search" id="ctl-explore-search" autocomplete="off" spellcheck="false"
+            placeholder="Search scales &amp; modes…"
+            data-i18n="controls.explore.searchPlaceholder" data-i18n-attr="placeholder"
+            aria-label="Search scales and modes"
+            aria-autocomplete="list" aria-controls="explore-search-results" aria-expanded="false">
+          <ul id="explore-search-results" class="explore-search-results" role="listbox" hidden></ul>
+        </span>
+      </label>
       <span id="explore-cats" class="cat-tabs"></span>
       <label><span data-i18n="controls.explore.root">Root</span>
         <select id="ctl-explore-root"></select>
       </label>
-      <label><span data-i18n="controls.explore.scale">Scale</span>
-        <select id="ctl-explore-family"></select>
-      </label>
-      <label><span data-i18n="controls.explore.mode">Mode</span>
-        <select id="ctl-explore-mode"></select>
-      </label>
-      <div class="ctl-cluster" id="ctl-explore-layers">
-        <span class="ctl-cluster-label" data-i18n="controls.explore.layers">Layers</span>
-        <label class="chk"><span data-i18n="controls.explore.cagedShapes">CAGED shapes</span> <input type="checkbox" id="ctl-caged-layer" checked></label>
+      <table class="explore-scale-table">
+        <tr>
+          <th scope="row"><label for="ctl-explore-family" data-i18n="controls.explore.scale">Scale</label></th>
+          <td><select id="ctl-explore-family"></select></td>
+        </tr>
+        <tr>
+          <th scope="row"><label for="ctl-explore-mode" data-i18n="controls.explore.mode">Mode</label></th>
+          <td><select id="ctl-explore-mode"></select></td>
+        </tr>
+      </table>
+      <div class="shift-cross" role="group" data-i18n="controls.explore.shiftCross" data-i18n-attr="aria-label" aria-label="Shift root and mode">
+        <button type="button" id="btn-shift-mode-prev" class="mini shift-cross-btn shift-up" data-i18n="controls.explore.shiftModePrev" data-i18n-attr="title aria-label" title="Previous mode" aria-label="Previous mode">▲</button>
+        <button type="button" id="btn-shift-scale-left" class="mini shift-cross-btn shift-left" data-i18n="controls.explore.shiftScaleLeft" data-i18n-attr="title aria-label" title="Previous scale" aria-label="Previous scale">◀</button>
+        <button type="button" id="btn-shift-scale-right" class="mini shift-cross-btn shift-right" data-i18n="controls.explore.shiftScaleRight" data-i18n-attr="title aria-label" title="Next scale" aria-label="Next scale">▶</button>
+        <button type="button" id="btn-shift-mode-next" class="mini shift-cross-btn shift-down" data-i18n="controls.explore.shiftModeNext" data-i18n-attr="title aria-label" title="Next mode" aria-label="Next mode">▼</button>
+      </div>
+      <div class="layer-picker-field" id="ctl-explore-layers-wrap">
+        <span class="layer-picker-label" data-i18n="controls.explore.layers">Layers</span>
+        <details class="layer-picker" id="ctl-explore-layers" data-i18n="controls.explore.layersAria" data-i18n-attr="aria-label" aria-label="Explore layer"></details>
       </div>
     </div>
 
     <div id="ctl-chords" class="control-group tab-controls hidden">
       <span class="lbl" data-i18n="controls.chords.label">Chord Analyzer</span>
       <span class="lbl" id="chord-count"></span>
-      <button id="btn-chord-play" class="mini" data-i18n="controls.chords.playChord">Play chord</button>
-      <button id="btn-chord-clear" class="mini" data-i18n="controls.chords.clearNotes">Clear notes</button>
+      <button type="button" id="btn-chord-play" class="mini" data-i18n="controls.chords.playChord">Play chord</button>
+      <button type="button" id="btn-chord-clear" class="mini" data-i18n="controls.chords.clearNotes">Clear notes</button>
+      <span class="kb-place-controls" id="kb-place-controls">
+        <label class="kb-place-field">
+          <span class="lbl" data-i18n="controls.chords.kbString">String</span>
+          <select id="ctl-kb-string" data-i18n="controls.chords.kbStringAria" data-i18n-attr="aria-label" aria-label="String"></select>
+        </label>
+        <label class="kb-place-field">
+          <span class="lbl" data-i18n="controls.chords.kbFret">Fret</span>
+          <input type="number" id="ctl-kb-fret" min="0" step="1" value="0"
+            data-i18n="controls.chords.kbFretAria" data-i18n-attr="aria-label" aria-label="Fret">
+        </label>
+        <button type="button" id="btn-kb-place" class="mini" data-i18n="controls.chords.kbPlace">Place</button>
+        <button type="button" id="btn-kb-remove" class="mini" data-i18n="controls.chords.kbRemove">Remove</button>
+      </span>
+      <span id="chord-live" class="sr-only" aria-live="polite"></span>
     </div>
   </section>
 
@@ -116,6 +160,7 @@
           <option value="1" selected data-i18n="controls.chords.compound">Compound (9 · 11 · 13)</option>
         </select>
       </label>
+      <label class="switch"><span data-i18n="controls.chords.showNo5">Show no5</span> <input type="checkbox" id="ctl-show-no5" checked><span class="switch-track" aria-hidden="true"></span></label>
     </div>
 
     <div id="ctl-caged-shapes" class="control-group">
@@ -123,8 +168,45 @@
         <span class="lbl" data-i18n="controls.shapes.label">Shapes</span>
         <span id="shape-buttons" class="shape-buttons"></span>
       </span>
-      <label class="chk"><span data-i18n="controls.shapes.chordTones">Chord tones</span> <input type="checkbox" id="ctl-chordtones" checked></label>
-      <label class="chk ctl-shapes-layer"><span data-i18n="controls.shapes.rootLines">Root lines</span> <input type="checkbox" id="ctl-rootlines" checked></label>
+      <div class="switch-grid">
+        <label class="switch switch-stack ctl-shapes-layer"><input type="checkbox" id="ctl-caged-repeats" checked><span class="switch-track" aria-hidden="true"></span><span data-i18n="controls.shapes.repeated">Repeated</span></label>
+        <label class="switch switch-stack"><input type="checkbox" id="ctl-char-tips" checked><span class="switch-track" aria-hidden="true"></span><span data-i18n="controls.shapes.charTips">Alteration arrows</span></label>
+        <label class="switch switch-stack ctl-shapes-layer"><input type="checkbox" id="ctl-char-originals" checked><span class="switch-track" aria-hidden="true"></span><span data-i18n="controls.shapes.charOriginals">Ionian mode notes</span></label>
+        <label class="switch switch-stack ctl-shapes-layer"><input type="checkbox" id="ctl-rootlines" checked><span class="switch-track" aria-hidden="true"></span><span data-i18n="controls.shapes.rootLines">Root lines</span></label>
+      </div>
+      <label class="ctl-shapes-layer"><span data-i18n="controls.shapes.highlightDegree">Highlight degree</span>
+        <select id="ctl-highlight-degree"></select>
+      </label>
+    </div>
+
+    <div id="ctl-quartal-shapes" class="control-group hidden">
+      <span class="lbl" data-i18n="controls.quartal.label">Quartal</span>
+      <label><span data-i18n="controls.quartal.height">Height</span>
+        <select id="ctl-quartal-height"></select>
+      </label>
+      <label><span data-i18n="controls.quartal.startString">Start string</span>
+        <select id="ctl-quartal-start"></select>
+      </label>
+      <label class="switch"><span data-i18n="controls.quartal.repeated">Repeated</span> <input type="checkbox" id="ctl-quartal-repeats" checked><span class="switch-track" aria-hidden="true"></span></label>
+      <span class="quartal-keys-hint" data-i18n="controls.quartal.keysHint">Shift ↑↓ upper strings · Ctrl ↑↓ bottom strings</span>
+    </div>
+
+    <div id="ctl-nps-shapes" class="control-group hidden">
+      <span class="lbl" data-i18n="controls.nps.label">Forms</span>
+      <span id="nps-form-buttons" class="shape-buttons"></span>
+      <label><span data-i18n="controls.nps.count">Notes / string</span>
+        <select id="ctl-nps-count">
+          <option value="3">3</option>
+          <option value="4">4</option>
+        </select>
+      </label>
+      <label class="switch"><span data-i18n="controls.nps.repeated">Repeated</span> <input type="checkbox" id="ctl-nps-repeats" checked><span class="switch-track" aria-hidden="true"></span></label>
+    </div>
+
+    <div id="ctl-berklee-shapes" class="control-group hidden">
+      <span class="lbl" data-i18n="controls.berklee.label">Positions</span>
+      <span id="berklee-form-buttons" class="shape-buttons"></span>
+      <label class="switch"><span data-i18n="controls.berklee.repeated">Repeated</span> <input type="checkbox" id="ctl-berklee-repeats" checked><span class="switch-track" aria-hidden="true"></span></label>
     </div>
 
     <div id="ctl-playback-controls" class="control-group">
@@ -145,19 +227,36 @@
     </div>
   </section>
 
+  <section class="card legend legend-collapsed" id="legend"></section>
+
+  <section class="card drills-panel hidden" id="drills-panel"></section>
+  <section class="card drill-bar hidden" id="drill-bar"></section>
+
+  <section class="card theory-panel hidden" id="theory-panel">
+    <div class="theory-head">
+      <h2 data-i18n="theory.title">Theory</h2>
+      <p class="theory-hint" data-i18n="theory.hint">A neck-first syllabus — examples play on the fretboard below</p>
+    </div>
+    <div class="theory-split">
+      <nav id="theory-nav" class="theory-nav" data-i18n="theory.navAria" data-i18n-attr="aria-label" aria-label="Theory topics"></nav>
+      <div id="theory-body" class="theory-body"></div>
+    </div>
+  </section>
+
   <section class="card board-wrap" id="board-wrap">
     <div id="fretboard">
       <div id="string-numbers"></div>
       <div id="string-labels"></div>
-      <div id="neck"></div>
+      <div id="neck" tabindex="0" role="application"
+        data-i18n="controls.chords.neckAria" data-i18n-attr="aria-label"
+        aria-label="Fretboard. Arrow keys move the cursor; Enter or Space places or removes a note."></div>
     </div>
+    <div id="piano" class="piano"></div>
   </section>
 
   <section class="card chord-result hidden" id="chord-result"></section>
 
   <section class="card scale-details" id="scale-details"></section>
-
-  <section class="card legend" id="legend"></section>
 
   <section class="card tipbox" id="tipbox"></section>
 
@@ -169,9 +268,9 @@
       </div>
       <div class="profile-head-actions">
         <span id="prof-import-status" class="prof-import-status"></span>
-        <button type="button" id="prof-export" class="mini" data-i18n="profiles.export">Export (.zip)</button>
-        <button type="button" id="prof-import" class="mini" data-i18n="profiles.import">Import (.zip)</button>
-        <input type="file" id="prof-import-input" accept=".zip,application/zip" hidden>
+        <button type="button" id="prof-export" class="mini" data-i18n="profiles.export">Export (.flstate)</button>
+        <button type="button" id="prof-import" class="mini" data-i18n="profiles.import">Import (.flstate)</button>
+        <input type="file" id="prof-import-input" accept=".flstate,.zip,application/zip,application/octet-stream" hidden>
       </div>
     </div>
     <div id="profile-grid" class="profile-grid"></div>
@@ -197,7 +296,27 @@
 <script src="js/geometry.js"></script>
 <script src="js/audio.js"></script>
 <script src="js/caged.js"></script>
+<script src="js/quartal.js"></script>
+<script src="js/nps.js"></script>
+<script src="js/berklee.js"></script>
 <script src="js/profiles.js"></script>
+<script src="js/chord-ui.js"></script>
+<script src="js/scale-details.js"></script>
+<script src="js/board-view.js"></script>
+<script src="js/piano-view.js"></script>
+<script src="js/readme.js"></script>
+<script src="js/about.js"></script>
+<script src="js/theory.js"></script>
+<script src="js/drills.js"></script>
+<script src="js/deeplink.js"></script>
 <script src="js/app.js"></script>
+<script>
+(function () {
+  if (!('serviceWorker' in navigator)) return;
+  window.addEventListener('load', function () {
+    navigator.serviceWorker.register('sw.js').catch(function () { /* ignore offline/file:// */ });
+  });
+})();
+</script>
 </body>
 </html>

@@ -182,6 +182,114 @@
     return files;
   }
 
+  const STATE_SCHEMA = 2;
+  const STATE_SCHEMA_MAX = 2;
+
+  function makeGuid() {
+    if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
+      return crypto.randomUUID().replace(/-/g, '');
+    }
+    let s = '';
+    for (let i = 0; i < 32; i++) s += ((Math.random() * 16) | 0).toString(16);
+    return s;
+  }
+
+  function extForMime(mime) {
+    const m = String(mime || '').toLowerCase();
+    if (m.indexOf('png') >= 0) return 'png';
+    if (m.indexOf('webp') >= 0) return 'webp';
+    if (m.indexOf('gif') >= 0) return 'gif';
+    return 'jpg';
+  }
+
+  function mimeFromName(name) {
+    const n = String(name || '').toLowerCase();
+    if (/\.png$/i.test(n)) return 'image/png';
+    if (/\.webp$/i.test(n)) return 'image/webp';
+    if (/\.gif$/i.test(n)) return 'image/gif';
+    return 'image/jpeg';
+  }
+
+  function parseDataUrl(dataUrl) {
+    const s = String(dataUrl || '');
+    const m = /^data:([^;,]+)?(;base64)?,(.*)$/i.exec(s);
+    if (!m) return null;
+    const mime = m[1] || 'application/octet-stream';
+    const isB64 = !!m[2];
+    const payload = m[3] || '';
+    try {
+      if (isB64) {
+        const bin = atob(payload);
+        const bytes = new Uint8Array(bin.length);
+        for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+        return { mime: mime, bytes: bytes };
+      }
+      const text = decodeURIComponent(payload);
+      const bytes = new TextEncoder().encode(text);
+      return { mime: mime, bytes: bytes };
+    } catch (e) {
+      return null;
+    }
+  }
+
+  function bytesToDataUrl(bytes, mime) {
+    const u8 = bytes instanceof Uint8Array ? bytes : new Uint8Array(bytes);
+    let binary = '';
+    const chunk = 0x8000;
+    for (let i = 0; i < u8.length; i += chunk) {
+      binary += String.fromCharCode.apply(null, u8.subarray(i, Math.min(i + chunk, u8.length)));
+    }
+    return 'data:' + (mime || 'application/octet-stream') + ';base64,' + btoa(binary);
+  }
+
+  function detachProfilePhotos(stateObj) {
+    const entries = [];
+    const out = JSON.parse(JSON.stringify(stateObj));
+    (out.profiles || []).forEach((p) => {
+      if (!p || typeof p.photo !== 'string') {
+        if (p) p.photo = '';
+        return;
+      }
+      if (p.photo.indexOf('data:') !== 0) {
+        p.photo = '';
+        return;
+      }
+      const parsed = parseDataUrl(p.photo);
+      if (!parsed || !parsed.bytes.length) {
+        p.photo = '';
+        return;
+      }
+      const guid = makeGuid();
+      const fileName = guid + '.' + extForMime(parsed.mime);
+      entries.push({ name: 'blobs/' + fileName, data: parsed.bytes });
+      p.photo = fileName;
+    });
+    return { state: out, blobEntries: entries };
+  }
+
+  function hydrateProfilePhotos(stateObj, files) {
+    if (!stateObj || !files) return stateObj;
+    (stateObj.profiles || []).forEach((p) => {
+      if (!p || typeof p.photo !== 'string' || !p.photo) return;
+      if (p.photo.indexOf('data:') === 0) return;
+      const rel = p.photo.indexOf('blobs/') === 0 ? p.photo : 'blobs/' + p.photo;
+      let data = files.get(rel);
+      if (!data) {
+        const needle = p.photo.replace(/^blobs\//, '');
+        files.forEach((bytes, name) => {
+          if (data) return;
+          if (name === rel || name === 'blobs/' + needle) data = bytes;
+        });
+      }
+      if (!data) {
+        p.photo = '';
+        return;
+      }
+      p.photo = bytesToDataUrl(data, mimeFromName(rel));
+    });
+    return stateObj;
+  }
+
   function midiToStr(m) {
     return { n: m % 12, o: Math.floor(m / 12) - 1 };
   }
@@ -326,9 +434,10 @@
           mode = null;
         }
 
-        cb.addEventListener('mousedown', (e) => {
-          if (e.button !== 0) return;
+        cb.addEventListener('pointerdown', (e) => {
+          if (e.pointerType === 'mouse' && e.button !== 0) return;
           e.preventDefault();
+          try { cb.setPointerCapture(e.pointerId); } catch (err) { /* ignore */ }
           mx = e.clientX;
           my = e.clientY;
           if (e.target === hdl) {
@@ -341,11 +450,13 @@
           }
         });
 
-        document.addEventListener('mousemove', onMove);
-        document.addEventListener('mouseup', onUp);
+        cb.addEventListener('pointermove', onMove);
+        cb.addEventListener('pointerup', onUp);
+        cb.addEventListener('pointercancel', onUp);
         teardown = () => {
-          document.removeEventListener('mousemove', onMove);
-          document.removeEventListener('mouseup', onUp);
+          cb.removeEventListener('pointermove', onMove);
+          cb.removeEventListener('pointerup', onUp);
+          cb.removeEventListener('pointercancel', onUp);
         };
       };
       io.src = src;
@@ -434,17 +545,18 @@
     }
 
     function copyProfile(id) {
-      const p = state.profiles.find((x) => x.id === id);
-      if (!p) return;
+      const idx = state.profiles.findIndex((x) => x.id === id);
+      if (idx < 0) return;
+      const p = state.profiles[idx];
       state.profileSeq += 1;
-      state.profiles.push({
+      state.profiles.splice(idx + 1, 0, {
         id: state.profileSeq,
         name: (p.name + t('profiles.copySuffix')).slice(0, 60),
         construction: p.construction,
         role: p.role,
         scaleLen: p.scaleLen,
         fretCount: p.fretCount,
-        tuning: p.tuning.map((t) => ({ n: t.n, o: t.o })),
+        tuning: p.tuning.map((tn) => ({ n: tn.n, o: tn.o })),
         photo: p.photo,
         desc: p.desc || ''
       });
@@ -452,10 +564,28 @@
       saveState();
     }
 
+    let modalReturnFocus = null;
+
     function openModal(html) {
+      modalReturnFocus = document.activeElement;
       $('#modal').innerHTML = html;
-      $('#modal-overlay').classList.remove('hidden');
-      $('#modal-overlay').querySelectorAll('[data-close]').forEach((el) => el.addEventListener('click', closeModal));
+      const overlay = $('#modal-overlay');
+      overlay.classList.remove('hidden');
+      overlay.querySelectorAll('[data-close]').forEach((el) => el.addEventListener('click', closeModal));
+      const dialog = $('#modal');
+      const title = dialog.querySelector('.modal-title, h2, h3');
+      if (title) {
+        if (!title.id) title.id = 'modal-title';
+        dialog.setAttribute('aria-labelledby', title.id);
+      } else {
+        dialog.removeAttribute('aria-labelledby');
+      }
+      requestAnimationFrame(() => {
+        const focusable = dialog.querySelector(
+          'input:not([type="hidden"]), select, textarea, button, [href], [tabindex]:not([tabindex="-1"])'
+        );
+        if (focusable && focusable.focus) focusable.focus();
+      });
     }
 
     function closeModal() {
@@ -465,6 +595,11 @@
       pendingPhoto = '';
       editTuning = [];
       editTouched = false;
+      const back = modalReturnFocus;
+      modalReturnFocus = null;
+      if (back && typeof back.focus === 'function') {
+        try { back.focus(); } catch (e) { /* ignore */ }
+      }
     }
 
     function openProfileModal(id) {
@@ -637,7 +772,7 @@
       }
       closeModal();
       renderProfiles();
-      if (!saveState()) alert(t('profiles.saveStorageFull'));
+      if (!saveState()) showImportStatus(t('profiles.saveStorageFull'), false);
     }
 
     function confirmDeleteProfile(id) {
@@ -673,16 +808,27 @@
 
     function exportSettings() {
       const now = new Date().toISOString();
-      const manifest = JSON.stringify({ app: 'fretboard-lab', schema: 1, exportedAt: now }, null, 1);
-      const payload = JSON.stringify({ app: 'fretboard-lab', schema: 1, exportedAt: now, state: serializeState() }, null, 1);
+      const packed = detachProfilePhotos(serializeState());
+      const manifest = JSON.stringify({
+        app: 'fretboard-lab',
+        schema: STATE_SCHEMA,
+        exportedAt: now,
+        format: 'flstate'
+      }, null, 2);
+      const payload = JSON.stringify({
+        app: 'fretboard-lab',
+        schema: STATE_SCHEMA,
+        exportedAt: now,
+        state: packed.state
+      }, null, 2);
       const zip = makeZip([
         { name: 'manifest.json', data: new TextEncoder().encode(manifest) },
         { name: 'fretboard-lab-state.json', data: new TextEncoder().encode(payload) }
-      ]);
+      ].concat(packed.blobEntries));
       const url = URL.createObjectURL(new Blob([zip], { type: 'application/zip' }));
       const a = document.createElement('a');
       a.href = url;
-      a.download = 'fretboard-lab-export-' + now.slice(0, 10) + '.zip';
+      a.download = 'fretboard-lab-export-' + now.slice(0, 10) + '.flstate';
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);
@@ -717,10 +863,11 @@
           showImportStatus(t('profiles.importUnknownFormat'), false);
           return;
         }
-        if (typeof parsed.schema === 'number' && parsed.schema > 1) {
+        if (typeof parsed.schema === 'number' && parsed.schema > STATE_SCHEMA_MAX) {
           showImportStatus(t('profiles.importNewerVersion'), false);
           return;
         }
+        hydrateProfilePhotos(parsed.state, files);
         const importedCount = (parsed.state.profiles && parsed.state.profiles.length) || 0;
         confirmImport(parsed.state, importedCount);
       };
@@ -778,10 +925,29 @@
       });
 
       const grid = $('#profile-grid');
-      let dragStartX = 0, dragStartY = 0, dragArmed = false, dragMoved = false;
+      let dragStartX = 0, dragStartY = 0, dragArmed = false, dragMoved = false, dragPointerId = null;
 
-      grid.addEventListener('mousedown', (e) => {
-        if (e.button !== 0) return;
+      function endProfileDrag(commit) {
+        if (!dragArmed) return;
+        dragArmed = false;
+        const id = dragProfileId;
+        const moved = dragMoved;
+        dragPointerId = null;
+        dragProfileId = null;
+        dragMoved = false;
+        grid.classList.remove('dragging');
+        grid.querySelectorAll('.profile-card.drag-src').forEach((el) => el.classList.remove('drag-src'));
+        if (!commit || !moved || id == null) return;
+        const order = Array.prototype.filter
+          .call(grid.children, (el) => el.classList.contains('profile-card') && !el.classList.contains('profile-add'))
+          .map((el) => parseInt(el.dataset.id, 10));
+        state.profiles.sort((a, b) => order.indexOf(a.id) - order.indexOf(b.id));
+        renderProfiles();
+        saveState();
+      }
+
+      grid.addEventListener('pointerdown', (e) => {
+        if (e.pointerType === 'mouse' && e.button !== 0) return;
         if (!e.target.closest('.profile-grip')) return;
         const card = e.target.closest('.profile-card');
         if (!card) return;
@@ -791,19 +957,22 @@
         dragStartY = e.clientY;
         dragArmed = true;
         dragMoved = false;
+        dragPointerId = e.pointerId;
+        try { card.setPointerCapture(e.pointerId); } catch (err) { /* ignore */ }
       });
 
-      document.addEventListener('mousemove', (e) => {
-        if (!dragArmed) return;
+      document.addEventListener('pointermove', (e) => {
+        if (!dragArmed || e.pointerId !== dragPointerId) return;
         if (!dragMoved && Math.abs(e.clientX - dragStartX) < 4 && Math.abs(e.clientY - dragStartY) < 4) return;
         if (!dragMoved) {
           dragMoved = true;
-          const src = grid.querySelector('.profile-card.drag-src') || grid.querySelector('[data-id="' + dragProfileId + '"]');
+          const src = grid.querySelector('[data-id="' + dragProfileId + '"]');
           if (src) src.classList.add('drag-src');
           grid.classList.add('dragging');
         }
         e.preventDefault();
-        const card = e.target.closest('.profile-card');
+        const hit = document.elementFromPoint(e.clientX, e.clientY);
+        const card = hit && hit.closest ? hit.closest('.profile-card') : null;
         if (!card || card.classList.contains('profile-add')) return;
         const overId = parseInt(card.dataset.id, 10);
         if (overId === dragProfileId) return;
@@ -820,26 +989,17 @@
         }
       });
 
-      document.addEventListener('mouseup', () => {
-        if (!dragArmed) return;
-        dragArmed = false;
-        if (!dragMoved || dragProfileId == null) { dragProfileId = null; return; }
-        const order = Array.prototype.filter
-          .call(grid.children, (el) => el.classList.contains('profile-card') && !el.classList.contains('profile-add'))
-          .map((el) => parseInt(el.dataset.id, 10));
-        state.profiles.sort((a, b) => order.indexOf(a.id) - order.indexOf(b.id));
-        grid.classList.remove('dragging');
-        renderProfiles();
-        saveState();
-        dragProfileId = null;
+      document.addEventListener('pointerup', (e) => {
+        if (e.pointerId !== dragPointerId) return;
+        endProfileDrag(true);
+      });
+      document.addEventListener('pointercancel', (e) => {
+        if (e.pointerId !== dragPointerId) return;
+        endProfileDrag(false);
       });
 
       window.addEventListener('blur', () => {
-        if (!dragArmed) return;
-        dragArmed = false;
-        dragMoved = false;
-        dragProfileId = null;
-        grid.classList.remove('dragging');
+        endProfileDrag(false);
       });
 
       $('#prof-export').addEventListener('click', exportSettings);

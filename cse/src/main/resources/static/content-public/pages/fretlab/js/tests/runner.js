@@ -95,10 +95,19 @@
       strictOk: lockFail === 0
     };
 
+    if (typeof document !== 'undefined' && document.documentElement) {
+      document.documentElement.setAttribute('data-strict-ok', summary.strictOk ? '1' : '0');
+      document.documentElement.setAttribute('data-lock-pass', String(lockPass));
+      document.documentElement.setAttribute('data-lock-fail', String(lockFail));
+      document.documentElement.setAttribute('data-known-fail', String(knownFail));
+      document.documentElement.setAttribute('data-known-pass', String(knownPass));
+    }
+
     const rootEl = document.getElementById('results');
     const sumEl = document.getElementById('summary');
     if (sumEl) {
       sumEl.className = 'summary ' + (summary.strictOk ? 'ok' : 'bad');
+      sumEl.setAttribute('data-strict-ok', summary.strictOk ? '1' : '0');
       sumEl.innerHTML =
         '<strong>Strict (lock):</strong> ' + lockPass + ' passed' +
         (lockFail ? ', <strong>' + lockFail + ' failed</strong>' : '') +

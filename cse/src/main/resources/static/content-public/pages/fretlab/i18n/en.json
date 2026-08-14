@@ -1,8 +1,8 @@
 {
   "app": {
-    "title": "Fretboard Lab — Explore, Chords & Profiles",
+    "title": "Fretboard Lab — Explore, Chords, Theory & Profiles",
     "brand": "Fretboard Lab",
-    "tagline": "Interactive guitar fretboard — explore scales & CAGED, analyze chords, save your guitar profiles",
+    "tagline": "Interactive guitar fretboard — explore scales & CAGED, analyze chords, learn theory, save your guitar profiles",
     "footer": "Fretboard Lab · hover a note for details · click a note to hear it · move your mouse to explore",
     "guitarChip": {
       "title": "Choose which guitar to use on the fretboard",
@@ -25,8 +25,11 @@
     "light": "Light"
   },
   "tabs": {
+    "aria": "Workspace",
     "explore": "Explore",
     "chords": "Chord Analyzer",
+    "drills": "Drills",
+    "theory": "Theory",
     "profiles": "Profiles"
   },
   "controls": {
@@ -37,7 +40,8 @@
       "intervals": "Intervals",
       "notes": "Notes",
       "sharps": "Sharps (C#)",
-      "flats": "Flats (Db)"
+      "flats": "Flats (Db)",
+      "fitScale": "Fit Scale"
     },
     "sound": {
       "label": "Sound",
@@ -52,8 +56,51 @@
       "root": "Root",
       "scale": "Scale",
       "mode": "Mode",
+      "shiftCross": "Shift root and mode",
+      "shiftScaleLeft": "Previous scale",
+      "shiftScaleRight": "Next scale",
+      "shiftModePrev": "Previous mode",
+      "shiftModeNext": "Next mode",
       "layers": "Layers",
-      "cagedShapes": "CAGED shapes"
+      "layersAria": "Explore layer",
+      "layerNone": "Full scale",
+      "layerNoneDesc": "Neck-wide scale view with no shape overlay",
+      "cagedShapes": "CAGED shapes",
+      "layerCagedDesc": "5-fret windows with the root on the 2nd fret of each box",
+      "layerCagedDescApprox": "Classic 6-string CAGED on the treble six (extra bass strings sit outside the shapes)",
+      "layerCagedDescBlocked": "Needs 6 or more strings — CAGED is a six-string map",
+      "quartalChords": "Quartal chords",
+      "layerQuartalDesc": "Stacked fourths linked across a chosen string set",
+      "nps": "Notes / string",
+      "layerNpsDesc": "One N-notes-per-string position per scale degree (3 · 4)",
+      "berklee": "Berklee (7PS)",
+      "layerBerkleeDesc": "Seven (or scale-length) positions — one 5-fret window per scale degree",
+      "search": "Find scale",
+      "searchPlaceholder": "Search scales & modes…",
+      "searchAria": "Search scales and modes",
+      "searchNoResults": "No matching scales"
+    },
+    "quartal": {
+      "label": "Quartal",
+      "height": "Height",
+      "startString": "Start string",
+      "startStringOpt": "String {n}",
+      "repeated": "Repeated",
+      "keysHint": "Shift ↑↓ upper strings · Ctrl ↑↓ bottom strings",
+      "boxLabel": "{degree}"
+    },
+    "nps": {
+      "label": "Forms",
+      "count": "Notes / string",
+      "repeated": "Repeated",
+      "boxLabel": "{degree}",
+      "formTitle": "{degree} form"
+    },
+    "berklee": {
+      "label": "Positions",
+      "repeated": "Repeated",
+      "boxLabel": "{degree}",
+      "formTitle": "{degree} position"
     },
     "chords": {
       "label": "Chord Analyzer",
@@ -64,14 +111,30 @@
       "intervalsLabel": "Chord intervals",
       "compoundTitle": "Simple = within-octave (2, 4, 6). Compound = extensions (9, 11, 13) when the chord has them.",
       "simple": "Simple (2 · 4 · 6)",
-      "compound": "Compound (9 · 11 · 13)"
+      "compound": "Compound (9 · 11 · 13)",
+      "showNo5": "Show no5",
+      "kbString": "String",
+      "kbStringAria": "String for keyboard placement",
+      "kbStringOpt": "String {n}",
+      "kbFret": "Fret",
+      "kbFretAria": "Fret for keyboard placement",
+      "kbPlace": "Place",
+      "kbRemove": "Remove",
+      "neckAria": "Fretboard. Arrow keys move the cursor; Enter or Space places or removes a note.",
+      "liveEmpty": "No notes on the fretboard.",
+      "liveUnmatched": "Notes placed — no clear chord match."
     },
     "shapes": {
       "label": "Shapes",
-      "chordTones": "Chord tones",
+      "repeated": "Repeated",
+      "charTips": "Alteration arrows",
+      "charOriginals": "Ionian mode notes",
+      "highlightDegree": "Highlight degree",
+      "highlightNone": "None",
       "rootLines": "Root lines",
       "shapeTitle": "{key} shape",
-      "boxLabel": "{key} shape"
+      "boxLabel": "{key} shape",
+      "play": "Play shape"
     },
     "playback": {
       "label": "Playback",
@@ -83,35 +146,60 @@
       "bothFromUp": "Both from up",
       "lowestRoot": "From the lowest root",
       "upperRoot": "From the upper root"
+    },
+    "piano": {
+      "title": "Piano",
+      "aria": "Piano keyboard mirroring the current scale",
+      "toggle": "Show piano",
+      "rangeHint": "4 octaves from guitar low · click to hear"
     }
   },
   "legend": {
+    "title": "Legend",
+    "toggle": "Show legend",
     "exploreTitle": "Legend — Explore · {root} {scale} · {layer}",
     "layerCaged": "CAGED shapes",
+    "layerCagedApprox": "CAGED (6-string map)",
+    "layerQuartal": "Quartal chords",
+    "layerNps": "Notes / string",
+    "layerBerklee": "Berklee (7PS)",
     "layerFullScale": "Full scale",
     "swatchRoot": "root",
     "swatchRootDesc": "Root note",
-    "swatchChord": "chord",
-    "swatchChordDesc": "Chord tone (1 · 3 · 5)",
     "swatchScale": "scale",
     "swatchScaleDesc": "Scale note",
     "swatchPlain": "plain",
     "swatchPlainDesc": "Non-scale note",
-    "hintCaged": "CAGED shapes (C · A · G · E · D) are 5-fret windows with the root on the 2nd fret of each box. Toggle shapes below; turn the layer off for a full-neck scale view. Hover a note for details.",
-    "hintFullScale": "Full-scale view of the selected root, scale, and mode. Turn on CAGED shapes to overlay the five movable boxes. Degrees are chromatic Romans; intervals are qualities relative to the root.",
+    "hintCaged": "CAGED shapes (C · A · G · E · D) are 5-fret windows with the root on the 2nd fret of each box. Toggle shapes below; choose Full scale in Layers for a full-neck view. Hover a note for details.",
+    "hintCagedApprox": "These are classic 6-string CAGED boxes shifted onto the treble six. Extra bass strings sit outside that map — treat this as an approximate overlay, not a separate CAGED system.",
+    "hintQuartal": "Neighbor notes in each quartal voicing are linked by a solid bar (Height strings from Start string). Click a link or degree chip to play. Shift ↑↓ moves the upper (treble) end of the string set; Ctrl ↑↓ moves the bottom (bass) end.",
+    "hintNps": "Each box is one N-notes-per-string position starting on a scale degree (3 · 4 ascending scale notes on every string). ▶ plays the pattern; click the box to hear its starting note. Repeated adds +12-fret copies.",
+    "hintBerklee": "Berklee 7-position system: one movable 5-fret window per scale degree (anchored on the bass string). Toggle positions below; ▶ plays the position. Repeated adds +12-fret copies.",
+    "hintCagedQuartal": "Pick one Explore overlay in Layers — CAGED shapes, Quartal chords, Notes / string, Berklee (7PS), or Full scale.",
+    "hintFullScale": "Full-scale view of the selected root, scale, and mode. Pick an overlay in Layers (CAGED, Quartal, Notes / string, or Berklee). Degrees are chromatic Romans; intervals are qualities relative to the root.",
+    "learnSystems": "Practice systems",
+    "learnModes": "Modes",
+    "learnBuilding": "Building chords",
+    "learnChords": "Chord symbols",
     "chordsTitle": "Legend — Chord Analyzer",
     "placeNote": "Place note",
-    "placeNoteDesc": "hover target; click to add",
-    "hintChords": "Move the mouse over the neck — a gold outline snaps to the nearest string/fret; click to place a note, click a placed note to remove it. Proposed scales can be previewed or ✦-wired into Explore."
+    "placeNoteDesc": "hover or drag; click/tap to add",
+    "hintChords": "Move over the neck — a gold outline snaps to the nearest string/fret; click or tap to place a note, tap a placed note to remove it. Right-click or long-press a note for pin-root and relative-degree options. Proposed scales can be previewed or ✦-wired into Explore."
   },
   "tipbox": {
     "exploreStrong": "Explore",
     "exploreBody": "root {root} · {scale}{modePart} · {layer}. Markers show note name, Roman degree and interval quality relative to root.",
     "exploreModePart": " (mode {n} of {parentKey} {familyShort})",
     "layerCagedOn": "CAGED shapes on",
+    "layerCagedOnApprox": "CAGED on treble six",
+    "layerQuartalOn": "quartal chords on",
+    "layerNpsOn": "notes / string on",
+    "layerBerkleeOn": "Berklee (7PS) on",
     "layerFullScale": "full scale",
     "chordsStrong": "Chord analyzer",
-    "chordsBody": "place notes by clicking the fretboard; click a placed note again to remove it. The app names the chord and shows each note’s role relative to its root."
+    "chordsBody": "place notes by clicking the fretboard; click a placed note again to remove it. The app names the chord and shows each note’s role relative to its root.",
+    "learnModes": "Why this mode?",
+    "learnBuilding": "How chords are built"
   },
   "tip": {
     "note": "Note",
@@ -126,6 +214,20 @@
     "emDash": "—",
     "fretOpen": "open",
     "qualityMajor": "major",
+    "qualityNames": [
+      "Perfect unison",
+      "Minor 2nd",
+      "Major 2nd",
+      "Minor 3rd",
+      "Major 3rd",
+      "Perfect 4th",
+      "Tritone",
+      "Perfect 5th",
+      "Minor 6th",
+      "Major 6th",
+      "Minor 7th",
+      "Major 7th"
+    ],
     "intervalFull": {
       "9": "M9 <span class=\"tip-full\">(Major 9th)</span>",
       "b9": "m9 <span class=\"tip-full\">(Minor 9th)</span>",
@@ -159,13 +261,1333 @@
     "missingPrefix": " — missing ",
     "slashChord": " · slash chord — {bass} in the bass",
     "rootPosition": " · root position",
-    "alsoHeardAs": "Also heard as: "
+    "alsoHeardAs": "Also heard as: ",
+    "altHookTitle": "Open Explore on a scale that features {alt}",
+    "shapes": "Alternative shapes",
+    "shapesEmpty": "No compact fingerings found for this chord on the current tuning.",
+    "shapeApply": "Use"
+  },
+  "about": {
+    "title": "About",
+    "hint": "Project overview from README.md",
+    "loading": "Loading README…",
+    "loadError": "README content is missing. Run tools/regen-readme.ps1 and reload."
+  },
+  "drills": {
+    "title": "Guided drills",
+    "hint": "Practice on the neck — find degrees, build a cadence, or name a chord.",
+    "displayLocked": "Display labels are off during drills so the board doesn’t give the answer away",
+    "check": "Check",
+    "skip": "Skip",
+    "next": "Next",
+    "exit": "Exit",
+    "showAnswer": "Show answer",
+    "answerFind": "Answer: {note} ({degree})",
+    "answerBuild": "Answer: {chord} — {notes}",
+    "answerName": "Answer: {chord}",
+    "correct": "Correct!",
+    "tryAgain": "Try again",
+    "cadenceDone": "ii–V–I complete!",
+    "score": "{correct}/{attempted} · streak {streak}",
+    "promptFind": "Find {degree} in {root} (any octave)",
+    "promptBuild": "Build {roman} — {chord} ({step}/{total})",
+    "promptName": "What is this chord?",
+    "types": {
+      "findDegree": {
+        "title": "Find the degree",
+        "blurb": "A scale is painted on the neck — tap any note that matches the asked degree."
+      },
+      "buildCadence": {
+        "title": "Build ii–V–I",
+        "blurb": "Place chord tones for Dm7 → G7 → Cmaj7. Check after each step."
+      },
+      "nameChord": {
+        "title": "Name this chord",
+        "blurb": "A voicing is placed with no root marked — often an inversion. Pick the best lead-sheet name among plausible readings."
+      }
+    }
+  },
+  "theory": {
+    "title": "Theory",
+    "hint": "A neck-first syllabus — live examples on the fretboard below",
+    "intro": "Pick a topic, read the short lesson, and watch the fretboard below update. Use the buttons to switch examples — Drills links still open the practice tab.",
+    "navAria": "Theory topics",
+    "back": "All topics",
+    "openOnNeck": "Show on the neck",
+    "seeAlso": "See also",
+    "about": {
+      "title": "About",
+      "blurb": "Project overview from README.md"
+    },
+    "sections": {
+      "foundations": "Foundations",
+      "chords": "Chords",
+      "harmony": "Harmony & progressions",
+      "scales": "Scales & modes",
+      "guitar": "On the guitar"
+    },
+    "articles": {
+      "pitchAndOctave": {
+        "title": "Pitch, pitch class & octave",
+        "blurb": "Why every note name returns after twelve frets.",
+        "body": [
+          {
+            "h": "One name, many heights",
+            "p": [
+              "Pitch is the exact highness or lowness of a sound. A pitch class groups every octave of the same note name together, so all C notes belong to pitch class C even though they sound at different heights.",
+              "Lead sheets usually care about pitch class: Cmaj7 tells you which note classes make the chord, not which octave or voicing to use."
+            ]
+          },
+          {
+            "h": "The twelve-fret repeat",
+            "p": [
+              "Western equal temperament divides the octave into twelve semitones. Moving twelve frets up one string doubles the frequency and returns to the same pitch class.",
+              "That repeat is the fretboard's main landmark. Learn one twelve-fret region well, then recognize its shapes again an octave higher."
+            ]
+          },
+          {
+            "h": "Read it on the neck",
+            "p": [
+              "Turn on note names and follow one pitch class across all six strings. Its positions look irregular across strings, but every position repeats twelve frets later.",
+              "Then switch to degrees: the same physical markers now show each note's job relative to the selected root rather than its absolute name."
+            ]
+          }
+        ],
+        "ctaNames": "C major · note names"
+      },
+      "intervals": {
+        "title": "Intervals & degrees",
+        "blurb": "Measure distance from a root with scale degrees and interval qualities.",
+        "body": [
+          {
+            "h": "Two useful labels",
+            "p": [
+              "A degree names a note's position relative to a tonal center: 1, 2, b3, 4, and so on. An interval names both its numbered span and quality: P1, M2, m3, P4.",
+              "Degrees are quick harmonic shorthand; qualities preserve the exact spelling and size. A b3 degree above C is Eb, and the interval C–Eb is a minor third. Tap a figure to place the dyad on the board."
+            ],
+            "figures": [
+              {
+                "type": "staff",
+                "caption": "C–E · M3",
+                "notes": [
+                  {
+                    "name": "C"
+                  },
+                  {
+                    "name": "E"
+                  }
+                ],
+                "layout": "harmonic",
+                "demoCta": 2
+              },
+              {
+                "type": "miniNeck",
+                "caption": "C–E · neck",
+                "chordPcs": [
+                  0,
+                  4
+                ],
+                "chordRoot": 0,
+                "labels": "degrees",
+                "demoCta": 2
+              },
+              {
+                "type": "staff",
+                "caption": "C–E♭ · m3",
+                "notes": [
+                  {
+                    "name": "C"
+                  },
+                  {
+                    "name": "Eb"
+                  }
+                ],
+                "layout": "harmonic",
+                "demoCta": 3
+              },
+              {
+                "type": "miniNeck",
+                "caption": "C–E♭ · neck",
+                "chordPcs": [
+                  0,
+                  3
+                ],
+                "chordRoot": 0,
+                "labels": "degrees",
+                "demoCta": 3
+              }
+            ]
+          },
+          {
+            "h": "Number and quality",
+            "p": [
+              "Unisons, fourths, fifths, and octaves use perfect, diminished, or augmented quality. Seconds, thirds, sixths, and sevenths use major, minor, diminished, or augmented quality.",
+              "Count letter names for the number, then semitones for the quality. C–F# is an augmented fourth; C–Gb is a diminished fifth even though both sound at the same fret."
+            ],
+            "figures": [
+              {
+                "type": "staff",
+                "caption": "C–F♯ · A4",
+                "notes": [
+                  {
+                    "name": "C"
+                  },
+                  {
+                    "name": "F#"
+                  }
+                ],
+                "layout": "harmonic"
+              },
+              {
+                "type": "staff",
+                "caption": "C–G♭ · d5",
+                "notes": [
+                  {
+                    "name": "C"
+                  },
+                  {
+                    "name": "Gb"
+                  }
+                ],
+                "layout": "harmonic"
+              }
+            ]
+          },
+          {
+            "h": "Simple and compound",
+            "p": [
+              "Intervals within one octave are simple. Carry a 2nd, 4th, or 6th above the octave and it becomes a compound 9th, 11th, or 13th.",
+              "On guitar, compare Degrees and Intervals on the same scale. The first reveals function; the second makes chord formulas and ear-training distances explicit."
+            ]
+          }
+        ],
+        "ctaDegrees": "C major · degrees",
+        "ctaIntervals": "C major · intervals",
+        "ctaM3": "Place C–E · M3",
+        "ctaM3min": "Place C–E♭ · m3"
+      },
+      "spellingAndEnharmonics": {
+        "title": "Spelling & enharmonics",
+        "blurb": "Choose note names that reveal the scale and harmony.",
+        "body": [
+          {
+            "h": "Same fret, different meaning",
+            "p": [
+              "Enharmonic notes sound the same in equal temperament but are written differently: F# and Gb share a pitch, as do C# and Db. The spelling tells you how the note behaves.",
+              "A chord third must be some kind of third by letter. D–F# is a major third; writing D–Gb hides that structure behind the sound of a diminished fourth."
+            ],
+            "figures": [
+              {
+                "type": "staff",
+                "caption": "F♯",
+                "notes": [
+                  {
+                    "name": "F#",
+                    "octave": 4
+                  }
+                ],
+                "demoCta": 0
+              },
+              {
+                "type": "staff",
+                "caption": "G♭ · same pitch",
+                "notes": [
+                  {
+                    "name": "Gb",
+                    "octave": 4
+                  }
+                ],
+                "demoCta": 1
+              }
+            ]
+          },
+          {
+            "h": "One letter per scale step",
+            "p": [
+              "A seven-note scale normally uses each letter name once. F# major is F#–G#–A#–B–C#–D#–E#: E#, not F, is its leading tone.",
+              "That spelling makes the degrees readable and keeps stacked thirds visible. It also explains why key context can favor a sharp or flat name."
+            ],
+            "figures": [
+              {
+                "type": "staff",
+                "caption": "E♯ → F♯ · leading tone",
+                "notes": [
+                  {
+                    "name": "E#",
+                    "octave": 4
+                  },
+                  {
+                    "name": "F#",
+                    "octave": 4
+                  }
+                ],
+                "layout": "melodic",
+                "demoCta": 0
+              },
+              {
+                "type": "staff",
+                "caption": "F → F♯ · wrong letter",
+                "notes": [
+                  {
+                    "name": "F",
+                    "octave": 4
+                  },
+                  {
+                    "name": "F#",
+                    "octave": 4
+                  }
+                ],
+                "layout": "melodic"
+              }
+            ]
+          },
+          {
+            "h": "Fit the display to the scale",
+            "p": [
+              "Fit Scale chooses names from the selected scale instead of forcing every black-key pitch into a global sharp or flat preference.",
+              "Compare Fit Scale with Flats while changing keys. Use the fixed choice when communicating a broad preference; use fitted spelling when studying actual scale grammar."
+            ]
+          }
+        ],
+        "ctaFit": "F# major · Fit Scale",
+        "ctaFlats": "Gb major · flats"
+      },
+      "building": {
+        "title": "Building triads & seventh chords",
+        "blurb": "Stack thirds, read formulas, and hear how one changed tone reshapes a chord.",
+        "body": [
+          {
+            "h": "Triads from two thirds",
+            "p": [
+              "A triad stacks two thirds above a root. Major is 1–3–5, minor is 1–♭3–5, diminished is 1–♭3–♭5, and augmented is 1–3–♯5.",
+              "Compare the formula strip, the staff stack, and the neck diagram. Tap any of them to load that triad on the board below."
+            ],
+            "figures": [
+              {
+                "type": "formula",
+                "caption": "Major · 1–3–5",
+                "tokens": [
+                  "1",
+                  "3",
+                  "5"
+                ],
+                "demoCta": 0
+              },
+              {
+                "type": "formula",
+                "caption": "Minor · 1–♭3–5",
+                "tokens": [
+                  "1",
+                  "♭3",
+                  "5"
+                ],
+                "demoCta": 1
+              },
+              {
+                "type": "staff",
+                "caption": "C major",
+                "notes": [
+                  {
+                    "name": "C"
+                  },
+                  {
+                    "name": "E"
+                  },
+                  {
+                    "name": "G"
+                  }
+                ],
+                "layout": "harmonic",
+                "demoCta": 0
+              },
+              {
+                "type": "staff",
+                "caption": "C minor",
+                "notes": [
+                  {
+                    "name": "C"
+                  },
+                  {
+                    "name": "Eb"
+                  },
+                  {
+                    "name": "G"
+                  }
+                ],
+                "layout": "harmonic",
+                "demoCta": 1
+              },
+              {
+                "type": "miniNeck",
+                "caption": "C · major",
+                "chordPcs": [
+                  0,
+                  4,
+                  7
+                ],
+                "chordRoot": 0,
+                "labels": "degrees",
+                "demoCta": 0
+              },
+              {
+                "type": "miniNeck",
+                "caption": "Cm · minor",
+                "chordPcs": [
+                  0,
+                  3,
+                  7
+                ],
+                "chordRoot": 0,
+                "labels": "degrees",
+                "demoCta": 1
+              },
+              {
+                "type": "miniNeck",
+                "caption": "Cdim",
+                "chordPcs": [
+                  0,
+                  3,
+                  6
+                ],
+                "chordRoot": 0,
+                "labels": "degrees",
+                "demoCta": 2
+              },
+              {
+                "type": "miniNeck",
+                "caption": "Caug",
+                "chordPcs": [
+                  0,
+                  4,
+                  8
+                ],
+                "chordRoot": 0,
+                "labels": "degrees",
+                "demoCta": 3
+              }
+            ]
+          },
+          {
+            "h": "Add the seventh",
+            "p": [
+              "Another stacked third creates a seventh chord. Major seventh is 1–3–5–7, dominant seventh is 1–3–5–♭7, and minor seventh is 1–♭3–5–♭7.",
+              "Half-diminished, written m7♭5, is 1–♭3–♭5–♭7. Fully diminished seventh lowers the last tone again to ♭♭7, producing an even stack of minor thirds."
+            ],
+            "figures": [
+              {
+                "type": "miniNeck",
+                "caption": "Cmaj7",
+                "chordPcs": [
+                  0,
+                  4,
+                  7,
+                  11
+                ],
+                "chordRoot": 0,
+                "labels": "degrees",
+                "demoCta": 4
+              },
+              {
+                "type": "miniNeck",
+                "caption": "C7",
+                "chordPcs": [
+                  0,
+                  4,
+                  7,
+                  10
+                ],
+                "chordRoot": 0,
+                "labels": "degrees",
+                "demoCta": 5
+              },
+              {
+                "type": "miniNeck",
+                "caption": "Cm7♭5",
+                "chordPcs": [
+                  0,
+                  3,
+                  6,
+                  10
+                ],
+                "chordRoot": 0,
+                "labels": "degrees",
+                "demoCta": 6
+              }
+            ]
+          },
+          {
+            "h": "Build with roles, not shapes",
+            "p": [
+              "Place chord tones and read their roles before worrying about fingering. A voicing may omit the fifth, double a tone, or spread notes across octaves without changing the core symbol.",
+              "Move only one marker at a time between examples. Hearing 3 become ♭3 or 7 become ♭7 turns a memorized formula into a practical sound."
+            ]
+          }
+        ],
+        "ctaMajor": "Place C",
+        "ctaMinor": "Place Cm",
+        "ctaDim": "Place Cdim",
+        "ctaAug": "Place Caug",
+        "ctaMaj7": "Place Cmaj7",
+        "ctaDom7": "Place C7",
+        "ctaHalfDim": "Place Cm7b5"
+      },
+      "inversionsAndSlash": {
+        "title": "Inversions & slash chords",
+        "blurb": "Separate the harmonic root from the note in the bass.",
+        "body": [
+          {
+            "h": "Root is not always lowest",
+            "p": [
+              "The root gives a chord its identity; the bass is simply its lowest sounding note. Root position puts the root in the bass, while an inversion places another chord tone below it.",
+              "For Cmaj7, compare root position with E in the bass (first inversion). Tap either diagram to mirror it on the live board."
+            ],
+            "figures": [
+              {
+                "type": "miniNeck",
+                "caption": "Cmaj7 · root position",
+                "chordPcs": [
+                  0,
+                  4,
+                  7,
+                  11
+                ],
+                "chordRoot": 0,
+                "labels": "degrees",
+                "demoCta": 0
+              },
+              {
+                "type": "miniNeck",
+                "caption": "Cmaj7/E · 1st inversion",
+                "chordPcs": [
+                  4,
+                  7,
+                  11,
+                  0
+                ],
+                "chordRoot": 0,
+                "labels": "degrees",
+                "demoCta": 1
+              }
+            ]
+          },
+          {
+            "h": "Slash notation",
+            "p": [
+              "A slash chord writes chord/bass: C/E means a C chord with E as the lowest note. The bass may be a chord tone, an inversion, or a non-chord pedal or passing tone.",
+              "Read the symbol from left to right: establish the chord quality first, then satisfy the requested bass note."
+            ],
+            "figures": [
+              {
+                "type": "miniNeck",
+                "caption": "C/E · slash bass",
+                "chordPcs": [
+                  4,
+                  0,
+                  7
+                ],
+                "chordRoot": 0,
+                "labels": "degrees",
+                "demoCta": 2
+              }
+            ]
+          },
+          {
+            "h": "Pin the intended root",
+            "p": [
+              "A compact guitar voicing can support several names. If the Analyzer follows the bass but the musical context points elsewhere, pin the intended root and compare the alternate reading.",
+              "Practice moving only the bass under fixed upper voices. Smooth slash-chord motion often matters more than keeping every chord in root position."
+            ]
+          }
+        ],
+        "ctaRoot": "Place C · root position",
+        "ctaFirst": "Place C/E · first inversion",
+        "ctaSlash": "Place C/G · slash bass"
+      },
+      "extensionsAndAlts": {
+        "title": "Extensions & alterations",
+        "blurb": "Add 9ths, 11ths, and 13ths without losing the chord underneath.",
+        "body": [
+          {
+            "h": "Beyond the seventh",
+            "p": [
+              "Continue stacking thirds above a seventh chord to reach the 9th, 11th, and 13th. They are compound versions of 2, 4, and 6, but the higher number implies a richer chord stack.",
+              "A Cmaj9 is built from 1–3–5–7–9; C9 uses 1–3–5–b7–9. The seventh distinguishes an extended dominant symbol from an added-note chord. Tap a diagram to load it below."
+            ],
+            "figures": [
+              {
+                "type": "miniNeck",
+                "caption": "Cmaj9",
+                "chordPcs": [
+                  0,
+                  4,
+                  7,
+                  11,
+                  2
+                ],
+                "chordRoot": 0,
+                "labels": "degrees",
+                "demoCta": 0
+              },
+              {
+                "type": "miniNeck",
+                "caption": "G9",
+                "chordPcs": [
+                  7,
+                  11,
+                  2,
+                  5,
+                  9
+                ],
+                "chordRoot": 7,
+                "labels": "degrees",
+                "demoCta": 1
+              }
+            ]
+          },
+          {
+            "h": "Color and omission",
+            "p": [
+              "Guitar voicings rarely contain every theoretical tone. The root, 3rd, 7th, and selected color tones usually carry more information than the 5th.",
+              "The natural 11 can clash with a major 3rd, so major-family voicings often omit it or sharpen it to #11. The 13 may replace the 5th in a lean voicing."
+            ],
+            "figures": [
+              {
+                "type": "miniNeck",
+                "caption": "Cmaj7♯11",
+                "chordPcs": [
+                  0,
+                  4,
+                  7,
+                  11,
+                  6
+                ],
+                "chordRoot": 0,
+                "labels": "degrees",
+                "demoCta": 2
+              }
+            ]
+          },
+          {
+            "h": "Altered dominants",
+            "p": [
+              "Alterations such as b9, #9, #11, b5, #5, and b13 intensify a dominant chord's pull. They modify named tensions; they do not replace the underlying 3 and b7 that define dominant function.",
+              "In Chord Analyzer, click an alteration hook to open a scale featuring that color. Compare Lydian Dominant over 7#11 and the Altered scale over 7alt."
+            ],
+            "figures": [
+              {
+                "type": "miniNeck",
+                "caption": "G7alt shell",
+                "chordPcs": [
+                  7,
+                  11,
+                  1,
+                  5,
+                  8
+                ],
+                "chordRoot": 7,
+                "labels": "degrees",
+                "demoCta": 3
+              }
+            ]
+          }
+        ],
+        "ctaMaj9": "Place Cmaj9",
+        "ctaDom9": "Place G9",
+        "ctaLyd": "C Lydian · #11 color",
+        "ctaAlt": "G Altered · altered tensions"
+      },
+      "chords": {
+        "title": "Reading chord symbols",
+        "blurb": "Parse the lead-sheet stack from root through slash bass.",
+        "body": [
+          {
+            "h": "The symbol stack",
+            "p": [
+              "Read a lead-sheet symbol as root + quality + extension + alterations + /bass. In C#m9/G#, C# is the root, m is minor quality, 9 is the extension, and G# is the bass.",
+              "A bare letter means a major triad. C7 means dominant seventh, not major seventh; Cmaj7 explicitly names the major 7."
+            ],
+            "figures": [
+              {
+                "type": "miniNeck",
+                "caption": "Cmaj7",
+                "chordPcs": [
+                  0,
+                  4,
+                  7,
+                  11
+                ],
+                "chordRoot": 0,
+                "labels": "degrees",
+                "demoCta": 0
+              },
+              {
+                "type": "miniNeck",
+                "caption": "G7",
+                "chordPcs": [
+                  7,
+                  11,
+                  2,
+                  5
+                ],
+                "chordRoot": 7,
+                "labels": "degrees",
+                "demoCta": 1
+              },
+              {
+                "type": "miniNeck",
+                "caption": "Bm7♭5",
+                "chordPcs": [
+                  11,
+                  2,
+                  5,
+                  9
+                ],
+                "chordRoot": 11,
+                "labels": "degrees",
+                "demoCta": 2
+              }
+            ]
+          },
+          {
+            "h": "Quality before color",
+            "p": [
+              "Symbols such as m, dim, aug, sus2, and sus4 alter the basic triad. Extension figures then add or imply upper chord tones.",
+              "Parentheses collect optional colors or alterations: G7(b9,#11). The symbol describes harmonic content, not a mandatory fretboard shape or doubling."
+            ]
+          },
+          {
+            "h": "Practical reading",
+            "p": [
+              "Start with the guide tones—the 3rd and 7th—then add the bass and one requested color. This produces a clear guitar part without trying to grip every implied tone.",
+              "Use alternate Analyzer readings as context checks. The best symbol is the one that explains the bass, function, and surrounding progression with the least strain."
+            ]
+          }
+        ],
+        "ctaMaj7": "Place Cmaj7",
+        "ctaDom7": "Place G7",
+        "ctaHalfDim": "Place Bm7b5"
+      },
+      "harmony": {
+        "title": "Diatonic chords & ii–V–I",
+        "blurb": "Stack the scale into chords, then hear its strongest common cadence.",
+        "body": [
+          {
+            "h": "A chord on every degree",
+            "p": [
+              "Stack alternating scale tones above each degree to produce the diatonic chord set. In C major the seventh chords are Cmaj7, Dm7, Em7, Fmaj7, G7, Am7, and Bm7b5.",
+              "Roman numerals preserve each chord's scale position when the key changes. Uppercase suggests major, lowercase minor, and the quality marks complete diminished-family symbols."
+            ]
+          },
+          {
+            "h": "The ii–V–I path",
+            "p": [
+              "Dm7–G7–Cmaj7 is ii–V–I in C: preparation, dominant tension, and arrival. The roots move by fifth, while the guide tones move efficiently by half or whole step.",
+              "The same pattern works in every major key. Learn the function and voice leading, then move the geometry rather than memorizing twelve unrelated progressions."
+            ],
+            "figures": [
+              {
+                "type": "romans",
+                "caption": "ii–V–I in C",
+                "tokens": [
+                  "ii",
+                  "V",
+                  "I"
+                ],
+                "demoCta": 1
+              },
+              {
+                "type": "miniNeck",
+                "caption": "Dm7 · ii",
+                "chordPcs": [
+                  2,
+                  5,
+                  9,
+                  0
+                ],
+                "chordRoot": 2,
+                "labels": "degrees",
+                "demoCta": 1
+              },
+              {
+                "type": "miniNeck",
+                "caption": "G7 · V",
+                "chordPcs": [
+                  7,
+                  11,
+                  2,
+                  5
+                ],
+                "chordRoot": 7,
+                "labels": "degrees",
+                "demoCta": 2
+              },
+              {
+                "type": "miniNeck",
+                "caption": "Cmaj7 · I",
+                "chordPcs": [
+                  0,
+                  4,
+                  7,
+                  11
+                ],
+                "chordRoot": 0,
+                "labels": "degrees",
+                "demoCta": 3
+              }
+            ]
+          },
+          {
+            "h": "Map, analyze, drill",
+            "p": [
+              "Open Ionian to inspect its scale chords, then send ii, V, and I to Chord Analyzer. Compare each chord's tones against the full scale on the neck.",
+              "Use Drills to build the cadence without labels. The exercise closes the loop from recognizing a formula to finding its notes under your fingers."
+            ]
+          }
+        ],
+        "ctaIonian": "C Ionian · scale chords",
+        "ctaIi": "Place Dm7 (ii)",
+        "ctaV": "Place G7 (V)",
+        "ctaI": "Place Cmaj7 (I)",
+        "ctaDrill": "Drill ii–V–I"
+      },
+      "functionalHarmony": {
+        "title": "Functional harmony",
+        "blurb": "Hear chords as tonic, predominant, or dominant motion.",
+        "body": [
+          {
+            "h": "Three broad jobs",
+            "p": [
+              "Tonic function feels settled, predominant function moves away from tonic, and dominant function creates pressure to return. The common flow is T–PD–D–T.",
+              "In major, I is the clearest tonic, ii and IV are common predominants, and V or vii° supply dominant pull."
+            ]
+          },
+          {
+            "h": "Function is contextual",
+            "p": [
+              "A chord's scale degree suggests a role, but meter, bass, duration, and neighboring chords shape what you hear. vi can prolong tonic or begin a deceptive turn.",
+              "Function describes directed motion rather than chord quality alone. A major chord can be tonic in one key, predominant in another, and dominant when temporarily tonicizing a new target."
+            ]
+          },
+          {
+            "h": "Follow guide tones",
+            "p": [
+              "In G7–Cmaj7, B rises to C and F falls to E. Those half-step resolutions make dominant-to-tonic motion clear even in a two-note guitar shell.",
+              "Compare I–IV–V–I with I–ii–V–I. The surface voicings differ, but both trace the same functional departure and return."
+            ]
+          }
+        ],
+        "ctaV": "Place G7 · dominant",
+        "ctaI": "Place Cmaj7 · tonic",
+        "ctaIV": "Place Fmaj7 · predominant"
+      },
+      "cadencesAndTurnarounds": {
+        "title": "Cadences & turnarounds",
+        "blurb": "Shape endings, detours, and returns with familiar harmonic routes.",
+        "body": [
+          {
+            "h": "Ways to close",
+            "p": [
+              "An authentic cadence moves V–I and gives the strongest tonal close, especially when both chords and melody emphasize the tonic. A plagal cadence moves IV–I for a softer release.",
+              "A deceptive cadence redirects V to vi instead of I. The expected leading-tone resolution can remain while the bass avoids the tonic, extending the phrase."
+            ]
+          },
+          {
+            "h": "Keep the form moving",
+            "p": [
+              "A turnaround occupies the end of a phrase and points back to its beginning. I–vi–ii–V is a classic loop because each chord leads naturally toward the next.",
+              "Jazz turnarounds often add secondary dominants or substitutions, but their job remains practical: create momentum into the next tonic."
+            ]
+          },
+          {
+            "h": "Voice the destination",
+            "p": [
+              "On guitar, keep one common tone where possible and move the other voices by the smallest interval. Cadential force survives even when roots are supplied by a bassist.",
+              "Loop each route and listen to expectation: closure for V–I, warmth for IV–I, surprise for V–vi, and renewed motion for the turnaround."
+            ]
+          }
+        ],
+        "ctaAuth": "Place G7 → Cmaj7",
+        "ctaPlagal": "Place Fmaj7 → Cmaj7",
+        "ctaDecep": "Place G7 → Am7",
+        "ctaTurn": "Place Cmaj7 → Am7 → Dm7 → G7"
+      },
+      "secondaryDominants": {
+        "title": "Secondary dominants",
+        "blurb": "Borrow a dominant to spotlight a diatonic chord.",
+        "body": [
+          {
+            "h": "A temporary leading chord",
+            "p": [
+              "A secondary dominant is the V of a chord other than the home tonic. In C major, D7 is V/V because D7 is the dominant of G, the key's V chord.",
+              "Its F# lies outside C major and acts as a temporary leading tone to G. That chromatic note creates direction without requiring a full modulation."
+            ]
+          },
+          {
+            "h": "Read the slash by function",
+            "p": [
+              "V/V is read \"five of five.\" This functional slash is not a bass slash: D7/F# names a voicing, while V/V names harmonic purpose.",
+              "Other common examples are V/ii leading to ii and V/vi leading to vi. The target usually arrives immediately or after a brief embellishment."
+            ]
+          },
+          {
+            "h": "Hear the chain",
+            "p": [
+              "Play D7–G7–Cmaj7. The first dominant points to the second, and the second resolves home, creating a chain of descending fifths.",
+              "Track each chord's 3rd and b7 in Analyzer. Those guide tones reveal why the chromatic chord sounds directed rather than randomly outside the key."
+            ]
+          }
+        ],
+        "ctaVV": "Place D7 (V/V)",
+        "ctaV": "Place G7 (V)",
+        "ctaI": "Place Cmaj7 (I)"
+      },
+      "minorHarmony": {
+        "title": "Harmony in minor keys",
+        "blurb": "Use natural, harmonic, and melodic minor as complementary resources.",
+        "body": [
+          {
+            "h": "Natural minor as the field",
+            "p": [
+              "Natural minor, or Aeolian, supplies the basic minor-key collection: 1–2–b3–4–5–b6–b7. In A minor its diatonic v chord is Em or Em7.",
+              "That minor v has weak dominant pull because it lacks the leading tone G#. Minor-key practice therefore often alters the seventh degree."
+            ]
+          },
+          {
+            "h": "Raise 7 for the dominant",
+            "p": [
+              "Harmonic minor raises b7 to 7, turning Em into E or E7 and creating a strong V–i resolution. The scale's b6-to-7 augmented second is a consequence of that harmonic need.",
+              "The resulting chord set mixes familiar and distinctive colors, including augmented III and fully diminished vii°7."
+            ]
+          },
+          {
+            "h": "Melodic flexibility",
+            "p": [
+              "Melodic minor also raises b6 to 6, smoothing melodic motion while preserving the leading tone. Jazz practice commonly uses this form in both directions and mines its modes for chord-scale colors.",
+              "Treat the three scales as views of one minor-key system, not competing definitions. Choose tones according to melody, voice leading, and the chord currently sounding."
+            ]
+          }
+        ],
+        "ctaAeolian": "A natural minor",
+        "ctaHarm": "A harmonic minor",
+        "ctaV": "Place E7 (V)",
+        "ctaIm": "Place Am (i)"
+      },
+      "voiceLeading": {
+        "title": "Voice leading & guide tones",
+        "blurb": "Read the inner motion before reaching for full guitar shapes.",
+        "body": [
+          {
+            "h": "Lines inside chords",
+            "p": [
+              "Voice leading treats each chord tone as part of a melodic line. Good motion often keeps common tones and moves remaining voices by step instead of making every hand shape jump.",
+              "The smoothest path is not always the nearest root-position chord. Inversions let the bass and upper voices travel independently."
+            ]
+          },
+          {
+            "h": "Thirds and sevenths",
+            "p": [
+              "The 3rd and 7th are guide tones because they define quality and function. In G7, B and F form a tritone that resolves inward to C and E in Cmaj7.",
+              "A two-note shell can therefore state V–I more clearly than a dense voicing whose important tones are buried. Tap G7, then Cmaj7, and watch the roles."
+            ],
+            "figures": [
+              {
+                "type": "miniNeck",
+                "caption": "G7 · V",
+                "chordPcs": [
+                  7,
+                  11,
+                  2,
+                  5
+                ],
+                "chordRoot": 7,
+                "labels": "degrees",
+                "demoCta": 0
+              },
+              {
+                "type": "miniNeck",
+                "caption": "Cmaj7 · I",
+                "chordPcs": [
+                  0,
+                  4,
+                  7,
+                  11
+                ],
+                "chordRoot": 0,
+                "labels": "degrees",
+                "demoCta": 1
+              }
+            ]
+          },
+          {
+            "h": "Read first, finger second",
+            "p": [
+              "Place V and I in Analyzer, identify every role, then choose nearby copies of the guide tones on adjacent strings. Add roots or colors only after the motion is audible.",
+              "Practice in several string sets. Reading roles first prevents a familiar grip from hiding doubled notes, omitted tones, or awkward melodic leaps."
+            ]
+          }
+        ],
+        "ctaV": "Place G7 · find 3 and b7",
+        "ctaI": "Resolve to Cmaj7"
+      },
+      "modes": {
+        "title": "The church modes",
+        "blurb": "Seven major-scale rotations, each with its own center and characteristic color.",
+        "body": [
+          {
+            "h": "Related notes, different home",
+            "p": [
+              "Ionian, Dorian, Phrygian, Lydian, Mixolydian, Aeolian, and Locrian can be generated from rotations of one major scale. C Ionian and D Dorian share notes, but they do not share a tonic.",
+              "A mode becomes audible when harmony, phrasing, and emphasis establish its own root. Merely starting a C-major run on D does not guarantee a Dorian sound."
+            ]
+          },
+          {
+            "h": "Characteristic intervals",
+            "p": [
+              "Compare each mode with a familiar major or minor baseline. Lydian is major with #4, Mixolydian is major with b7, Dorian is minor with 6, and Phrygian is minor with b2.",
+              "Aeolian's b6 supports natural-minor gravity; Locrian's b5 makes its tonic triad diminished and unstable. Ionian is the unaltered major reference."
+            ]
+          },
+          {
+            "h": "Make the root audible",
+            "p": [
+              "Drone the modal tonic or loop a simple tonic chord, then target the characteristic note and resolve it deliberately. This separates modal color from parent-scale fingering.",
+              "Keep the root fixed while switching modes in Explore. The changed markers show the exact intervals responsible for each new sound."
+            ]
+          }
+        ],
+        "ctaIonian": "C Ionian",
+        "ctaDorian": "C Dorian",
+        "ctaPhrygian": "C Phrygian",
+        "ctaLydian": "C Lydian",
+        "ctaMixo": "C Mixolydian"
+      },
+      "melodicMinor": {
+        "title": "Melodic minor & its modes",
+        "blurb": "A minor tonic with natural 6 and 7, plus essential modern dominant colors.",
+        "body": [
+          {
+            "h": "The parent sound",
+            "p": [
+              "Jazz melodic minor is 1–2–b3–4–5–6–7 in both directions. It combines a minor 3rd with major 6th and 7th for a tense but lyrical minor color.",
+              "Over a minor-major seventh chord, the scale states every essential tone and offers natural 9, 11, and 13."
+            ]
+          },
+          {
+            "h": "Lydian Dominant",
+            "p": [
+              "The fourth mode is Lydian Dominant: 1–2–3–#4–5–6–b7. Its 3 and b7 fit a dominant chord while #4 supplies the #11 color.",
+              "Use it over 7#11, especially when a plain Mixolydian 4 would rub against the major 3rd."
+            ]
+          },
+          {
+            "h": "Super Locrian",
+            "p": [
+              "The seventh mode is Super Locrian, commonly called the Altered scale. Relative to its root it contains b9, #9, b5 or #11, and b13 around a dominant shell.",
+              "Use it over 7alt, then resolve altered tensions by half step into the target chord. The destination makes the outside color intelligible."
+            ]
+          }
+        ],
+        "ctaMm": "C melodic minor",
+        "ctaLydDom": "F Lydian Dominant",
+        "ctaAlt": "B Altered"
+      },
+      "harmonicMinor": {
+        "title": "Harmonic minor & Phrygian Dominant",
+        "blurb": "Strengthen minor-key dominant motion and explore its b2–3 color.",
+        "body": [
+          {
+            "h": "A leading tone in minor",
+            "p": [
+              "Harmonic minor is 1–2–b3–4–5–b6–7. Raising the natural-minor b7 creates a leading tone and turns the v chord into a major V or V7.",
+              "The augmented second between b6 and 7 is the scale's unmistakable melodic gap. It can sound dramatic, classical, metal, or regionally inflected depending on phrasing."
+            ]
+          },
+          {
+            "h": "Phrygian Dominant",
+            "p": [
+              "The fifth mode is Phrygian Dominant: 1–b2–3–4–5–b6–b7. Its major 3rd and b7 outline a dominant chord, while b2 and b6 supply its characteristic tension.",
+              "In A harmonic minor, E Phrygian Dominant fits E7 and points back to Am. The mode is a dominant view of the same minor-key material."
+            ]
+          },
+          {
+            "h": "Resolve the color",
+            "p": [
+              "Hold an E or E7 drone, emphasize F and G#, then resolve into A minor. The half-step F–E and G#–A motions reveal both the modal color and its function.",
+              "Map A harmonic minor first, then switch the root to E without changing the pitch collection. Listen for the center to move from minor tonic to dominant."
+            ]
+          }
+        ],
+        "ctaHm": "A harmonic minor",
+        "ctaPhryDom": "E Phrygian Dominant"
+      },
+      "pentatonicAndBlues": {
+        "title": "Pentatonic & blues scales",
+        "blurb": "Five sturdy notes, then one blue note that changes the phrasing.",
+        "body": [
+          {
+            "h": "Major and minor pentatonic",
+            "p": [
+              "Major pentatonic is 1–2–3–5–6. It removes the major scale's two semitone pairs, leaving an open collection that fits many folk, country, pop, and soul melodies.",
+              "Minor pentatonic is 1–b3–4–5–b7. Relative major and minor pentatonics share notes, but phrasing and harmonic center decide which sound you hear."
+            ]
+          },
+          {
+            "h": "Add the blue note",
+            "p": [
+              "The common minor blues scale adds b5 between 4 and 5. That passing tone is expressive because it rubs against stable chord tones and wants motion.",
+              "Do not treat every scale tone equally. Bend toward chord tones, linger on b3 or b7 where the harmony supports them, and use b5 as tension rather than a parking place."
+            ]
+          },
+          {
+            "h": "Connect shapes to targets",
+            "p": [
+              "Guitar box patterns are useful navigation, but target notes make a solo follow the progression. Mark each chord's root, 3rd, and 7th inside the pentatonic map.",
+              "Compare major and minor pentatonic over the same blues tonic. Their overlap supports familiar call-and-response, while their different thirds create the expressive major/minor blend."
+            ]
+          }
+        ],
+        "ctaMinP": "A minor pentatonic",
+        "ctaMajP": "C major pentatonic",
+        "ctaBlues": "A blues scale"
+      },
+      "symmetricScales": {
+        "title": "Symmetric scales",
+        "blurb": "Repeat interval patterns to create ambiguous, reusable tension.",
+        "body": [
+          {
+            "h": "Whole tone",
+            "p": [
+              "The whole-tone scale uses six consecutive whole steps. With no semitones, perfect fifths, or unique internal hierarchy, it sounds floating and resistant to a single tonal center.",
+              "Its 1–3–#5 outline fits augmented chords, while 9, #11, and b13 can color dominant harmony."
+            ]
+          },
+          {
+            "h": "Diminished in two forms",
+            "p": [
+              "The diminished scale alternates whole and half steps across eight notes. Whole–half supports diminished-seventh harmony; half–whole is commonly placed over dominant b9 chords.",
+              "Because the pattern repeats every minor third, one diminished collection serves several roots and dominant chords. That symmetry is powerful but can obscure direction."
+            ]
+          },
+          {
+            "h": "Aim the tension",
+            "p": [
+              "Sequence a small fingering in minor thirds to hear the geometry, then break the pattern by resolving a voice a half step into the next chord.",
+              "Use the neck view to compare whole–half and half–whole from the same root. Their notes overlap, but where the half step begins changes the chord they describe."
+            ]
+          }
+        ],
+        "ctaWt": "C whole tone",
+        "ctaDim": "C diminished · whole–half",
+        "ctaHw": "G diminished · half–whole"
+      },
+      "bebopAndChromatic": {
+        "title": "Bebop scales & chromatic motion",
+        "blurb": "Use passing tones to place chord tones on strong beats.",
+        "body": [
+          {
+            "h": "Eight notes for rhythmic alignment",
+            "p": [
+              "A bebop scale adds a chromatic passing tone to a seven-note scale. In an even stream of eighth notes, the extra note can place stable chord tones consistently on downbeats.",
+              "The passing tone is a rhythmic and melodic device, not a new tonic. Its success depends on where the line begins, where it lands, and which chord is sounding."
+            ]
+          },
+          {
+            "h": "Dominant and major forms",
+            "p": [
+              "Bebop dominant adds a major 7 passing tone to Mixolydian: 1–2–3–4–5–6–b7–7. Over a dominant chord, 1, 3, 5, and b7 can line up on strong beats.",
+              "Bebop major adds #5 or b6 to the major scale. The added tone bridges 5 and 6 while preserving the major chord as the line's structural target."
+            ]
+          },
+          {
+            "h": "Chromatic notes need destinations",
+            "p": [
+              "Approach a chord tone from a half step above, below, or both. Enclosures make a line sound connected to the harmony even when several notes lie outside the parent scale.",
+              "Practice one octave with a metronome and vary the starting degree. If chord tones drift onto weak beats, change the pickup or direction rather than blaming the scale."
+            ]
+          }
+        ],
+        "ctaDom": "G bebop dominant",
+        "ctaMaj": "C bebop major"
+      },
+      "systems": {
+        "title": "CAGED, NPS & Berklee positions",
+        "blurb": "Organize one neck-wide scale into different practice maps.",
+        "body": [
+          {
+            "h": "CAGED regions",
+            "p": [
+              "CAGED connects five movable regions named for open C, A, G, E, and D chord forms. Each region links chord tones, arpeggios, and surrounding scale notes.",
+              "The names describe visual ancestry, not the current key. In any key, the five regions repeat in order and overlap along the neck."
+            ]
+          },
+          {
+            "h": "Notes per string",
+            "p": [
+              "NPS organizes ascending scale tones with a fixed count—usually three or four—on each string. It favors repeated picking and legato mechanics and exposes diagonal neck movement.",
+              "The fingering is regular in note count, not fret span. Position shifts and the tuning break between G and B still require attention."
+            ]
+          },
+          {
+            "h": "Berklee positions",
+            "p": [
+              "Berklee-style seven-position practice places one compact window on each scale degree. The forms keep the whole scale available while limiting the hand to a readable area.",
+              "No system owns the correct notes. Compare all three over one root, name degrees inside every form, and use the map that serves the phrase or technique you are practicing."
+            ]
+          }
+        ],
+        "ctaCaged": "C major · CAGED",
+        "ctaNps": "C major · Notes / string",
+        "ctaBerklee": "C major · Berklee (7PS)"
+      },
+      "quartalHarmony": {
+        "title": "Quartal harmony",
+        "blurb": "Stack fourths for open, modal voicings that resist ordinary triad labels.",
+        "body": [
+          {
+            "h": "Fourths instead of thirds",
+            "p": [
+              "Tertian harmony stacks thirds to produce triads and seventh chords. Quartal harmony stacks fourths, creating wider structures such as C–F–Bb.",
+              "Perfect fourths dominate the sound, but a scale-constrained stack may include an augmented or diminished fourth. Those changes connect the voicing to its mode."
+            ],
+            "figures": [
+              {
+                "type": "miniNeck",
+                "caption": "C–F–B♭ · quartal",
+                "chordPcs": [
+                  0,
+                  5,
+                  10
+                ],
+                "chordRoot": 0,
+                "labels": "degrees",
+                "demoCta": 1
+              },
+              {
+                "type": "miniNeck",
+                "caption": "C–E–G · tertian",
+                "chordPcs": [
+                  0,
+                  4,
+                  7
+                ],
+                "chordRoot": 0,
+                "labels": "degrees",
+                "demoCta": 2
+              }
+            ]
+          },
+          {
+            "h": "Ambiguous by design",
+            "p": [
+              "A quartal voicing can support several roots because it may not contain a conventional 3rd. Context, bass, melody, and neighboring shapes determine its function.",
+              "This ambiguity makes fourth stacks useful for modal comping, suspended textures, and parallel movement where a fixed chord symbol is less important than color."
+            ]
+          },
+          {
+            "h": "Move the layer",
+            "p": [
+              "Open the Quartal layer, choose a string set and height, and follow the connected scale tones. Shift the stack through the mode while listening for stable and tense degrees.",
+              "Add a separate bass note to test possible roots. The same upper structure can become a sus chord, an extended dominant color, or a rootless minor voicing."
+            ]
+          }
+        ],
+        "ctaLayer": "C Dorian · quartal layer",
+        "ctaQuartal": "Place C–F–B♭ · quartal",
+        "ctaTertian": "Place C · tertian"
+      },
+      "readingTheNeck": {
+        "title": "Reading the neck",
+        "blurb": "Combine Display, Analyzer, and Drills into one learning loop.",
+        "body": [
+          {
+            "h": "See one layer at a time",
+            "p": [
+              "Use Display intentionally: Names answer where notes are, Degrees show scale function, and Intervals expose exact distance from the root. Switch views on the same pattern instead of trying to read everything at once.",
+              "The same C triad can be read as letter names or as roles. Tap either diagram, then flip Names / Degrees on the board below."
+            ],
+            "figures": [
+              {
+                "type": "miniNeck",
+                "caption": "C triad · degrees",
+                "chordPcs": [
+                  0,
+                  4,
+                  7
+                ],
+                "chordRoot": 0,
+                "labels": "degrees",
+                "demoCta": 0
+              },
+              {
+                "type": "miniNeck",
+                "caption": "C triad · names",
+                "chordPcs": [
+                  0,
+                  4,
+                  7
+                ],
+                "chordRoot": 0,
+                "labels": "names",
+                "demoCta": 0
+              }
+            ]
+          },
+          {
+            "h": "Interrogate real voicings",
+            "p": [
+              "Place notes in Chord Analyzer to turn a shape into roles. Pin the root when context demands it, compare inversions, and notice which tones are doubled or omitted.",
+              "Compare a root-position Cmaj7 with C/E. Send proposed scales back to Explore and check the chord against the larger collection."
+            ],
+            "figures": [
+              {
+                "type": "miniNeck",
+                "caption": "Cmaj7 · root position",
+                "chordPcs": [
+                  0,
+                  4,
+                  7,
+                  11
+                ],
+                "chordRoot": 0,
+                "labels": "degrees",
+                "demoCta": 2
+              },
+              {
+                "type": "miniNeck",
+                "caption": "C/E · slash bass",
+                "chordPcs": [
+                  4,
+                  0,
+                  7
+                ],
+                "chordRoot": 0,
+                "labels": "degrees",
+                "demoCta": 3
+              }
+            ]
+          },
+          {
+            "h": "Recall without labels",
+            "p": [
+              "Finish in Drills, where the board stops supplying the answer. Finding a degree, building ii–V–I, and naming an inversion test different kinds of recall.",
+              "Use a short cycle: explore a concept, analyze one example, then drill it. Return to Display only to diagnose a miss, and repeat until the location and sound agree."
+            ]
+          }
+        ],
+        "ctaExplore": "Explore the fretboard",
+        "ctaDrills": "Open guided drills",
+        "ctaMaj7": "Place Cmaj7",
+        "ctaSlash": "Place C/E"
+      }
+    },
+    "figureAria": "Show this example on the fretboard",
+    "figurePlay": "Play this example"
   },
   "profiles": {
     "title": "My Guitars",
     "hint": "Save your instruments — body type, role, scale length, tuning and a photo.",
-    "export": "Export (.zip)",
-    "import": "Import (.zip)",
+    "export": "Export (.flstate)",
+    "import": "Import (.flstate)",
     "addGuitar": "Add guitar",
     "editGuitar": "Edit guitar",
     "close": "Close",
@@ -226,8 +1648,8 @@
     "imageNoDimensions": "This image has no usable dimensions.",
     "importTooLarge": "File is too large (max 50 MB).",
     "importReadError": "Could not read the file.",
-    "importInvalidZip": "Not a valid Fretboard Lab export — the file could not be read as a ZIP archive.",
-    "importNoSettings": "Not a Fretboard Lab export — no settings file inside the ZIP.",
+    "importInvalidZip": "Not a valid Fretboard Lab export — the file could not be read as an flstate archive (ZIP).",
+    "importNoSettings": "Not a Fretboard Lab export — no settings file inside the archive.",
     "importCorruptJson": "The export is corrupted — its settings file is not valid JSON.",
     "importUnknownFormat": "Not a Fretboard Lab export — the settings file has an unknown format.",
     "importNewerVersion": "This export was made by a newer version of Fretboard Lab and cannot be imported here.",
@@ -235,78 +1657,1180 @@
   },
   "scaleDetails": {
     "modeOf": "mode {n} of {parent}",
+    "parentScale": "Parent scale:",
+    "parentScaleGo": "Switch to {name}",
+    "chords": "Scale chords",
+    "chords7": "Diatonic 7th chords",
+    "chordGo": "Open {name} in Chord Analyzer",
+    "playChord": "Play chord",
+    "playSequence": "Play sequence",
     "characteristic": "Characteristic: ",
+    "hookCharTitle": "Learn about {interval} in Theory",
+    "related": "Related modes",
+    "relatedTitle": "Open {name} — characteristic: {char}",
+    "relatedTitlePlain": "Open {name}",
+    "learn": "Learn more",
+    "learnIntervals": "Intervals",
+    "learnModes": "Modes",
+    "learnBuilding": "Building chords",
+    "learnHarmony": "Scale chords",
     "wheelAria": "scale wheel",
     "stepHalf": "H",
-    "stepWhole": "W"
+    "stepWhole": "W",
+    "learnExtensions": "Extensions & alts"
   },
   "scaleCats": {
-    "church": { "label": "Church Modes", "short": "Church" },
-    "melodic": { "label": "Melodic Minor Modes", "short": "Melodic Minor" },
-    "harmonic": { "label": "Harmonic Minor Modes", "short": "Harmonic Minor" },
-    "harmMajor": { "label": "Harmonic Major Modes", "short": "Harmonic Major" },
-    "doubleHarm": { "label": "Double Harmonic Modes", "short": "Double Harmonic" },
-    "neapolitan": { "label": "Neapolitan Modes", "short": "Neapolitan" },
-    "symmetric": { "label": "Symmetric & Limited Transposition", "short": "Symmetric" },
-    "penta": { "label": "Pentatonic", "short": "Pentatonic" },
-    "hex": { "label": "Hexatonic & Blues", "short": "Hexatonic" },
-    "bebop": { "label": "Bebop", "short": "Bebop" },
-    "jazz": { "label": "Jazz & Dominant", "short": "Jazz" },
-    "world": { "label": "World & Exotic", "short": "World" },
-    "other": { "label": "Other", "short": "Other" }
+    "church": {
+      "label": "Church Modes",
+      "short": "Church"
+    },
+    "melodic": {
+      "label": "Melodic Minor Modes",
+      "short": "Melodic Minor"
+    },
+    "harmonic": {
+      "label": "Harmonic Minor Modes",
+      "short": "Harmonic Minor"
+    },
+    "harmMajor": {
+      "label": "Harmonic Major Modes",
+      "short": "Harmonic Major"
+    },
+    "doubleHarm": {
+      "label": "Double Harmonic Modes",
+      "short": "Double Harmonic"
+    },
+    "neapolitan": {
+      "label": "Neapolitan Modes",
+      "short": "Neapolitan"
+    },
+    "symmetric": {
+      "label": "Symmetric & Limited Transposition",
+      "short": "Symmetric"
+    },
+    "penta": {
+      "label": "Pentatonic",
+      "short": "Pentatonic"
+    },
+    "hex": {
+      "label": "Hexatonic & Blues",
+      "short": "Hexatonic"
+    },
+    "bebop": {
+      "label": "Bebop",
+      "short": "Bebop"
+    },
+    "jazz": {
+      "label": "Jazz & Dominant",
+      "short": "Jazz"
+    },
+    "world": {
+      "label": "World & Exotic",
+      "short": "World"
+    },
+    "other": {
+      "label": "Other",
+      "short": "Other"
+    }
   },
   "scales": {
-  "major": { "label": "Major (Church Modes)", "short": "Major", "modes": ["Ionian", "Dorian", "Phrygian", "Lydian", "Mixolydian", "Aeolian", "Locrian"] },
-  "melodicMinor": { "label": "Melodic Minor", "short": "Melodic", "modes": ["Melodic Minor", "Dorian b2", "Lydian Augmented", "Lydian Dominant", "Mixolydian b6", "Locrian #2", "Super Locrian"] },
-  "harmonicMinor": { "label": "Harmonic Minor", "short": "Harmonic", "modes": ["Harmonic Minor", "Locrian #6", "Ionian #5", "Dorian #4", "Phrygian Dominant", "Lydian #9", "Altered bb7"] },
-  "harmonicMajor": { "label": "Harmonic Major", "short": "Harmonic", "modes": ["Harmonic Major", "Dorian b5", "Phrygian b4", "Lydian b3", "Mixolydian b2", "Lydian Augmented #2", "Locrian bb7"] },
-  "doubleHarmonic": { "label": "Double Harmonic", "short": "Double", "modes": ["Double Harmonic Major", "Lydian #2 #6", "Ultraphrygian", "Hungarian Minor", "Oriental", "Ionian b2 b5", "Locrian b3 bb7"] },
-  "neapolitanMajor": { "label": "Neapolitan Major", "short": "Neapolitan", "modes": ["Neapolitan Major", "Leading Whole Tone", "Lydian #5 b7", "Lydian b6 b7", "Major Locrian", "Ionian #4 b6", "Phrygian #2 #4"] },
-  "neapolitanMinor": { "label": "Neapolitan Minor", "short": "Neapolitan", "modes": ["Neapolitan Minor", "Lydian Dominant", "Mixolydian", "Locrian #2", "Phrygian #3", "Mixolydian #2", "Lydian #2 b6"] },
-  "wholeTone": { "label": "Whole Tone", "short": "Whole" },
-  "augmented": { "label": "Augmented", "short": "Augmented" },
-  "diminished": { "label": "Diminished (whole-half)", "short": "Diminished" },
-  "diminishedHW": { "label": "Diminished (half-whole)", "short": "Diminished" },
-  "chromatic": { "label": "Chromatic", "short": "Chromatic" },
-  "messiaen3": { "label": "Messiaen Mode 3", "short": "Messiaen" },
-  "messiaen4": { "label": "Messiaen Mode 4", "short": "Messiaen" },
-  "messiaen5": { "label": "Messiaen Mode 5", "short": "Messiaen" },
-  "messiaen6": { "label": "Messiaen Mode 6", "short": "Messiaen" },
-  "messiaen7": { "label": "Messiaen Mode 7", "short": "Messiaen" },
-  "majorPentatonic": { "label": "Major Pentatonic", "short": "Major" },
-  "minorPentatonic": { "label": "Minor Pentatonic", "short": "Minor" },
-  "suspendedPentatonic": { "label": "Suspended (Egyptian / Yo)", "short": "Suspended" },
-  "dominantPentatonic": { "label": "Dominant Pentatonic", "short": "Dominant" },
-  "hirajoshi": { "label": "Hirajoshi", "short": "Hirajoshi" },
-  "iwato": { "label": "Iwato", "short": "Iwato" },
-  "insen": { "label": "In-Sen", "short": "In-Sen" },
-  "pelog": { "label": "Pelog", "short": "Pelog" },
-  "marwa": { "label": "Marwa", "short": "Marwa" },
-  "blues": { "label": "Blues (hexatonic)", "short": "Blues" },
-  "bluesMajor": { "label": "Major Blues", "short": "Major" },
-  "hexatonicMajor": { "label": "Hexatonic Major", "short": "Hexatonic" },
-  "hexatonicMinor": { "label": "Hexatonic Minor", "short": "Hexatonic" },
-  "prometheus": { "label": "Prometheus (Mystic)", "short": "Prometheus" },
-  "bebopDominant": { "label": "Bebop Dominant", "short": "Bebop" },
-  "bebopMajor": { "label": "Bebop Major", "short": "Bebop" },
-  "bebopMinor": { "label": "Bebop Minor", "short": "Bebop" },
-  "bebopDorian": { "label": "Bebop Dorian", "short": "Bebop" },
-  "bebopLocrian": { "label": "Bebop Locrian", "short": "Bebop" },
-  "dominant": { "label": "Mixolydian (Dominant)", "short": "Mixolydian" },
-  "minorSixDiminished": { "label": "Minor Six Diminished", "short": "Minor" },
-  "majorSixDiminished": { "label": "Major Six Diminished", "short": "Major" },
-  "persian": { "label": "Persian", "short": "Persian" },
-  "enigmatic": { "label": "Enigmatic", "short": "Enigmatic" },
-  "spanishPhrygian": { "label": "Spanish Phrygian (Flamenco)", "short": "Spanish" },
-  "todi": { "label": "Todi", "short": "Todi" },
-  "purvi": { "label": "Purvi", "short": "Purvi" },
-  "phrygianNatural6": { "label": "Phrygian Natural 6", "short": "Phrygian" },
-  "mixolydianAugmented": { "label": "Mixolydian Augmented", "short": "Mixolydian" },
-  "lydianMinor": { "label": "Lydian Minor", "short": "Lydian" },
-  "hungarianMajor": { "label": "Hungarian Major", "short": "Hungarian" },
-  "locrianNatural2": { "label": "Locrian Natural 2", "short": "Locrian" }
-},
-  "modeInfo": {"Ionian":{"mood":["bright","happy","pure","stable"],"char":"perfect 4th + major 7th","desc":"The major scale itself. No real tension to resolve тАФ the sound of home and a happy ending."},"Dorian":{"mood":["jazzy","soulful","hopeful","bluesy"],"char":"minor 3rd + major 6th","desc":"A minor scale with a bright 6th. Santana solos, Irish folk, and modal jazz тАФ sadness that still smiles."},"Phrygian":{"mood":["dark","exotic","tense","Spanish"],"char":"minor 2nd (тЩн2)","desc":"The тЩн2 gives it a distinctly Spanish / Andalusian flavor. Flamenco and heavy-metal riffs live here."},"Lydian":{"mood":["dreamy","ethereal","mystical","floating"],"char":"augmented 4th (тЩп4)","desc":"The тЩп4 makes everything feel airy and unresolved тАФ film scores, dream-pop shimmer, classic Sci-Fi wonder."},"Mixolydian":{"mood":["bluesy","rock","streetwise","laid-back"],"char":"minor 7th (тЩн7)","desc":"The major scale with a bluesy flattened 7th тАФ the sound of rock, blues, and Irish folk."},"Aeolian":{"mood":["sad","melancholic","brooding","serious"],"char":"тЩн3, тЩн6, тЩн7","desc":"The natural minor scale тАФ Western musicТs default for sadness, drama and dark emotion."},"Locrian":{"mood":["unsettling","dissonant","scary","unstable"],"char":"diminished 5th (тЩн5)","desc":"The tonic triad is diminished, so nothing ever truly resolves тАФ dread, chaos, and deliberate УwrongnessФ."},"Harmonic Minor":{"mood":["dark","exotic","haunting","Eastern-European"],"char":"тЩн6 + major 7th","desc":"The raised 7th over a тЩн6 creates a signature leap тАФ klezmer, gypsy, metal and classical minor melodies."},"Locrian #6":{"mood":["dark","mysterious","unsettled"],"char":"тЩн2, тЩн5, тЩп6","desc":"Locrian with a raised 6th тАФ shadowy and unstable."},"Ionian #5":{"mood":["tense","suspended","bright but unresolved"],"char":"raised 5th (тЩп5)","desc":"A major scale with a sharpened 5th тАФ chords wobble between major and augmented."},"Dorian #4":{"mood":["jazzy","quirky","bright"],"char":"raised 4th (тЩп4) + тЩн3","desc":"Dorian with a raised 4th тАФ a jazzy, slightly exotic minor sound."},"Phrygian Major":{"mood":["Spanish","flamenco","Arabic","metal"],"char":"тЩн2 + major 3rd","desc":"Also called Phrygian Dominant тАФ the Andalusian sound of flamenco, gypsy jazz and Middle-Eastern metal."},"Lydian #9":{"mood":["tense","dissonant","altered"],"char":"raised 9th (тЩп9) + тЩп4","desc":"An odd, chromatic-sounding major mode."},"Altered bb7":{"mood":["dominant","dissonant","chaotic"],"char":"тЩн3, тЩн5, тЩнтЩн7","desc":"An altered dominant scale full of chromatic tension."},"Melodic Minor":{"mood":["jazz","bittersweet","lyrical"],"char":"тЩн3 + major 6th + 7th","desc":"The jazz minor тАФ a minor scale that rises with a major sound, a favorite for soloing over minor chords."},"Dorian b2":{"mood":["mysterious","neoclassical","haunting"],"char":"тЩн2 + тЩн3","desc":"Dorian with a flattened 2nd тАФ dark and exotic."},"Lydian Augmented":{"mood":["dreamy","airy","cinematic"],"char":"тЩп4 + тЩп5","desc":"Lydian with a raised 5th тАФ floating, majestic film-score material."},"Lydian Dominant":{"mood":["bright","bluesy","fusion"],"char":"тЩп4 + тЩн7","desc":"A dominant 7 chord with a тЩп11 тАФ the jazz-fusion and bebop dominant sound."},"Mixolydian b6":{"mood":["sad-dominant","song-like","minor-leaning"],"char":"тЩн7 + тЩн6","desc":"A dominant scale that bends toward minor тАФ melancholic."},"Locrian #2":{"mood":["dark","dissonant","jazz"],"char":"тЩп2 + тЩн5","desc":"Locrian with a raised 2nd тАФ dark and unstable."},"Super Locrian":{"mood":["tense","extreme","free","altered"],"char":"тЩн9 тЩп9 тЩн5 тЩн13","desc":"The altered scale тАФ every note is a tension note, built for playing over altered dominant chords."},"Phrygian Dominant":{"mood":["Spanish","flamenco","Arabic","metal"],"char":"тЩн2 + major 3rd","desc":"The Andalusian sound of flamenco, gypsy jazz and Middle-Eastern metal тАФ a dominant chord with a flat 2nd."},"Harmonic Major":{"mood":["bright","unsettled","classical"],"char":"тЩн6 + major 7th","desc":"The major scale with a flattened 6th тАФ Ravel and jazz harmony love its dual major/minor colors."},"Dorian b5":{"mood":["dark","jazzy","tense"],"char":"тЩн5 + major 6th","desc":"Dorian with a flattened 5th тАФ a minor sound with a diminished core."},"Phrygian b4":{"mood":["exotic","dark","mystical"],"char":"тЩн2 + тЩн4","desc":"Phrygian with a flattened 4th тАФ an unusual, ancient-sounding color."},"Lydian b3":{"mood":["unstable","dreamy","uneasy"],"char":"тЩп4 + тЩн3","desc":"Lydian bent toward minor тАФ the tonic wavers between major and minor."},"Mixolydian b2":{"mood":["dark","dominant","tense"],"char":"тЩн2 + тЩн7","desc":"A dominant sound with a Phrygian lean тАФ tense and dramatic."},"Lydian Augmented #2":{"mood":["dense","altered","dissonant"],"char":"тЩп2 тЩп4 тЩп5","desc":"An extreme Lydian variant with three raised notes."},"Locrian bb7":{"mood":["dark","unstable","diminished"],"char":"тЩн5 + тЩнтЩн7","desc":"Locrian with a doubly-flattened 7th тАФ a fully diminished flavor."},"Double Harmonic Major":{"mood":["exotic","mystical","Arabic","Jewish"],"char":"two augmented 2nds","desc":"The famous \"double harmonic\" sound тАФ Jewish prayer, Arabic maqam, gypsy music."},"Lydian #2 #6":{"mood":["bright","odd","shimmering"],"char":"тЩп2 + тЩп6 + тЩп4","desc":"An exotic Lydian variant with raised 2nd and 6th."},"Ultraphrygian":{"mood":["dark","dissonant","extreme"],"char":"тЩн2 + тЩн3 + тЩн4","desc":"Phrygian with a flattened 4th too тАФ very dark and unusual."},"Hungarian Minor":{"mood":["haunting","gypsy","eastern-European"],"char":"тЩн3 + тЩп4 + тЩп7","desc":"The gypsy minor scale тАФ two augmented 2nds, one minor 3rd, very dramatic."},"Oriental":{"mood":["exotic","tense","mysterious"],"char":"тЩн2 + тЩп4","desc":"A double-harmonic variant with a raised 4th тАФ snake-charmer exotica."},"Ionian b2 b5":{"mood":["unstable","dissonant","chromatic"],"char":"тЩн2 + тЩн5 + тЩн6","desc":"A major scale with two flattened notes тАФ uneasy and rare."},"Locrian b3 bb7":{"mood":["extreme","dark","diminished"],"char":"тЩн3 + тЩн5 + тЩнтЩн7","desc":"Doubly flattened тАФ even darker than ordinary Locrian."},"Neapolitan Major":{"mood":["romantic","dramatic","classical"],"char":"тЩн2 + major 7th","desc":"The Neapolitan sound тАФ a major scale with a flat 2nd, used for dramatic classical cadences."},"Leading Whole Tone":{"mood":["shimmering","unstable","floating"],"char":"тЩн2 + whole-tone run","desc":"Mostly whole steps over a flat 2nd тАФ a dreamy, unstable Neapolitan mode."},"Lydian #5 b7":{"mood":["fusion","tense","bright"],"char":"тЩп4 + тЩп5 + тЩн7","desc":"A dominant Lydian variant with a raised 5th."},"Lydian b6 b7":{"mood":["minor-leaning","airy","song-like"],"char":"тЩп4 + тЩн6 + тЩн7","desc":"Lydian bent minor тАФ a haunting raised-4th color."},"Major Locrian":{"mood":["dark","unsettled","rare"],"char":"тЩн2 + тЩн5","desc":"Locrian with a major 3rd тАФ an exotic diminished-major clash."},"Ionian #4 b6":{"mood":["tense","chromatic","unstable"],"char":"тЩп4 + тЩн6","desc":"Major with raised 4th and flattened 6th тАФ odd and rare."},"Phrygian #2 #4":{"mood":["dark","exotic","chromatic"],"char":"тЩп2 + тЩп4","desc":"Phrygian with raised 2nd and 4th тАФ exotic and unstable."},"Neapolitan Minor":{"mood":["dark","classical","dramatic"],"char":"тЩн2 + тЩн3 + тЩн7","desc":"The Neapolitan minor тАФ a dark classical mode with a flat 2nd."},"Phrygian #3":{"mood":["Spanish","major-minor","exotic"],"char":"тЩн2 + major 3rd","desc":"A Phrygian-dominant-like sound тАФ flamenco and Arabic color."},"Mixolydian #2":{"mood":["tense","dominant","chromatic"],"char":"тЩп2 + тЩн7","desc":"A dominant mode with a sharpened 2nd."},"Lydian #2 b6":{"mood":["dark","exotic","unsettled"],"char":"тЩп2 + тЩп4 + тЩн6","desc":"Lydian bent minor with a raised 2nd тАФ dark and rare."}},
-  "scaleInfo": {"majorPentatonic":{"mood":["bright","simple","safe"],"char":"no semitones","desc":"Five notes with no half-steps тАФ almost impossible to sound wrong. Pop, folk, country and blues."},"minorPentatonic":{"mood":["bluesy","rock","earthy"],"char":"no semitones","desc":"The go-to scale for rock and blues guitar solos."},"blues":{"mood":["gritty","wailing","expressive"],"char":"adds the тЩн5 Уblue noteФ","desc":"Minor pentatonic with a flattened 5th тАФ the note that bends and wails."},"dominant":{"mood":["bluesy","rock","laid-back"],"char":"minor 7th (тЩн7)","desc":"The Mixolydian sound тАФ a dominant scale for bluesy rock."},"wholeTone":{"mood":["floating","dreamlike","ambiguous"],"char":"six equal whole steps","desc":"No tonal center at all тАФ Debussy and jazz use it for a hazy, unsettled shimmer."},"diminished":{"mood":["tense","dissonant","symmetrical"],"char":"alternating W / H","desc":"Alternating whole and half steps тАФ an 8-note scale full of built-in tension."},"augmented":{"mood":["dreamy","floating","magical"],"char":"two augmented triads","desc":"Two augmented triads stacked тАФ Debussy and Ravel use it for a hazy, glowing sound."},"diminishedHW":{"mood":["tense","symmetrical","dominant"],"char":"alternating H / W","desc":"The half-whole diminished тАФ the classic dominant-altered scale."},"chromatic":{"mood":["dense","total","12-tone"],"char":"every half step","desc":"All twelve notes тАФ total chromatic color, atonal and free."},"messiaen3":{"mood":["modal","mystical","ritualistic"],"char":"2-1-1 repeating","desc":"MessiaenТs Mode 3 тАФ a symmetrical 9-note scale with a liturgical shimmer."},"messiaen4":{"mood":["symmetrical","modern","eerie"],"char":"2-1-3-1-1 pattern","desc":"Messiaen Mode 4 тАФ an 8-note symmetrical scale."},"messiaen5":{"mood":["ethereal","modern","detached"],"char":"1-4-1-1-1 pattern","desc":"Messiaen Mode 5 тАФ a sparse 6-note symmetric scale."},"messiaen6":{"mood":["colorful","modern","fragmented"],"char":"2-2-1-1-2-2-1 pattern","desc":"Messiaen Mode 6 тАФ two interlocking tritone shapes."},"messiaen7":{"mood":["dense","total","modern"],"char":"1-1-1-1-1-1-1-2-1","desc":"MessiaenТs Mode 7 тАФ an almost-chromatic scale of 10 notes."},"suspendedPentatonic":{"mood":["ancient","open","modal","calm"],"char":"no 3rd","desc":"The Egyptian / Yo scale тАФ a pentatonic with a suspended, open sound."},"dominantPentatonic":{"mood":["bluesy","earthy","simple"],"char":"тЩн7, no 3rd","desc":"Pentatonic built on the dominant notes тАФ a blues-friendly five-note set."},"hirajoshi":{"mood":["zen","Japanese","minimal"],"char":"two minor 2nds","desc":"A classic koto tuning scale тАФ sparse and evocative."},"iwato":{"mood":["Japanese","dark","minimal"],"char":"тЩн2 + тЩн5","desc":"A dark Japanese scale with flat 2nd and flat 5th."},"insen":{"mood":["Japanese","melancholy","clean"],"char":"minor 2nd + tritone","desc":"Another traditional Japanese scale тАФ sparse and elegant."},"pelog":{"mood":["Balinese","exotic","gamelan"],"char":"wide leaps","desc":"A Javanese/Balinese gamelan scale of seven tones."},"marwa":{"mood":["Arabic","exotic","serious"],"char":"тЩн2 + major 3rd","desc":"An Arabic maqam scale тАФ dark and dignified."},"bluesMajor":{"mood":["soulful","cheerful","bluesy"],"char":"adds the тЩн3 to major pentatonic","desc":"The major blues scale тАФ a bright pentatonic with a passing blue note."},"hexatonicMajor":{"mood":["bright","wide","incomplete"],"char":"тЩн7 + major 7th","desc":"A six-note major scale with a wide gap between 5th and 7th."},"hexatonicMinor":{"mood":["minor","wide","folk"],"char":"two 3-semitone leaps","desc":"A six-note minor scale with big expressive leaps."},"prometheus":{"mood":["mysterious","orchestral","mystic"],"char":"тЩн2 + тЩп4 + тЩн6","desc":"The Scriabin \"mystic\" chord scale тАФ mystical and brooding."},"bebopDominant":{"mood":["jazzy","driving","swinging"],"char":"adds a passing тЩн7","desc":"Dominant with a chromatic passing note тАФ bebop phrasing flows smoothly."},"bebopMajor":{"mood":["jazzy","smooth","classic"],"char":"adds a passing тЩп5","desc":"Major with a passing chromatic тАФ the classic bebop scale."},"bebopMinor":{"mood":["jazzy","dark","flowing"],"char":"adds a passing 2","desc":"Minor with a chromatic passing note between 3rd and 5th."},"bebopDorian":{"mood":["funky","jazzy","soulful"],"char":"adds a passing 3","desc":"Dorian with a passing chromatic тАФ funky and fluid."},"bebopLocrian":{"mood":["dark","tense","jazz"],"char":"adds a passing 2","desc":"Locrian with a passing note тАФ tense and chromatic."},"minorSixDiminished":{"mood":["dark","smooth","classical","jazz"],"char":"тЩн6 + major 7th","desc":"The Barry Harris minor scale тАФ a minor sound with a sharp 7th."},"majorSixDiminished":{"mood":["bright","swinging","classical"],"char":"тЩн3 + major 7th","desc":"The Barry Harris major scale тАФ major with a passing chromatic 3rd."},"persian":{"mood":["Arabic","exotic","serious"],"char":"тЩн2 + two augmented 2nds","desc":"The Persian scale тАФ exotic and regal, used in traditional Persian music."},"enigmatic":{"mood":["mysterious","dark","orchestral"],"char":"тЩн2 + тЩп4 + тЩн7 + major 7th","desc":"A theatrical scale from Italian opera тАФ dark, chromatic and grand."},"spanishPhrygian":{"mood":["flamenco","Spanish","fiery"],"char":"8 notes with тЩн2 + тЩн3 + тЩн7","desc":"The flamenco scale тАФ Phrygian with a raised 3rd and a тЩн7."},"todi":{"mood":["Indian","dark","meditative"],"char":"тЩн2 + тЩн3 + тЩп4","desc":"A Hindustani raga scale тАФ devotional and serious."},"purvi":{"mood":["Indian","tense","dramatic"],"char":"тЩн2 + тЩп4","desc":"A raga scale built on double-harmonic color."},"phrygianNatural6":{"mood":["dark","folk","exotic"],"char":"тЩн2 + natural 6th","desc":"Phrygian with a raised 6th тАФ a folk Andalusian sound."},"mixolydianAugmented":{"mood":["fusion","dramatic","dominant"],"char":"тЩп5 + тЩн7","desc":"A dominant scale with a raised 5th тАФ bright and tense."},"lydianMinor":{"mood":["dreamy","minor","floating"],"char":"тЩп4 + тЩн3","desc":"Lydian bent toward minor тАФ airy and unresolved."},"hungarianMajor":{"mood":["gypsy","exotic","dramatic"],"char":"two augmented 2nds","desc":"The Hungarian gypsy major тАФ dark, fiery and folk-inflected."},"locrianNatural2":{"mood":["dark","unsettled","modern"],"char":"тЩн3 + тЩн5 with natural 2","desc":"Locrian with a natural 2nd тАФ dissonant but less sharp."}},
-  "noteNames": { "sharp": ["C","C#","D","D#","E","F","F#","G","G#","A","A#","B"], "flat": ["C","Db","D","Eb","E","F","Gb","G","Ab","A","Bb","B"] }
+    "major": {
+      "label": "Major (Church Modes)",
+      "short": "Major",
+      "modes": [
+        "Ionian",
+        "Dorian",
+        "Phrygian",
+        "Lydian",
+        "Mixolydian",
+        "Aeolian",
+        "Locrian"
+      ]
+    },
+    "melodicMinor": {
+      "label": "Melodic Minor",
+      "short": "Melodic",
+      "modes": [
+        "Melodic Minor",
+        "Dorian b2",
+        "Lydian Augmented",
+        "Lydian Dominant",
+        "Mixolydian b6",
+        "Locrian #2",
+        "Super Locrian"
+      ]
+    },
+    "harmonicMinor": {
+      "label": "Harmonic Minor",
+      "short": "Harmonic",
+      "modes": [
+        "Harmonic Minor",
+        "Locrian #6",
+        "Ionian #5",
+        "Dorian #4",
+        "Phrygian Dominant",
+        "Lydian #9",
+        "Altered bb7"
+      ]
+    },
+    "harmonicMajor": {
+      "label": "Harmonic Major",
+      "short": "Harmonic",
+      "modes": [
+        "Harmonic Major",
+        "Dorian b5",
+        "Phrygian b4",
+        "Lydian b3",
+        "Mixolydian b2",
+        "Lydian Augmented #2",
+        "Locrian bb7"
+      ]
+    },
+    "doubleHarmonic": {
+      "label": "Double Harmonic",
+      "short": "Double",
+      "modes": [
+        "Double Harmonic Major",
+        "Lydian #2 #6",
+        "Ultraphrygian",
+        "Hungarian Minor",
+        "Oriental",
+        "Ionian b2 b5",
+        "Locrian b3 bb7"
+      ]
+    },
+    "neapolitanMajor": {
+      "label": "Neapolitan Major",
+      "short": "Neapolitan",
+      "modes": [
+        "Neapolitan Major",
+        "Leading Whole Tone",
+        "Lydian #5 b7",
+        "Lydian b6 b7",
+        "Major Locrian",
+        "Ionian #4 b6",
+        "Phrygian #2 #4"
+      ]
+    },
+    "neapolitanMinor": {
+      "label": "Neapolitan Minor",
+      "short": "Neapolitan",
+      "modes": [
+        "Neapolitan Minor",
+        "Lydian Dominant",
+        "Mixolydian",
+        "Locrian #2",
+        "Phrygian #3",
+        "Mixolydian #2",
+        "Lydian #2 b6"
+      ]
+    },
+    "wholeTone": {
+      "label": "Whole Tone",
+      "short": "Whole"
+    },
+    "augmented": {
+      "label": "Augmented",
+      "short": "Augmented"
+    },
+    "diminished": {
+      "label": "Diminished (whole-half)",
+      "short": "Diminished"
+    },
+    "diminishedHW": {
+      "label": "Diminished (half-whole)",
+      "short": "Diminished"
+    },
+    "chromatic": {
+      "label": "Chromatic",
+      "short": "Chromatic"
+    },
+    "messiaen3": {
+      "label": "Messiaen Mode 3",
+      "short": "Messiaen"
+    },
+    "messiaen4": {
+      "label": "Messiaen Mode 4",
+      "short": "Messiaen"
+    },
+    "messiaen5": {
+      "label": "Messiaen Mode 5",
+      "short": "Messiaen"
+    },
+    "messiaen6": {
+      "label": "Messiaen Mode 6",
+      "short": "Messiaen"
+    },
+    "messiaen7": {
+      "label": "Messiaen Mode 7",
+      "short": "Messiaen"
+    },
+    "majorPentatonic": {
+      "label": "Major Pentatonic",
+      "short": "Major"
+    },
+    "minorPentatonic": {
+      "label": "Minor Pentatonic",
+      "short": "Minor"
+    },
+    "suspendedPentatonic": {
+      "label": "Suspended (Egyptian / Yo)",
+      "short": "Suspended"
+    },
+    "dominantPentatonic": {
+      "label": "Dominant Pentatonic",
+      "short": "Dominant"
+    },
+    "hirajoshi": {
+      "label": "Hirajoshi",
+      "short": "Hirajoshi"
+    },
+    "iwato": {
+      "label": "Iwato",
+      "short": "Iwato"
+    },
+    "insen": {
+      "label": "In-Sen",
+      "short": "In-Sen"
+    },
+    "pelog": {
+      "label": "Pelog",
+      "short": "Pelog"
+    },
+    "marwa": {
+      "label": "Marwa",
+      "short": "Marwa"
+    },
+    "blues": {
+      "label": "Blues (hexatonic)",
+      "short": "Blues"
+    },
+    "bluesMajor": {
+      "label": "Major Blues",
+      "short": "Major"
+    },
+    "hexatonicMajor": {
+      "label": "Hexatonic Major",
+      "short": "Hexatonic"
+    },
+    "hexatonicMinor": {
+      "label": "Hexatonic Minor",
+      "short": "Hexatonic"
+    },
+    "prometheus": {
+      "label": "Prometheus (Mystic)",
+      "short": "Prometheus"
+    },
+    "bebopDominant": {
+      "label": "Bebop Dominant",
+      "short": "Bebop"
+    },
+    "bebopMajor": {
+      "label": "Bebop Major",
+      "short": "Bebop"
+    },
+    "bebopMinor": {
+      "label": "Bebop Minor",
+      "short": "Bebop"
+    },
+    "bebopDorian": {
+      "label": "Bebop Dorian",
+      "short": "Bebop"
+    },
+    "bebopLocrian": {
+      "label": "Bebop Locrian",
+      "short": "Bebop"
+    },
+    "dominant": {
+      "label": "Mixolydian (Dominant)",
+      "short": "Mixolydian"
+    },
+    "minorSixDiminished": {
+      "label": "Minor Six Diminished",
+      "short": "Minor"
+    },
+    "majorSixDiminished": {
+      "label": "Major Six Diminished",
+      "short": "Major"
+    },
+    "persian": {
+      "label": "Persian",
+      "short": "Persian"
+    },
+    "enigmatic": {
+      "label": "Enigmatic",
+      "short": "Enigmatic"
+    },
+    "spanishPhrygian": {
+      "label": "Spanish Phrygian (Flamenco)",
+      "short": "Spanish"
+    },
+    "todi": {
+      "label": "Todi",
+      "short": "Todi"
+    },
+    "purvi": {
+      "label": "Purvi",
+      "short": "Purvi"
+    },
+    "phrygianNatural6": {
+      "label": "Phrygian Natural 6",
+      "short": "Phrygian"
+    },
+    "mixolydianAugmented": {
+      "label": "Mixolydian Augmented",
+      "short": "Mixolydian"
+    },
+    "lydianMinor": {
+      "label": "Lydian Minor",
+      "short": "Lydian"
+    },
+    "hungarianMajor": {
+      "label": "Hungarian Major",
+      "short": "Hungarian"
+    },
+    "locrianNatural2": {
+      "label": "Locrian Natural 2",
+      "short": "Locrian"
+    }
+  },
+  "modeInfo": {
+    "Ionian": {
+      "mood": [
+        "bright",
+        "happy",
+        "pure",
+        "stable"
+      ],
+      "char": "perfect 4th + major 7th",
+      "desc": "The major scale itself. No real tension to resolve — the sound of home and a happy ending."
+    },
+    "Dorian": {
+      "mood": [
+        "jazzy",
+        "soulful",
+        "hopeful",
+        "bluesy"
+      ],
+      "char": "minor 3rd + major 6th",
+      "desc": "A minor scale with a bright 6th. Santana solos, Irish folk, and modal jazz — sadness that still smiles."
+    },
+    "Phrygian": {
+      "mood": [
+        "dark",
+        "exotic",
+        "tense",
+        "Spanish"
+      ],
+      "char": "minor 2nd (♭2)",
+      "desc": "The ♭2 gives it a distinctly Spanish / Andalusian flavor. Flamenco and heavy-metal riffs live here."
+    },
+    "Lydian": {
+      "mood": [
+        "dreamy",
+        "ethereal",
+        "mystical",
+        "floating"
+      ],
+      "char": "augmented 4th (♯4)",
+      "desc": "The ♯4 makes everything feel airy and unresolved — film scores, dream-pop shimmer, classic Sci-Fi wonder."
+    },
+    "Mixolydian": {
+      "mood": [
+        "bluesy",
+        "rock",
+        "streetwise",
+        "laid-back"
+      ],
+      "char": "minor 7th (♭7)",
+      "desc": "The major scale with a bluesy flattened 7th — the sound of rock, blues, and Irish folk."
+    },
+    "Aeolian": {
+      "mood": [
+        "sad",
+        "melancholic",
+        "brooding",
+        "serious"
+      ],
+      "char": "♭3, ♭6, ♭7",
+      "desc": "The natural minor scale — Western musicТs default for sadness, drama and dark emotion."
+    },
+    "Locrian": {
+      "mood": [
+        "unsettling",
+        "dissonant",
+        "scary",
+        "unstable"
+      ],
+      "char": "diminished 5th (♭5)",
+      "desc": "The tonic triad is diminished, so nothing ever truly resolves — dread, chaos, and deliberate “wrongness”."
+    },
+    "Harmonic Minor": {
+      "mood": [
+        "dark",
+        "exotic",
+        "haunting",
+        "Eastern-European"
+      ],
+      "char": "♭6 + major 7th",
+      "desc": "The raised 7th over a ♭6 creates a signature leap — klezmer, gypsy, metal and classical minor melodies."
+    },
+    "Locrian #6": {
+      "mood": [
+        "dark",
+        "mysterious",
+        "unsettled"
+      ],
+      "char": "♭2, ♭5, ♯6",
+      "desc": "Locrian with a raised 6th — shadowy and unstable."
+    },
+    "Ionian #5": {
+      "mood": [
+        "tense",
+        "suspended",
+        "bright but unresolved"
+      ],
+      "char": "raised 5th (♯5)",
+      "desc": "A major scale with a sharpened 5th — chords wobble between major and augmented."
+    },
+    "Dorian #4": {
+      "mood": [
+        "jazzy",
+        "quirky",
+        "bright"
+      ],
+      "char": "raised 4th (♯4) + ♭3",
+      "desc": "Dorian with a raised 4th — a jazzy, slightly exotic minor sound."
+    },
+    "Lydian #9": {
+      "mood": [
+        "tense",
+        "dissonant",
+        "altered"
+      ],
+      "char": "raised 9th (♯9) + ♯4",
+      "desc": "An odd, chromatic-sounding major mode."
+    },
+    "Altered bb7": {
+      "mood": [
+        "dominant",
+        "dissonant",
+        "chaotic"
+      ],
+      "char": "♭3, ♭5, ♭♭7",
+      "desc": "An altered dominant scale full of chromatic tension."
+    },
+    "Melodic Minor": {
+      "mood": [
+        "jazz",
+        "bittersweet",
+        "lyrical"
+      ],
+      "char": "♭3 + major 6th + 7th",
+      "desc": "The jazz minor — a minor scale that rises with a major sound, a favorite for soloing over minor chords."
+    },
+    "Dorian b2": {
+      "mood": [
+        "mysterious",
+        "neoclassical",
+        "haunting"
+      ],
+      "char": "♭2 + ♭3",
+      "desc": "Dorian with a flattened 2nd — dark and exotic."
+    },
+    "Lydian Augmented": {
+      "mood": [
+        "dreamy",
+        "airy",
+        "cinematic"
+      ],
+      "char": "♯4 + ♯5",
+      "desc": "Lydian with a raised 5th — floating, majestic film-score material."
+    },
+    "Lydian Dominant": {
+      "mood": [
+        "bright",
+        "bluesy",
+        "fusion"
+      ],
+      "char": "♯4 + ♭7",
+      "desc": "A dominant 7 chord with a ♯11 — the jazz-fusion and bebop dominant sound."
+    },
+    "Mixolydian b6": {
+      "mood": [
+        "sad-dominant",
+        "song-like",
+        "minor-leaning"
+      ],
+      "char": "♭7 + ♭6",
+      "desc": "A dominant scale that bends toward minor — melancholic."
+    },
+    "Locrian #2": {
+      "mood": [
+        "dark",
+        "dissonant",
+        "jazz"
+      ],
+      "char": "♯2 + ♭5",
+      "desc": "Locrian with a raised 2nd — dark and unstable."
+    },
+    "Super Locrian": {
+      "mood": [
+        "tense",
+        "extreme",
+        "free",
+        "altered"
+      ],
+      "char": "♭9 ♯9 ♭5 ♭13",
+      "desc": "The altered scale — every note is a tension note, built for playing over altered dominant chords."
+    },
+    "Phrygian Dominant": {
+      "mood": [
+        "Spanish",
+        "flamenco",
+        "Arabic",
+        "metal"
+      ],
+      "char": "♭2 + major 3rd",
+      "desc": "The Andalusian sound of flamenco, gypsy jazz and Middle-Eastern metal — a dominant chord with a flat 2nd."
+    },
+    "Harmonic Major": {
+      "mood": [
+        "bright",
+        "unsettled",
+        "classical"
+      ],
+      "char": "♭6 + major 7th",
+      "desc": "The major scale with a flattened 6th — Ravel and jazz harmony love its dual major/minor colors."
+    },
+    "Dorian b5": {
+      "mood": [
+        "dark",
+        "jazzy",
+        "tense"
+      ],
+      "char": "♭5 + major 6th",
+      "desc": "Dorian with a flattened 5th — a minor sound with a diminished core."
+    },
+    "Phrygian b4": {
+      "mood": [
+        "exotic",
+        "dark",
+        "mystical"
+      ],
+      "char": "♭2 + ♭4",
+      "desc": "Phrygian with a flattened 4th — an unusual, ancient-sounding color."
+    },
+    "Lydian b3": {
+      "mood": [
+        "unstable",
+        "dreamy",
+        "uneasy"
+      ],
+      "char": "♯4 + ♭3",
+      "desc": "Lydian bent toward minor — the tonic wavers between major and minor."
+    },
+    "Mixolydian b2": {
+      "mood": [
+        "dark",
+        "dominant",
+        "tense"
+      ],
+      "char": "♭2 + ♭7",
+      "desc": "A dominant sound with a Phrygian lean — tense and dramatic."
+    },
+    "Lydian Augmented #2": {
+      "mood": [
+        "dense",
+        "altered",
+        "dissonant"
+      ],
+      "char": "♯2 ♯4 ♯5",
+      "desc": "An extreme Lydian variant with three raised notes."
+    },
+    "Locrian bb7": {
+      "mood": [
+        "dark",
+        "unstable",
+        "diminished"
+      ],
+      "char": "♭5 + ♭♭7",
+      "desc": "Locrian with a doubly-flattened 7th — a fully diminished flavor."
+    },
+    "Double Harmonic Major": {
+      "mood": [
+        "exotic",
+        "mystical",
+        "Arabic",
+        "Jewish"
+      ],
+      "char": "two augmented 2nds",
+      "desc": "The famous \"double harmonic\" sound — Jewish prayer, Arabic maqam, gypsy music."
+    },
+    "Lydian #2 #6": {
+      "mood": [
+        "bright",
+        "odd",
+        "shimmering"
+      ],
+      "char": "♯2 + ♯6 + ♯4",
+      "desc": "An exotic Lydian variant with raised 2nd and 6th."
+    },
+    "Ultraphrygian": {
+      "mood": [
+        "dark",
+        "dissonant",
+        "extreme"
+      ],
+      "char": "♭2 + ♭3 + ♭4",
+      "desc": "Phrygian with a flattened 4th too — very dark and unusual."
+    },
+    "Hungarian Minor": {
+      "mood": [
+        "haunting",
+        "gypsy",
+        "eastern-European"
+      ],
+      "char": "♭3 + ♯4 + ♯7",
+      "desc": "The gypsy minor scale — two augmented 2nds, one minor 3rd, very dramatic."
+    },
+    "Oriental": {
+      "mood": [
+        "exotic",
+        "tense",
+        "mysterious"
+      ],
+      "char": "♭2 + ♯4",
+      "desc": "A double-harmonic variant with a raised 4th — snake-charmer exotica."
+    },
+    "Ionian b2 b5": {
+      "mood": [
+        "unstable",
+        "dissonant",
+        "chromatic"
+      ],
+      "char": "♭2 + ♭5 + ♭6",
+      "desc": "A major scale with two flattened notes — uneasy and rare."
+    },
+    "Locrian b3 bb7": {
+      "mood": [
+        "extreme",
+        "dark",
+        "diminished"
+      ],
+      "char": "♭3 + ♭5 + ♭♭7",
+      "desc": "Doubly flattened — even darker than ordinary Locrian."
+    },
+    "Neapolitan Major": {
+      "mood": [
+        "romantic",
+        "dramatic",
+        "classical"
+      ],
+      "char": "♭2 + major 7th",
+      "desc": "The Neapolitan sound — a major scale with a flat 2nd, used for dramatic classical cadences."
+    },
+    "Leading Whole Tone": {
+      "mood": [
+        "shimmering",
+        "unstable",
+        "floating"
+      ],
+      "char": "♭2 + whole-tone run",
+      "desc": "Mostly whole steps over a flat 2nd — a dreamy, unstable Neapolitan mode."
+    },
+    "Lydian #5 b7": {
+      "mood": [
+        "fusion",
+        "tense",
+        "bright"
+      ],
+      "char": "♯4 + ♯5 + ♭7",
+      "desc": "A dominant Lydian variant with a raised 5th."
+    },
+    "Lydian b6 b7": {
+      "mood": [
+        "minor-leaning",
+        "airy",
+        "song-like"
+      ],
+      "char": "♯4 + ♭6 + ♭7",
+      "desc": "Lydian bent minor — a haunting raised-4th color."
+    },
+    "Major Locrian": {
+      "mood": [
+        "dark",
+        "unsettled",
+        "rare"
+      ],
+      "char": "♭2 + ♭5",
+      "desc": "Locrian with a major 3rd — an exotic diminished-major clash."
+    },
+    "Ionian #4 b6": {
+      "mood": [
+        "tense",
+        "chromatic",
+        "unstable"
+      ],
+      "char": "♯4 + ♭6",
+      "desc": "Major with raised 4th and flattened 6th — odd and rare."
+    },
+    "Phrygian #2 #4": {
+      "mood": [
+        "dark",
+        "exotic",
+        "chromatic"
+      ],
+      "char": "♯2 + ♯4",
+      "desc": "Phrygian with raised 2nd and 4th — exotic and unstable."
+    },
+    "Neapolitan Minor": {
+      "mood": [
+        "dark",
+        "classical",
+        "dramatic"
+      ],
+      "char": "♭2 + ♭3 + ♭7",
+      "desc": "The Neapolitan minor — a dark classical mode with a flat 2nd."
+    },
+    "Phrygian #3": {
+      "mood": [
+        "Spanish",
+        "major-minor",
+        "exotic"
+      ],
+      "char": "♭2 + major 3rd",
+      "desc": "A Phrygian-dominant-like sound — flamenco and Arabic color."
+    },
+    "Mixolydian #2": {
+      "mood": [
+        "tense",
+        "dominant",
+        "chromatic"
+      ],
+      "char": "♯2 + ♭7",
+      "desc": "A dominant mode with a sharpened 2nd."
+    },
+    "Lydian #2 b6": {
+      "mood": [
+        "dark",
+        "exotic",
+        "unsettled"
+      ],
+      "char": "♯2 + ♯4 + ♭6",
+      "desc": "Lydian bent minor with a raised 2nd — dark and rare."
+    }
+  },
+  "scaleInfo": {
+    "majorPentatonic": {
+      "mood": [
+        "bright",
+        "simple",
+        "safe"
+      ],
+      "char": "no semitones",
+      "desc": "Five notes with no half-steps — almost impossible to sound wrong. Pop, folk, country and blues."
+    },
+    "minorPentatonic": {
+      "mood": [
+        "bluesy",
+        "rock",
+        "earthy"
+      ],
+      "char": "no semitones",
+      "desc": "The go-to scale for rock and blues guitar solos."
+    },
+    "blues": {
+      "mood": [
+        "gritty",
+        "wailing",
+        "expressive"
+      ],
+      "char": "adds the ♭5 “blue note”",
+      "desc": "Minor pentatonic with a flattened 5th — the note that bends and wails."
+    },
+    "dominant": {
+      "mood": [
+        "bluesy",
+        "rock",
+        "laid-back"
+      ],
+      "char": "minor 7th (♭7)",
+      "desc": "The Mixolydian sound — a dominant scale for bluesy rock."
+    },
+    "wholeTone": {
+      "mood": [
+        "floating",
+        "dreamlike",
+        "ambiguous"
+      ],
+      "char": "six equal whole steps",
+      "desc": "No tonal center at all — Debussy and jazz use it for a hazy, unsettled shimmer."
+    },
+    "diminished": {
+      "mood": [
+        "tense",
+        "dissonant",
+        "symmetrical"
+      ],
+      "char": "alternating W / H",
+      "desc": "Alternating whole and half steps — an 8-note scale full of built-in tension."
+    },
+    "augmented": {
+      "mood": [
+        "dreamy",
+        "floating",
+        "magical"
+      ],
+      "char": "two augmented triads",
+      "desc": "Two augmented triads stacked — Debussy and Ravel use it for a hazy, glowing sound."
+    },
+    "diminishedHW": {
+      "mood": [
+        "tense",
+        "symmetrical",
+        "dominant"
+      ],
+      "char": "alternating H / W",
+      "desc": "The half-whole diminished — the classic dominant-altered scale."
+    },
+    "chromatic": {
+      "mood": [
+        "dense",
+        "total",
+        "12-tone"
+      ],
+      "char": "every half step",
+      "desc": "All twelve notes — total chromatic color, atonal and free."
+    },
+    "messiaen3": {
+      "mood": [
+        "modal",
+        "mystical",
+        "ritualistic"
+      ],
+      "char": "2-1-1 repeating",
+      "desc": "MessiaenТs Mode 3 — a symmetrical 9-note scale with a liturgical shimmer."
+    },
+    "messiaen4": {
+      "mood": [
+        "symmetrical",
+        "modern",
+        "eerie"
+      ],
+      "char": "2-1-3-1-1 pattern",
+      "desc": "Messiaen Mode 4 — an 8-note symmetrical scale."
+    },
+    "messiaen5": {
+      "mood": [
+        "ethereal",
+        "modern",
+        "detached"
+      ],
+      "char": "1-4-1-1-1 pattern",
+      "desc": "Messiaen Mode 5 — a sparse 6-note symmetric scale."
+    },
+    "messiaen6": {
+      "mood": [
+        "colorful",
+        "modern",
+        "fragmented"
+      ],
+      "char": "2-2-1-1-2-2-1 pattern",
+      "desc": "Messiaen Mode 6 — two interlocking tritone shapes."
+    },
+    "messiaen7": {
+      "mood": [
+        "dense",
+        "total",
+        "modern"
+      ],
+      "char": "1-1-1-1-1-1-1-2-1",
+      "desc": "MessiaenТs Mode 7 — an almost-chromatic scale of 10 notes."
+    },
+    "suspendedPentatonic": {
+      "mood": [
+        "ancient",
+        "open",
+        "modal",
+        "calm"
+      ],
+      "char": "no 3rd",
+      "desc": "The Egyptian / Yo scale — a pentatonic with a suspended, open sound."
+    },
+    "dominantPentatonic": {
+      "mood": [
+        "bluesy",
+        "earthy",
+        "simple"
+      ],
+      "char": "♭7, no 3rd",
+      "desc": "Pentatonic built on the dominant notes — a blues-friendly five-note set."
+    },
+    "hirajoshi": {
+      "mood": [
+        "zen",
+        "Japanese",
+        "minimal"
+      ],
+      "char": "two minor 2nds",
+      "desc": "A classic koto tuning scale — sparse and evocative."
+    },
+    "iwato": {
+      "mood": [
+        "Japanese",
+        "dark",
+        "minimal"
+      ],
+      "char": "♭2 + ♭5",
+      "desc": "A dark Japanese scale with flat 2nd and flat 5th."
+    },
+    "insen": {
+      "mood": [
+        "Japanese",
+        "melancholy",
+        "clean"
+      ],
+      "char": "minor 2nd + tritone",
+      "desc": "Another traditional Japanese scale — sparse and elegant."
+    },
+    "pelog": {
+      "mood": [
+        "Balinese",
+        "exotic",
+        "gamelan"
+      ],
+      "char": "wide leaps",
+      "desc": "A Javanese/Balinese gamelan scale of seven tones."
+    },
+    "marwa": {
+      "mood": [
+        "Arabic",
+        "exotic",
+        "serious"
+      ],
+      "char": "♭2 + major 3rd",
+      "desc": "An Arabic maqam scale — dark and dignified."
+    },
+    "bluesMajor": {
+      "mood": [
+        "soulful",
+        "cheerful",
+        "bluesy"
+      ],
+      "char": "adds the ♭3 to major pentatonic",
+      "desc": "The major blues scale — a bright pentatonic with a passing blue note."
+    },
+    "hexatonicMajor": {
+      "mood": [
+        "bright",
+        "wide",
+        "incomplete"
+      ],
+      "char": "♭7 + major 7th",
+      "desc": "A six-note major scale with a wide gap between 5th and 7th."
+    },
+    "hexatonicMinor": {
+      "mood": [
+        "minor",
+        "wide",
+        "folk"
+      ],
+      "char": "two 3-semitone leaps",
+      "desc": "A six-note minor scale with big expressive leaps."
+    },
+    "prometheus": {
+      "mood": [
+        "mysterious",
+        "orchestral",
+        "mystic"
+      ],
+      "char": "♭2 + ♯4 + ♭6",
+      "desc": "The Scriabin \"mystic\" chord scale — mystical and brooding."
+    },
+    "bebopDominant": {
+      "mood": [
+        "jazzy",
+        "driving",
+        "swinging"
+      ],
+      "char": "adds a passing ♭7",
+      "desc": "Dominant with a chromatic passing note — bebop phrasing flows smoothly."
+    },
+    "bebopMajor": {
+      "mood": [
+        "jazzy",
+        "smooth",
+        "classic"
+      ],
+      "char": "adds a passing ♯5",
+      "desc": "Major with a passing chromatic — the classic bebop scale."
+    },
+    "bebopMinor": {
+      "mood": [
+        "jazzy",
+        "dark",
+        "flowing"
+      ],
+      "char": "adds a passing 2",
+      "desc": "Minor with a chromatic passing note between 3rd and 5th."
+    },
+    "bebopDorian": {
+      "mood": [
+        "funky",
+        "jazzy",
+        "soulful"
+      ],
+      "char": "adds a passing 3",
+      "desc": "Dorian with a passing chromatic — funky and fluid."
+    },
+    "bebopLocrian": {
+      "mood": [
+        "dark",
+        "tense",
+        "jazz"
+      ],
+      "char": "adds a passing 2",
+      "desc": "Locrian with a passing note — tense and chromatic."
+    },
+    "minorSixDiminished": {
+      "mood": [
+        "dark",
+        "smooth",
+        "classical",
+        "jazz"
+      ],
+      "char": "♭6 + major 7th",
+      "desc": "The Barry Harris minor scale — a minor sound with a sharp 7th."
+    },
+    "majorSixDiminished": {
+      "mood": [
+        "bright",
+        "swinging",
+        "classical"
+      ],
+      "char": "♭3 + major 7th",
+      "desc": "The Barry Harris major scale — major with a passing chromatic 3rd."
+    },
+    "persian": {
+      "mood": [
+        "Arabic",
+        "exotic",
+        "serious"
+      ],
+      "char": "♭2 + two augmented 2nds",
+      "desc": "The Persian scale — exotic and regal, used in traditional Persian music."
+    },
+    "enigmatic": {
+      "mood": [
+        "mysterious",
+        "dark",
+        "orchestral"
+      ],
+      "char": "♭2 + ♯4 + ♭7 + major 7th",
+      "desc": "A theatrical scale from Italian opera — dark, chromatic and grand."
+    },
+    "spanishPhrygian": {
+      "mood": [
+        "flamenco",
+        "Spanish",
+        "fiery"
+      ],
+      "char": "8 notes with ♭2 + ♭3 + ♭7",
+      "desc": "The flamenco scale — Phrygian with a raised 3rd and a ♭7."
+    },
+    "todi": {
+      "mood": [
+        "Indian",
+        "dark",
+        "meditative"
+      ],
+      "char": "♭2 + ♭3 + ♯4",
+      "desc": "A Hindustani raga scale — devotional and serious."
+    },
+    "purvi": {
+      "mood": [
+        "Indian",
+        "tense",
+        "dramatic"
+      ],
+      "char": "♭2 + ♯4",
+      "desc": "A raga scale built on double-harmonic color."
+    },
+    "phrygianNatural6": {
+      "mood": [
+        "dark",
+        "folk",
+        "exotic"
+      ],
+      "char": "♭2 + natural 6th",
+      "desc": "Phrygian with a raised 6th — a folk Andalusian sound."
+    },
+    "mixolydianAugmented": {
+      "mood": [
+        "fusion",
+        "dramatic",
+        "dominant"
+      ],
+      "char": "♯5 + ♭7",
+      "desc": "A dominant scale with a raised 5th — bright and tense."
+    },
+    "lydianMinor": {
+      "mood": [
+        "dreamy",
+        "minor",
+        "floating"
+      ],
+      "char": "♯4 + ♭3",
+      "desc": "Lydian bent toward minor — airy and unresolved."
+    },
+    "hungarianMajor": {
+      "mood": [
+        "gypsy",
+        "exotic",
+        "dramatic"
+      ],
+      "char": "two augmented 2nds",
+      "desc": "The Hungarian gypsy major — dark, fiery and folk-inflected."
+    },
+    "locrianNatural2": {
+      "mood": [
+        "dark",
+        "unsettled",
+        "modern"
+      ],
+      "char": "♭3 + ♭5 with natural 2",
+      "desc": "Locrian with a natural 2nd — dissonant but less sharp."
+    }
+  },
+  "noteNames": {
+    "sharp": [
+      "C",
+      "C#",
+      "D",
+      "D#",
+      "E",
+      "F",
+      "F#",
+      "G",
+      "G#",
+      "A",
+      "A#",
+      "B"
+    ],
+    "flat": [
+      "C",
+      "Db",
+      "D",
+      "Eb",
+      "E",
+      "F",
+      "Gb",
+      "G",
+      "Ab",
+      "A",
+      "Bb",
+      "B"
+    ]
+  }
 }

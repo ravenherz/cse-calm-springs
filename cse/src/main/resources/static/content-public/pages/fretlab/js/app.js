@@ -5,18 +5,20 @@
   const t = (path, vars) => (window.FretI18n && window.FretI18n.t(path, vars)) || path;
   const $ = (s) => document.querySelector(s);
   const neck = $('#neck');
-  const strLabels = $('#string-labels');
-  const numLabels = $('#string-numbers');
   const boardWrap = $('#board-wrap');
-  const tip = $('#tip');
-  const ctxMenu = $('#ctx-menu');
 
-  const INLAY_FRETS = [3, 5, 7, 9, 12, 15, 17, 19, 21, 24];
   const CHROMATIC_ROMAN = ['I', 'bII', 'II', 'bIII', 'III', 'IV', 'bV', 'V', 'bVI', 'VI', 'bVII', 'VII'];
-  function degreeRoman(rel) {
-    return CHROMATIC_ROMAN[((rel % 12) + 12) % 12];
+  const CHROMATIC_ROMAN_SHARP = { 1: '#I', 3: '#II', 6: '#IV', 8: '#V', 10: '#VI' };
+  function degreeRoman(rel, familyKey, modeIndex) {
+    rel = ((rel % 12) + 12) % 12;
+    const fk = familyKey != null ? familyKey : (state.tab === 'explore' ? state.scaleFamily : null);
+    const mi = modeIndex != null ? modeIndex : (state.tab === 'explore' ? state.modeIndex : 0);
+    if (fk != null) {
+      const alts = M.characteristicAlts(fk, mi);
+      if (alts[rel] === 'up' && CHROMATIC_ROMAN_SHARP[rel]) return CHROMATIC_ROMAN_SHARP[rel];
+    }
+    return CHROMATIC_ROMAN[rel];
   }
-  const FORMULA = ['1', '♭2', '2', '♭3', '3', '4', '♯4', '5', '♭6', '6', '♭7', '7'];
 
   function theoryInfo(modeName, familyKey) {
     const raw = window.FretI18n && window.FretI18n.raw;
@@ -37,20 +39,35 @@
   const state = {
     tab: 'explore',
     stringCount: 6,
-    tuningId: 'std6',
-    customPcs: [4, 9, 2, 7, 11, 4],
     fretCount: 15,
     flats: false,
+    noteSpell: 'fit',
     sound: true,
     showNames: true,
     showDegrees: true,
     showIntervals: false,
     compoundIntervals: true,
+    showNo5: true,
     fullChart: false,
-    cagedKey: 0,
+    showPiano: true,
+    showLegend: false,
     shapes: { C: true, A: true, G: true, E: true, D: true },
     showCagedShapes: true,
-    showChordTones: true,
+    showQuartal: false,
+    showNps: false,
+    showBerklee: false,
+    quartalHeight: 3,
+    quartalStartString: 1,
+    quartalRepeats: true,
+    npsCount: 3,
+    npsRepeats: true,
+    npsForms: {},
+    berkleeRepeats: true,
+    berkleeForms: {},
+    cagedRepeats: true,
+    showCharTips: true,
+    showCharOriginals: true,
+    highlightDegree: 0,
     showRootLines: true,
     scaleKey: 0,
     scaleFamily: 'major',
@@ -66,36 +83,59 @@
     activeProfileId: null
   };
 
-  let profiles;
-  const freshShapes = new Set();
-  let chordResult = null;
-  let scaleSel = null;
-  let chordScaleFocus = null;
-  let scalePropFollow = true;
-  let scalePropKey = 0;
-  let noteSeq = 0;
-  let ghostPlus = null;
+  /** Cross-module view state shared by board-view / chord-ui / scale-details. */
+  const ui = {
+    chordResult: null,
+    scaleSel: null,
+    chordScaleFocus: null,
+    scalePropFollow: true,
+    scalePropKey: 0,
+    noteSeq: 0,
+    shapesSpoilerOpen: false,
+    scaleChordSpoilers: { chords: false, chords7: false },
+    /** On Theory tab: 'explore' | 'chords' | null (About / no demo). */
+    theoryBoardMode: null
+  };
 
-  function proposalKeyPc(r) {
-    if (scalePropFollow || !r) return r ? r.rootPc : 0;
-    return scalePropKey;
+  let profiles;
+  let chordUi;
+  let scaleDetails;
+  let boardView;
+  let pianoView;
+  let theory;
+  let drills;
+  const freshShapes = new Set();
+
+  function chromaticNames(spell) {
+    const key = spell === 'flat' ? 'noteNames.flat' : 'noteNames.sharp';
+    const arr = window.FretI18n && window.FretI18n.raw(key);
+    if (Array.isArray(arr) && arr.length === 12) return arr.slice();
+    return (spell === 'flat' ? M.FLAT : M.SHARP).slice();
   }
 
-  function chordScaleOpts(r, keyPc) {
-    return { names: names(), compoundIntervals: state.compoundIntervals, scaleRoot: keyPc != null ? keyPc : proposalKeyPc(r) };
+  function localizeSpell(en) {
+    if (!en) return en;
+    const m = /^([A-G])(#*|b*)$/.exec(en);
+    if (!m) return en;
+    const letterIdx = M.LETTERS.indexOf(m[1]);
+    if (letterIdx < 0) return en;
+    const natPc = [0, 2, 4, 5, 7, 9, 11][letterIdx];
+    const natural = chromaticNames('sharp')[natPc];
+    return natural + m[2];
   }
 
   function names() {
-    const key = state.flats ? 'noteNames.flat' : 'noteNames.sharp';
-    const arr = window.FretI18n && window.FretI18n.raw(key);
-    if (Array.isArray(arr) && arr.length === 12) return arr;
-    return state.flats ? M.FLAT : M.SHARP;
-  }
-
-  function midiLabel(midi) {
-    const m = midi | 0;
-    const pc = ((m % 12) + 12) % 12;
-    return names()[pc] + (Math.floor(m / 12) - 1);
+    if (state.noteSpell !== 'fit') return chromaticNames(state.noteSpell);
+    const target = scaleDetails ? scaleDetails.resolveTarget() : null;
+    if (!target || !M.SCALES[target.family]) return chromaticNames('sharp');
+    const fitted = M.fitScaleNames(target.root, M.scaleOrdered(target.family, target.modeIndex));
+    const out = chromaticNames(fitted.preferFlat ? 'flat' : 'sharp');
+    if (fitted.names) {
+      for (let pc = 0; pc < 12; pc++) {
+        if (fitted.names[pc]) out[pc] = localizeSpell(fitted.names[pc]);
+      }
+    }
+    return out;
   }
 
   const audio = window.FretAudio.create({
@@ -107,7 +147,14 @@
     midiToFreq: M.midiToFreq
   });
   const playMidi = audio.playMidi;
-  const playSequence = audio.playSequence;
+  const playSequenceRaw = audio.playSequence;
+  const playSimultaneous = audio.playSimultaneous;
+  const playBlocks = audio.playBlocks;
+
+  function playSequence(notes, rootOverride) {
+    if (scaleDetails) scaleDetails.clearPlaying();
+    playSequenceRaw(notes, rootOverride);
+  }
 
   function activeProfile() {
     return state.activeProfileId ? state.profiles.find((p) => p.id === state.activeProfileId) || null : null;
@@ -122,6 +169,55 @@
       const t = M.TUNINGS.find((x) => x.id === DEFAULT_TUNING_ID);
       state.stringCount = t ? t.strings : 6;
       state.fretCount = DEFAULT_FRET_COUNT;
+    }
+    if (window.FretQuartal) {
+      state.quartalHeight = window.FretQuartal.clampHeight(state.quartalHeight, state.stringCount);
+      state.quartalStartString = window.FretQuartal.clampStartString(
+        state.quartalStartString, state.stringCount, state.quartalHeight
+      );
+    }
+    pruneChordNotesToBoard();
+    if (enforceCagedHonesty()) {
+      renderLayerPicker();
+      const shapes = $('#ctl-caged-shapes');
+      if (shapes) shapes.classList.add('hidden');
+    }
+  }
+
+  /** @returns {'ok'|'approx'|'blocked'} */
+  function cagedHonestyMode() {
+    const n = state.stringCount | 0;
+    if (n < 6) return 'blocked';
+    if (n > 6) return 'approx';
+    return 'ok';
+  }
+
+  /** Clear CAGED when the active guitar cannot host it. @returns {boolean} whether layer was cleared */
+  function enforceCagedHonesty() {
+    if (!state.showCagedShapes) return false;
+    if (cagedHonestyMode() !== 'blocked') return false;
+    state.showCagedShapes = false;
+    return true;
+  }
+
+  function cagedLayerDescKey() {
+    const mode = cagedHonestyMode();
+    if (mode === 'blocked') return 'controls.explore.layerCagedDescBlocked';
+    if (mode === 'approx') return 'controls.explore.layerCagedDescApprox';
+    return 'controls.explore.layerCagedDesc';
+  }
+
+  function pruneChordNotesToBoard() {
+    const n = state.stringCount;
+    const N = state.fretCount;
+    state.chordNotes = state.chordNotes.filter((nt) =>
+      nt && Number.isFinite(nt.s) && Number.isFinite(nt.f) && nt.s >= 0 && nt.s < n && nt.f >= 0 && nt.f <= N
+    );
+    if (state.pinRoot) {
+      const pin = state.pinRoot;
+      const onBoard = pin.s >= 0 && pin.s < n && pin.f >= 0 && pin.f <= N &&
+        state.chordNotes.some((nt) => nt.s === pin.s && nt.f === pin.f);
+      if (!onBoard) state.pinRoot = null;
     }
   }
 
@@ -138,7 +234,6 @@
 
   function setExploreRoot(pc) {
     state.scaleKey = pc;
-    state.cagedKey = pc;
   }
 
   function catForFamily(fk) {
@@ -185,18 +280,23 @@
   function clusterScaleEntries(entries) {
     const buckets = {};
     entries.forEach((e) => {
-      const id = catForFamily(e.family) || 'other';
-      if (!buckets[id]) buckets[id] = [];
-      buckets[id].push(e);
+      const fk = e.family || 'other';
+      if (!buckets[fk]) buckets[fk] = [];
+      buckets[fk].push(e);
     });
     const groups = [];
+    const seen = {};
     M.SCALE_CATS.forEach((cat) => {
-      if (!buckets[cat.id] || !buckets[cat.id].length) return;
-      groups.push({ id: cat.id, label: scaleCatLabel(cat.id, 'short'), entries: buckets[cat.id] });
+      cat.families.forEach((fk) => {
+        if (!buckets[fk] || !buckets[fk].length || seen[fk]) return;
+        seen[fk] = true;
+        groups.push({ id: fk, label: scaleFamilyLabel(fk), entries: buckets[fk] });
+      });
     });
-    if (buckets.other && buckets.other.length) {
-      groups.push({ id: 'other', label: scaleCatLabel('other', 'short'), entries: buckets.other });
-    }
+    Object.keys(buckets).forEach((fk) => {
+      if (seen[fk] || !buckets[fk].length) return;
+      groups.push({ id: fk, label: scaleFamilyLabel(fk), entries: buckets[fk] });
+    });
     return groups;
   }
 
@@ -222,32 +322,41 @@
     render();
   }
 
-  function allScaleKeys() {
-    const out = [];
-    M.SCALE_CATS.forEach((cat) => cat.families.forEach((fk) => out.push(fk)));
-    return out;
-  }
-
   const STORE_KEY = 'fretboard-lab-v1';
 
   function serializeState() {
     return {
       tab: state.tab,
       stringCount: state.stringCount,
-      tuningId: state.tuningId,
-      customPcs: state.customPcs,
       fretCount: state.fretCount,
-      flats: state.flats,
+      flats: state.noteSpell === 'flat',
+      noteSpell: state.noteSpell,
       sound: state.sound,
-      showNames: state.showNames,
-      showDegrees: state.showDegrees,
-      showIntervals: state.showIntervals,
+      showNames: drillsDisplaySnap ? drillsDisplaySnap.showNames : state.showNames,
+      showDegrees: drillsDisplaySnap ? drillsDisplaySnap.showDegrees : state.showDegrees,
+      showIntervals: drillsDisplaySnap ? drillsDisplaySnap.showIntervals : state.showIntervals,
       compoundIntervals: state.compoundIntervals,
+      showNo5: state.showNo5,
       fullChart: state.fullChart,
-      cagedKey: state.cagedKey,
+      showPiano: state.showPiano,
+      showLegend: state.showLegend,
       shapes: state.shapes,
       showCagedShapes: state.showCagedShapes,
-      showChordTones: state.showChordTones,
+      showQuartal: state.showQuartal,
+      showNps: state.showNps,
+      showBerklee: state.showBerklee,
+      quartalHeight: state.quartalHeight,
+      quartalStartString: state.quartalStartString,
+      quartalRepeats: state.quartalRepeats,
+      npsCount: state.npsCount,
+      npsRepeats: state.npsRepeats,
+      npsForms: state.npsForms,
+      berkleeRepeats: state.berkleeRepeats,
+      berkleeForms: state.berkleeForms,
+      cagedRepeats: state.cagedRepeats,
+      showCharTips: state.showCharTips,
+      showCharOriginals: state.showCharOriginals,
+      highlightDegree: state.highlightDegree,
       showRootLines: state.showRootLines,
       scaleKey: state.scaleKey,
       scaleFamily: state.scaleFamily,
@@ -260,7 +369,12 @@
       showIntervalGhost: state.showIntervalGhost,
       profiles: state.profiles,
       profileSeq: state.profileSeq,
-      activeProfileId: state.activeProfileId
+      activeProfileId: state.activeProfileId,
+      shapesSpoilerOpen: !!ui.shapesSpoilerOpen,
+      scaleChordSpoilers: {
+        chords: !!ui.scaleChordSpoilers.chords,
+        chords7: !!ui.scaleChordSpoilers.chords7
+      }
     };
   }
 
@@ -269,6 +383,181 @@
       localStorage.setItem(STORE_KEY, JSON.stringify(serializeState()));
       return true;
     } catch (e) { return false; }
+  }
+
+  let saveTimer = null;
+  let deepLinkWriteSuppressed = false;
+  let pendingTheoryArticle = null;
+
+  function scheduleSave() {
+    if (saveTimer) clearTimeout(saveTimer);
+    saveTimer = setTimeout(() => {
+      saveTimer = null;
+      saveState();
+      writeDeepLink();
+    }, 220);
+  }
+
+  function applyLayerId(layer) {
+    if (layer === 'caged' && cagedHonestyMode() === 'blocked') layer = 'none';
+    state.showCagedShapes = layer === 'caged';
+    state.showQuartal = layer === 'quartal';
+    state.showNps = layer === 'nps';
+    state.showBerklee = layer === 'berklee';
+  }
+
+  function applyDeepLink(slice) {
+    const DL = window.FretDeepLink;
+    if (!DL || !DL.hasShareable(slice)) return false;
+
+    if (slice.names != null) state.showNames = !!slice.names;
+    if (slice.degrees != null) state.showDegrees = !!slice.degrees;
+    if (slice.intervals != null) state.showIntervals = !!slice.intervals;
+
+    if (slice.l != null) applyLayerId(slice.l);
+
+    if (slice.f != null || slice.r != null || slice.m != null) {
+      const fam = slice.f != null ? slice.f : state.scaleFamily;
+      if (M.SCALES[fam]) {
+        const maxMode = (M.SCALES[fam].modes || []).length - 1;
+        const root = slice.r != null ? slice.r : state.scaleKey;
+        const mode = slice.m != null ? slice.m : state.modeIndex;
+        setExploreRoot(root);
+        state.scaleFamily = fam;
+        state.modeIndex = Math.max(0, Math.min(maxMode < 0 ? 0 : maxMode, mode | 0));
+        const cat = catForFamily(fam);
+        if (cat) state.scaleCategory = cat;
+      }
+    }
+
+    if (slice.spell === 'fit' || slice.spell === 'flat' || slice.spell === 'sharp') {
+      state.noteSpell = slice.spell;
+      state.flats = slice.spell === 'flat';
+    }
+
+    pendingTheoryArticle = null;
+    // Share links are self-contained: without explicit t/a/pcs/vox, land on Explore
+    // (do not keep a leftover Theory/Drills tab from localStorage).
+    const tab = slice.t && ['explore', 'chords', 'drills', 'theory'].indexOf(slice.t) >= 0
+      ? slice.t
+      : (slice.a ? 'theory' : (slice.pcs || slice.vox ? 'chords' : 'explore'));
+
+    if (tab === 'drills') {
+      state.tab = 'drills';
+      state.chordNotes = [];
+      state.pinRoot = null;
+      ui.chordResult = null;
+      ui.theoryBoardMode = null;
+      return true;
+    }
+
+    let placed = false;
+    if (slice.vox && chordUi && typeof chordUi.decodeVoicing === 'function') {
+      const notes = chordUi.decodeVoicing(slice.vox);
+      if (notes && notes.length) {
+        state.chordNotes = notes.map((nt) => ({
+          s: Math.max(0, Math.min(state.stringCount - 1, nt.s | 0)),
+          f: Math.max(0, Math.min(state.fretCount, nt.f | 0)),
+          id: ++ui.noteSeq
+        }));
+        placed = true;
+        if (slice.cr != null) {
+          const midis = tuningMidis();
+          const hit = state.chordNotes.find((nt) => (((midis[nt.s] + nt.f) % 12) + 12) % 12 === slice.cr);
+          state.pinRoot = hit ? { s: hit.s, f: hit.f } : null;
+        }
+      }
+    }
+    if (!placed && slice.pcs && slice.pcs.length) {
+      const rootPcVal = slice.cr != null ? slice.cr : slice.pcs[0];
+      placed = !!placeChordNotes(slice.pcs, rootPcVal);
+    }
+
+    if (tab === 'theory') {
+      state.tab = 'theory';
+      if (slice.a) pendingTheoryArticle = slice.a;
+      if (placed) {
+        ui.theoryBoardMode = 'chords';
+      } else {
+        // Article-only links should not keep leftover Analyzer notes from localStorage.
+        state.chordNotes = [];
+        state.pinRoot = null;
+        ui.chordResult = null;
+        ui.theoryBoardMode = (slice.f != null || slice.r != null || slice.l != null)
+          ? 'explore'
+          : null;
+      }
+      return true;
+    }
+
+    if (placed || tab === 'chords') {
+      state.tab = 'chords';
+      ui.theoryBoardMode = null;
+      if (!placed) {
+        state.chordNotes = [];
+        state.pinRoot = null;
+        ui.chordResult = null;
+      }
+      return true;
+    }
+
+    state.tab = 'explore';
+    state.chordNotes = [];
+    state.pinRoot = null;
+    ui.chordResult = null;
+    ui.theoryBoardMode = null;
+    return true;
+  }
+
+  function applyDeepLinkFromLocation() {
+    const DL = window.FretDeepLink;
+    if (!DL) return false;
+    const slice = DL.parseLocation();
+    if (!slice) return false;
+    deepLinkWriteSuppressed = true;
+    const ok = applyDeepLink(slice);
+    deepLinkWriteSuppressed = false;
+    return ok;
+  }
+
+  function writeDeepLink() {
+    if (deepLinkWriteSuppressed) return;
+    const DL = window.FretDeepLink;
+    if (!DL || typeof history === 'undefined' || !history.replaceState) return;
+    try {
+      const slice = DL.sliceFromState(state, {
+        articleId: theory && typeof theory.getArticleId === 'function' ? theory.getArticleId() : null,
+        encodeVoicing: chordUi && chordUi.encodeVoicing ? (notes) => chordUi.encodeVoicing(notes) : null,
+        tuningMidis: tuningMidis
+      });
+      const hash = DL.build(slice);
+      const next = location.pathname + location.search + (hash || '');
+      const cur = location.pathname + location.search + (location.hash || '');
+      if (next !== cur) history.replaceState(null, '', next);
+    } catch (e) { /* ignore */ }
+  }
+
+  function bindDeepLink() {
+    if (typeof window === 'undefined') return;
+    window.addEventListener('hashchange', () => {
+      const DL = window.FretDeepLink;
+      if (!DL) return;
+      const slice = DL.parseLocation();
+      if (!slice) return;
+      deepLinkWriteSuppressed = true;
+      applyDeepLink(slice);
+      deepLinkWriteSuppressed = false;
+      if (pendingTheoryArticle && theory) {
+        theory.openArticle(pendingTheoryArticle);
+        pendingTheoryArticle = null;
+      }
+      syncControls();
+      populateSelects();
+      renderLayerPicker();
+      applyTabUI();
+      render();
+      scheduleSave();
+    });
   }
 
   function loadState() {
@@ -289,17 +578,22 @@
     } else if (tab === 'scales') {
       tab = 'explore';
       if (s.showCagedShapes == null) s.showCagedShapes = false;
+    } else if (tab === 'about') {
+      tab = 'theory';
     }
-    state.tab = ['explore', 'chords', 'profiles'].indexOf(tab) >= 0 ? tab : 'explore';
+    state.tab = ['explore', 'chords', 'drills', 'theory', 'profiles'].indexOf(tab) >= 0 ? tab : 'explore';
     state.stringCount = [4, 5, 6, 7, 8, 9, 10].indexOf(s.stringCount) >= 0 ? s.stringCount : state.stringCount;
-    state.fretCount = [12, 15, 22, 24].indexOf(s.fretCount) >= 0 ? s.fretCount : state.fretCount;
+    {
+      const fc = s.fretCount | 0;
+      if (fc >= 12 && fc <= 24) state.fretCount = fc;
+    }
     if (Array.isArray(s.chordNotes)) {
       state.chordNotes = s.chordNotes
         .filter((nt) => nt && Number.isFinite(nt.s) && Number.isFinite(nt.f))
         .map((nt) => ({
           s: Math.max(0, Math.min(state.stringCount - 1, nt.s | 0)),
           f: Math.max(0, Math.min(state.fretCount, nt.f | 0)),
-          id: ++noteSeq
+          id: ++ui.noteSeq
         }));
       state.pinRoot = (s.pinRoot && Number.isFinite(s.pinRoot.s) && Number.isFinite(s.pinRoot.f))
         ? { s: Math.max(0, Math.min(state.stringCount - 1, s.pinRoot.s | 0)), f: Math.max(0, Math.min(state.fretCount, s.pinRoot.f | 0)) }
@@ -311,7 +605,12 @@
       state.pinRoot = null;
     }
     state.showIntervalGhost = !!s.showIntervalGhost;
-    state.flats = !!s.flats;
+    if (s.noteSpell === 'fit' || s.noteSpell === 'flat' || s.noteSpell === 'sharp') {
+      state.noteSpell = s.noteSpell;
+    } else {
+      state.noteSpell = s.flats ? 'flat' : 'sharp';
+    }
+    state.flats = state.noteSpell === 'flat';
     state.sound = s.sound !== false;
     state.showNames = s.showNames !== false;
     if (s.showDegrees != null) {
@@ -325,37 +624,69 @@
       state.showIntervals = false;
     }
     state.fullChart = !!s.fullChart;
+    state.showPiano = s.showPiano !== false;
+    state.showLegend = !!s.showLegend;
     state.compoundIntervals = s.compoundIntervals !== false;
-    state.cagedKey = Math.max(0, Math.min(11, s.cagedKey | 0));
+    state.showNo5 = s.showNo5 !== false;
     if (s.shapes && typeof s.shapes === 'object') {
       Object.keys(state.shapes).forEach((k) => { state.shapes[k] = s.shapes[k] !== false; });
     }
     state.showCagedShapes = s.showCagedShapes !== false;
-    state.showChordTones = s.showChordTones !== false;
+    state.showQuartal = !!s.showQuartal;
+    state.showNps = !!s.showNps;
+    state.showBerklee = !!s.showBerklee;
+    {
+      const layers = [state.showCagedShapes, state.showQuartal, state.showNps, state.showBerklee].filter(Boolean).length;
+      if (layers > 1) {
+        if (state.showCagedShapes) { state.showQuartal = false; state.showNps = false; state.showBerklee = false; }
+        else if (state.showBerklee) { state.showQuartal = false; state.showNps = false; }
+        else if (state.showNps) { state.showQuartal = false; }
+      }
+    }
+    state.npsCount = window.FretNps ? window.FretNps.clampCount(s.npsCount) : 3;
+    state.npsRepeats = s.npsRepeats !== false;
+    if (s.npsForms && typeof s.npsForms === 'object') {
+      state.npsForms = {};
+      Object.keys(s.npsForms).forEach((k) => { state.npsForms[k] = s.npsForms[k] !== false; });
+    }
+    state.berkleeRepeats = s.berkleeRepeats !== false;
+    if (s.berkleeForms && typeof s.berkleeForms === 'object') {
+      state.berkleeForms = {};
+      Object.keys(s.berkleeForms).forEach((k) => { state.berkleeForms[k] = s.berkleeForms[k] !== false; });
+    }
+    if (window.FretQuartal) {
+      state.quartalHeight = window.FretQuartal.clampHeight(s.quartalHeight, state.stringCount);
+      const defStart = window.FretQuartal.defaultStartString(state.stringCount, state.quartalHeight);
+      const rawStart = Number.isFinite(s.quartalStartString) ? (s.quartalStartString | 0) : defStart;
+      state.quartalStartString = window.FretQuartal.clampStartString(rawStart, state.stringCount, state.quartalHeight);
+    } else {
+      const n = state.stringCount;
+      const minH = Math.min(3, n);
+      state.quartalHeight = Math.max(minH, Math.min(n, s.quartalHeight | 0 || 3));
+      state.quartalStartString = Math.max(0, Math.min(n - state.quartalHeight, s.quartalStartString | 0));
+    }
+    state.quartalRepeats = s.quartalRepeats !== false;
+    state.cagedRepeats = s.cagedRepeats !== false;
+    state.showCharTips = s.showCharTips !== false;
+    state.showCharOriginals = s.showCharOriginals !== false;
+    if (s.highlightDegree === -1 || s.highlightDegree === null) {
+      state.highlightDegree = -1;
+    } else if (Number.isFinite(s.highlightDegree)) {
+      state.highlightDegree = ((s.highlightDegree % 12) + 12) % 12;
+    } else if (s.highlightRoots === false) {
+      state.highlightDegree = -1;
+    } else {
+      state.highlightDegree = 0;
+    }
     state.showRootLines = s.showRootLines !== false;
     state.scaleKey = Math.max(0, Math.min(11, (s.scaleKey != null ? s.scaleKey : s.cagedKey) | 0));
-    state.cagedKey = state.scaleKey;
     if (M.SCALES[s.scaleFamily]) state.scaleFamily = s.scaleFamily;
     state.scaleCategory = catForFamily(state.scaleFamily) || 'church';
     const maxMode = (M.SCALES[state.scaleFamily].modes || []).length - 1;
     state.modeIndex = Math.max(0, Math.min(maxMode, s.modeIndex | 0));
-    state.bpm = Math.max(40, Math.min(800, s.bpm | 0 || 120));
+    state.bpm = Math.max(40, Math.min(300, s.bpm | 0 || 120));
     if (['downsideUp', 'upsideDown', 'bothFromDown', 'bothFromUp', 'lowestRoot', 'upperRoot'].indexOf(s.groove) >= 0) {
       state.groove = s.groove;
-    }
-    if (Array.isArray(s.customPcs) && s.customPcs.length) {
-      state.customPcs = s.customPcs.map((v) => (((v % 12) + 12) % 12));
-    }
-    state.tuningId = s.tuningId || state.tuningId;
-    if (state.tuningId !== 'custom') {
-      const t = M.TUNINGS.find((x) => x.id === state.tuningId);
-      if (!t || t.strings !== state.stringCount) {
-        const fb = M.TUNINGS.find((x) => x.strings === state.stringCount && x.id !== 'custom');
-        state.tuningId = fb ? fb.id : 'std6';
-      }
-    } else {
-      while (state.customPcs.length < state.stringCount) state.customPcs.unshift(7);
-      while (state.customPcs.length > state.stringCount) state.customPcs.shift();
     }
     state.profiles = [];
     state.profileSeq = 0;
@@ -383,6 +714,10 @@
         if (!p.tuning.length) p.tuning = window.FretProfiles.ROLE_DEFAULTS[p.role].tuning.map((m) => ({ n: m % 12, o: Math.floor(m / 12) - 1 }));
       });
     }
+    ui.shapesSpoilerOpen = !!s.shapesSpoilerOpen;
+    const spoilers = s.scaleChordSpoilers && typeof s.scaleChordSpoilers === 'object' ? s.scaleChordSpoilers : {};
+    ui.scaleChordSpoilers.chords = !!spoilers.chords;
+    ui.scaleChordSpoilers.chords7 = !!spoilers.chords7;
   }
 
   function defaultGuitarSub() {
@@ -495,6 +830,8 @@
       }
       state.activeProfileId = next;
       el.open = false;
+      syncBoardSource();
+      applyTabUI();
       saveState();
       render();
     });
@@ -506,710 +843,603 @@
     });
   }
 
+  function exploreLayerId() {
+    if (state.showCagedShapes) return 'caged';
+    if (state.showQuartal) return 'quartal';
+    if (state.showNps) return 'nps';
+    if (state.showBerklee) return 'berklee';
+    return 'none';
+  }
+
+  function exploreLayerDefs() {
+    const cagedBlocked = cagedHonestyMode() === 'blocked';
+    return [
+      { id: 'none', nameKey: 'controls.explore.layerNone', descKey: 'controls.explore.layerNoneDesc' },
+      {
+        id: 'caged',
+        nameKey: 'controls.explore.cagedShapes',
+        descKey: cagedLayerDescKey(),
+        disabled: cagedBlocked
+      },
+      { id: 'quartal', nameKey: 'controls.explore.quartalChords', descKey: 'controls.explore.layerQuartalDesc' },
+      { id: 'nps', nameKey: 'controls.explore.nps', descKey: 'controls.explore.layerNpsDesc' },
+      { id: 'berklee', nameKey: 'controls.explore.berklee', descKey: 'controls.explore.layerBerkleeDesc' }
+    ];
+  }
+
+  function setExploreLayer(layer) {
+    if (layer === 'caged' && cagedHonestyMode() === 'blocked') return;
+    state.showCagedShapes = layer === 'caged';
+    state.showQuartal = layer === 'quartal';
+    state.showNps = layer === 'nps';
+    state.showBerklee = layer === 'berklee';
+    renderLayerPicker();
+    applyTabUI();
+    render();
+  }
+
+  function renderLayerPicker() {
+    const el = $('#ctl-explore-layers');
+    if (!el) return;
+    const wasOpen = el.open;
+    const cur = exploreLayerId();
+    const defs = exploreLayerDefs();
+    const selected = defs.find((d) => d.id === cur) || defs[0];
+    const items = defs.map((d) => {
+      const on = d.id === cur;
+      const disabled = !!d.disabled;
+      return '<button type="button" class="layer-picker-item' + (on ? ' on' : '') + (disabled ? ' disabled' : '') +
+        '" data-layer="' + d.id + '" role="option" aria-selected="' + (on ? 'true' : 'false') + '"' +
+        (disabled ? ' aria-disabled="true" disabled' : '') + '>' +
+        '<span class="layer-picker-check" aria-hidden="true">' + (on ? '✓' : '') + '</span>' +
+        '<span class="layer-picker-item-text">' +
+        '<span class="layer-picker-item-name">' + esc(t(d.nameKey)) + '</span>' +
+        '<span class="layer-picker-item-desc">' + esc(t(d.descKey)) + '</span>' +
+        '</span>' +
+        '</button>';
+    }).join('');
+    el.innerHTML =
+      '<summary class="layer-picker-summary">' +
+      '<span class="layer-picker-chip-text">' +
+      '<span class="layer-picker-name">' + esc(t(selected.nameKey)) + '</span>' +
+      '<span class="layer-picker-sub">' + esc(t(selected.descKey)) + '</span>' +
+      '</span>' +
+      '<span class="layer-picker-caret" aria-hidden="true">▾</span>' +
+      '</summary>' +
+      '<div class="layer-picker-menu" role="listbox" aria-label="' + esc(t('controls.explore.layersAria')) + '">' +
+      items +
+      '</div>';
+    el.open = wasOpen;
+    el.setAttribute('aria-label', t('controls.explore.layersAria'));
+  }
+
+  function bindLayerPicker() {
+    const wrap = $('#ctl-explore-layers-wrap');
+    const el = $('#ctl-explore-layers');
+    if (!el || el.dataset.bound === '1') return;
+    el.dataset.bound = '1';
+    el.addEventListener('click', (e) => {
+      const btn = e.target.closest('.layer-picker-item');
+      if (!btn || !el.contains(btn)) return;
+      e.preventDefault();
+      const layer = btn.dataset.layer || 'none';
+      el.open = false;
+      if (layer === exploreLayerId()) return;
+      setExploreLayer(layer);
+    });
+    document.addEventListener('click', (e) => {
+      if (!el.open) return;
+      if (el.contains(e.target)) return;
+      if (wrap && wrap.contains(e.target)) return;
+      el.open = false;
+    });
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && el.open) el.open = false;
+    });
+  }
+
+  function syncKbPlaceControls() {
+    const sel = $('#ctl-kb-string');
+    const fret = $('#ctl-kb-fret');
+    if (!sel || !fret || !boardView) return;
+    const n = state.stringCount | 0;
+    const N = state.fretCount | 0;
+    boardView.setKbCursor(boardView.getKbCursor().s, boardView.getKbCursor().f, { silent: true });
+    const cur = boardView.getKbCursor();
+    if (sel.options.length !== n) {
+      sel.innerHTML = '';
+      for (let s = 0; s < n; s++) {
+        const opt = document.createElement('option');
+        opt.value = String(s);
+        opt.textContent = t('controls.chords.kbStringOpt', { n: n - s });
+        sel.appendChild(opt);
+      }
+    } else {
+      for (let s = 0; s < n; s++) {
+        if (sel.options[s]) sel.options[s].textContent = t('controls.chords.kbStringOpt', { n: n - s });
+      }
+    }
+    fret.min = '0';
+    fret.max = String(N);
+    sel.value = String(cur.s);
+    fret.value = String(cur.f);
+    if (boardView.syncNeckAria) boardView.syncNeckAria();
+  }
+
   function syncControls() {
     renderGuitarChip();
     const langSel = $('#ctl-lang');
     if (langSel) langSel.value = window.FretI18n.lang();
-    $('#ctl-flats').value = state.flats ? '1' : '0';
-    $('#ctl-names').checked = state.showNames;
-    $('#ctl-degrees').checked = state.showDegrees;
-    $('#ctl-intervals').checked = state.showIntervals;
+    $('#ctl-flats').value = state.noteSpell === 'fit' ? '2' : (state.noteSpell === 'flat' ? '1' : '0');
+    // While Drills locks labels off, keep the switches showing the user's prefs (snap).
+    const disp = drillsDisplaySnap || state;
+    $('#ctl-names').checked = disp.showNames;
+    $('#ctl-degrees').checked = disp.showDegrees;
+    $('#ctl-intervals').checked = disp.showIntervals;
     $('#ctl-full').checked = state.fullChart;
     $('#ctl-sound').checked = state.sound;
-    $('#ctl-chordtones').checked = state.showChordTones;
+    const cagedRepeats = $('#ctl-caged-repeats');
+    if (cagedRepeats) cagedRepeats.checked = state.cagedRepeats;
+    const charTips = $('#ctl-char-tips');
+    if (charTips) charTips.checked = state.showCharTips;
+    const charOrig = $('#ctl-char-originals');
+    if (charOrig) charOrig.checked = state.showCharOriginals;
     $('#ctl-rootlines').checked = state.showRootLines;
-    $('#ctl-caged-layer').checked = state.showCagedShapes;
+    renderLayerPicker();
+    const quartalRepeats = $('#ctl-quartal-repeats');
+    if (quartalRepeats) quartalRepeats.checked = state.quartalRepeats;
+    const npsRepeats = $('#ctl-nps-repeats');
+    if (npsRepeats) npsRepeats.checked = state.npsRepeats;
+    syncNpsCountSelect();
+    const berkleeRepeats = $('#ctl-berklee-repeats');
+    if (berkleeRepeats) berkleeRepeats.checked = state.berkleeRepeats;
+    populateQuartalControls();
     $('#ctl-compound').value = state.compoundIntervals ? '1' : '0';
+    const showNo5 = $('#ctl-show-no5');
+    if (showNo5) showNo5.checked = state.showNo5;
     $('#ctl-bpm').value = String(state.bpm);
     $('#ctl-groove').value = state.groove;
+    syncKbPlaceControls();
+  }
+
+  function syncNpsCountSelect() {
+    const sel = $('#ctl-nps-count');
+    if (!sel) return;
+    if (window.FretNps) state.npsCount = window.FretNps.clampCount(state.npsCount);
+    else state.npsCount = 3;
+    const opts = (window.FretNps && window.FretNps.COUNT_OPTIONS) || [3, 4];
+    const cur = String(state.npsCount);
+    if (sel.options.length !== opts.length) {
+      sel.innerHTML = opts.map((n) => '<option value="' + n + '">' + n + '</option>').join('');
+    }
+    sel.value = cur;
+  }
+
+  function populateQuartalHeightSelect() {
+    const sel = $('#ctl-quartal-height');
+    if (!sel || !window.FretQuartal) return;
+    const n = state.stringCount;
+    state.quartalHeight = window.FretQuartal.clampHeight(state.quartalHeight, n);
+    const opts = window.FretQuartal.heightOptions(n);
+    const cur = String(state.quartalHeight);
+    sel.innerHTML = '';
+    opts.forEach((h) => {
+      const opt = document.createElement('option');
+      opt.value = String(h);
+      opt.textContent = String(h);
+      sel.appendChild(opt);
+    });
+    sel.value = cur;
+    if (sel.value !== cur) sel.value = String(state.quartalHeight);
+  }
+
+  function populateQuartalStartSelect() {
+    const sel = $('#ctl-quartal-start');
+    if (!sel || !window.FretQuartal) return;
+    const n = state.stringCount;
+    const h = state.quartalHeight;
+    state.quartalStartString = window.FretQuartal.clampStartString(state.quartalStartString, n, h);
+    const maxStart = Math.max(0, n - h);
+    const cur = String(state.quartalStartString);
+    sel.innerHTML = '';
+    for (let eng = 0; eng <= maxStart; eng++) {
+      const playerNum = n - eng;
+      const opt = document.createElement('option');
+      opt.value = String(eng);
+      opt.textContent = t('controls.quartal.startStringOpt', { n: playerNum });
+      sel.appendChild(opt);
+    }
+    sel.value = cur;
+    if (sel.value !== cur) sel.value = String(maxStart >= 0 ? Math.min(state.quartalStartString, maxStart) : 0);
+  }
+
+  function populateQuartalControls() {
+    populateQuartalHeightSelect();
+    populateQuartalStartSelect();
+  }
+
+  function boardlessTab() {
+    return state.tab === 'profiles';
+  }
+
+  function theoryShowsBoard() {
+    return state.tab === 'theory' && !!ui.theoryBoardMode;
+  }
+
+  function placeChordNotes(pcs, rootPc, voicingNotes) {
+    const midis = tuningMidis();
+    let notes = voicingNotes;
+    if (!notes || !notes.length) notes = chordUi.placeChordPcs(pcs, midis, state.fretCount);
+    if (!notes || !notes.length) return false;
+    state.chordNotes = notes.map((nt) => ({ s: nt.s, f: nt.f, id: ++ui.noteSeq }));
+    const rootNote = notes.find((nt) => (((midis[nt.s] + nt.f) % 12) + 12) % 12 === rootPc);
+    state.pinRoot = rootNote ? { s: rootNote.s, f: rootNote.f } : { s: notes[0].s, f: notes[0].f };
+    ui.scaleSel = null;
+    return true;
+  }
+
+  function openScaleChordInAnalyzer(pcs, rootPc, voicingNotes) {
+    if (!placeChordNotes(pcs, rootPc, voicingNotes)) return false;
+    state.tab = 'chords';
+    applyTabUI();
+      render();
+    requestAnimationFrame(() => {
+      if (boardWrap) boardWrap.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    });
+    return true;
+  }
+
+  /** Apply a Theory lesson to the companion board without leaving the Theory tab. */
+  function applyTheoryDemo(spec) {
+    const lesson = spec && typeof spec === 'object' ? spec : null;
+    if (!lesson || lesson.tab === 'drills') {
+      ui.theoryBoardMode = null;
+      state.chordNotes = [];
+      state.pinRoot = null;
+      ui.chordResult = null;
+      applyTabUI();
+      if (state.tab === 'theory') {
+        scheduleSave();
+      }
+      return;
+    }
+
+    if (lesson.showNames != null) state.showNames = !!lesson.showNames;
+    if (lesson.showDegrees != null) state.showDegrees = !!lesson.showDegrees;
+    if (lesson.showIntervals != null) state.showIntervals = !!lesson.showIntervals;
+
+    if (lesson.layer != null) {
+      applyLayerId(lesson.layer);
+    } else if (lesson.tab !== 'chords') {
+      state.showCagedShapes = false;
+      state.showQuartal = false;
+      state.showNps = false;
+      state.showBerklee = false;
+    }
+
+    if (lesson.family != null || lesson.root != null || lesson.mode != null) {
+      const fam = lesson.family != null ? lesson.family : state.scaleFamily;
+      if (M.SCALES[fam]) {
+        const maxMode = (M.SCALES[fam].modes || []).length - 1;
+        const root = lesson.root != null ? (((lesson.root % 12) + 12) % 12) : state.scaleKey;
+        const mode = lesson.mode != null ? lesson.mode : state.modeIndex;
+        setExploreRoot(root);
+        state.scaleFamily = fam;
+        state.modeIndex = Math.max(0, Math.min(maxMode < 0 ? 0 : maxMode, mode | 0));
+        const cat = catForFamily(fam);
+        if (cat) state.scaleCategory = cat;
+      }
+    }
+
+    if (lesson.noteSpell === 'fit' || lesson.noteSpell === 'flat' || lesson.noteSpell === 'sharp') {
+      state.noteSpell = lesson.noteSpell;
+    }
+
+    if (lesson.tab === 'chords' && Array.isArray(lesson.chordPcs) && lesson.chordPcs.length) {
+      const rootPcVal = lesson.chordRoot != null
+        ? (((lesson.chordRoot % 12) + 12) % 12)
+        : (lesson.chordPcs[0] % 12);
+      if (!placeChordNotes(lesson.chordPcs, rootPcVal)) {
+        ui.theoryBoardMode = null;
+      } else {
+        ui.theoryBoardMode = 'chords';
+      }
+    } else {
+      state.chordNotes = [];
+      state.pinRoot = null;
+      ui.chordResult = null;
+      ui.theoryBoardMode = 'explore';
+    }
+
+    populateSelects();
+    renderLayerPicker();
+    applyTabUI();
+    syncControls();
+    if (boardView) boardView.drawBoard();
+    if (pianoView) pianoView.renderPiano();
+    scheduleSave();
+  }
+
+  function openTheoryArticle(id) {
+    state.tab = 'theory';
+    applyTabUI();
+    if (theory && typeof theory.openArticle === 'function') theory.openArticle(id);
+    else render();
+    scheduleSave();
+  }
+
+  function openTheoryLesson(spec) {
+    const lesson = spec && typeof spec === 'object' ? spec : {};
+    if (lesson.showNames != null) state.showNames = !!lesson.showNames;
+    if (lesson.showDegrees != null) state.showDegrees = !!lesson.showDegrees;
+    if (lesson.showIntervals != null) state.showIntervals = !!lesson.showIntervals;
+
+    if (lesson.layer != null) {
+      applyLayerId(lesson.layer);
+    }
+
+    if (lesson.family != null || lesson.root != null || lesson.mode != null) {
+      const fam = lesson.family != null ? lesson.family : state.scaleFamily;
+      if (M.SCALES[fam]) {
+        const maxMode = (M.SCALES[fam].modes || []).length - 1;
+        const root = lesson.root != null ? (((lesson.root % 12) + 12) % 12) : state.scaleKey;
+        const mode = lesson.mode != null ? lesson.mode : state.modeIndex;
+        setExploreRoot(root);
+        state.scaleFamily = fam;
+        state.modeIndex = Math.max(0, Math.min(maxMode < 0 ? 0 : maxMode, mode | 0));
+        const cat = catForFamily(fam);
+        if (cat) state.scaleCategory = cat;
+      }
+    }
+
+    if (lesson.noteSpell === 'fit' || lesson.noteSpell === 'flat' || lesson.noteSpell === 'sharp') {
+      state.noteSpell = lesson.noteSpell;
+    }
+
+    if (lesson.tab === 'drills') {
+      state.tab = 'drills';
+      applyTabUI();
+      syncControls();
+      saveState();
+      render();
+      requestAnimationFrame(() => {
+        if (boardWrap) boardWrap.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      });
+      return;
+    }
+
+    if (lesson.tab === 'chords' && Array.isArray(lesson.chordPcs) && lesson.chordPcs.length) {
+      const rootPcVal = lesson.chordRoot != null ? (((lesson.chordRoot % 12) + 12) % 12) : (lesson.chordPcs[0] % 12);
+      openScaleChordInAnalyzer(lesson.chordPcs, rootPcVal);
+      return;
+    }
+
+    state.tab = 'explore';
+    populateSelects();
+    renderLayerPicker();
+    applyTabUI();
+    syncControls();
+    saveState();
+    render();
+    requestAnimationFrame(() => {
+      if (boardWrap) boardWrap.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    });
+  }
+
+  let drillsDisplaySnap = null;
+
+  function lockDrillsDisplay() {
+    const cluster = $('#ctl-display');
+    if (cluster) {
+      cluster.classList.add('ctl-locked');
+      cluster.setAttribute('aria-disabled', 'true');
+      cluster.title = t('drills.displayLocked');
+      cluster.querySelectorAll('input, select').forEach((el) => { el.disabled = true; });
+    }
+    if (!drillsDisplaySnap) {
+      drillsDisplaySnap = {
+        showNames: state.showNames,
+        showDegrees: state.showDegrees,
+        showIntervals: state.showIntervals
+      };
+    }
+    state.showNames = false;
+    state.showDegrees = false;
+    state.showIntervals = false;
+  }
+
+  /** Restore user's Display prefs for drawing without leaving Drills / clearing the snap. */
+  function peekDrillsDisplay() {
+    if (!drillsDisplaySnap) return;
+    state.showNames = drillsDisplaySnap.showNames;
+    state.showDegrees = drillsDisplaySnap.showDegrees;
+    state.showIntervals = drillsDisplaySnap.showIntervals;
+  }
+
+  /** Force labels off again while still on Drills (after Show answer peek). */
+  function relockDrillsDisplay() {
+    if (state.tab !== 'drills' || !drillsDisplaySnap) return;
+    state.showNames = false;
+    state.showDegrees = false;
+    state.showIntervals = false;
+  }
+
+  function unlockDrillsDisplay() {
+    const cluster = $('#ctl-display');
+    if (cluster) {
+      cluster.classList.remove('ctl-locked');
+      cluster.removeAttribute('aria-disabled');
+      cluster.removeAttribute('title');
+      cluster.querySelectorAll('input, select').forEach((el) => { el.disabled = false; });
+    }
+    if (drillsDisplaySnap) {
+      state.showNames = drillsDisplaySnap.showNames;
+      state.showDegrees = drillsDisplaySnap.showDegrees;
+      state.showIntervals = drillsDisplaySnap.showIntervals;
+      drillsDisplaySnap = null;
+    }
   }
 
   function applyTabUI() {
-    document.querySelectorAll('.tab').forEach((t) => t.classList.toggle('active', t.dataset.tab === state.tab));
-    $('#ctl-main-controls').classList.toggle('hidden', state.tab === 'profiles');
+    document.querySelectorAll('.tab').forEach((t) => {
+      const on = t.dataset.tab === state.tab;
+      t.classList.toggle('active', on);
+      t.setAttribute('aria-selected', on ? 'true' : 'false');
+      t.tabIndex = on ? 0 : -1;
+    });
+    if (state.tab !== 'drills' && drills && typeof drills.active === 'function' && drills.active()) {
+      drills.end({ silent: true });
+    }
+    if (state.tab === 'drills') lockDrillsDisplay();
+    else unlockDrillsDisplay();
+    if (state.tab !== 'theory') {
+      ui.theoryBoardMode = null;
+      if (theory && typeof theory.invalidateDemo === 'function') theory.invalidateDemo();
+    }
+    const hideBoard = boardlessTab() || (state.tab === 'theory' && !ui.theoryBoardMode);
+    const theoryLive = theoryShowsBoard();
+    $('#ctl-main-controls').classList.toggle('hidden', hideBoard);
     $('#ctl-explore').classList.toggle('hidden', state.tab !== 'explore');
     $('#ctl-chords').classList.toggle('hidden', state.tab !== 'chords');
-    $('#ctl-playback').classList.toggle('hidden', state.tab === 'profiles');
+    if (state.tab !== 'chords' && boardView && boardView.clearKbReveal) boardView.clearKbReveal();
+    $('#ctl-playback').classList.toggle('hidden', hideBoard || state.tab === 'drills' || state.tab === 'theory');
     $('#ctl-chord-opts').classList.toggle('hidden', state.tab !== 'chords');
     $('#ctl-caged-shapes').classList.toggle('hidden', state.tab !== 'explore');
     document.querySelectorAll('.ctl-shapes-layer').forEach((el) => {
-      el.classList.toggle('hidden', !state.showCagedShapes);
+      el.classList.toggle('hidden', !state.showCagedShapes || state.tab === 'theory');
     });
-    $('#ctl-playback-controls').classList.toggle('hidden', !state.sound || state.tab === 'profiles');
-    $('#board-wrap').classList.toggle('hidden', state.tab === 'profiles');
-    $('#legend').classList.toggle('hidden', state.tab === 'profiles');
-    $('#tipbox').classList.toggle('hidden', state.tab === 'profiles');
-    if (state.tab === 'profiles') $('#scale-details').classList.add('hidden');
-    else if (state.tab !== 'chords') $('#scale-details').classList.remove('hidden');
+    const qStrip = $('#ctl-quartal-shapes');
+    if (qStrip) qStrip.classList.toggle('hidden', state.tab !== 'explore' || !state.showQuartal);
+    const npsStrip = $('#ctl-nps-shapes');
+    if (npsStrip) npsStrip.classList.toggle('hidden', state.tab !== 'explore' || !state.showNps);
+    const berkleeStrip = $('#ctl-berklee-shapes');
+    if (berkleeStrip) berkleeStrip.classList.toggle('hidden', state.tab !== 'explore' || !state.showBerklee);
+    $('#ctl-playback-controls').classList.toggle('hidden', !state.sound || hideBoard || state.tab === 'drills' || state.tab === 'theory');
+    $('#board-wrap').classList.toggle('hidden', hideBoard);
+    $('#legend').classList.toggle('hidden', hideBoard || state.tab === 'drills' || state.tab === 'theory');
+    $('#tipbox').classList.toggle('hidden', hideBoard || state.tab === 'drills' || state.tab === 'theory');
+    if (hideBoard || state.tab === 'chords' || state.tab === 'drills' || state.tab === 'theory') $('#scale-details').classList.add('hidden');
+    else $('#scale-details').classList.remove('hidden');
     $('#chord-result').classList.toggle('hidden', state.tab !== 'chords');
     $('#profiles-panel').classList.toggle('hidden', state.tab !== 'profiles');
-  }
-
-  const x = (i) => G.x(i, state.fretCount);
-  const bandCenter = (i) => G.bandCenter(i, state.fretCount);
-  const leftBound = (i) => G.leftBound(i, state.fretCount);
-  const rightBound = (i) => G.rightBound(i, state.fretCount);
-  const hexA = G.hexA;
-  const yArea = () => G.yArea(state.stringCount);
-  const yPx = G.yPx;
-  const fretFromX = (pct) => G.fretFromX(pct, state.fretCount);
-
-  function positionTip(x, y) {
-    const r = tip.getBoundingClientRect();
-    const maxX = Math.max(8, window.innerWidth - r.width - 8);
-    const maxY = Math.max(8, window.innerHeight - r.height - 8);
-    tip.style.left = Math.max(8, Math.min(x + 14, maxX)) + 'px';
-    tip.style.top = Math.max(8, Math.min(y + 20, maxY)) + 'px';
-  }
-
-  function showTip(html, x, y) {
-    tip.innerHTML = html;
-    tip.style.display = 'block';
-    positionTip(x, y);
-  }
-
-  function tipRow(key, val, valCls) {
-    return '<div class="tip-row"><span class="tip-k">' + key + '</span><span class="tip-v' + (valCls ? ' ' + valCls : '') + '">' + val + '</span></div>';
-  }
-
-  function tipHtml(label) {
-    const dash = t('tip.emDash');
-    const deg = label.tipDegree || dash;
-    const iv = label.tipIntervalHtml || label.tipInterval || dash;
-    return tipRow(t('tip.note'), label.octaveName || label.name || dash) +
-      tipRow(t('tip.fret'), label.fretText || dash) +
-      tipRow(t('tip.degree'), deg, label.root ? 'tr' : '') +
-      tipRow(t('tip.interval'), iv, 'ti');
-  }
-
-  function tipQuality(r) {
-    if (r.quality) return r.quality;
-    const dash = t('tip.emDash');
-    if (!r.matched || !r.c) return dash;
-    if (r.c.dim || r.c.dim7 || r.c.aug || r.c.sus) return dash;
-    if (r.c.third === 4) return t('tip.qualityMajor');
-    return dash;
-  }
-
-  function chordSymbolTipHtml(r) {
-    const dash = t('tip.emDash');
-    const alts = (r.alterations || []).join('');
-    const paren = r.parens && r.parens.length ? '(' + r.parens.join(',') + ')' : '';
-    const alteration = (alts + paren) || dash;
-    return tipRow(t('tip.root'), r.rootName || dash, 'tr') +
-      tipRow(t('tip.quality'), tipQuality(r)) +
-      tipRow(t('tip.extension'), r.extension || dash) +
-      tipRow(t('tip.alteration'), alteration) +
-      tipRow(t('tip.bass'), r.slash && r.bassName ? r.bassName : dash);
-  }
-
-  function hideTip() {
-    tip.style.display = 'none';
-  }
-
-  function positionCtx(x, y) {
-    const r = ctxMenu.getBoundingClientRect();
-    const maxX = Math.max(8, window.innerWidth - r.width - 8);
-    const maxY = Math.max(8, window.innerHeight - r.height - 8);
-    ctxMenu.style.left = Math.max(8, Math.min(x, maxX)) + 'px';
-    ctxMenu.style.top = Math.max(8, Math.min(y, maxY)) + 'px';
-  }
-
-  function closeCtx() {
-    ctxMenu.style.display = 'none';
-  }
-
-  function openChordMenu(x, y, nt) {
-    const pinned = state.pinRoot && state.pinRoot.s === nt.s && state.pinRoot.f === nt.f;
-    ctxMenu.innerHTML =
-      '<button type="button" class="ctx-item" data-act="pin">' +
-      '<span class="ctx-check">' + (pinned ? '\u2726' : '') + '</span>' +
-      '<span>' + (pinned ? t('ctx.unpinRoot') : t('ctx.pinAsRoot')) + '</span>' +
-      '</button>' +
-      '<button type="button" class="ctx-item" data-act="iv">' +
-      '<span class="ctx-check">' + (state.showIntervalGhost ? '\u2713' : '') + '</span>' +
-      '<span>' + t('ctx.relativeDegreesIntervals') + '</span>' +
-      '</button>';
-    ctxMenu.dataset.s = nt.s;
-    ctxMenu.dataset.f = nt.f;
-    ctxMenu.style.display = 'block';
-    positionCtx(x, y);
-  }
-
-  ctxMenu.addEventListener('click', (e) => {
-    const btn = e.target.closest ? e.target.closest('.ctx-item') : null;
-    if (!btn) return;
-    const s = parseInt(ctxMenu.dataset.s, 10);
-    const f = parseInt(ctxMenu.dataset.f, 10);
-    if (btn.dataset.act === 'pin') {
-      if (state.pinRoot && state.pinRoot.s === s && state.pinRoot.f === f) state.pinRoot = null;
-      else state.pinRoot = { s: s, f: f };
-      render();
-    } else if (btn.dataset.act === 'iv') {
-      state.showIntervalGhost = !state.showIntervalGhost;
-      render();
+    const theoryPanel = $('#theory-panel');
+    if (theoryPanel) {
+      theoryPanel.classList.toggle('hidden', state.tab !== 'theory');
+      theoryPanel.classList.toggle('theory-with-board', theoryLive);
     }
-    closeCtx();
-  });
-
-  function relText(semis, degreeOverride, join) {
-    return M.formatRel(semis, false, state.showIntervals, degreeOverride, join);
-  }
-
-  function makeMarker(pc, fret, stringIdx, midis, label, cls, color, colorR) {
-    const m = document.createElement('div');
-    m.className = 'marker ' + cls;
-    if (color) {
-      m.style.setProperty('--mc', color);
-      m.style.setProperty('--mcL', color);
-      if (cls.indexOf('root') < 0) m.classList.add('shaped');
+    const drillsPanel = $('#drills-panel');
+    const drillBar = $('#drill-bar');
+    if (state.tab !== 'drills') {
+      if (drillsPanel) drillsPanel.classList.add('hidden');
+      if (drillBar) drillBar.classList.add('hidden');
     }
-    if (colorR) m.style.setProperty('--mcR', colorR);
-    const left = bandCenter(fret);
-    m.style.left = left + '%';
-    m.style.top = label.top + 'px';
-    m.style.zIndex = 10;
-    m.dataset.sf = stringIdx + ':' + fret;
-
-    const nameTxt = label.name;
-    const degTxt = label.degree;
-    const intTxt = label.interval;
-
-    m.innerHTML =
-      '<span class="mtop">' +
-      (nameTxt ? '<span class="mn">' + nameTxt + '</span>' : '') +
-      (degTxt ? '<span class="ms">' + degTxt + '</span>' : '') +
-      '</span>' +
-      (intTxt ? '<span class="ml"></span><span class="mi">' + intTxt + '</span>' : '');
-
-    const midi = midis[stringIdx] + fret;
-    m.addEventListener('click', (e) => {
-      e.stopPropagation();
-      if (state.tab === 'chords') {
-        const i = state.chordNotes.findIndex((nt) => nt.s === stringIdx && nt.f === fret);
-        if (i >= 0) state.chordNotes.splice(i, 1);
-        if (state.pinRoot && state.pinRoot.s === stringIdx && state.pinRoot.f === fret) state.pinRoot = null;
-        render();
-        return;
-      }
-      playMidi(midi);
-    });
-    m.addEventListener('mouseenter', (e) => {
-      showTip(tipHtml(label), e.clientX, e.clientY);
-    });
-    m.addEventListener('mouseleave', hideTip);
-    neck.appendChild(m);
-    return m;
-  }
-
-  function pinRootPc(midis) {
-    if (!state.pinRoot) return null;
-    const m = midis[state.pinRoot.s];
-    if (m == null) return null;
-    return (((m + state.pinRoot.f) % 12) + 12) % 12;
-  }
-
-  function gridAt(pct, y) {
-    const area = yArea();
-    const midis = tuningMidis();
-    const s = Math.max(0, Math.min(midis.length - 1, Math.round(midis.length - 0.5 - (y - area.topPad) / area.step)));
-    const f = fretFromX(pct);
-    return { s: s, f: f, area: area };
-  }
-
-  function makeGhostPlus() {
-    ghostPlus = document.createElement('div');
-    ghostPlus.className = 'marker ghost-plus';
-    ghostPlus.innerHTML = '<span class="place-plus">+</span>';
-    ghostPlus.style.display = 'none';
-    neck.appendChild(ghostPlus);
-  }
-
-  function placeGhostPlus(pct, y) {
-    if (!ghostPlus) return;
-    const g = gridAt(pct, y);
-    const occupied = state.chordNotes.some((nt) => nt.s === g.s && nt.f === g.f);
-    if (occupied) {
-      ghostPlus.style.display = 'none';
-      return;
-    }
-    ghostPlus.style.left = bandCenter(g.f) + '%';
-    ghostPlus.style.top = yPx(g.s, g.area) + 'px';
-    ghostPlus.style.display = 'block';
-  }
-
-  function makeChordNote(nt, midis, area) {
-    const midi = midis[nt.s] + nt.f;
-    const pc = ((midi % 12) + 12) % 12;
-    const rootPc = chordResult ? chordResult.rootPc : -1;
-    const isRoot = pc === rootPc;
-    const isPinned = state.pinRoot && state.pinRoot.s === nt.s && state.pinRoot.f === nt.f;
-    const rel = rootPc >= 0 ? (pc - rootPc + 12) % 12 : -1;
-    const cdesc = chordResult && chordResult.matched ? chordResult.c : null;
-    const role = rel >= 0 ? M.chordRoleText(rel, cdesc, state.compoundIntervals) : '';
-    const ivAbbr = rel >= 0 ? M.chordIntervalText(rel, cdesc, state.compoundIntervals) : '';
-    const lbl = {
-      name: state.showNames ? names()[pc] : '',
-      degree: rel >= 0 && state.showDegrees ? degreeRoman(rel) : '',
-      interval: rel >= 0 && state.showIntervals ? ivAbbr : '',
-      tipDegree: rel >= 0 ? (role || degreeRoman(rel)) : '',
-      tipInterval: ivAbbr,
-      tipIntervalHtml: rel >= 0 ? M.chordIntervalFull(rel, cdesc, state.compoundIntervals) : '',
-      octaveName: midiLabel(midi),
-      fretText: nt.f === 0 ? t('tip.fretOpen') : String(nt.f),
-      root: isRoot,
-      top: yPx(nt.s, area)
-    };
-    const m = makeMarker(pc, nt.f, nt.s, midis, lbl, isRoot ? 'root' : 'scale', null);
-    if (isPinned) {
-      const star = document.createElement('span');
-      star.className = 'pin-star';
-      star.textContent = '*';
-      m.appendChild(star);
-    }
-    m.addEventListener('contextmenu', (e) => {
-      e.preventDefault();
-      e.stopPropagation();
-      openChordMenu(e.clientX, e.clientY, nt);
-    });
-  }
-
-  function renderScaleGhost(midis, area) {
-    if (!scaleSel || !scaleSel.ivs) return;
-    const N = state.fretCount;
-    const rootPc = scaleSel.rootPc;
-    const ivs = scaleSel.ivs;
-    const abs = new Set(ivs.map((v) => (rootPc + v) % 12));
-    midis.forEach((base, s) => {
-      for (let f = 0; f <= N; f++) {
-        const pc = (((base + f) % 12) + 12) % 12;
-        const rel = (pc - rootPc + 12) % 12;
-        const inScale = abs.has(pc);
-        const name = state.showNames ? names()[pc] : '';
-        const degree = state.showDegrees ? degreeRoman(rel) : '';
-        const interval = state.showIntervals ? relText(rel) : '';
-        if (!inScale && !name && !degree && !interval) continue;
-        const m = document.createElement('div');
-        m.className = 'marker ' + (inScale ? (pc === rootPc ? 'root' : 'scale') : 'plain') + ' soft ghost-scale';
-        m.style.left = bandCenter(f) + '%';
-        m.style.top = yPx(s, area) + 'px';
-        m.style.zIndex = 3;
-        m.style.pointerEvents = 'none';
-        m.style.cursor = 'default';
-        m.innerHTML =
-          '<span class="mtop">' +
-          (name ? '<span class="mn">' + name + '</span>' : '') +
-          (degree ? '<span class="ms">' + degree + '</span>' : '') +
-          '</span>' +
-          (interval ? '<span class="ml"></span><span class="mi">' + interval + '</span>' : '');
-        neck.appendChild(m);
-      }
-    });
-  }
-
-  function renderIntervalGhost(midis, area) {
-    if (!state.showIntervalGhost || (!state.showDegrees && !state.showIntervals)) return;
-    const rootPc = chordResult ? chordResult.rootPc : null;
-    if (rootPc == null) return;
-    const N = state.fretCount;
-    midis.forEach((base, s) => {
-      for (let f = 0; f <= N; f++) {
-        const pc = (((base + f) % 12) + 12) % 12;
-        const rel = (pc - rootPc + 12) % 12;
-        const degree = state.showDegrees ? degreeRoman(rel) : '';
-        const interval = relText(rel);
-        if (!degree && !interval) continue;
-        const m = document.createElement('div');
-        m.className = 'marker plain soft ghost-interval';
-        m.style.left = bandCenter(f) + '%';
-        m.style.top = yPx(s, area) + 'px';
-        m.style.zIndex = 2;
-        m.style.pointerEvents = 'none';
-        m.style.cursor = 'default';
-        m.innerHTML =
-          '<span class="mtop">' +
-          (degree ? '<span class="ms">' + degree + '</span>' : '') +
-          '</span>' +
-          (interval ? '<span class="ml"></span><span class="mi">' + interval + '</span>' : '');
-        neck.appendChild(m);
-      }
-    });
-  }
-
-  function renderChordNotes(midis, area) {
-    const n = midis.length;
-    const N = state.fretCount;
-    const valid = state.chordNotes.filter((nt) => nt.s >= 0 && nt.s < n && nt.f >= 0 && nt.f <= N);
-    chordResult = M.analyzeChord(valid.map((nt) => midis[nt.s] + nt.f), pinRootPc(midis), { names: names(), compoundIntervals: state.compoundIntervals });
-    if (chordResult && chordResult.matched && scalePropFollow) scalePropKey = chordResult.rootPc;
-    if (!chordResult || !chordResult.matched) {
-      scaleSel = null;
-      chordScaleFocus = null;
-    } else if (scaleSel) {
-      const keyPc = proposalKeyPc(chordResult);
-      const sc = M.chordScales(chordResult.rootPc, chordResult.intervals, chordScaleOpts(chordResult, keyPc));
-      const ok = scaleSel.rootPc === keyPc && sc.full.concat(sc.partial).some((e) => e.name === scaleSel.name && e.family === scaleSel.family);
-      if (!ok) scaleSel = null;
-    }
-    const cnt = $('#chord-count');
-    if (cnt) cnt.textContent = t('controls.chords.noteCount', { count: valid.length });
-    valid.forEach((nt) => {
-      makeChordNote(nt, midis, area);
-    });
-    makeGhostPlus();
-  }
-
-  function playChord() {
-    if (!state.chordNotes.length) return;
-    const midis = tuningMidis();
-    const notes = state.chordNotes
-      .filter((nt) => nt.s >= 0 && nt.s < midis.length && nt.f >= 0 && nt.f <= state.fretCount)
-      .map((nt) => ({ s: nt.s, f: nt.f, m: midis[nt.s] + nt.f }));
-    playSequence(notes, chordResult ? chordResult.rootPc : null);
-  }
-
-  function drawBoard() {
-    const area = yArea();
-    const midis = tuningMidis();
-    const n = midis.length;
-    const N = state.fretCount;
-    const nm = names();
-    neck.style.height = area.height + 'px';
-    neck.innerHTML = '';
-    strLabels.innerHTML = '';
-    numLabels.innerHTML = '';
-
-    midis.forEach((m, i) => {
-      const lbl = document.createElement('div');
-      lbl.className = 'string-label';
-      lbl.textContent = midiLabel(m);
-      lbl.style.top = yPx(i, area) + 'px';
-      lbl.addEventListener('click', () => playMidi(m));
-      strLabels.appendChild(lbl);
-
-      const num = document.createElement('div');
-      num.className = 'string-num';
-      num.textContent = n - i;
-      num.style.top = yPx(i, area) + 'px';
-      numLabels.appendChild(num);
-
-      const line = document.createElement('div');
-      line.className = 'string-line';
-      const h = 1.5 + (n - 1 - i) * 0.55;
-      line.style.height = h + 'px';
-      line.style.top = (yPx(i, area) - h / 2) + 'px';
-      const bronze = [205, 127, 50];
-      const silver = [201, 206, 214];
-      const tt = i / (n - 1);
-      const col = bronze.map((v, k) => Math.round(v + (silver[k] - v) * tt));
-      line.style.backgroundColor = 'rgb(' + col.join(',') + ')';
-      if (i <= n - 3) {
-        const t = n > 3 ? i / (n - 3) : 0;
-        const period = 10 - (10 - 3.5) * t;
-        line.style.backgroundImage = 'repeating-linear-gradient(45deg, var(--bg) 0 1.5px, transparent 1.5px ' + period + 'px)';
-      }
-      neck.appendChild(line);
-    });
-
-    for (let i = 0; i <= N; i++) {
-      const fl = document.createElement('div');
-      fl.className = i === 0 ? 'fret-line nut' : 'fret-line';
-      fl.style.left = x(i) + '%';
-      fl.style.top = area.topPad + 'px';
-      fl.style.height = n * area.step + 'px';
-      neck.appendChild(fl);
-    }
-
-    INLAY_FRETS.forEach((f) => {
-      if (f > N) return;
-      const double = f === 12 || f === 24;
-      const d = document.createElement('div');
-      d.className = 'inlay' + (double ? ' double' : '');
-      d.style.left = bandCenter(f) + '%';
-      d.style.top = (area.topPad + (n + 0.75) * area.step) + 'px';
-      neck.appendChild(d);
-    });
-
-    for (let i = 0; i <= N; i++) {
-      const fl = document.createElement('div');
-      fl.className = 'fret-num';
-      fl.textContent = i;
-      fl.style.left = bandCenter(i) + '%';
-      neck.appendChild(fl);
-    }
-
-    const data = computeData();
-    const labelOpts = {
-      rootPc: rootPc(),
-      ordered: data.ordered,
-      pcs: data.pcs,
-      nm: nm,
-      midis: midis,
-      area: area
-    };
-
-    data.markers.forEach((mk) => {
-      const lbl = markerLabels(mk, labelOpts);
-      lbl.top = yPx(mk.stringIdx, area);
-      const el = makeMarker(mk.pc, mk.fret, mk.stringIdx, midis, lbl, mk.cls, mk.color, mk.colorR);
-      if (mk.shapes) el.dataset.shapes = mk.shapes.join(' ');
-    });
-
-    data.boxes.forEach((box) => {
-      const b = document.createElement('div');
-      b.className = 'caged-box';
-      b.dataset.shape = box.key;
-      if (freshShapes.has(box.key)) b.classList.add('box-fade-in');
-      const l = leftBound(box.visLo), r = rightBound(box.visHi);
-      const yTop = Math.min(yPx(box.minS, area), yPx(box.maxS, area));
-      const yBot = Math.max(yPx(box.minS, area), yPx(box.maxS, area));
-      b.style.left = l + '%';
-      b.style.width = (r - l) + '%';
-      b.style.top = (yTop - 15 - area.step / 2) + 'px';
-      b.style.height = (yBot - yTop + 30 + area.step) + 'px';
-      b.style.borderColor = box.color;
-      b.style.background = hexA(box.color, 0.08);
-      b.style.zIndex = 1;
-      const top = document.createElement('div');
-      top.className = 'box-top';
-      const playBtn = document.createElement('div');
-      playBtn.className = 'box-play';
-      playBtn.innerHTML = '&#9654;';
-      playBtn.style.background = box.color;
-      playBtn.addEventListener('click', (e) => {
-        e.stopPropagation();
-        playSequence(box.notes);
-      });
-      top.appendChild(playBtn);
-      const lab = document.createElement('div');
-      lab.className = 'box-label';
-      lab.textContent = t('controls.shapes.boxLabel', { key: box.key });
-      lab.style.background = box.color;
-      top.appendChild(lab);
-      b.appendChild(top);
-      b.addEventListener('click', (e) => {
-        e.stopPropagation();
-        playMidi(box.rootMidi);
-      });
-      neck.appendChild(b);
-    });
-
-    if (state.showRootLines && data.boxes.length) {
-      const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
-      svg.setAttribute('viewBox', '0 0 100 100');
-      svg.setAttribute('preserveAspectRatio', 'none');
-      svg.setAttribute('class', 'shape-lines');
-      data.boxes.forEach((box) => {
-        if (!box.roots || box.roots.length < 2) return;
-        const pts = box.roots
-          .slice()
-          .sort((a, b) => a.s - b.s)
-          .map((r) => bandCenter(r.f).toFixed(3) + ',' + ((yPx(r.s, area) / area.height) * 100).toFixed(3))
-          .join(' ');
-        const poly = document.createElementNS('http://www.w3.org/2000/svg', 'polyline');
-        poly.setAttribute('points', pts);
-        poly.setAttribute('stroke', box.color);
-        poly.setAttribute('stroke-width', '1.5');
-        poly.setAttribute('vector-effect', 'non-scaling-stroke');
-        poly.setAttribute('fill', 'none');
-        poly.setAttribute('stroke-linecap', 'round');
-        svg.appendChild(poly);
-      });
-      if (svg.childNodes.length) neck.appendChild(svg);
-    }
-
-    if (state.tab === 'chords') {
-      renderChordNotes(midis, area);
-      renderIntervalGhost(midis, area);
-      renderScaleGhost(midis, area);
-    }
-  }
-
-  function markerLabels(mk, o) {
-    const rootPc = o.rootPc;
-    const intIdx = (mk.pc - rootPc + 12) % 12;
-    const inScale = o.pcs.has(mk.pc);
-    let degree = '';
-    let interval = '';
-    let name = '';
-    const midiVal = o.midis[mk.stringIdx] + mk.fret;
-    if (state.showNames) name = o.nm[mk.pc];
-    const octaveName = midiLabel(midiVal);
-    if (state.showDegrees) degree = degreeRoman(intIdx);
-    interval = relText(intIdx);
-    return {
-      name: name,
-      degree: degree,
-      interval: interval,
-      tipDegree: degreeRoman(intIdx),
-      tipInterval: M.QUALITIES[intIdx],
-      tipIntervalHtml: M.qualityFull(intIdx),
-      octaveName: octaveName,
-      fretText: mk.fret === 0 ? t('tip.fretOpen') : String(mk.fret),
-      root: mk.pc === rootPc && inScale
-    };
-  }
-
-  function computeData() {
-    return window.FretCaged.computeData({
-      M: M,
-      midis: tuningMidis(),
-      fretCount: state.fretCount,
-      root: rootPc(),
-      tab: state.tab,
-      showCagedShapes: state.tab === 'explore' && state.showCagedShapes,
-      scaleFamily: state.scaleFamily,
-      modeIndex: state.modeIndex,
-      shapes: state.shapes,
-      showChordTones: state.showChordTones,
-      fullChart: state.fullChart
-    });
+    syncControls();
   }
 
   function render() {
-    hideTip();
+    boardView.hideTip();
     syncBoardSource();
     renderGuitarChip();
     if (state.tab === 'profiles') {
       profiles.renderProfiles();
-      saveState();
+      scheduleSave();
       return;
     }
-    drawBoard();
+    if (state.tab === 'theory') {
+      theory.renderTheory();
+      if (ui.theoryBoardMode) {
+        boardView.drawBoard();
+        pianoView.renderPiano();
+      }
+      scheduleSave();
+      return;
+    }
+    if (state.tab === 'drills') {
+      drills.renderDrills();
+      boardView.drawBoard();
+      pianoView.renderPiano();
+      scheduleSave();
+      return;
+    }
+    boardView.drawBoard();
+    pianoView.renderPiano();
     renderLegend();
     renderTipbox();
-    renderChordResult();
-    renderScaleDetails();
-    saveState();
+    chordUi.renderChordResult();
+    scaleDetails.renderScaleDetails();
+    scheduleSave();
     freshShapes.clear();
   }
 
-  function renderChordResult() {
-    const el = $('#chord-result');
-    if (!chordResult) {
-      el.innerHTML = '<div class="cr-empty">' + t('chords.empty') + '</div>';
-      return;
-    }
-    const r = chordResult;
-    const chips = r.notes.map((nt) => {
-      const iv = (nt.pc - r.rootPc + 12) % 12;
-      const inChord = r.matched && r.intervals.indexOf(iv) >= 0;
-      const cls = nt.pc === r.rootPc ? 'cr-root' : (inChord ? 'cr-in' : 'cr-out');
-      const role = r.labelFor ? (r.labelFor[nt.pc] || M.DEGREES[iv]) : M.DEGREES[iv];
+  function exploreLayerLabel(prefix) {
       const parts = [];
-      if (state.showDegrees) parts.push(degreeRoman(iv));
-      if (state.showIntervals) parts.push(M.chordIntervalText(iv, r.c, state.compoundIntervals));
-      if (!parts.length) parts.push(role);
-      return '<span class="cr-chip ' + cls + '"><b>' + nt.name + '</b><i>' + parts.join(' · ') + '</i></span>';
-    }).join('');
-    const raised =
-      (r.extension ? '<span class="cr-extension">' + r.extension + '</span>' : '') +
-      (r.alterations && r.alterations.length ? '<span class="cr-alteration">' + r.alterations.join('') + '</span>' : '') +
-      (r.parens && r.parens.length ? '<span class="cr-alteration">(' + r.parens.join(',') + ')</span>' : '');
-    let symbol =
-      '<span class="cr-root">' + r.rootName + '</span>' +
-      (r.quality ? '<span class="cr-quality">' + r.quality + '</span>' : '') +
-      raised;
-    let sub = r.name;
-    if (r.matched) {
-      if (r.slash) {
-        symbol += '<span class="cr-bass">/' + r.bassName + '</span>';
-        sub += t('chords.slashChord', { bass: r.bassName });
+    if (state.showCagedShapes) {
+      const approx = cagedHonestyMode() === 'approx';
+      if (prefix === 'tipbox') {
+        parts.push(t(approx ? 'tipbox.layerCagedOnApprox' : 'tipbox.layerCagedOn'));
       } else {
-        sub += t('chords.rootPosition');
+        parts.push(t(approx ? 'legend.layerCagedApprox' : 'legend.layerCaged'));
       }
     }
-    let altHtml = '';
-    if (r.alternatives.length) {
-      altHtml = '<div class="cr-alt">' + t('chords.alsoHeardAs') + r.alternatives.map((a) => a.rootName + a.suffix).join('  ·  ') + '</div>';
-    }
-    let scalesHtml = '';
-    if (r.matched) {
-      if (scalePropFollow) scalePropKey = r.rootPc;
-      const keyPc = proposalKeyPc(r);
-      const sc = M.chordScales(r.rootPc, r.intervals, chordScaleOpts(r, keyPc));
-      const nm = names();
-      const keyOpts = nm.map((nn, i) => '<option value="' + i + '"' + (i === keyPc ? ' selected' : '') + '>' + nn + '</option>').join('');
-      const resetBtn = scalePropFollow ? '' : '<button type="button" class="cr-scale-key-reset" title="' + t('chords.useChordRoot') + '">↺</button>';
-      const keyCtl =
-        '<label class="cr-scale-key-wrap">' + t('chords.key') + ' ' +
-        '<select class="cr-scale-key" aria-label="' + t('chords.scaleProposalKeyAria') + '">' + keyOpts + '</select>' +
-        resetBtn +
-        '</label>';
-      const chip = (e, extra) => {
-        const active = scaleSel && scaleSel.rootPc === keyPc && scaleSel.name === e.name ? ' active' : '';
-        const pinned = state.scaleKey === keyPc && state.scaleFamily === e.family && state.modeIndex === e.modeIndex;
-        const pcs = Array.from(e.pcs).sort((a, b) => a - b).join(',');
-        const disp = scaleDisplayName(e.family, e.modeIndex);
-        return '<button type="button" class="cr-scale-chip' + extra + active + (pinned ? ' cr-scale-wired' : '') + '" data-r="' + keyPc + '" data-n="' + e.name + '" data-pcs="' + pcs + '" data-fk="' + e.family + '" data-m="' + e.modeIndex + '">' +
-          '<span class="cr-scale-label">' + sc.rootName + ' ' + disp + e.note + '</span>' +
-          '<span class="cr-scale-pin' + (pinned ? ' on' : '') + '" data-pin="1" title="' + t('chords.useOnExplore') + '">✦</span>' +
-          '</button>';
-      };
-      const fullBlock = sc.full.length
-        ? '<div class="cr-scale-block"><div class="cr-scale-block-label">' + t('chords.fullMatch') + '</div>' + renderScaleClusters(sc.full, chip, '') + '</div>'
-        : '';
-      const partBlock = sc.partial.length
-        ? '<div class="cr-scale-block cr-scale-block-partial"><div class="cr-scale-block-label">' + t('chords.partial') + '</div>' + renderScaleClusters(sc.partial, chip, ' cr-scale-partial') + '</div>'
-        : '';
-      const hint = scaleSel
-        ? '<span class="cr-scale-hint">' + t('chords.ghostHint', { root: sc.rootName, scale: scaleDisplayName(scaleSel.family, scaleSel.modeIndex) }) + '</span>'
-        : '';
-      const empty = (!sc.full.length && !sc.partial.length)
-        ? '<div class="cr-scales-empty">' + t('chords.noScales', { root: sc.rootName }) + '</div>'
-        : '';
-      scalesHtml =
-        '<section class="cr-section cr-scales">' +
-        '<div class="cr-scales-title">' +
-          '<span class="cr-section-label">' + t('chords.scalesThatFit') + '</span>' +
-          '<b>' + r.rootName + r.suffix + '</b>' +
-          keyCtl +
-          hint +
-        '</div>' +
-        '<p class="cr-scale-guide">' + t('chords.guide') + '</p>' +
-        fullBlock +
-        partBlock +
-        empty +
-        '</section>';
-    }
-    el.innerHTML =
-      '<div class="cr-stack">' +
-        '<section class="cr-section cr-symbol">' +
-          '<div class="cr-head"><div class="cr-name">' + symbol + '</div><div class="cr-sub">' + sub + '</div></div>' +
-          altHtml +
-        '</section>' +
-        '<section class="cr-section cr-tones">' +
-          '<div class="cr-section-label">' + t('chords.notes') + '</div>' +
-          '<div class="cr-chips">' + chips + '</div>' +
-        '</section>' +
-        scalesHtml +
-      '</div>';
+    if (state.showQuartal) parts.push(t(prefix === 'tipbox' ? 'tipbox.layerQuartalOn' : 'legend.layerQuartal'));
+    if (state.showNps) parts.push(t(prefix === 'tipbox' ? 'tipbox.layerNpsOn' : 'legend.layerNps'));
+    if (state.showBerklee) parts.push(t(prefix === 'tipbox' ? 'tipbox.layerBerkleeOn' : 'legend.layerBerklee'));
+    if (!parts.length) return t(prefix === 'tipbox' ? 'tipbox.layerFullScale' : 'legend.layerFullScale');
+    return parts.join(' · ');
   }
 
   function renderLegend() {
     const el = $('#legend');
+    if (!el) return;
+    el.classList.toggle('legend-collapsed', !state.showLegend);
+
+    const head =
+      '<div class="legend-head">' +
+      '<span class="legend-title">' + t('legend.title') + '</span>' +
+      '<label class="switch" title="' + t('legend.toggle') + '">' +
+      '<input type="checkbox" aria-label="' + t('legend.toggle') + '"' +
+      (state.showLegend ? ' checked' : '') + '>' +
+      '<span class="switch-track" aria-hidden="true"></span>' +
+      '</label>' +
+      '</div>';
+
+    if (!state.showLegend) {
+      el.innerHTML = head;
+      return;
+    }
+
+    let body = '';
     if (state.tab === 'explore') {
       const desc = scaleDisplayName(state.scaleFamily, state.modeIndex);
-      const layer = state.showCagedShapes ? t('legend.layerCaged') : t('legend.layerFullScale');
-      el.innerHTML =
+      const layer = exploreLayerLabel('legend');
+      let hint = t('legend.hintFullScale');
+      if (state.showCagedShapes) {
+        hint = t(cagedHonestyMode() === 'approx' ? 'legend.hintCagedApprox' : 'legend.hintCaged');
+      } else if (state.showQuartal) hint = t('legend.hintQuartal');
+      else if (state.showNps) hint = t('legend.hintNps');
+      else if (state.showBerklee) hint = t('legend.hintBerklee');
+      body =
         '<h3>' + t('legend.exploreTitle', { root: names()[state.scaleKey], scale: desc, layer: layer }) + '</h3>' +
         '<div class="legend-items">' +
         legendItem(t('legend.swatchRoot'), 'gold', t('legend.swatchRootDesc')) +
-        legendItem(t('legend.swatchChord'), '#7dd3fc', t('legend.swatchChordDesc')) +
         legendItem(t('legend.swatchScale'), '#3b6fd4', t('legend.swatchScaleDesc')) +
-        (state.fullChart && !state.showCagedShapes ? legendItem(t('legend.swatchPlain'), 'rgba(255,255,255,.25)', t('legend.swatchPlainDesc')) : '') +
+        (state.fullChart && !state.showCagedShapes && !state.showQuartal && !state.showNps && !state.showBerklee ? legendItem(t('legend.swatchPlain'), 'rgba(255,255,255,.25)', t('legend.swatchPlainDesc')) : '') +
         '</div>' +
-        (state.showCagedShapes
-          ? '<p class="hint">' + t('legend.hintCaged') + '</p>'
-          : '<p class="hint">' + t('legend.hintFullScale') + '</p>');
+        '<p class="hint">' + hint + '</p>' +
+        '<p class="legend-learn"><button type="button" class="legend-learn-btn" data-theory-article="systems">' + t('legend.learnSystems') + '</button>' +
+        ' <button type="button" class="legend-learn-btn" data-theory-article="modes">' + t('legend.learnModes') + '</button></p>';
     } else if (state.tab === 'chords') {
-      el.innerHTML =
+      body =
         '<h3>' + t('legend.chordsTitle') + '</h3>' +
         '<div class="legend-items">' +
         '<span class="legend-item"><i class="swatch swatch-place"><span>+</span></i><b>' + t('legend.placeNote') + '</b> — ' + t('legend.placeNoteDesc') + '</span>' +
         '</div>' +
-        '<p class="hint">' + t('legend.hintChords') + '</p>';
+        '<p class="hint">' + t('legend.hintChords') + '</p>' +
+        '<p class="legend-learn"><button type="button" class="legend-learn-btn" data-theory-article="building">' + t('legend.learnBuilding') + '</button>' +
+        ' <button type="button" class="legend-learn-btn" data-theory-article="extensionsAndAlts">' + t('scaleDetails.learnExtensions') + '</button>' +
+        ' <button type="button" class="legend-learn-btn" data-theory-article="chords">' + t('legend.learnChords') + '</button></p>';
     }
+    el.innerHTML = head + (body ? '<div class="legend-body">' + body + '</div>' : '');
   }
 
   function legendItem(text, color, desc) {
@@ -1221,135 +1451,42 @@
     if (state.tab === 'explore') {
       const fam = M.SCALES[state.scaleFamily];
       const desc = scaleDisplayName(state.scaleFamily, state.modeIndex);
-      const layer = state.showCagedShapes ? t('tipbox.layerCagedOn') : t('tipbox.layerFullScale');
+      const layer = exploreLayerLabel('tipbox');
       const modePart = fam.modes
         ? t('tipbox.exploreModePart', { n: state.modeIndex + 1, parentKey: state.scaleKeyName(), familyShort: scaleFamilyShort(state.scaleFamily) })
         : '';
       const body = t('tipbox.exploreBody', { root: names()[state.scaleKey], scale: desc, modePart: modePart, layer: layer });
-      el.innerHTML = '<strong>' + t('tipbox.exploreStrong') + '</strong> — <span>' + body + '</span>';
+      const famObj = M.SCALES[state.scaleFamily];
+      const modeName = famObj && famObj.modes ? famObj.modes[state.modeIndex] : null;
+      const info = theoryInfo(modeName, state.scaleFamily);
+      const why = info && info.desc
+        ? ' <button type="button" class="tip-learn" data-theory-article="modes">' + t('tipbox.learnModes') + '</button>'
+        : '';
+      el.innerHTML = '<strong>' + t('tipbox.exploreStrong') + '</strong> — <span>' + body + '</span>' + why;
     } else if (state.tab === 'chords') {
-      el.innerHTML = '<strong>' + t('tipbox.chordsStrong') + '</strong> — <span>' + t('tipbox.chordsBody') + '</span>';
+      el.innerHTML = '<strong>' + t('tipbox.chordsStrong') + '</strong> — <span>' + t('tipbox.chordsBody') + '</span>' +
+        ' <button type="button" class="tip-learn" data-theory-article="building">' + t('tipbox.learnBuilding') + '</button>';
     }
-  }
-
-  function scaleWheelSvg(nm, root, ordered) {
-    const scaleSet = new Set(ordered.map((v) => (root + v) % 12));
-    const chordSet = new Set([ordered[0], ordered[2], ordered[4]].map((v) => (root + v) % 12));
-    const cx = 100, cy = 100, R = 78;
-    const parts = [];
-    for (let pc = 0; pc < 12; pc++) {
-      const ang = (pc * 30 - 90) * Math.PI / 180;
-      const x = cx + R * Math.cos(ang);
-      const y = cy + R * Math.sin(ang);
-      let cls = 'w-off';
-      if (pc === root) cls = 'w-root';
-      else if (chordSet.has(pc)) cls = 'w-chord';
-      else if (scaleSet.has(pc)) cls = 'w-scale';
-      parts.push('<circle class="' + cls + '" cx="' + x.toFixed(2) + '" cy="' + y.toFixed(2) + '" r="15"/>');
-      parts.push('<text x="' + x.toFixed(2) + '" y="' + (y + 4).toFixed(2) + '">' + nm[pc] + '</text>');
-    }
-    return '<svg viewBox="0 0 200 200" role="img" aria-label="' + t('scaleDetails.wheelAria') + '">' + parts.join('') + '</svg>';
-  }
-
-  function resolveScaleDetailsTarget() {
-    if (state.tab === 'profiles') return null;
-    if (state.tab === 'chords') {
-      if (scaleSel && scaleSel.family && M.SCALES[scaleSel.family]) {
-        return { root: scaleSel.rootPc, family: scaleSel.family, modeIndex: scaleSel.modeIndex | 0 };
-      }
-      if (chordScaleFocus && M.SCALES[chordScaleFocus.family]) {
-        return { root: chordScaleFocus.rootPc, family: chordScaleFocus.family, modeIndex: chordScaleFocus.modeIndex | 0 };
-      }
-      return null;
-    }
-    return {
-      root: state.scaleKey,
-      family: state.scaleFamily,
-      modeIndex: state.modeIndex
-    };
-  }
-
-  function renderScaleDetails() {
-    const el = $('#scale-details');
-    const target = resolveScaleDetailsTarget();
-    if (!target) {
-      el.classList.add('hidden');
-      el.innerHTML = '';
-      return;
-    }
-    const fam = M.SCALES[target.family];
-    if (!fam) {
-      el.classList.add('hidden');
-      el.innerHTML = '';
-      return;
-    }
-    el.classList.remove('hidden');
-    const nm = names();
-    const root = target.root;
-    const modeIndex = target.modeIndex;
-    const ordered = M.scaleOrdered(target.family, modeIndex);
-    const modeName = fam.modes ? fam.modes[modeIndex] : null;
-    const displayName = scaleDisplayName(target.family, modeIndex);
-
-    const theory = theoryInfo(modeName, target.family);
-    const mood = theory ? theory.mood : null;
-    const desc = theory ? theory.desc : '';
-
-    const title = nm[root] + ' ' + displayName;
-    let parent = '';
-    if (modeName) {
-      const baseOrdered = M.scaleOrdered(target.family, 0);
-      const parentPc = (root + 12 - baseOrdered[0]) % 12;
-      parent = t('scaleDetails.modeOf', { n: modeIndex + 1, parent: nm[parentPc] + ' ' + scaleFamilyShort(target.family) });
-    }
-
-    const len = ordered.length;
-    const steps = [];
-    for (let i = 0; i < len; i++) {
-      const b = i + 1 < len ? ordered[i + 1] : ordered[0] + 12;
-      steps.push(b - ordered[i]);
-    }
-    const stepHtml = steps.map((d) => {
-      const lab = d === 1 ? t('scaleDetails.stepHalf') : d === 2 ? t('scaleDetails.stepWhole') : String(d);
-      const cls = d === 1 ? 'sd-step H' : d === 2 ? 'sd-step W' : 'sd-step';
-      return '<span class="' + cls + '">' + lab + '</span>';
-    }).join('<span class="sd-step-join">·</span>');
-
-    const degHtml = ordered.map((v, i) => {
-      const pc = (root + v) % 12;
-      const cls = i === 0 ? 'sd-root' : (i === 2 || i === 4 ? 'sd-chord' : 'sd-scale');
-      return '<div class="sd-deg ' + cls + '">' +
-        '<span class="sd-deg-num">' + degreeRoman(v) + '</span>' +
-        '<span class="sd-deg-note">' + nm[pc] + '</span>' +
-        '<span class="sd-deg-int">' + M.QUALITIES[v] + '</span>' +
-        '</div>';
-    }).join('');
-
-    const formula = ordered.map((v) => FORMULA[v]).join(' · ');
-    const charTxt = theory && theory.char ? theory.char : '';
-
-    el.innerHTML =
-      '<div class="sd-head"><h3>' + title + '</h3>' +
-      (parent ? '<span class="sd-parent">' + parent + '</span>' : '') +
-      '</div>' +
-      '<div class="sd-body">' +
-        '<div class="sd-wheel">' + scaleWheelSvg(nm, root, ordered) + '</div>' +
-        '<div class="sd-main">' +
-          (mood ? '<p class="sd-mood">' + mood.join('  ·  ') + '</p>' : '') +
-          '<p class="sd-desc">' + desc + '</p>' +
-          (charTxt ? '<p class="sd-char">' + t('scaleDetails.characteristic') + '<b>' + charTxt + '</b></p>' : '') +
-          '<p class="sd-formula">' + formula + '</p>' +
-          '<div class="sd-steps">' + stepHtml + '</div>' +
-          '<div class="sd-degrees">' + degHtml + '</div>' +
-        '</div>' +
-      '</div>';
   }
 
   state.scaleKeyName = function () {
-    const ordered = M.scaleOrdered(state.scaleFamily, 0);
-    const keyPc = (state.scaleKey + 12 - ordered[0]) % 12;
-    return names()[keyPc];
+    const p = M.parentScale(state.scaleFamily, state.modeIndex, state.scaleKey);
+    return names()[p ? p.rootPc : state.scaleKey];
   };
+
+  function populateHighlightDegreeSelect() {
+    const sel = $('#ctl-highlight-degree');
+    if (!sel) return;
+    const ordered = M.scaleOrdered(state.scaleFamily, state.modeIndex) || [0];
+    if (state.highlightDegree >= 0 && ordered.indexOf(state.highlightDegree) < 0) {
+      state.highlightDegree = ordered.indexOf(0) >= 0 ? 0 : ordered[0];
+    }
+    let html = '<option value="-1"' + (state.highlightDegree < 0 ? ' selected' : '') + '>' + t('controls.shapes.highlightNone') + '</option>';
+    ordered.forEach((v) => {
+      html += '<option value="' + v + '"' + (state.highlightDegree === v ? ' selected' : '') + '>' + degreeRoman(v) + '</option>';
+    });
+    sel.innerHTML = html;
+  }
 
   function populateSelects() {
     const nm = names();
@@ -1358,34 +1495,237 @@
     $('#ctl-explore-family').innerHTML = familyOptions();
     renderScaleCats();
     populateModeSelect();
+    populateHighlightDegreeSelect();
     populateShapeButtons();
+    populateNpsFormButtons();
+    populateBerkleeFormButtons();
+    refreshExploreSearchChrome();
+  }
+
+  let scaleSearchIndex = null;
+  let scaleSearchActive = -1;
+
+  function refreshExploreSearchChrome() {
+    const input = $('#ctl-explore-search');
+    if (!input) return;
+    input.setAttribute('aria-label', t('controls.explore.searchAria'));
+    scaleSearchIndex = null;
+  }
+
+  function buildScaleSearchIndex() {
+    const out = [];
+    M.SCALE_CATS.forEach((cat) => {
+      const catLabel = scaleCatLabel(cat.id, 'label');
+      (cat.families || []).forEach((fk) => {
+        const fam = M.SCALES[fk];
+        if (!fam) return;
+        const famLabel = scaleFamilyLabel(fk);
+        const famEn = fam.label || fk;
+        if (fam.modes && fam.modes.length) {
+          fam.modes.forEach((enName, mi) => {
+            const label = scaleModeLabel(fk, mi);
+            const hay = [label, enName, famLabel, famEn, fk, catLabel, cat.id].join('\n').toLowerCase();
+            out.push({
+              family: fk,
+              modeIndex: mi,
+              category: cat.id,
+              label: label,
+              meta: catLabel + ' · ' + famLabel,
+              hay: hay
+            });
+          });
+        } else {
+          const hay = [famLabel, famEn, fk, catLabel, cat.id].join('\n').toLowerCase();
+          out.push({
+            family: fk,
+            modeIndex: 0,
+            category: cat.id,
+            label: famLabel,
+            meta: catLabel,
+            hay: hay
+          });
+        }
+      });
+    });
+    return out;
+  }
+
+  function scaleSearchIndexData() {
+    if (!scaleSearchIndex) scaleSearchIndex = buildScaleSearchIndex();
+    return scaleSearchIndex;
+  }
+
+  function normalizeSearchQuery(q) {
+    return String(q || '').trim().toLowerCase().replace(/\s+/g, ' ');
+  }
+
+  function filterScaleSearch(query) {
+    const q = normalizeSearchQuery(query);
+    if (!q) return [];
+    const parts = q.split(' ').filter(Boolean);
+    const hits = [];
+    scaleSearchIndexData().forEach((entry) => {
+      let ok = true;
+      for (let i = 0; i < parts.length; i++) {
+        if (entry.hay.indexOf(parts[i]) < 0) { ok = false; break; }
+      }
+      if (!ok) return;
+      const starts = entry.label.toLowerCase().indexOf(q) === 0 || entry.hay.indexOf('\n' + q) >= 0;
+      hits.push({ entry: entry, starts: starts });
+    });
+    hits.sort((a, b) => (b.starts - a.starts) || a.entry.label.localeCompare(b.entry.label));
+    return hits.slice(0, 12).map((h) => h.entry);
+  }
+
+  function closeExploreSearch() {
+    const list = $('#explore-search-results');
+    const input = $('#ctl-explore-search');
+    if (list) {
+      list.hidden = true;
+      list.innerHTML = '';
+    }
+    if (input) input.setAttribute('aria-expanded', 'false');
+    scaleSearchActive = -1;
+  }
+
+  function renderExploreSearchResults(query) {
+    const list = $('#explore-search-results');
+    const input = $('#ctl-explore-search');
+    if (!list || !input) return;
+    const q = normalizeSearchQuery(query);
+    if (!q) {
+      closeExploreSearch();
+      return;
+    }
+    const hits = filterScaleSearch(q);
+    scaleSearchActive = hits.length ? 0 : -1;
+    if (!hits.length) {
+      list.innerHTML = '<li class="explore-search-empty" role="presentation">' + t('controls.explore.searchNoResults') + '</li>';
+    } else {
+      list.innerHTML = hits.map((hit, i) =>
+        '<li role="presentation">' +
+          '<button type="button" class="explore-search-option' + (i === 0 ? ' active' : '') + '"' +
+          ' role="option" data-idx="' + i + '"' +
+          ' data-family="' + hit.family + '" data-mode="' + hit.modeIndex + '"' +
+          ' id="explore-search-opt-' + i + '">' +
+            '<span class="explore-search-option-label">' + esc(hit.label) + '</span>' +
+            '<span class="explore-search-option-meta">' + esc(hit.meta) + '</span>' +
+          '</button>' +
+        '</li>'
+      ).join('');
+    }
+    list.hidden = false;
+    input.setAttribute('aria-expanded', 'true');
+    if (scaleSearchActive >= 0) {
+      input.setAttribute('aria-activedescendant', 'explore-search-opt-' + scaleSearchActive);
+    } else {
+      input.removeAttribute('aria-activedescendant');
+    }
+  }
+
+  function setExploreSearchActive(idx) {
+    const list = $('#explore-search-results');
+    if (!list || list.hidden) return;
+    const opts = list.querySelectorAll('.explore-search-option');
+    if (!opts.length) return;
+    const n = opts.length;
+    scaleSearchActive = ((idx % n) + n) % n;
+    opts.forEach((el, i) => el.classList.toggle('active', i === scaleSearchActive));
+    const input = $('#ctl-explore-search');
+    if (input) input.setAttribute('aria-activedescendant', 'explore-search-opt-' + scaleSearchActive);
+    const active = opts[scaleSearchActive];
+    if (active && active.scrollIntoView) active.scrollIntoView({ block: 'nearest' });
+  }
+
+  function jumpToScaleSearchHit(btn) {
+    if (!btn) return;
+    const family = btn.dataset.family;
+    const modeIndex = parseInt(btn.dataset.mode, 10) || 0;
+    if (!M.SCALES[family]) return;
+    const input = $('#ctl-explore-search');
+    if (input) input.value = '';
+    closeExploreSearch();
+    applySharedScale(state.scaleKey, family, modeIndex);
+    flashCtl($('#ctl-explore-family'));
+    if (M.SCALES[family].modes) flashCtl($('#ctl-explore-mode'));
+  }
+
+  function bindExploreSearch() {
+    const input = $('#ctl-explore-search');
+    const list = $('#explore-search-results');
+    if (!input || !list || input.dataset.bound === '1') return;
+    input.dataset.bound = '1';
+    refreshExploreSearchChrome();
+
+    input.addEventListener('input', () => {
+      renderExploreSearchResults(input.value);
+    });
+    input.addEventListener('focus', () => {
+      if (normalizeSearchQuery(input.value)) renderExploreSearchResults(input.value);
+    });
+    input.addEventListener('keydown', (e) => {
+      const open = list && !list.hidden;
+      if (e.key === 'ArrowDown') {
+        if (!open) renderExploreSearchResults(input.value);
+        else setExploreSearchActive(scaleSearchActive + 1);
+        e.preventDefault();
+      } else if (e.key === 'ArrowUp') {
+        if (open) setExploreSearchActive(scaleSearchActive - 1);
+        e.preventDefault();
+      } else if (e.key === 'Enter') {
+        if (!open) return;
+        const opts = list.querySelectorAll('.explore-search-option');
+        const btn = opts[scaleSearchActive] || opts[0];
+        if (btn) {
+          e.preventDefault();
+          jumpToScaleSearchHit(btn);
+        }
+      } else if (e.key === 'Escape') {
+        if (open) {
+          e.preventDefault();
+          closeExploreSearch();
+        } else if (input.value) {
+          input.value = '';
+        }
+      }
+    });
+    list.addEventListener('mousedown', (e) => {
+      const btn = e.target.closest ? e.target.closest('.explore-search-option') : null;
+      if (!btn) return;
+      e.preventDefault();
+      jumpToScaleSearchHit(btn);
+    });
+    document.addEventListener('click', (e) => {
+      if (!e.target.closest || e.target.closest('.explore-search')) return;
+      closeExploreSearch();
+    });
   }
 
   function familyOptions() {
     const cat = M.SCALE_CATS.find((c) => c.id === state.scaleCategory);
-    const keys = (cat && cat.families.indexOf(state.scaleFamily) >= 0) ? cat.families : allScaleKeys();
+    const keys = (cat && cat.families.indexOf(state.scaleFamily) >= 0) ? cat.families : M.allScaleKeys();
     return keys.map((k) => '<option value="' + k + '"' + (k === state.scaleFamily ? ' selected' : '') + '>' + scaleFamilyLabel(k) + '</option>').join('');
   }
 
   function renderScaleCats() {
     const wrap = $('#explore-cats');
-    wrap.innerHTML = '';
-    M.SCALE_CATS.forEach((cat) => {
-      const b = document.createElement('button');
-      b.className = 'cat-tab' + (cat.id === state.scaleCategory ? ' active' : '');
-      b.dataset.cat = cat.id;
+      wrap.innerHTML = '';
+      M.SCALE_CATS.forEach((cat) => {
+        const b = document.createElement('button');
+        b.className = 'cat-tab' + (cat.id === state.scaleCategory ? ' active' : '');
+        b.dataset.cat = cat.id;
       b.textContent = scaleCatLabel(cat.id, 'label');
-      b.addEventListener('click', () => {
-        if (state.scaleCategory === cat.id) return;
-        state.scaleCategory = cat.id;
-        if (cat.families.indexOf(state.scaleFamily) < 0) {
-          state.scaleFamily = cat.families[0];
-          state.modeIndex = 0;
-        }
-        populateSelects();
-        render();
-      });
-      wrap.appendChild(b);
+        b.addEventListener('click', () => {
+          if (state.scaleCategory === cat.id) return;
+          state.scaleCategory = cat.id;
+          if (cat.families.indexOf(state.scaleFamily) < 0) {
+            state.scaleFamily = cat.families[0];
+            state.modeIndex = 0;
+          }
+          populateSelects();
+          render();
+        });
+        wrap.appendChild(b);
     });
   }
 
@@ -1393,13 +1733,168 @@
     const fam = M.SCALES[state.scaleFamily];
     if (!fam) return;
     const sel = $('#ctl-explore-mode');
-    if (!fam.modes) {
-      sel.innerHTML = '<option>—</option>';
-      sel.disabled = true;
-      return;
-    }
-    sel.disabled = false;
+    const modeBtns = [$('#btn-shift-mode-prev'), $('#btn-shift-mode-next')];
+      if (!fam.modes) {
+        sel.innerHTML = '<option>—</option>';
+        sel.disabled = true;
+      modeBtns.forEach((b) => { if (b) b.disabled = true; });
+        return;
+      }
+      sel.disabled = false;
+    modeBtns.forEach((b) => { if (b) b.disabled = false; });
     sel.innerHTML = fam.modes.map((_, i) => '<option value="' + i + '"' + (i === state.modeIndex ? ' selected' : '') + '>' + scaleModeLabel(state.scaleFamily, i) + '</option>').join('');
+  }
+
+  function flashCtl(el) {
+    if (!el) return;
+    el.classList.remove('ctl-flash');
+    void el.offsetWidth;
+    el.classList.add('ctl-flash');
+    const done = () => {
+      el.classList.remove('ctl-flash');
+      el.removeEventListener('animationend', done);
+    };
+    el.addEventListener('animationend', done);
+  }
+
+  function shiftScale(delta) {
+    setExploreRoot((state.scaleKey + delta + 12) % 12);
+    populateSelects();
+    flashCtl($('#ctl-explore-root'));
+    flashCtl($(delta < 0 ? '#btn-shift-scale-left' : '#btn-shift-scale-right'));
+    render();
+  }
+
+  function shiftMode(delta) {
+    const fam = M.SCALES[state.scaleFamily];
+    if (!fam || !fam.modes || !fam.modes.length) return;
+    const n = fam.modes.length;
+    state.modeIndex = (state.modeIndex + delta + n) % n;
+    populateSelects();
+    flashCtl($('#ctl-explore-mode'));
+    flashCtl($(delta < 0 ? '#btn-shift-mode-prev' : '#btn-shift-mode-next'));
+    render();
+  }
+
+  /** Shift↑↓ — move the treble (upper) end. delta +1 = toward higher strings. */
+  function shiftQuartalUpper(delta) {
+    if (!state.showQuartal || !window.FretQuartal || !delta) return false;
+    const n = state.stringCount;
+    const start = state.quartalStartString;
+    const maxH = n - start;
+    const minH = Math.min(window.FretQuartal.MIN_HEIGHT, n);
+    let h = state.quartalHeight + delta;
+    if (h < minH) h = minH;
+    if (h > maxH) h = maxH;
+    h = window.FretQuartal.clampHeight(h, n);
+    if (h === state.quartalHeight) return false;
+    state.quartalHeight = h;
+    state.quartalStartString = window.FretQuartal.clampStartString(start, n, h);
+    populateQuartalControls();
+    flashCtl($('#ctl-quartal-height'));
+    render();
+    return true;
+  }
+
+  /** Ctrl/⌘↑↓ — move the bass (bottom) end. delta +1 = toward higher strings. */
+  function shiftQuartalBottom(delta) {
+    if (!state.showQuartal || !window.FretQuartal || !delta) return false;
+    const n = state.stringCount;
+    const end = state.quartalStartString + state.quartalHeight - 1;
+    const minH = Math.min(window.FretQuartal.MIN_HEIGHT, n);
+    let start = state.quartalStartString + delta;
+    let h = end - start + 1;
+    if (h < minH) {
+      start = end - minH + 1;
+      h = minH;
+    }
+    if (start < 0) {
+      start = 0;
+      h = end - start + 1;
+    }
+    if (start + h - 1 >= n) {
+      h = n - start;
+    }
+    h = window.FretQuartal.clampHeight(h, n);
+    start = window.FretQuartal.clampStartString(start, n, h);
+    if (start === state.quartalStartString && h === state.quartalHeight) return false;
+    const startChanged = start !== state.quartalStartString;
+    const heightChanged = h !== state.quartalHeight;
+    state.quartalStartString = start;
+    state.quartalHeight = h;
+    populateQuartalControls();
+    if (startChanged) flashCtl($('#ctl-quartal-start'));
+    if (heightChanged) flashCtl($('#ctl-quartal-height'));
+    render();
+    return true;
+  }
+
+  function syncNpsForms() {
+    if (!window.FretNps) return;
+    const ordered = M.scaleOrdered(state.scaleFamily, state.modeIndex) || [];
+    const defs = window.FretNps.formDefs(ordered, state.scaleKey);
+    const next = {};
+    defs.forEach((d) => {
+      next[d.key] = state.npsForms[d.key] !== false;
+    });
+    state.npsForms = next;
+    return defs;
+  }
+
+  function populateNpsFormButtons() {
+    const wrap = $('#nps-form-buttons');
+    if (!wrap || !window.FretNps) return;
+    const defs = syncNpsForms();
+    wrap.innerHTML = '';
+    defs.forEach((def) => {
+      const on = state.npsForms[def.key] !== false;
+      const b = document.createElement('button');
+      b.type = 'button';
+      b.className = 'shape-btn' + (on ? ' on' : '');
+      b.style.setProperty('--sc', def.color);
+      b.textContent = degreeRoman(def.degreeRel);
+      b.title = t('controls.nps.formTitle', { degree: degreeRoman(def.degreeRel) });
+      b.addEventListener('click', () => {
+        state.npsForms[def.key] = !on;
+        populateNpsFormButtons();
+        render();
+      });
+      wrap.appendChild(b);
+    });
+  }
+
+  function syncBerkleeForms() {
+    if (!window.FretBerklee) return;
+    const ordered = M.scaleOrdered(state.scaleFamily, state.modeIndex) || [];
+    const defs = window.FretBerklee.formDefs(ordered, state.scaleKey);
+    const next = {};
+    defs.forEach((d) => {
+      next[d.key] = state.berkleeForms[d.key] !== false;
+    });
+    state.berkleeForms = next;
+    return defs;
+  }
+
+  function populateBerkleeFormButtons() {
+    const wrap = $('#berklee-form-buttons');
+    if (!wrap || !window.FretBerklee) return;
+    const defs = syncBerkleeForms();
+    wrap.innerHTML = '';
+    defs.forEach((def) => {
+      const on = state.berkleeForms[def.key] !== false;
+      const b = document.createElement('button');
+      b.type = 'button';
+      b.className = 'shape-btn' + (on ? ' on' : '');
+      b.style.setProperty('--sc', def.color);
+      b.textContent = degreeRoman(def.degreeRel);
+      b.title = t('controls.berklee.formTitle', { degree: degreeRoman(def.degreeRel) });
+      b.addEventListener('click', () => {
+        state.berkleeForms[def.key] = !on;
+        populateBerkleeFormButtons();
+        render();
+      });
+      wrap.appendChild(b);
+    });
   }
 
   function populateShapeButtons() {
@@ -1455,6 +1950,33 @@
   }
 
   function bindEvents() {
+    bindExploreSearch();
+    const legendEl = $('#legend');
+    if (legendEl && !legendEl.dataset.bound) {
+      legendEl.dataset.bound = '1';
+      legendEl.addEventListener('change', (e) => {
+        const input = e.target;
+        if (!input || input.type !== 'checkbox' || !input.closest('.legend-head .switch')) return;
+        state.showLegend = !!input.checked;
+        render();
+      });
+      legendEl.addEventListener('click', (e) => {
+        const btn = e.target.closest('[data-theory-article]');
+        if (!btn || !legendEl.contains(btn)) return;
+        e.preventDefault();
+        openTheoryArticle(btn.getAttribute('data-theory-article'));
+      });
+    }
+    const tipboxEl = $('#tipbox');
+    if (tipboxEl && !tipboxEl.dataset.theoryBound) {
+      tipboxEl.dataset.theoryBound = '1';
+      tipboxEl.addEventListener('click', (e) => {
+        const btn = e.target.closest('[data-theory-article]');
+        if (!btn || !tipboxEl.contains(btn)) return;
+        e.preventDefault();
+        openTheoryArticle(btn.getAttribute('data-theory-article'));
+      });
+    }
     $('.tabs').addEventListener('click', (e) => {
       const b = e.target.closest('.tab');
       if (!b) return;
@@ -1462,23 +1984,41 @@
       applyTabUI();
       render();
     });
-
-
+    $('.tabs').addEventListener('keydown', (e) => {
+      const tabs = Array.prototype.slice.call(document.querySelectorAll('.tabs .tab'));
+      if (!tabs.length) return;
+      const i = tabs.indexOf(document.activeElement);
+      if (i < 0) return;
+      let next = -1;
+      if (e.key === 'ArrowRight' || e.key === 'ArrowDown') next = (i + 1) % tabs.length;
+      else if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') next = (i - 1 + tabs.length) % tabs.length;
+      else if (e.key === 'Home') next = 0;
+      else if (e.key === 'End') next = tabs.length - 1;
+      if (next < 0) return;
+      e.preventDefault();
+      state.tab = tabs[next].dataset.tab;
+      applyTabUI();
+      tabs[next].focus();
+      render();
+    });
     $('#ctl-names').addEventListener('change', (e) => { state.showNames = e.target.checked; render(); });
     $('#ctl-degrees').addEventListener('change', (e) => { state.showDegrees = e.target.checked; render(); });
     $('#ctl-intervals').addEventListener('change', (e) => { state.showIntervals = e.target.checked; render(); });
     $('#ctl-compound').addEventListener('change', (e) => { state.compoundIntervals = e.target.value === '1'; render(); });
+    $('#ctl-show-no5').addEventListener('change', (e) => { state.showNo5 = e.target.checked; render(); });
     $('#ctl-full').addEventListener('change', (e) => { state.fullChart = e.target.checked; render(); });
     $('#ctl-sound').addEventListener('change', (e) => { state.sound = e.target.checked; saveState(); applyTabUI(); });
 
     $('#ctl-bpm').addEventListener('change', (e) => {
-      state.bpm = Math.max(40, Math.min(800, parseInt(e.target.value, 10) || 120));
+      state.bpm = Math.max(40, Math.min(300, parseInt(e.target.value, 10) || 120));
       e.target.value = String(state.bpm);
       saveState();
     });
     $('#ctl-groove').addEventListener('change', (e) => { state.groove = e.target.value; saveState(); });
     $('#ctl-flats').addEventListener('change', (e) => {
-      state.flats = e.target.value === '1';
+      const v = e.target.value;
+      state.noteSpell = v === '2' ? 'fit' : (v === '1' ? 'flat' : 'sharp');
+      state.flats = state.noteSpell === 'flat';
       populateSelects();
       render();
     });
@@ -1488,6 +2028,8 @@
       populateSelects();
       render();
     });
+    $('#btn-shift-scale-left').addEventListener('click', () => shiftScale(-1));
+    $('#btn-shift-scale-right').addEventListener('click', () => shiftScale(1));
     $('#ctl-explore-family').addEventListener('change', (e) => {
       state.scaleFamily = e.target.value;
       state.modeIndex = 0;
@@ -1499,145 +2041,299 @@
       populateSelects();
       render();
     });
-    $('#ctl-caged-layer').addEventListener('change', (e) => {
-      state.showCagedShapes = e.target.checked;
-      applyTabUI();
-      render();
-    });
-    $('#ctl-chordtones').addEventListener('change', (e) => { state.showChordTones = e.target.checked; render(); });
-    $('#ctl-rootlines').addEventListener('change', (e) => { state.showRootLines = e.target.checked; render(); });
-
-    neck.addEventListener('click', (e) => {
-      if (state.tab !== 'chords') return;
-      const r = neck.getBoundingClientRect();
-      const pct = ((e.clientX - r.left) / r.width) * 100;
-      const y = e.clientY - r.top;
-      const g = gridAt(pct, y);
-      const i = state.chordNotes.findIndex((nt) => nt.s === g.s);
-      if (state.pinRoot && i >= 0 && state.pinRoot.s === state.chordNotes[i].s && state.pinRoot.f === state.chordNotes[i].f) {
-        state.pinRoot = null;
+    $('#btn-shift-mode-prev').addEventListener('click', () => shiftMode(-1));
+    $('#btn-shift-mode-next').addEventListener('click', () => shiftMode(1));
+    document.addEventListener('keydown', (e) => {
+      if (state.tab !== 'explore') return;
+      const t = e.target;
+      if (t && (t.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(t.tagName))) return;
+      const overlay = $('#modal-overlay');
+      if (overlay && !overlay.classList.contains('hidden')) return;
+      const isUp = e.key === 'ArrowUp';
+      const isDown = e.key === 'ArrowDown';
+      if ((isUp || isDown) && state.showQuartal) {
+        const dir = isUp ? 1 : -1;
+        if (e.shiftKey && !e.altKey && !e.ctrlKey && !e.metaKey) {
+          e.preventDefault();
+          shiftQuartalUpper(dir);
+          return;
+        }
+        if ((e.ctrlKey || e.metaKey) && !e.altKey && !e.shiftKey) {
+          e.preventDefault();
+          shiftQuartalBottom(dir);
+          return;
+        }
       }
-      if (i >= 0) state.chordNotes[i] = { s: g.s, f: g.f, id: state.chordNotes[i].id };
-      else state.chordNotes.push({ s: g.s, f: g.f, id: ++noteSeq });
+      if (e.altKey || e.ctrlKey || e.metaKey) return;
+      if (e.key === 'ArrowLeft') { e.preventDefault(); shiftScale(-1); }
+      else if (e.key === 'ArrowRight') { e.preventDefault(); shiftScale(1); }
+      else if (e.key === 'ArrowUp') { e.preventDefault(); shiftMode(-1); }
+      else if (e.key === 'ArrowDown') { e.preventDefault(); shiftMode(1); }
+    });
+    $('#ctl-quartal-height').addEventListener('change', (e) => {
+      const raw = parseInt(e.target.value, 10);
+      state.quartalHeight = window.FretQuartal
+        ? window.FretQuartal.clampHeight(raw, state.stringCount)
+        : Math.max(3, Math.min(state.stringCount, raw || 3));
+      if (window.FretQuartal) {
+        state.quartalStartString = window.FretQuartal.clampStartString(
+          state.quartalStartString, state.stringCount, state.quartalHeight
+        );
+      }
+      populateQuartalStartSelect();
       render();
     });
-
-    neck.addEventListener('mousemove', (e) => {
-      if (state.tab !== 'chords') return;
-      const r = neck.getBoundingClientRect();
-      const pct = ((e.clientX - r.left) / r.width) * 100;
-      const y = e.clientY - r.top;
-      placeGhostPlus(pct, y);
+    $('#ctl-quartal-start').addEventListener('change', (e) => {
+      state.quartalStartString = parseInt(e.target.value, 10) || 0;
+      if (window.FretQuartal) {
+        state.quartalStartString = window.FretQuartal.clampStartString(
+          state.quartalStartString, state.stringCount, state.quartalHeight
+        );
+      }
+      render();
     });
-
-    neck.addEventListener('mouseleave', () => {
-      if (ghostPlus) ghostPlus.style.display = 'none';
+    $('#ctl-quartal-repeats').addEventListener('change', (e) => {
+      state.quartalRepeats = e.target.checked;
+      render();
     });
+    const npsRepeatsCtl = $('#ctl-nps-repeats');
+    if (npsRepeatsCtl) npsRepeatsCtl.addEventListener('change', (e) => {
+      state.npsRepeats = e.target.checked;
+      render();
+    });
+    const npsCountCtl = $('#ctl-nps-count');
+    if (npsCountCtl) npsCountCtl.addEventListener('change', (e) => {
+      state.npsCount = window.FretNps
+        ? window.FretNps.clampCount(e.target.value)
+        : 3;
+      render();
+    });
+    const berkleeRepeatsCtl = $('#ctl-berklee-repeats');
+    if (berkleeRepeatsCtl) berkleeRepeatsCtl.addEventListener('change', (e) => {
+      state.berkleeRepeats = e.target.checked;
+      render();
+    });
+    $('#ctl-caged-repeats').addEventListener('change', (e) => { state.cagedRepeats = e.target.checked; render(); });
+    $('#ctl-char-tips').addEventListener('change', (e) => { state.showCharTips = e.target.checked; render(); });
+    $('#ctl-char-originals').addEventListener('change', (e) => { state.showCharOriginals = e.target.checked; render(); });
+    $('#ctl-highlight-degree').addEventListener('change', (e) => {
+      const v = parseInt(e.target.value, 10);
+      state.highlightDegree = v === -1 ? -1 : (((v % 12) + 12) % 12);
+      render();
+    });
+    $('#ctl-rootlines').addEventListener('change', (e) => { state.showRootLines = e.target.checked; render(); });
 
     $('#btn-chord-clear').addEventListener('click', () => {
       state.chordNotes = [];
       state.pinRoot = null;
-      scalePropFollow = true;
-      scaleSel = null;
-      chordScaleFocus = null;
+      ui.scalePropFollow = true;
+      ui.scaleSel = null;
+      ui.chordScaleFocus = null;
       render();
     });
 
     $('#btn-chord-play').addEventListener('click', () => {
-      playChord();
+      boardView.playChord();
     });
 
-    $('#chord-result').addEventListener('change', (e) => {
-      if (!e.target.classList || !e.target.classList.contains('cr-scale-key')) return;
-      scalePropFollow = false;
-      scalePropKey = parseInt(e.target.value, 10);
-      scaleSel = null;
-      chordScaleFocus = null;
-      render();
-    });
+    const kbString = $('#ctl-kb-string');
+    const kbFret = $('#ctl-kb-fret');
+    if (kbString) {
+      kbString.addEventListener('change', () => {
+        const s = parseInt(kbString.value, 10);
+        const f = kbFret ? parseInt(kbFret.value, 10) : boardView.getKbCursor().f;
+        boardView.setKbCursor(s, f, { fromControls: true, silent: true });
+        syncKbPlaceControls();
+      });
+    }
+    if (kbFret) {
+      const applyKbFret = () => {
+        const raw = kbFret.value;
+        if (raw === '' || raw === '-') return;
+        let f = parseInt(raw, 10);
+        if (!Number.isFinite(f)) return;
+        const s = kbString ? parseInt(kbString.value, 10) : boardView.getKbCursor().s;
+        boardView.setKbCursor(s, f, { fromControls: true, silent: true });
+        syncKbPlaceControls();
+      };
+      kbFret.addEventListener('change', applyKbFret);
+      kbFret.addEventListener('input', applyKbFret);
+    }
+    const btnKbPlace = $('#btn-kb-place');
+    if (btnKbPlace) {
+      btnKbPlace.addEventListener('click', () => {
+        const c = boardView.getKbCursor();
+        boardView.placeAt(c.s, c.f);
+      });
+    }
+    const btnKbRemove = $('#btn-kb-remove');
+    if (btnKbRemove) {
+      btnKbRemove.addEventListener('click', () => {
+        const c = boardView.getKbCursor();
+        boardView.removeAt(c.s);
+      });
+    }
+    if (boardView.setKbCursorListener) {
+      boardView.setKbCursorListener(() => {
+        syncKbPlaceControls();
+      });
+    }
 
-    $('#chord-result').addEventListener('click', (e) => {
-      const reset = e.target.closest ? e.target.closest('.cr-scale-key-reset') : null;
-      if (reset) {
-        e.preventDefault();
-        scalePropFollow = true;
-        scaleSel = null;
-        chordScaleFocus = null;
-        render();
-        return;
-      }
-      const pin = e.target.closest ? e.target.closest('.cr-scale-pin') : null;
-      if (pin) {
-        e.preventDefault();
-        e.stopPropagation();
-        const chip = pin.closest('.cr-scale-chip');
-        if (!chip || !chip.dataset.fk) return;
-        const rootPc = parseInt(chip.dataset.r, 10);
-        const family = chip.dataset.fk;
-        const modeIndex = parseInt(chip.dataset.m, 10);
-        chordScaleFocus = { rootPc: rootPc, family: family, modeIndex: modeIndex, name: chip.dataset.n };
-        applySharedScale(rootPc, family, modeIndex);
-        return;
-      }
-      const chip = e.target.closest ? e.target.closest('.cr-scale-chip') : null;
-      if (!chip) return;
-      const r = parseInt(chip.dataset.r, 10);
-      const n = chip.dataset.n;
-      if (scaleSel && scaleSel.rootPc === r && scaleSel.name === n) {
-        scaleSel = null;
-      } else {
-        scaleSel = {
-          rootPc: r,
-          name: n,
-          ivs: chip.dataset.pcs.split(',').map(Number),
-          family: chip.dataset.fk,
-          modeIndex: parseInt(chip.dataset.m, 10)
-        };
-      }
-      render();
-    });
-
-    $('#chord-result').addEventListener('mouseover', (e) => {
-      const nameEl = e.target.closest ? e.target.closest('.cr-name') : null;
-      if (!nameEl || !chordResult) return;
-      showTip(chordSymbolTipHtml(chordResult), e.clientX, e.clientY);
-    });
-    $('#chord-result').addEventListener('mouseout', (e) => {
-      const nameEl = e.target.closest ? e.target.closest('.cr-name') : null;
-      if (!nameEl) return;
-      const next = e.relatedTarget;
-      if (next && nameEl.contains(next)) return;
-      hideTip();
-    });
-    $('#chord-result').addEventListener('mousemove', (e) => {
-      if (tip.style.display === 'none') return;
-      if (!(e.target.closest && e.target.closest('.cr-name'))) return;
-      positionTip(e.clientX, e.clientY);
-    });
-
-    boardWrap.addEventListener('mousemove', (e) => {
-      if (tip.style.display !== 'none') {
-        positionTip(e.clientX, e.clientY);
-      }
-    });
-
+    boardView.bindNeckEvents();
+    pianoView.bindPianoEvents();
+    chordUi.bindChordResultEvents();
+    scaleDetails.bindScaleDetailsEvents();
     profiles.bind();
+    theory.bind();
+    drills.bind();
     bindGuitarPicker();
+    bindLayerPicker();
 
-    document.addEventListener('keydown', (e) => {
-      if (e.key === 'Escape') closeCtx();
+    window.addEventListener('beforeunload', () => {
+      if (saveTimer) {
+        clearTimeout(saveTimer);
+        saveTimer = null;
+        saveState();
+      }
     });
-    document.addEventListener('click', (e) => {
-      if (ctxMenu && !ctxMenu.contains(e.target)) closeCtx();
-    });
-    document.addEventListener('contextmenu', (e) => {
-      if (ctxMenu && !ctxMenu.contains(e.target)) closeCtx();
-    });
-    window.addEventListener('scroll', closeCtx, true);
-    window.addEventListener('resize', closeCtx);
   }
 
-  function init() {
+  function createModules() {
+    chordUi = window.FretChordUi.create({
+      $: $,
+      t: t,
+      M: M,
+      state: state,
+      ui: ui,
+      names: names,
+      degreeRoman: degreeRoman,
+      tuningMidis: tuningMidis,
+      scaleDisplayName: scaleDisplayName,
+      renderScaleClusters: renderScaleClusters,
+      applySharedScale: applySharedScale,
+      render: render,
+      saveState: saveState,
+      playSimultaneous: playSimultaneous,
+      playChordSimultaneous: () => boardView.playChordSimultaneous(),
+      openTheoryArticle: openTheoryArticle,
+      showTip: (html, x, y) => boardView.showTip(html, x, y),
+      hideTip: () => boardView.hideTip(),
+      positionTip: (x, y) => boardView.positionTip(x, y),
+      tipVisible: () => boardView.tipVisible(),
+      tipRow: (key, val, valCls) => boardView.tipRow(key, val, valCls)
+    });
+
+    scaleDetails = window.FretScaleDetails.create({
+      $: $,
+      t: t,
+      M: M,
+      state: state,
+      ui: ui,
+      names: names,
+      theoryInfo: theoryInfo,
+      degreeRoman: degreeRoman,
+      tuningMidis: tuningMidis,
+      scaleDisplayName: scaleDisplayName,
+      placeChordPcs: chordUi.placeChordPcs,
+      chordDiagramSvg: chordUi.chordDiagramSvg,
+      chordDisplaySuffix: chordUi.chordDisplaySuffix,
+      chordSymbolStackHtml: chordUi.chordSymbolStackHtml,
+      encodeVoicing: chordUi.encodeVoicing,
+      decodeVoicing: chordUi.decodeVoicing,
+      midisFromPcsAscending: chordUi.midisFromPcsAscending,
+      playBlocks: playBlocks,
+      playSimultaneous: playSimultaneous,
+      applySharedScale: applySharedScale,
+      openScaleChordInAnalyzer: openScaleChordInAnalyzer,
+      openTheoryArticle: openTheoryArticle,
+      saveState: saveState
+    });
+
+    boardView = window.FretBoardView.create({
+      $: $,
+      t: t,
+      M: M,
+      G: G,
+      state: state,
+      ui: ui,
+      names: names,
+      degreeRoman: degreeRoman,
+      tuningMidis: tuningMidis,
+      rootPc: rootPc,
+      freshShapes: freshShapes,
+      playMidi: playMidi,
+      playSequence: playSequence,
+      playSimultaneous: playSimultaneous,
+      render: render,
+      getChordScales: (r, keyPc) => chordUi.getChordScales(r, keyPc),
+      proposalKeyPc: (r) => chordUi.proposalKeyPc(r),
+      getDrillMode: () => (drills && drills.mode ? drills.mode() : null),
+      drillNotesLocked: () => (drills && drills.notesLocked ? drills.notesLocked() : false),
+      drillAnswerRevealed: () => (drills && drills.answerRevealed ? drills.answerRevealed() : false),
+      getTheoryBoardMode: () => (state.tab === 'theory' ? ui.theoryBoardMode : null),
+      onDrillNeckClick: (s, f, opts) => (drills && drills.onNeckClick ? drills.onNeckClick(s, f, opts) : false)
+    });
+
+    pianoView = window.FretPianoView.create({
+      $: $,
+      t: t,
+      M: M,
+      state: state,
+      names: names,
+      degreeRoman: degreeRoman,
+      rootPc: rootPc,
+      tuningMidis: tuningMidis,
+      playMidi: playMidi,
+      render: render,
+      showTip: (html, x, y) => boardView.showTip(html, x, y),
+      hideTip: () => boardView.hideTip(),
+      positionTip: (x, y) => boardView.positionTip(x, y),
+      tipVisible: () => boardView.tipVisible(),
+      tipRow: (key, val, valCls) => boardView.tipRow(key, val, valCls)
+    });
+
+    theory = window.FretTheory.create({
+      $: $,
+      t: t,
+      esc: esc,
+      openLesson: openTheoryLesson,
+      applyDemo: applyTheoryDemo,
+      onNavigate: () => scheduleSave(),
+      placeChordPcs: (...args) => chordUi.placeChordPcs(...args),
+      miniNeckSvg: (...args) => chordUi.miniNeckSvg(...args),
+      staffSvg: (...args) => chordUi.staffSvg(...args),
+      staffNotesToMidi: (...args) => chordUi.staffNotesToMidi(...args),
+      decodeVoicing: (...args) => chordUi.decodeVoicing(...args),
+      playSimultaneous: playSimultaneous,
+      playMidi: playMidi,
+      tuningMidis: tuningMidis,
+      names: names,
+      state: state
+    });
+
+    drills = window.FretDrills.create({
+      $: $,
+      t: t,
+      M: M,
+      state: state,
+      ui: ui,
+      names: names,
+      esc: esc,
+      tuningMidis: tuningMidis,
+      placeChordPcs: (...args) => chordUi.placeChordPcs(...args),
+      midisFromPcsAscending: (...args) => chordUi.midisFromPcsAscending(...args),
+      playMidi: playMidi,
+      playSimultaneous: playSimultaneous,
+      render: render,
+      applyTabUI: applyTabUI,
+      saveState: saveState,
+      setExploreRoot: setExploreRoot,
+      populateSelects: populateSelects,
+      degreeRoman: degreeRoman,
+      peekDrillsDisplay: peekDrillsDisplay,
+      relockDrillsDisplay: relockDrillsDisplay
+    });
+
     profiles = window.FretProfiles.create({
       $: $,
       state: state,
@@ -1650,13 +2346,24 @@
       serializeState: serializeState,
       sanitizeState: sanitizeState
     });
+  }
+
+  function init() {
+    createModules();
     loadState();
+    applyDeepLinkFromLocation();
     syncControls();
     applyTabUI();
     populateSelects();
     bindEvents();
+    bindDeepLink();
     SHAPE_DEFS.forEach((d) => freshShapes.add(d.key));
+    if (pendingTheoryArticle && theory) {
+      theory.openArticle(pendingTheoryArticle);
+      pendingTheoryArticle = null;
+    }
     render();
+    writeDeepLink();
   }
 
   function bindLangPicker() {
@@ -1695,6 +2402,8 @@
     document.documentElement.setAttribute('data-theme', t);
     const link = document.getElementById('theme-css');
     if (link) link.href = 'css/' + t + '.css';
+    const meta = document.querySelector('meta[name="theme-color"]');
+    if (meta) meta.setAttribute('content', t === 'light' ? '#eef1f6' : '#0e1016');
   }
 
   function bindThemePicker() {
@@ -1707,7 +2416,7 @@
 
   function bootUi() {
     window.FretI18n.applyDom(document);
-    init();
+  init();
     bindThemePicker();
     bindLangPicker();
   }

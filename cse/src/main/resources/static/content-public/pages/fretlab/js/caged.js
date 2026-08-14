@@ -23,7 +23,6 @@
     const ordered = M.scaleOrdered(opts.scaleFamily, opts.modeIndex);
     if (opts.showCagedShapes) {
       const scalePcs = new Set(ordered.map((v) => (root + v) % 12));
-      const chordPcs = [(root + ordered[0]) % 12, (root + ordered[2]) % 12, (root + ordered[4]) % 12];
       const shapes = SHAPE_DEFS.filter((s) => opts.shapes[s.key]);
       const core = Math.max(0, n - 6);
 
@@ -127,7 +126,9 @@
         if (pos2 >= n) return;
         const base = ((root - midis[pos2] % 12) % 12 + 12) % 12;
         for (let f = base; f <= N; f += 12) {
+          const before = boxes.length;
           addShape(def, pos2, f);
+          if (boxes.length > before && opts.cagedRepeats === false) break;
         }
       });
 
@@ -138,9 +139,12 @@
         const fr = parseInt(parts[1], 10);
         const pc = ((midis[s] + fr) % 12 + 12) % 12;
         taken[keyId] = true;
+        const rel = (pc - root + 12) % 12;
+        const hlDeg = opts.highlightDegree;
+        const hlOn = Number.isFinite(hlDeg) && hlDeg >= 0;
+        const isHl = hlOn && rel === hlDeg;
         let cls = 'scale';
-        if (pc === root) cls = 'root';
-        else if (opts.showChordTones && chordPcs.indexOf(pc) >= 0) cls = 'chord';
+        if (isHl) cls = 'root';
         const kept = hits.some((h) => boxKeep[h.id] && boxKeep[h.id].has(keyId));
         const shapeKeys = hits.map((h) => h.key);
         if (cls === 'root') {
@@ -151,22 +155,54 @@
           return;
         }
         const soft = kept ? '' : ' soft';
+        const ring = (!hlOn && pc === root) ? ' root-ring' : '';
         if (hits.length >= 2) {
           markers.push({
-            pc: pc, fret: fr, stringIdx: s, cls: cls + ' split' + soft,
+            pc: pc, fret: fr, stringIdx: s, cls: cls + ' split' + soft + ring,
             color: hits[0].color, colorR: hits[hits.length - 1].color,
             shapes: shapeKeys
           });
         } else {
           markers.push({
-            pc: pc, fret: fr, stringIdx: s, cls: cls + soft,
+            pc: pc, fret: fr, stringIdx: s, cls: cls + soft + ring,
             color: hits[0].color, shapes: shapeKeys
           });
         }
       });
 
+      const charPairs = opts.showCharOriginals !== false && typeof M.characteristicPairs === 'function'
+        ? M.characteristicPairs(opts.scaleFamily, opts.modeIndex)
+        : [];
+      if (charPairs.length) {
+        boxes.forEach((box) => {
+          const active = charPairs.filter((p) => {
+            const altPc = (root + p.alt) % 12;
+            return box.notes.some((nt) => ((midis[nt.s] + nt.f) % 12 + 12) % 12 === altPc);
+          });
+          if (!active.length) return;
+          active.forEach((p) => {
+            const origPc = (root + p.original) % 12;
+            for (let s = 0; s < n; s++) {
+              for (let fr = box.lo; fr <= box.hi; fr++) {
+                const pc = ((midis[s] + fr) % 12 + 12) % 12;
+                if (pc !== origPc) continue;
+                const keyId = s + ':' + fr;
+                if (taken[keyId]) continue;
+                taken[keyId] = true;
+                markers.push({
+                  pc: pc, fret: fr, stringIdx: s, cls: 'plain',
+                  shapes: [box.key]
+                });
+              }
+            }
+          });
+        });
+      }
+
       if (opts.fullChart) {
         const boxRanges = boxes.map((b) => ({ lo: b.visLo, hi: b.visHi }));
+        const hlDeg = opts.highlightDegree;
+        const hlOn = Number.isFinite(hlDeg) && hlDeg >= 0;
         for (let s = 0; s < n; s++) {
           for (let fr = 0; fr <= N; fr++) {
             const keyId = s + ':' + fr;
@@ -176,7 +212,10 @@
             const inBox = boxRanges.some((r) => fr >= r.lo && fr <= r.hi);
             let cls = 'plain';
             if (inScale) {
-              cls = pc === root ? 'root' : (opts.showChordTones && chordPcs.indexOf(pc) >= 0 ? 'chord' : 'scale');
+              const rel = (pc - root + 12) % 12;
+              if (hlOn && rel === hlDeg) cls = 'root';
+              else cls = 'scale';
+              if (!hlOn && pc === root) cls += ' root-ring';
             }
             if (!inBox) cls += ' soft';
             markers.push({ pc: pc, fret: fr, stringIdx: s, cls: cls });
@@ -187,7 +226,8 @@
       return { markers: [], boxes: [], ordered: [], pcs: new Set() };
     } else {
       const pcs = new Set(ordered.map((v) => (root + v) % 12));
-      const triad = new Set([ordered[0], ordered[2], ordered[4]].map((v) => (root + v) % 12));
+      const hlDeg = opts.highlightDegree;
+      const hlOn = Number.isFinite(hlDeg) && hlDeg >= 0;
       for (let s = 0; s < n; s++) {
         for (let fr = 0; fr <= N; fr++) {
           const pc = ((midis[s] + fr) % 12 + 12) % 12;
@@ -195,7 +235,10 @@
           if (!inScale && !opts.fullChart) continue;
           let cls = 'plain';
           if (inScale) {
-            cls = pc === root ? 'root' : (opts.showChordTones && triad.has(pc) ? 'chord' : 'scale');
+            const rel = (pc - root + 12) % 12;
+            if (hlOn && rel === hlDeg) cls = 'root';
+            else cls = 'scale';
+            if (!hlOn && pc === root) cls += ' root-ring';
           }
           markers.push({ pc: pc, fret: fr, stringIdx: s, cls: cls });
         }

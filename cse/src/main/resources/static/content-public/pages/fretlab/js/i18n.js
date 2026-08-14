@@ -93,7 +93,7 @@
       const attr = el.getAttribute('data-i18n-attr');
       const val = t(key);
       if (typeof val !== 'string') return;
-      if (attr) el.setAttribute(attr, val);
+      if (attr) attr.split(/\s+/).forEach((a) => { if (a) el.setAttribute(a, val); });
       else el.textContent = val;
     });
     scope.querySelectorAll('[data-i18n-html]').forEach((el) => {
@@ -158,6 +158,9 @@
     storedLang: storedLang,
     setStoredLang: setStoredLang,
     lang: () => lang,
-    raw: resolve
+    raw: resolve,
+    vocab: function (code) {
+      return vocabs[code === 'ru' ? 'ru' : 'en'] || null;
+    }
   };
 })(typeof self !== 'undefined' ? self : this);

@@ -32,6 +32,8 @@
   --nut-3: #555553;
   --stage-bg: #e8ebf2;
 
+  --string-bass: #a65f22;
+  --string-treble: #5c657a;
   --string-line: rgba(20, 28, 45, .22);
   --fret-line: rgba(20, 28, 45, .16);
   --plain-bg: rgba(255, 255, 255, .72);
@@ -63,4 +65,9 @@
   --danger: #e11d48;
   --danger-dark: #fff5f6;
   --danger-tint: rgba(225, 29, 72, .12);
+
+  --piano-white: #f7f5ef;
+  --piano-white-border: #b7b0a4;
+  --piano-black: #222733;
+  --piano-black-border: #10131a;
 }

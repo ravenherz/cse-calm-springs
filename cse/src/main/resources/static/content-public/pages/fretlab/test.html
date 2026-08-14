@@ -77,15 +77,24 @@
 <body>
   <h1>Fretboard Lab — Theory tests</h1>
   <p class="hint">
-    Zero-build fixtures against <code>music.js</code> + <code>chords.js</code>.
+    Zero-build fixtures against theory modules (<code>music.js</code>, <code>chords.js</code>,
+    <code>geometry.js</code>, <code>caged.js</code>, <code>quartal.js</code>, deeplink + i18n).
     <strong>lock</strong> cases must stay green when heuristics change.
     <strong>known</strong> cases document desired fixes (amber until cleared).
+    Headless: <code>.\tools\run-theory-tests.ps1</code>
   </p>
   <div id="summary" class="summary">Running…</div>
   <div id="results"></div>
 
   <script src="js/music.js"></script>
   <script src="js/chords.js"></script>
+  <script src="js/geometry.js"></script>
+  <script src="js/caged.js"></script>
+  <script src="js/quartal.js"></script>
+  <script src="js/deeplink.js"></script>
+  <script src="js/i18n.js"></script>
+  <script src="i18n/en.js"></script>
+  <script src="i18n/ru.js"></script>
   <script src="js/tests/runner.js"></script>
   <script src="js/tests/fixtures.js"></script>
   <script>
