@@ -1,0 +1,30 @@
+import com.ravenherz.build.PackCsetheme
+
+apply from: rootProject.file('gradle/theme-shared.gradle')
+
+def themeIdVal = (findProperty('themeId') ?: project.name
+        .replaceFirst('^theme-thymeleaf-', '')
+        .replaceFirst('^theme-js-', '')
+        .replaceFirst('^theme-', '')).toString()
+def verVal = project.version.toString()
+
+tasks.register('packRelease', PackCsetheme) {
+    group = 'distribution'
+    description = "Pack ${themeIdVal} into a .csetheme archive"
+    srcDir = layout.projectDirectory.dir('src')
+    distDir = layout.projectDirectory.dir('dist')
+    themeId = themeIdVal
+    themeVersion = verVal
+    if (project.findProperty('out')) {
+        outFile = layout.projectDirectory.file(project.property('out').toString())
+    } else {
+        outFile = layout.projectDirectory.file("dist/${themeIdVal}-${verVal}.csetheme")
+    }
+    outputs.upToDateWhen { false }
+}
+
+wireThemeShared(tasks.named('packRelease'))
+
+tasks.named('assemble') {
+    dependsOn tasks.named('packRelease')
+}

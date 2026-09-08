@@ -1,0 +1,10 @@
+apply plugin: 'groovy'
+repositories {
+    maven {
+        url "https://plugins.gradle.org/m2/"
+    }
+}
+dependencies {
+    implementation 'org.codehaus.groovy:groovy-all:2.2.1'
+    implementation "com.huaweicloud:esdk-obs-java:3.22.3.1"
+}

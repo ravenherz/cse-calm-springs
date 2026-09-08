@@ -1,0 +1,11 @@
+rootProject.name = 'calm-springs-engine'
+
+include 'cse'
+include 'cse-db-api'
+include 'cse-db-mongo'
+include 'cse-db-postgres'
+include 'app-setup'
+include 'app-admin'
+include 'theme-thymeleaf-modern'
+include 'theme-thymeleaf-2000s'
+include 'theme-js-client'

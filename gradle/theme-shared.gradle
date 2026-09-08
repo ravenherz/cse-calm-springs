@@ -1,0 +1,119 @@
+import java.nio.file.Files
+import java.nio.file.Path
+import java.nio.file.StandardCopyOption
+
+if (!rootProject.tasks.names.contains('stageThemeShared')) {
+    rootProject.tasks.register('stageThemeShared') {
+        group = 'distribution'
+        description = 'Stage JS/CSS/fonts copied into every public .csetheme'
+        def stageDir = rootProject.layout.buildDirectory.dir('theme-shared')
+        outputs.dir(stageDir)
+        doLast {
+            File stage = new File(rootProject.buildDir, 'theme-shared')
+            File cache = new File(rootProject.buildDir, 'theme-shared-cache')
+            File engineJs = rootProject.file('cse/src/main/resources/static/content-public/js')
+            File runtimeSrc = rootProject.file('gradle/theme-runtime')
+            stage.deleteDir()
+            stage.mkdirs()
+            cache.mkdirs()
+
+            def copyTree = { Path from, Path to ->
+                if (!Files.isDirectory(from)) {
+                    return
+                }
+                Files.walk(from).forEach { Path path ->
+                    Path dest = to.resolve(from.relativize(path).toString())
+                    if (Files.isDirectory(path)) {
+                        Files.createDirectories(dest)
+                    } else {
+                        Files.createDirectories(dest.parent)
+                        Files.copy(path, dest, StandardCopyOption.REPLACE_EXISTING)
+                    }
+                }
+            }
+            def downloadTo = { File dest, List<String> urls ->
+                dest.parentFile.mkdirs()
+                Exception last = null
+                for (String url : urls) {
+                    try {
+                        logger.lifecycle("Downloading ${url}")
+                        def connection = URI.create(url).toURL().openConnection()
+                        connection.setConnectTimeout(30000)
+                        connection.setReadTimeout(60000)
+                        connection.inputStream.withStream { input ->
+                            dest.withOutputStream { output -> output << input }
+                        }
+                        if (dest.isFile() && dest.length() >= 32) {
+                            return
+                        }
+                    } catch (Exception ex) {
+                        last = ex
+                        dest.delete()
+                    }
+                }
+                throw new GradleException("Download failed: ${urls}", last)
+            }
+            def resolveFile = { String destRel, String engineRel, List<String> urls ->
+                File dest = new File(stage, destRel)
+                dest.parentFile.mkdirs()
+                if (engineRel != null) {
+                    File local = new File(engineJs, engineRel)
+                    if (local.isFile() && local.length() > 0) {
+                        Files.copy(local.toPath(), dest.toPath(), StandardCopyOption.REPLACE_EXISTING)
+                        return
+                    }
+                }
+                if (urls == null || urls.isEmpty()) {
+                    throw new GradleException("Missing theme runtime file ${destRel}")
+                }
+                File cached = new File(cache, destRel.replace('/', File.separator))
+                if (!cached.isFile() || cached.length() < 32) {
+                    downloadTo(cached, urls)
+                }
+                Files.copy(cached.toPath(), dest.toPath(), StandardCopyOption.REPLACE_EXISTING)
+            }
+
+            copyTree(runtimeSrc.toPath(), stage.toPath())
+            if (engineJs.isDirectory()) {
+                engineJs.eachFile { File file ->
+                    if (file.isFile() && file.name.endsWith('.js')) {
+                        File dest = new File(stage, "js/${file.name}")
+                        dest.parentFile.mkdirs()
+                        Files.copy(file.toPath(), dest.toPath(), StandardCopyOption.REPLACE_EXISTING)
+                    }
+                }
+            }
+
+            resolveFile('js/sha512.js', 'dist/sha512.js', [])
+            resolveFile('css/quill.snow.css', 'dist/quill.snow.css', [])
+            resolveFile('js/jquery.min.js', 'dist/jquery.min.js', [
+                    'https://code.jquery.com/jquery-3.6.0.min.js'
+            ])
+            resolveFile('js/bootstrap.min.js', 'dist/bootstrap.min.js', [
+                    'https://cdn.jsdelivr.net/npm/bootstrap@3.3.7/dist/js/bootstrap.min.js'
+            ])
+            resolveFile('css/bootstrap.min.css', 'dist/bootstrap.min.css', [
+                    'https://cdn.jsdelivr.net/npm/bootstrap@3.3.7/dist/css/bootstrap.min.css'
+            ])
+            resolveFile('js/quill.min.js', 'dist/quill.min.js', [
+                    'https://cdn.jsdelivr.net/npm/quill@1.3.6/dist/quill.min.js'
+            ])
+            resolveFile('fonts/outfit-latin-wght-normal.woff2', null, [
+                    'https://cdn.jsdelivr.net/fontsource/fonts/outfit:vf@5.3.0/latin-wght-normal.woff2',
+                    'https://cdn.jsdelivr.net/fontsource/fonts/outfit:vf@latest/latin-wght-normal.woff2',
+                    'https://cdn.jsdelivr.net/npm/@fontsource-variable/outfit@5.2.8/files/outfit-latin-wght-normal.woff2'
+            ])
+            resolveFile('fonts/inter-latin-wght-normal.woff2', null, [
+                    'https://cdn.jsdelivr.net/fontsource/fonts/inter:vf@latest/latin-wght-normal.woff2',
+                    'https://cdn.jsdelivr.net/npm/@fontsource-variable/inter@5.2.8/files/inter-latin-wght-normal.woff2'
+            ])
+        }
+    }
+}
+
+ext.wireThemeShared = { pack ->
+    pack.configure {
+        dependsOn rootProject.tasks.named('stageThemeShared')
+        overlaySharedDir.set(rootProject.layout.buildDirectory.dir('theme-shared'))
+    }
+}

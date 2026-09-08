@@ -1,0 +1,23 @@
+apply from: 'gradle/theme-shared.gradle'
+
+allprojects {
+
+    group = 'com.ravenherz'
+
+    ["prepareKotlinBuildScriptModel"].forEach {
+        project.gradle.startParameter.excludedTaskNames.add(it)
+    }
+}
+
+tasks.register('packFrontend') {
+    group = 'distribution'
+    description = 'Pack every app-* (.cseapp) and theme-thymeleaf-* / theme-js-* (.csetheme) module'
+    dependsOn ':cse:packFrontend'
+}
+
+subprojects {
+
+}
+
+
+

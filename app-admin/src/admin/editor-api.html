@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="en">
+<head th:replace="~{fragments/shared :: shared-head}"></head>
+<body>
+  <div class="editor-layout">
+    <aside class="editor-sidebar" th:replace="~{fragments/shared :: shared-editor-sidebar}"></aside>
+    <main class="editor-main api-page">
+      <p class="field-hint">
+        Public HTTP surface for themes, the login panel, and first-boot setup.
+        Prefix every path with this instance's context
+        (<code th:text="${cseContextPath}">/rhz-we</code>).
+        <code>/editor/**</code> is ADMIN HTML (forms), not listed here.
+      </p>
+
+      <nav class="api-tabs" role="tablist" aria-label="API sections">
+        <a class="is-active"
+           role="tab"
+           href="#conventions"
+           id="tab-conventions"
+           aria-controls="conventions"
+           aria-selected="true">Conventions</a>
+        <a role="tab"
+           th:each="section : ${apiSections}"
+           th:href="${'#' + section.id}"
+           th:id="${'tab-' + section.id}"
+           th:attr="aria-controls=${section.id}"
+           aria-selected="false"
+           th:text="${section.title}">Account</a>
+      </nav>
+
+      <section class="api-tab-panel is-active"
+               id="conventions"
+               role="tabpanel"
+               aria-labelledby="tab-conventions">
+        <dl class="prop-grid api-conventions">
+          <dt>CSRF</dt>
+          <dd>
+            Cookie <code>XSRF-TOKEN</code> (readable, SameSite=Lax). POSTs send it as
+            header <code>X-XSRF-TOKEN</code> or form field <code>_csrf</code>.
+            <code>cse-csrf.js</code> does this for jQuery and HTML forms.
+          </dd>
+          <dt>Auth cookies</dt>
+          <dd>
+            <code>auth-login</code> and <code>auth-session</code> are HttpOnly.
+            Scripts cannot read them; they are sent automatically on same-origin requests.
+          </dd>
+          <dt>JSON envelope</dt>
+          <dd>
+            <code>/account/*</code> and <code>/rest/forms</code> / <code>/rest/markdown</code>
+            return HTTP 200 with
+            <code>{ "status", "restObject", "message" }</code>.
+            Check <code>status</code> in the body.
+            <code>GET /rest/site</code>, <code>/rest/error</code>, and <code>/install/**</code>
+            do not use that envelope. JS shells read <code>GET /rest/site</code>
+            (same query as <code>GET /</code>).
+          </dd>
+        </dl>
+      </section>
+
+      <section class="api-tab-panel"
+               th:each="section : ${apiSections}"
+               th:id="${section.id}"
+               role="tabpanel"
+               th:attr="aria-labelledby=${'tab-' + section.id}">
+        <p class="field-hint" th:text="${section.lead}">Lead</p>
+        <details class="api-endpoint" th:each="ep : ${section.endpoints}">
+          <summary class="api-endpoint-summary">
+            <span class="api-endpoint-head">
+              <span class="api-method"
+                    th:classappend="${ep.method == 'GET'} ? 'is-get' : 'is-post'"
+                    th:text="${ep.method}">POST</span>
+              <code class="api-path"
+                    th:text="${(cseContextPath == '/' ? '' : cseContextPath) + ep.path}">/account/auth</code>
+              <span class="api-flags">
+                <span th:text="${ep.access}">Public</span>
+                <span th:text="${ep.csrf} ? 'CSRF' : 'No CSRF'">CSRF</span>
+              </span>
+            </span>
+            <span class="field-hint" th:text="${ep.summary}">Summary</span>
+          </summary>
+          <div class="api-endpoint-body">
+            <div class="api-sample-label" th:if="${ep.request != null}">Request</div>
+            <pre class="api-sample" th:if="${ep.request != null}" th:text="${ep.request}"></pre>
+            <div class="api-sample-label" th:if="${ep.response != null}">Response</div>
+            <pre class="api-sample" th:if="${ep.response != null}" th:text="${ep.response}"></pre>
+          </div>
+        </details>
+      </section>
+    </main>
+  </div>
+  <script>
+      (function () {
+          var nav = document.querySelector('.api-tabs');
+          if (!nav) {
+              return;
+          }
+          var tabs = nav.querySelectorAll('[role="tab"]');
+          var panels = document.querySelectorAll('.api-tab-panel');
+          var byId = {};
+          for (var i = 0; i < panels.length; i++) {
+              byId[panels[i].id] = panels[i];
+          }
+
+          function show(id, updateHash) {
+              if (!byId[id]) {
+                  id = 'conventions';
+              }
+              for (var p = 0; p < panels.length; p++) {
+                  var on = panels[p].id === id;
+                  panels[p].classList.toggle('is-active', on);
+                  panels[p].hidden = !on;
+              }
+              for (var t = 0; t < tabs.length; t++) {
+                  var selected = tabs[t].getAttribute('aria-controls') === id;
+                  tabs[t].classList.toggle('is-active', selected);
+                  tabs[t].setAttribute('aria-selected', selected ? 'true' : 'false');
+                  tabs[t].tabIndex = selected ? 0 : -1;
+              }
+              if (updateHash) {
+                  var next = '#' + id;
+                  if (location.hash !== next) {
+                      history.replaceState(null, '', next);
+                  }
+              }
+          }
+
+          nav.addEventListener('click', function (event) {
+              var tab = event.target.closest('[role="tab"]');
+              if (!tab || !nav.contains(tab)) {
+                  return;
+              }
+              event.preventDefault();
+              show(tab.getAttribute('aria-controls'), true);
+          });
+
+          nav.addEventListener('keydown', function (event) {
+              var list = Array.prototype.slice.call(tabs);
+              var index = list.indexOf(document.activeElement);
+              if (index < 0) {
+                  return;
+              }
+              var next = -1;
+              if (event.key === 'ArrowRight' || event.key === 'ArrowDown') {
+                  next = (index + 1) % list.length;
+              } else if (event.key === 'ArrowLeft' || event.key === 'ArrowUp') {
+                  next = (index - 1 + list.length) % list.length;
+              } else if (event.key === 'Home') {
+                  next = 0;
+              } else if (event.key === 'End') {
+                  next = list.length - 1;
+              }
+              if (next < 0) {
+                  return;
+              }
+              event.preventDefault();
+              list[next].focus();
+              show(list[next].getAttribute('aria-controls'), true);
+          });
+
+          window.addEventListener('hashchange', function () {
+              show(location.hash.replace(/^#/, ''), false);
+          });
+
+          show(location.hash.replace(/^#/, '') || 'conventions', false);
+      })();
+  </script>
+</body>
+</html>

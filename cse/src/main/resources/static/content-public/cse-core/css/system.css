@@ -1,0 +1,166 @@
+:root {
+    --color-item-type-bg: rgb(43, 41, 37);
+}
+
+.div-wide-100 {
+    border-radius: 5px;
+    width: 100%;
+    padding-left: 5px;
+    padding-right: 5px;
+}
+
+.div-height-auto {
+    height: auto;
+}
+
+.temporary-glow {
+    -webkit-box-shadow: 0px 0px 20px 12px rgba(255, 255, 255, 0.65);
+    -moz-box-shadow: 0px 0px 20px 12px rgba(255, 255, 255, 0.65);
+    box-shadow: 0px 0px 20px 12px rgba(255, 255, 255, 0.65);
+}
+
+.div-margin-right-5px {
+    margin-right: 5px;
+}
+
+.div-margin-left-5px {
+    margin-left: 5px;
+}
+
+table {
+    -webkit-box-shadow: 0px 2px 3px 0px rgba(0, 0, 0, 0.15);
+    -moz-box-shadow: 0px 2px 3px 0px rgba(0, 0, 0, 0.15);
+    box-shadow: 0px 2px 3px 0px rgba(0, 0, 0, 0.15);
+    width: 100%;
+    margin-bottom: 10px;
+}
+
+.tg {
+    border-collapse: collapse;
+    border-spacing: 0;
+    margin-bottom: 4px;
+}
+
+.tg:hover {
+    background-color: #FFFFFF11;
+}
+
+.tg td {
+    vertical-align: top;
+    padding: 0px 5px 5px;
+    overflow: hidden;
+    word-break: normal;
+}
+
+.tg .td65 {
+    width: 65%;
+    text-align: justify;
+    text-justify: inter-word;
+}
+
+.tg .td30 {
+    text-align: right;
+    width: 34%;
+}
+
+.tg th {
+    padding: 0px 1px;
+    overflow: hidden;
+    word-break: normal;
+}
+
+.tg-yw4l {
+    background-color: var(--color-item-header-bg);
+    /*border-radius: 2px 0 0 2px;*/
+    margin-right: 30px;
+}
+
+.tg-yw4t {
+    width: 100%;
+    text-align: center;
+    padding-bottom: 2px;
+    padding-top: 5px;
+    background-color: var(--color-item-header-bg);
+
+    text-shadow: 1px 3px 2px rgba(0, 0, 0, 0.13);
+    font-weight: bolder;
+    font-size: 11px;
+
+    margin-bottom: -1px;
+    /*border-radius:  0 2px 0 0;*/
+}
+
+.rotate {
+    text-align: center;
+    white-space: nowrap;
+    vertical-align: middle;
+    width: 0.6em;
+}
+
+.rotate div {
+    -moz-transform: rotate(-90.0deg);
+    -o-transform: rotate(-90.0deg);
+    -webkit-transform: rotate(-90.0deg);
+    filter: progid:DXImageTransform.Microsoft.BasicImage(rotation=0.083);
+    -ms-filter: progid:DXImageTransform.Microsoft.BasicImage(rotation=0.083);
+    margin-left: -10em;
+    margin-right: -10em;
+}
+
+.item-type {
+    color: var(--color-item-type-text);
+}
+
+.error-type {
+    color: var(--color-error-type-text);
+}
+
+.item-type, .error-type {
+    z-index: 10;
+    position: relative;
+
+    padding: 9px 9px 0px 9px;
+
+    background: -moz-linear-gradient(45deg, var(--color-item-type-bg) 39%, rgba(0, 0, 0, 0) 39%, rgba(0, 0, 0, 0) 99%, rgba(0, 0, 0, 0) 100%); /* FF3.6-15 */
+    background: -webkit-linear-gradient(45deg, var(--color-item-type-bg) 39%, rgba(0, 0, 0, 0) 39%, rgba(0, 0, 0, 0) 99%, rgba(0, 0, 0, 0) 100%); /* Chrome10-25,Safari5.1-6 */
+    background: linear-gradient(45deg, var(--color-item-type-bg) 39%, rgba(0, 0, 0, 0) 39%, rgba(0, 0, 0, 0) 99%, rgba(0, 0, 0, 0) 100%); /* W3C, IE10+, FF16+, Chrome26+, Opera12+, Safari7+ */
+    filter: progid:DXImageTransform.Microsoft.gradient(startColorstr='#000000', endColorstr='#00000000', GradientType=1); /* IE6-9 fallback on horizontal gradient */
+    /*width: auto 40%;*/
+
+    text-shadow: 1px 3px 2px rgba(0, 0, 0, 0.2);
+    font-weight: bolder;
+    font-size: 11px;
+
+    margin-bottom: -2px;
+}
+
+.album-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+    gap: 10px;
+    margin: 16px 0 24px;
+}
+
+.album-grid figure {
+    margin: 0;
+}
+
+.album-grid a {
+    display: block;
+}
+
+.album-grid img {
+    display: block;
+    width: 100%;
+    aspect-ratio: 1;
+    object-fit: cover;
+    border-radius: 6px;
+}
+
+.album-grid figcaption {
+    margin-top: 6px;
+    font-size: 12px;
+    line-height: 1.35;
+    color: inherit;
+    opacity: 0.78;
+}

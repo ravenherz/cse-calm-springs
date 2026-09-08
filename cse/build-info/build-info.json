@@ -1,0 +1,10 @@
+{
+    "artifact": {
+        "latest": {
+            "name": "cse-0.6.0.3162.tree-v2.war"
+        }
+    },
+    "build": {
+        "number": 3162
+    }
+}

@@ -1,0 +1,9 @@
+{
+  "id": "modern",
+  "title": "modern",
+  "author": "A. Kolesnikov",
+  "description": "Portfolio studio: category sections, not a feed",
+  "shell": "modern",
+  "defaultSchema": "linen",
+  "sortOrder": 0
+}

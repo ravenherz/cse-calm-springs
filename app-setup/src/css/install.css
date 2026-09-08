@@ -1,0 +1,140 @@
+.install-main {
+  max-width: 52rem;
+}
+
+.install-grid-span {
+  grid-column: 1 / -1;
+}
+
+.install-grid textarea.editor-textarea {
+  margin-top: 4px;
+  min-height: 4.5rem;
+}
+
+.install-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px 28px;
+}
+
+.install-grid .form-group {
+  min-width: 0;
+  margin: 0;
+}
+
+.install-step-title {
+  margin: 0 0 8px;
+  color: var(--text-white);
+  font-size: 1.1rem;
+  font-weight: 500;
+}
+
+.install-choice {
+  border: none;
+  margin: 20px 0 0;
+  padding: 0;
+}
+
+.install-choice-legend {
+  padding: 0;
+  color: var(--text-muted);
+  font-size: 11px;
+  font-weight: 500;
+  font-family: "IBM Plex Mono", ui-monospace, monospace;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+}
+
+.install-choice-option {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 10px 0 0;
+  color: var(--text-primary);
+  cursor: pointer;
+  font-size: 14px;
+}
+
+.install-choice-option input {
+  margin: 0;
+  accent-color: var(--accent);
+}
+
+#mongo-guide {
+  margin: 20px 0 8px;
+  padding-top: 20px;
+  border-top: 1px solid var(--border-default);
+}
+
+#mongo-guide > .field-hint:first-child {
+  margin: 0 0 16px;
+}
+
+#mongo-guide .install-grid {
+  margin-bottom: 8px;
+}
+
+.install-guide-step {
+  margin-top: 20px;
+}
+
+.install-guide-chunk {
+  margin-top: 16px;
+}
+
+.install-guide-chunk .field-hint {
+  margin: 0 0 8px;
+}
+
+.install-guide-step > .install-snippet-label {
+  display: block;
+  margin: 0 0 8px;
+}
+
+.install-snippet-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  margin: 16px 0 8px;
+}
+
+.install-snippet-label {
+  color: var(--text-muted);
+  font-size: 11px;
+  font-weight: 500;
+  font-family: "IBM Plex Mono", ui-monospace, monospace;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+}
+
+.install-snippet-head .btn {
+  margin: 0;
+}
+
+.install-snippet {
+  margin: 0;
+  padding: 16px;
+  background: var(--bg-raised);
+  border: 1px solid var(--border-default);
+  color: var(--text-white);
+  font-family: "IBM Plex Mono", ui-monospace, monospace;
+  font-size: 12px;
+  line-height: 1.5;
+  overflow-x: auto;
+  white-space: pre;
+}
+
+.install-step .form-panel {
+  padding-top: 16px;
+}
+
+.install-step .form-panel > .btn {
+  margin-top: 16px;
+}
+
+@media (max-width: 640px) {
+  .install-grid {
+    grid-template-columns: 1fr;
+  }
+}

@@ -1,0 +1,29 @@
+spring:
+  application:
+    name: cse
+  servlet:
+    multipart:
+      enabled: true
+      max-file-size: 2GB
+      max-request-size: 2GB
+
+logging:
+  level:
+    root: DEBUG
+    org.mongodb: INFO
+    org.springframework: INFO
+    org.springframework.data.mongodb.core.convert.QueryMapper: WARN
+    com.ravenherz.cse.controller: INFO
+  file:
+    name: "./logs/cse.log"
+
+server:
+  forward-headers-strategy: framework
+  tomcat:
+    max-http-form-post-size: 2GB
+    max-swallow-size: 2GB
+  error:
+    path: "/error"
+    whitelabel:
+      enabled: false
+  port: 8081

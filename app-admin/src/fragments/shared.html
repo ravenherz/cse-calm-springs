@@ -1,0 +1,823 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:fragment="shared-head">
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Calm Springs</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" type="text/css"
+          th:href="@{/content-public/admin/css/editor.css}"
+          href="../../../static/content-public/admin/css/editor.css"/>
+    <link rel="icon"
+          th:href="@{/content-public/cse-core/images/favicon.ico}"
+          href="../../../static/content-public/cse-core/images/favicon.ico"
+          type="image/x-icon"/>
+    <script type="text/javascript"
+            th:src="@{/content-public/js/dist/jquery.min.js}"
+            src="//code.jquery.com/jquery-3.6.0.min.js"></script>
+    <meta name="cse-context" th:content="${cseContextPath}">
+    <meta name="csrf-token" th:if="${_csrf != null}" th:content="${_csrf.token}">
+    <script id="script-cse-csrf" type="text/javascript"
+            th:src="@{/content-public/js/cse-csrf.js(v=7)}"
+            src="../../../static/content-public/js/cse-csrf.js?v=7"></script>
+    <script id="script-cse-editor" type="text/javascript"
+            th:src="@{/content-public/js/cse-editor.js(v=1)}"
+            src="../../../static/content-public/js/cse-editor.js?v=1"></script>
+    <script id="script-cse-editor-tree" type="text/javascript"
+            th:src="@{/content-public/js/cse-editor-tree.js(v=9)}"
+            src="../../../static/content-public/js/cse-editor-tree.js?v=9"></script>
+</head>
+<body>
+    <div class="editor-layout">
+        <aside class="editor-sidebar" th:fragment="shared-editor-sidebar">
+            <a class="sidebar-brand" th:href="@{/editor/resources}">
+                <img class="brand-mark"
+                     th:src="@{/content-public/cse-core/images/favicon.ico}"
+                     src="../../../static/content-public/cse-core/images/favicon.ico"
+                     alt=""/>
+                <span class="brand-text">Calm Springs</span>
+            </a>
+            <nav class="editor-nav" th:fragment="shared-editor-nav">
+                <a th:href="@{/editor/resources}"
+                   th:classappend="${navResources} ? 'active' : ''">
+                    Catalog
+                </a>
+                <span class="nav-sep" aria-hidden="true"></span>
+                <a th:href="@{/editor/accounts}"
+                   th:classappend="${navAccounts} ? 'active' : ''">
+                    Accounts
+                </a>
+                <a th:href="@{/editor/roles}"
+                   th:classappend="${navRoles} ? 'active' : ''">
+                    Roles
+                </a>
+                <a th:href="@{/editor/settings}"
+                   th:classappend="${navSettings} ? 'active' : ''">
+                    Settings
+                </a>
+                <a th:href="@{/editor/site-data}"
+                   th:classappend="${navSiteData} ? 'active' : ''">
+                    Site data
+                </a>
+                <a th:href="@{/editor/api}"
+                   th:classappend="${navApi} ? 'active' : ''">
+                    API
+                </a>
+                <a th:href="@{/editor/logs}"
+                   th:classappend="${navLogs} ? 'active' : ''">
+                    Logs
+                </a>
+            </nav>
+            <div class="sidebar-foot">
+                <div class="sidebar-user" th:if="${username}" th:text="${username}">user</div>
+                <a th:href="@{/}" class="back-link">Site</a>
+            </div>
+        </aside>
+        <div class="resource-tree-column" th:fragment="shared-editor-tree">
+            <nav class="resource-tree" aria-label="Resource groups" data-can-create-root="true"
+                 th:attr="data-default-group-id=${defaultGroupId}">
+                <div class="resource-tree-node is-open resource-tree-origin">
+                    <div class="resource-tree-row" data-kind="folder" data-can-create="true"
+                         data-can-rename="false" data-can-delete="false"
+                         data-can-drag="false" data-accept-files="false">
+                        <span class="resource-tree-icon" aria-hidden="true">
+                            <span class="resource-tree-folder-host">
+                                <th:block th:replace="~{fragments/shared :: resource-tree-folders}"></th:block>
+                                <th:block th:replace="~{fragments/shared :: resource-asterisk}"></th:block>
+                            </span>
+                        </span>
+                        <a class="resource-tree-root-label" draggable="false"
+                           th:href="@{/editor/resources(group=${defaultGroupId})}">root</a>
+                    </div>
+                    <div class="resource-tree-children resource-tree-roots">
+                        <th:block th:each="group : ${resourceGroupTree}">
+                        <div th:replace="~{fragments/shared :: resource-tree-node(group=${group}, selectedGroup=${selectedGroup})}"></div>
+                        </th:block>
+                    </div>
+                </div>
+                <div id="resource-tree-create-holder" hidden>
+                    <form id="resource-tree-create" class="resource-tree-create"
+                          th:action="@{/editor/resources/group/create}" method="post">
+                        <th:block th:replace="~{fragments/csrf :: field}"></th:block>
+                        <input type="hidden" name="parentId" id="treeCreateParent"/>
+                        <input type="hidden" name="returnGroup"
+                               th:value="${selectedGroup != null and not selectedGroup.ungrouped and not selectedGroup.virtual and not selectedGroup.categoryNode ? selectedGroup.id : defaultGroupId}"/>
+                        <input type="text" name="humanReadableId" id="treeCreateName"
+                               placeholder="Group name" required autocomplete="off"/>
+                    </form>
+                </div>
+                <div id="resource-tree-rename-holder" hidden>
+                    <form id="resource-tree-rename" class="resource-tree-rename"
+                          th:action="@{/editor/catalog/rename}" method="post">
+                        <th:block th:replace="~{fragments/csrf :: field}"></th:block>
+                        <input type="hidden" name="kind" id="treeRenameKind"/>
+                        <input type="hidden" name="id" id="treeRenameId"/>
+                        <input type="hidden" name="returnGroup"
+                               th:value="${selectedGroup != null and not selectedGroup.ungrouped and not selectedGroup.virtual and not selectedGroup.categoryNode ? selectedGroup.id : defaultGroupId}"/>
+                        <input type="text" name="name" id="treeRenameName"
+                               placeholder="Name" required autocomplete="off"/>
+                    </form>
+                </div>
+            </nav>
+            <div id="resource-tree-menu" class="resource-tree-menu" hidden role="menu">
+                <button type="button" role="menuitem" data-action="edit">Edit</button>
+                <button type="button" role="menuitem" data-action="open">Open</button>
+                <div class="resource-tree-menu-stack" data-action="new-page-wrap" hidden>
+                    <button type="button" role="menuitem" data-action="new-page">New page</button>
+                    <div id="resource-tree-page-submenu" class="resource-tree-submenu" hidden role="menu"></div>
+                </div>
+                <div class="resource-tree-menu-stack" data-action="new-album-wrap" hidden>
+                    <button type="button" role="menuitem" data-action="new-album">New album</button>
+                    <div id="resource-tree-album-submenu" class="resource-tree-submenu" hidden role="menu"></div>
+                </div>
+                <button type="button" role="menuitem" data-action="rename">Rename</button>
+                <button type="button" role="menuitem" data-action="download">Download</button>
+                <button type="button" role="menuitem" data-action="new-group">New group</button>
+                <button type="button" role="menuitem" data-action="new-category">New category</button>
+                <button type="button" role="menuitem" data-action="activate">Activate</button>
+                <button type="button" role="menuitem" data-action="delete">Delete</button>
+            </div>
+            <form id="resource-category-delete-form" hidden
+                  th:action="@{/editor/category/delete}" method="post">
+                <th:block th:replace="~{fragments/csrf :: field}"></th:block>
+                <input type="hidden" name="id" id="treeDeleteCategoryId"/>
+                <input type="hidden" name="returnGroup" value="content-categories"/>
+            </form>
+            <form id="catalog-delete-form" method="post" hidden>
+                <th:block th:replace="~{fragments/csrf :: field}"></th:block>
+                <input type="hidden" name="returnGroup" id="catalogDeleteReturn"/>
+                <input type="hidden" name="id" id="catalogDeleteId"/>
+                <input type="hidden" name="name" id="catalogDeleteName"/>
+                <input type="hidden" name="pathPublic" id="catalogDeletePath"/>
+                <input type="hidden" name="slug" id="catalogDeleteSlug"/>
+                <input type="hidden" name="themeId" id="catalogDeleteTheme"/>
+                <input type="hidden" name="groupId" id="catalogDeleteGroup"/>
+            </form>
+            <form id="catalog-activate-form" hidden
+                  th:action="@{/editor/themes/activate}" method="post">
+                <th:block th:replace="~{fragments/csrf :: field}"></th:block>
+                <input type="hidden" name="themeId" id="catalogActivateTheme"/>
+                <input type="hidden" name="returnGroup" id="catalogActivateReturn"/>
+            </form>
+            <form id="resource-assign-form" hidden
+                  th:action="@{/editor/resources/group/assign}" method="post">
+                <th:block th:replace="~{fragments/csrf :: field}"></th:block>
+                <input type="hidden" name="resourceId" id="assignResourceId"/>
+                <input type="hidden" name="groupId" id="assignGroupId"/>
+                <input type="hidden" name="returnGroup"
+                       th:value="${selectedGroup != null and not selectedGroup.ungrouped and not selectedGroup.virtual and not selectedGroup.categoryNode ? selectedGroup.id : defaultGroupId}"/>
+            </form>
+            <form id="resource-group-move-form" hidden
+                  th:action="@{/editor/resources/group/move}" method="post">
+                <th:block th:replace="~{fragments/csrf :: field}"></th:block>
+                <input type="hidden" name="groupId" id="dndMoveGroupId"/>
+                <input type="hidden" name="parentId" id="dndMoveParentId"/>
+                <input type="hidden" name="returnGroup"
+                       th:value="${selectedGroup != null and not selectedGroup.ungrouped and not selectedGroup.virtual and not selectedGroup.categoryNode ? selectedGroup.id : defaultGroupId}"/>
+            </form>
+        </div>
+        <main class="editor-main">
+            <header class="page-header" th:fragment="editor-page-header (title)">
+                <h1 class="page-title" th:text="${title}">Title</h1>
+            </header>
+            <a class="btn btn-secondary" th:fragment="editor-inline-back"
+               th:href="${(cseContextPath == '/' ? '' : (cseContextPath != null ? cseContextPath : ''))
+                   + (selectedGroup != null and selectedGroup.href != null ? selectedGroup.href : '/editor/resources')}">Back</a>
+        </main>
+    </div>
+    <li class="resource-row tile-row" draggable="true"
+        th:fragment="resource-row (resource, returnGroup)"
+        th:attr="data-kind='resource',
+                 data-id=${resource.id},
+                 data-key=${resource.resourceData.pathPublic},
+                 data-name=${resource.resourceData.fileName},
+                 data-can-rename='true',
+                 data-can-delete='true',
+                 data-resource-id=${resource.id},
+                 data-group-id=${resource.refResourceGroup != null ? resource.refResourceGroup.id.toString() : defaultGroupId},
+                 data-return-group=${returnGroup},
+                 data-download-href=@{/editor/resources/download(pathPublic=${resource.resourceData.pathPublic})}">
+        <div class="item-thumb-wrap">
+            <div class="thumb-actions">
+                <form th:action="@{/editor/resources/delete}" method="post" class="thumb-delete">
+                    <th:block th:replace="~{fragments/csrf :: field}"></th:block>
+                    <input type="hidden" name="pathPublic"
+                           th:value="${resource.resourceData.pathPublic}"/>
+                    <input type="hidden" name="returnGroup" th:value="${returnGroup}"/>
+                    <button type="submit" class="thumb-action-btn thumb-delete-btn" title="Delete"
+                            onclick="return confirm('Delete this resource?')">×</button>
+                </form>
+                <a class="thumb-action-btn thumb-download-btn" title="Download"
+                   th:href="@{/editor/resources/download(pathPublic=${resource.resourceData.pathPublic})}">↓</a>
+                <button type="button" class="thumb-action-btn thumb-info-btn" title="Details"
+                        aria-label="Details">i</button>
+            </div>
+            <img th:if="${resource.resourceData.type.name() == 'IMAGE'}"
+                 class="item-thumb" draggable="false"
+                 th:src="@{/content-protected{path}(path=${resource.previewData?.pathPublic != null ? resource.previewData.pathPublic : resource.resourceData.pathPublic})}"
+                 th:alt="${resource.resourceData.imageDescription != null ? resource.resourceData.imageDescription : resource.resourceData.fileName}"/>
+            <img th:if="${resource.resourceData.type.name() != 'IMAGE' and resource.previewData != null}"
+                 class="item-thumb" draggable="false"
+                 th:src="@{/content-protected{path}(path=${resource.previewData.pathPublic})}"
+                 th:alt="${resource.resourceData.fileName}"/>
+            <div th:if="${resource.resourceData.type.name() != 'IMAGE' and resource.previewData == null}"
+                 class="item-thumb-audio"></div>
+            <canvas class="thumb-waveform"
+                    th:if="${resource.resourceData.type.name() == 'AUDIO' and resource.resourceData.waveformBase64 != null}"
+                    width="2048" height="256"
+                    th:attr="data-waveform=${resource.resourceData.waveformBase64}"></canvas>
+            <div class="thumb-caption" th:if="${resource.resourceData.type.name() == 'AUDIO'}"
+                 th:with="albumLine=${T(com.ravenherz.cse.util.Mp3Metadata).albumLine(resource.resourceData.metadata)}">
+                <div class="thumb-caption-title"
+                     th:text="${resource.resourceData.metadata?.get('title') ?: resource.resourceData.fileName}">title</div>
+                <div class="thumb-caption-artist"
+                     th:if="${resource.resourceData.metadata?.get('artist') != null}"
+                     th:text="${resource.resourceData.metadata.get('artist')}">artist</div>
+                <div class="thumb-caption-album"
+                     th:if="${albumLine != null}"
+                     th:text="${albumLine}">album 2024 #1</div>
+            </div>
+            <div class="thumb-tags">
+                <span class="thumb-tag thumb-tag-type" th:text="${resource.resourceData.type}">IMAGE</span>
+                <span class="thumb-tag" th:text="${resource.resourceData.sizeLabel}">0 bytes</span>
+            </div>
+        </div>
+        <div class="resource-tip">
+            <div class="item-title" th:text="${resource.resourceData.fileName}">file.jpg</div>
+            <div class="tip-cover" th:if="${resource.resourceData.type.name() == 'AUDIO' and resource.previewData != null}">
+                <img th:src="@{/content-protected{path}(path=${resource.previewData.pathPublic})}"
+                     th:alt="${resource.resourceData.fileName}"/>
+            </div>
+            <canvas class="tip-waveform"
+                    th:if="${resource.resourceData.type.name() == 'AUDIO' and resource.resourceData.waveformBase64 != null}"
+                    width="2048" height="256"
+                    th:attr="data-waveform=${resource.resourceData.waveformBase64}"></canvas>
+            <dl class="prop-grid">
+                <dt th:if="${resource.resourceData.largeFile}">Chunks</dt>
+                <dd th:if="${resource.resourceData.largeFile}" class="chunk-field">
+                    <span class="chunk-count"
+                          th:text="${resource.resourceData.dataChunkIds == null ? 0 : #lists.size(resource.resourceData.dataChunkIds)}">0</span>
+                    <div class="chunk-ids"
+                         th:if="${resource.resourceData.dataChunkIds != null and !#lists.isEmpty(resource.resourceData.dataChunkIds)}">
+                        <span th:each="chunkId : ${resource.resourceData.dataChunkIds}"
+                              th:text="${chunkId}">id</span>
+                    </div>
+                </dd>
+                <dt>Public URL</dt>
+                <dd>
+                    <a class="tip-url-btn"
+                       th:href="@{/content-protected{path}(path=${resource.resourceData.pathPublic})}"
+                       th:title="${'/content-protected' + resource.resourceData.pathPublic}"
+                       target="_blank" rel="noopener" aria-label="Open public URL">🔗</a>
+                </dd>
+                <th:block th:if="${resource.previewData != null}">
+                    <dt>Preview URL</dt>
+                    <dd>
+                        <a class="tip-url-btn"
+                           th:href="@{/content-protected{path}(path=${resource.previewData.pathPublic})}"
+                           th:title="${'/content-protected' + resource.previewData.pathPublic}"
+                           target="_blank" rel="noopener" aria-label="Open preview URL">🔗</a>
+                    </dd>
+                    <dt>Preview size</dt>
+                    <dd th:text="${resource.previewData.sizeLabel}">0 bytes</dd>
+                </th:block>
+                <dt>ID</dt>
+                <dd th:text="${resource.id}">id</dd>
+                <th:block th:if="${resource.resourceData.type.name() == 'IMAGE'}">
+                    <dt>Description</dt>
+                    <dd>
+                        <form th:action="@{/editor/resources/description}" method="post"
+                              class="tip-desc-form">
+                            <th:block th:replace="~{fragments/csrf :: field}"></th:block>
+                            <input type="hidden" name="pathPublic"
+                                   th:value="${resource.resourceData.pathPublic}"/>
+                            <input type="hidden" name="returnGroup" th:value="${returnGroup}"/>
+                            <textarea name="imageDescription" rows="3"
+                                      class="editor-textarea tip-desc"
+                                      placeholder="Caption for this photo"
+                                      th:text="${resource.resourceData.imageDescription}"></textarea>
+                            <button type="submit" class="btn btn-primary">Save</button>
+                        </form>
+                    </dd>
+                </th:block>
+                <th:block th:if="${resource.resourceData.type.name() != 'AUDIO' and resource.resourceData.metadata != null}">
+                    <th:block th:each="entry : ${resource.resourceData.metadata}">
+                        <dt th:text="${entry.key}">key</dt>
+                        <dd th:text="${entry.value}">value</dd>
+                    </th:block>
+                </th:block>
+            </dl>
+            <th:block th:if="${resource.resourceData.type.name() == 'AUDIO' and resource.resourceData.metadata != null and !resource.resourceData.metadata.isEmpty()}">
+                <div class="tip-imported">
+                    <div class="tip-imported-label">From file tags</div>
+                    <dl class="prop-grid">
+                        <th:block th:each="entry : ${resource.resourceData.metadata}">
+                            <dt th:text="${entry.key}">key</dt>
+                            <dd th:if="${entry.key == 'duration'}" th:text="${entry.value} + ' s'">0 s</dd>
+                            <dd th:if="${entry.key == 'bitrate'}" th:text="${entry.value} + ' kbps'">0 kbps</dd>
+                            <dd th:if="${entry.key != 'duration' and entry.key != 'bitrate'}"
+                                th:text="${entry.value}">value</dd>
+                        </th:block>
+                    </dl>
+                </div>
+            </th:block>
+        </div>
+    </li>
+    <th:block th:fragment="resource-lock">
+        <span class="resource-lock-overlay" title="Locked" aria-hidden="true">
+            <svg class="resource-lock" viewBox="0 0 24 24" focusable="false">
+                <path d="M16.5 10.5V6.75a4.5 4.5 0 1 0-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 0 0 2.25-2.25v-6.75a2.25 2.25 0 0 0-2.25-2.25H6.75a2.25 2.25 0 0 0-2.25 2.25v6.75a2.25 2.25 0 0 0 2.25 2.25Z"/>
+            </svg>
+        </span>
+    </th:block>
+    <th:block th:fragment="resource-asterisk">
+        <span class="resource-asterisk-overlay" title="Open" aria-hidden="true">
+            <svg class="resource-asterisk" viewBox="0 0 24 24" focusable="false">
+                <path d="M12 4.5v15M6.1 7.8l11.8 8.4M6.1 16.2l11.8-8.4"/>
+            </svg>
+        </span>
+    </th:block>
+    <th:block th:fragment="resource-tree-folders">
+        <svg class="resource-tree-folder resource-tree-folder-closed" viewBox="0 0 24 24"
+             aria-hidden="true" focusable="false">
+            <path d="M2.25 12.75V12A2.25 2.25 0 0 1 4.5 9.75h15A2.25 2.25 0 0 1 21.75 12v.75m-8.69-6.44-2.12-2.12a1.5 1.5 0 0 0-1.061-.44H4.5A2.25 2.25 0 0 0 2.25 6v12a2.25 2.25 0 0 0 2.25 2.25h15A2.25 2.25 0 0 0 21.75 18V9.75a2.25 2.25 0 0 0-2.25-2.25H11.81a1.5 1.5 0 0 1-1.061-.44Z"/>
+        </svg>
+        <svg class="resource-tree-folder resource-tree-folder-open" viewBox="0 0 24 24"
+             aria-hidden="true" focusable="false">
+            <path d="M3.75 9.776c.112-.017.227-.026.344-.026h15.812c.117 0 .232.009.344.026m-16.5 0a2.25 2.25 0 0 0-1.883 2.542l.857 6a2.25 2.25 0 0 0 2.227 1.932H19.05a2.25 2.25 0 0 0 2.227-1.932l.857-6a2.25 2.25 0 0 0-1.883-2.542m-16.5 0V6A2.25 2.25 0 0 1 6 3.75h3.879a1.5 1.5 0 0 1 1.06.44l2.122 2.12a1.5 1.5 0 0 0 1.06.44H18A2.25 2.25 0 0 1 20.25 9v.776"/>
+        </svg>
+    </th:block>
+    <div class="resource-tree-node"
+         th:fragment="resource-tree-node (group, selectedGroup)"
+         th:id="${'group-' + group.id}"
+         th:classappend="${(selectedGroup != null and group.containsInSubtree(selectedGroup.id) ? 'is-open ' : '')
+             + (selectedLeafId == null and selectedGroup != null and group.id.equals(selectedGroup.id) ? 'is-selected' : '')}">
+        <div class="resource-tree-row"
+             th:attr="data-kind=${group.categoryNode ? 'category' : (group.virtual ? 'folder' : 'group')},
+             data-id=${group.categoryNode ? group.categoryObjectId() : group.id},
+             data-group-id=${group.id}, data-name=${group.humanReadableId},
+             data-parent-id=${group.parentId != null ? group.parentId : ''},
+             data-can-create=${group.canCreateChild()},
+             data-can-rename=${group.canRename() or group.canEditCategory()},
+             data-can-delete=${group.canDelete() or group.canDeleteCategory()},
+             data-can-delete-category=${group.canDeleteCategory()},
+             data-category-id=${group.canDeleteCategory() ? group.categoryObjectId() : ''},
+             data-can-drag=${group.canMove()}, data-accept-files=${group.canAcceptFiles()},
+             data-virtual=${group.virtual}, draggable=${group.canMove()},
+             data-create-href=${group.canCreateCategory() ? ((cseContextPath == '/' ? '' : (cseContextPath != null ? cseContextPath : '')) + '/editor/category/create') : ''},
+             data-create-page-href=${group.canCreatePage() ? ((cseContextPath == '/' ? '' : (cseContextPath != null ? cseContextPath : '')) + group.pageCreatePath()) : ''},
+             data-create-page-menu=${group.canCreatePageMenu()},
+             data-create-album-href=${group.canCreatePage() ? ((cseContextPath == '/' ? '' : (cseContextPath != null ? cseContextPath : '')) + group.albumCreatePath()) : ''},
+             data-create-album-menu=${group.canCreatePageMenu()},
+             data-edit-href=${group.canEditCategory() ? ((cseContextPath == '/' ? '' : (cseContextPath != null ? cseContextPath : '')) + group.categoryEditPath()) : ''}">
+            <button type="button" class="resource-tree-toggle"
+                    th:if="${group.hasExpandableChildren()}"
+                    aria-label="Expand group"
+                    th:attr="aria-expanded=${selectedGroup != null and group.containsInSubtree(selectedGroup.id)}">
+                <span class="resource-tree-folder-host"
+                      th:classappend="${group.locked} ? 'is-locked'">
+                    <th:block th:replace="~{fragments/shared :: resource-tree-folders}"></th:block>
+                    <th:block th:if="${group.locked}">
+                        <th:block th:replace="~{fragments/shared :: resource-lock}"></th:block>
+                    </th:block>
+                    <th:block th:replace="~{fragments/shared :: resource-asterisk}"></th:block>
+                </span>
+            </button>
+            <span class="resource-tree-toggle is-leaf" th:unless="${group.hasExpandableChildren()}"
+                  aria-hidden="true">
+                <span class="resource-tree-folder-host"
+                      th:classappend="${group.locked} ? 'is-locked'">
+                    <th:block th:replace="~{fragments/shared :: resource-tree-folders}"></th:block>
+                    <th:block th:if="${group.locked}">
+                        <th:block th:replace="~{fragments/shared :: resource-lock}"></th:block>
+                    </th:block>
+                    <th:block th:replace="~{fragments/shared :: resource-asterisk}"></th:block>
+                </span>
+            </span>
+            <a class="resource-tree-link"
+               th:if="${group.href != null}"
+               th:attr="draggable=${group.canMove()} ? 'true' : 'false'"
+               th:href="${(cseContextPath == '/' ? '' : (cseContextPath != null ? cseContextPath : '')) + group.href}"
+               th:text="${group.humanReadableId}">Group</a>
+            <a class="resource-tree-link"
+               th:unless="${group.href != null}"
+               th:attr="draggable=${group.canMove()} ? 'true' : 'false'"
+               th:href="@{/editor/resources(group=${group.id})}"
+               th:text="${group.humanReadableId}">Group</a>
+        </div>
+        <div class="resource-tree-children">
+            <th:block th:each="child : ${group.children}">
+                <div th:replace="~{fragments/shared :: resource-tree-node(group=${child}, selectedGroup=${selectedGroup})}"></div>
+            </th:block>
+            <th:block th:each="file : ${group.treeFiles}">
+                <div th:replace="~{fragments/shared :: resource-tree-file(file=${file}, groupId=${group.id})}"></div>
+            </th:block>
+        </div>
+    </div>
+    <div class="resource-tree-node resource-tree-file"
+         th:fragment="resource-tree-file (file, groupId)"
+         th:id="${'resource-' + file.id}"
+         th:classappend="${selectedLeafId != null and selectedLeafId.equals(file.id)} ? 'is-selected'">
+        <div class="resource-tree-row" th:if="${file.page}"
+             th:with="ctx=${cseContextPath == '/' ? '' : (cseContextPath != null ? cseContextPath : '')}"
+             th:attr="data-kind=${file.kind()},
+             data-id=${file.key != null ? file.key : file.id},
+             data-key=${file.key},
+             data-name=${file.name},
+             data-group-id=${groupId},
+             data-can-rename=${file.canRename()},
+             data-can-delete=${file.canDelete()},
+             data-can-activate=${file.canActivate()},
+             data-return-group=${groupId},
+             data-edit-href=${file.canEdit() ? ctx + file.href : ''},
+             data-open-href=${file.canOpen() ? ctx + file.href : ''}"
+             draggable="false">
+            <span class="resource-tree-icon" aria-hidden="true">
+                <span class="resource-tree-file-host"
+                      th:classappend="${file.album} ? 'is-album' : (${file.contentPage} ? 'is-page' : '')">
+                    <img th:if="${file.preview}"
+                         class="resource-tree-file-icon resource-tree-file-preview"
+                         th:src="@{/editor/resources/tree-preview/{id}(id=${file.id})}"
+                         width="64" height="64" alt=""/>
+                    <svg th:unless="${file.preview}" class="resource-tree-file-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                        <path d="M7 3.75h6.5L19.5 10v10.25H7z"/>
+                        <path d="M13.5 3.75V10H19.5"/>
+                    </svg>
+                    <span class="resource-tree-file-mark" th:if="${file.album}">A</span>
+                    <span class="resource-tree-file-mark" th:if="${file.contentPage}">P</span>
+                </span>
+            </span>
+            <a class="resource-tree-link" draggable="false"
+               th:href="${(cseContextPath == '/' ? '' : (cseContextPath != null ? cseContextPath : '')) + file.href}"
+               th:text="${file.name}">file.jpg</a>
+        </div>
+        <div class="resource-tree-row" th:unless="${file.page}"
+             th:attr="data-kind='resource',
+             data-id=${file.id},
+             data-key=${file.key},
+             data-name=${file.name},
+             data-resource-id=${file.id},
+             data-group-id=${groupId},
+             data-can-rename=${file.canRename()},
+             data-can-delete=${file.canDelete()},
+             data-return-group=${groupId},
+             data-download-href=@{/editor/resources/download(pathPublic=${file.key})}"
+             draggable="true">
+            <span class="resource-tree-icon" aria-hidden="true">
+                <img th:if="${file.preview}"
+                     class="resource-tree-file-icon resource-tree-file-preview"
+                     th:src="@{/editor/resources/tree-preview/{id}(id=${file.id})}"
+                     width="64" height="64" alt=""/>
+                <svg th:unless="${file.preview}" class="resource-tree-file-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                    <path d="M7 3.75h6.5L19.5 10v10.25H7z"/>
+                    <path d="M13.5 3.75V10H19.5"/>
+                </svg>
+            </span>
+            <a class="resource-tree-link" draggable="true"
+               th:href="@{/editor/resources(group=${groupId})}"
+               th:text="${file.name}">file.jpg</a>
+        </div>
+    </div>
+    <li class="app-row tile-row" th:fragment="app-row (app, returnGroup)"
+        th:attr="data-kind='app',
+                 data-id=${app.slug},
+                 data-name=${app.name != null and !#strings.isEmpty(app.name) ? app.name : app.slug},
+                 data-can-rename='false',
+                 data-can-delete=${!app.bundled},
+                 data-return-group=${returnGroup},
+                 data-open-href=@{${app.publicUrl}}">
+        <div class="item-thumb-wrap">
+            <div class="thumb-actions">
+                <form th:if="${!app.bundled}" th:action="@{/editor/apps/delete}" method="post" class="thumb-delete">
+                    <th:block th:replace="~{fragments/csrf :: field}"></th:block>
+                    <input type="hidden" name="slug" th:value="${app.slug}"/>
+                    <input type="hidden" name="returnGroup" th:if="${returnGroup}" th:value="${returnGroup}"/>
+                    <button type="submit" class="thumb-action-btn thumb-delete-btn" title="Delete"
+                            onclick="return confirm('Delete this app from Mongo and disk?')">×</button>
+                </form>
+                <button type="button" class="thumb-action-btn thumb-info-btn" title="Details"
+                        aria-label="Details">i</button>
+            </div>
+            <img th:if="${app.productLogo}"
+                 class="item-thumb"
+                 th:src="@{/static-pages/{slug}/product-logo.jpg(slug=${app.slug}, v=${app.sizeInBytes})}"
+                 alt=""/>
+            <div th:unless="${app.productLogo}" class="app-logo-fallback" th:text="${app.slug}">slug</div>
+            <div class="thumb-tags">
+                <span class="thumb-tag thumb-tag-type" th:text="${app.bundled} ? 'WAR' : 'APP'">APP</span>
+                <span class="thumb-tag" th:if="${app.company != null and !#strings.isEmpty(app.company)}"
+                      th:text="${app.company}">company</span>
+                <span class="thumb-tag" th:text="${app.sizeLabel}">0 bytes</span>
+            </div>
+        </div>
+        <div class="resource-tip">
+            <div class="item-title" th:text="${app.name} ?: ${app.slug}">name</div>
+            <p class="field-hint" th:if="${app.description != null and !#strings.isEmpty(app.description)}"
+               th:text="${app.description}">description</p>
+            <dl class="prop-grid">
+                <dt>Slug</dt>
+                <dd th:text="${app.slug}">slug</dd>
+                <dt>Author</dt>
+                <dd th:text="${app.author} ?: '—'">author</dd>
+                <dt>Company</dt>
+                <dd th:text="${app.company} ?: '—'">company</dd>
+                <dt>Version</dt>
+                <dd th:text="${app.version} ?: '—'">1.0.0</dd>
+                <dt>File</dt>
+                <dd th:text="${app.originalFilename}">app.cseapp</dd>
+                <dt th:if="${app.largeFile}">Chunks</dt>
+                <dd th:if="${app.largeFile}" class="chunk-field">
+                    <span class="chunk-count" th:text="${app.chunkCount}">0</span>
+                    <div class="chunk-ids"
+                         th:if="${app.chunkIds != null and !#lists.isEmpty(app.chunkIds)}">
+                        <span th:each="chunkId : ${app.chunkIds}" th:text="${chunkId}">id</span>
+                    </div>
+                </dd>
+                <dt>Public URL</dt>
+                <dd>
+                    <a class="tip-url-btn"
+                       th:href="@{${app.publicUrl}}"
+                       th:title="${app.publicUrl}"
+                       target="_blank" rel="noopener" aria-label="Open public URL">🔗</a>
+                </dd>
+                <dt>ID</dt>
+                <dd th:text="${app.id} ?: '—'">id</dd>
+            </dl>
+        </div>
+    </li>
+    <li class="page-row tile-row" th:fragment="page-row (item, returnGroup)"
+        th:attr="data-kind=${item.album ? 'album' : 'page'},
+                 data-id=${item.uniqueUriName},
+                 data-name=${item.album ? item.albumData?.title : item.pageData?.title},
+                 data-can-rename='true',
+                 data-can-delete='true',
+                 data-return-group=${returnGroup},
+                 data-edit-href=@{/editor/edit(name=${item.uniqueUriName})}">
+        <div class="item-thumb-wrap">
+            <div class="thumb-actions">
+                <form th:action="@{/editor/delete}" method="post" class="thumb-delete">
+                    <th:block th:replace="~{fragments/csrf :: field}"></th:block>
+                    <input type="hidden" name="name" th:value="${item.uniqueUriName}"/>
+                    <input type="hidden" name="returnGroup" th:if="${returnGroup}" th:value="${returnGroup}"/>
+                    <button type="submit" class="thumb-action-btn thumb-delete-btn" title="Delete"
+                            onclick="return confirm('Delete this page?')">×</button>
+                </form>
+                <button type="button" class="thumb-action-btn thumb-info-btn" title="Details"
+                        aria-label="Details">i</button>
+            </div>
+            <img th:if="${item.pageData?.refImage?.resourceData?.pathPublic}"
+                 class="item-thumb"
+                 th:src="@{/content-protected{path}(path=${item.pageData.refImage.resourceData.pathPublic})}"
+                 alt=""/>
+            <div th:unless="${item.pageData?.refImage?.resourceData?.pathPublic}"
+                 class="app-logo-fallback"
+                 th:text="${item.album} ? 'ALBUM' : ${item.uniqueUriName}">uri</div>
+            <div class="thumb-tags">
+                <span class="thumb-tag thumb-tag-type"
+                      th:text="${item.album} ? 'ALBUM' : 'PAGE'">PAGE</span>
+                <span class="thumb-tag" th:text="${item.uniqueUriName}">uri</span>
+            </div>
+        </div>
+        <div class="resource-tip" th:with="events=${item.historyData?.events}">
+            <a class="item-title" th:href="@{/editor/edit(name=${item.uniqueUriName})}"
+               th:text="${item.album} ? ${item.albumData?.title} : ${item.pageData?.title}">Page Title</a>
+            <dl class="prop-grid">
+                <dt>URI</dt>
+                <dd th:text="${item.uniqueUriName}">uri-name</dd>
+                <dt>Public URL</dt>
+                <dd>
+                    <a class="tip-url-btn"
+                       th:if="${item.album}" th:href="@{/(album=${item.uniqueUriName})}"
+                       th:title="${'/?album=' + item.uniqueUriName}"
+                       target="_blank" rel="noopener" aria-label="Open public URL">🔗</a>
+                    <a class="tip-url-btn"
+                       th:unless="${item.album}" th:href="@{/(page=${item.uniqueUriName})}"
+                       th:title="${'/?page=' + item.uniqueUriName}"
+                       target="_blank" rel="noopener" aria-label="Open public URL">🔗</a>
+                </dd>
+                <th:block th:if="${item.album}">
+                <dt>Resource group</dt>
+                <dd th:text="${item.albumData?.refResourceGroup?.resourceGroupData?.humanReadableId} ?: '—'">group</dd>
+                </th:block>
+                <dt>Tags</dt>
+                <dd th:if="${item.album}"
+                    th:text="${item.albumData?.tags} ? ${#strings.listJoin(item.albumData.tags, ', ')} : '—'">tags</dd>
+                <dd th:unless="${item.album}"
+                    th:text="${item.pageData?.tags} ? ${#strings.listJoin(item.pageData.tags, ', ')} : '—'">tag1, tag2</dd>
+                <dt>Category</dt>
+                <dd th:text="${item.refCategory?.categoryData?.itemName} ?: '—'">category</dd>
+                <dt>Created</dt>
+                <dd th:if="${events != null and events.length > 0}">
+                    <span th:text="${#temporals.format(events[0].localDateTime, 'yyyy-MM-dd HH:mm')}">2024-01-01 12:00</span>
+                    by <span th:text="${events[0].owner?.accountData?.login} ?: '—'">admin</span>
+                </dd>
+                <dd th:unless="${events != null and events.length > 0}">—</dd>
+                <dt>Updated</dt>
+                <dd th:if="${events != null and events.length > 1}">
+                    <span th:text="${#temporals.format(events[events.length - 1].localDateTime, 'yyyy-MM-dd HH:mm')}">2024-01-02 12:00</span>
+                    by <span th:text="${events[events.length - 1].owner?.accountData?.login} ?: '—'">admin</span>
+                </dd>
+                <dd th:unless="${events != null and events.length > 1}">—</dd>
+                <dt>ID</dt>
+                <dd th:text="${item.id}">id</dd>
+            </dl>
+        </div>
+    </li>
+    <li class="app-row theme-row tile-row" th:fragment="theme-row (theme, returnGroup)"
+        th:attr="data-kind='theme',
+                 data-id=${theme.themeId},
+                 data-name=${theme.title != null and !#strings.isEmpty(theme.title) ? theme.title : theme.themeId},
+                 data-can-rename='false',
+                 data-can-delete=${!theme.builtin and !theme.active},
+                 data-can-activate=${!theme.active},
+                 data-return-group=${returnGroup},
+                 data-theme-id=${theme.themeId},
+                 draggable=${!theme.builtin}">
+        <div class="item-thumb-wrap">
+            <div class="thumb-actions">
+                <form th:if="${!theme.builtin}" th:action="@{/editor/themes/delete}" method="post" class="thumb-delete">
+                    <th:block th:replace="~{fragments/csrf :: field}"></th:block>
+                    <input type="hidden" name="themeId" th:value="${theme.themeId}"/>
+                    <input type="hidden" name="returnGroup" th:if="${returnGroup}" th:value="${returnGroup}"/>
+                    <button type="submit" class="thumb-action-btn thumb-delete-btn" title="Remove"
+                            th:disabled="${theme.active}"
+                            onclick="return confirm('Remove this theme pack from Mongo and disk?')">×</button>
+                </form>
+                <button type="button" class="thumb-action-btn thumb-info-btn" title="Details"
+                        aria-label="Details" draggable="false">i</button>
+            </div>
+            <img th:if="${theme.hasPreview}"
+                 class="item-thumb"
+                 th:src="@{/content-public/themes/{id}/preview.jpg(id=${theme.themeId}, v=${theme.sizeInBytes})}"
+                 alt=""/>
+            <div th:unless="${theme.hasPreview}" class="app-logo-fallback"
+                 th:text="${theme.themeId}">id</div>
+            <div class="thumb-tags">
+                <span class="thumb-tag thumb-tag-type" th:text="${theme.shellKind}">thymeleaf</span>
+                <span class="thumb-tag" th:if="${theme.author != null and !#strings.isEmpty(theme.author)}"
+                      th:text="${theme.author}">author</span>
+                <span class="thumb-tag" th:text="${theme.active} ? 'ON' : (${theme.builtin} ? 'WAR' : 'PACK')">ON</span>
+            </div>
+        </div>
+        <div class="resource-tip">
+            <div class="item-title" th:text="${theme.title} ?: ${theme.themeId}">title</div>
+            <p class="field-hint" th:if="${theme.description != null and !#strings.isEmpty(theme.description)}"
+               th:text="${theme.description}">description</p>
+            <dl class="prop-grid">
+                <dt>Id</dt>
+                <dd th:text="${theme.themeId}">id</dd>
+                <dt>Author</dt>
+                <dd th:text="${theme.author} ?: '—'">author</dd>
+                <dt>Shell</dt>
+                <dd th:text="${theme.shell}">modern</dd>
+                <dt>Kind</dt>
+                <dd th:text="${theme.shellKind}">thymeleaf</dd>
+                <dt>Default</dt>
+                <dd th:text="${theme.defaultSchema} ?: '—'">linen</dd>
+                <dt>Schemas</dt>
+                <dd>
+                    <ul class="tip-schema-list" th:if="${theme.schemas != null and !#lists.isEmpty(theme.schemas)}">
+                        <li th:each="schema : ${theme.schemas}">
+                            <span th:text="${schema}">linen</span>
+                            <span class="tip-default" th:if="${schema == theme.defaultSchema}">default</span>
+                        </li>
+                    </ul>
+                    <span th:if="${theme.schemas == null or #lists.isEmpty(theme.schemas)}">—</span>
+                </dd>
+                <dt th:if="${theme.originalFilename != null and !#strings.isEmpty(theme.originalFilename)}">File</dt>
+                <dd th:if="${theme.originalFilename != null and !#strings.isEmpty(theme.originalFilename)}"
+                    th:text="${theme.originalFilename}">theme.csetheme</dd>
+                <dt th:if="${theme.sizeInBytes > 0}">Size</dt>
+                <dd th:if="${theme.sizeInBytes > 0}" th:text="${theme.sizeLabel}">0 B</dd>
+            </dl>
+            <div class="editor-actions">
+                <form th:action="@{/editor/themes/activate}" method="post">
+                    <th:block th:replace="~{fragments/csrf :: field}"></th:block>
+                    <input type="hidden" name="themeId" th:value="${theme.themeId}"/>
+                    <input type="hidden" name="returnGroup" th:if="${returnGroup}" th:value="${returnGroup}"/>
+                    <button type="submit" class="btn btn-primary" th:disabled="${theme.active}">Activate</button>
+                </form>
+                <form th:if="${!theme.builtin}" th:action="@{/editor/themes/delete}" method="post">
+                    <th:block th:replace="~{fragments/csrf :: field}"></th:block>
+                    <input type="hidden" name="themeId" th:value="${theme.themeId}"/>
+                    <input type="hidden" name="returnGroup" th:if="${returnGroup}" th:value="${returnGroup}"/>
+                    <button type="submit" class="btn"
+                            th:disabled="${theme.active}"
+                            onclick="return confirm('Remove this theme pack from Mongo and disk?')">
+                        Remove
+                    </button>
+                </form>
+            </div>
+        </div>
+    </li>
+    <li class="category-row tile-row" th:fragment="category-row (cat, returnGroup)"
+        th:attr="data-kind='category',
+                 data-id=${cat.id},
+                 data-name=${cat.categoryData?.itemName},
+                 data-group-id=${'category-' + cat.id},
+                 data-can-rename='true',
+                 data-can-delete='true',
+                 data-return-group=${returnGroup},
+                 data-edit-href=@{/editor/category/edit(id=${cat.id})},
+                 data-create-page-href=@{/editor/create(categoryId=${cat.id})},
+                 data-create-album-href=@{/editor/album/create(categoryId=${cat.id})}">
+        <div class="item-thumb-wrap">
+            <div class="thumb-actions">
+                <form th:action="@{/editor/category/delete}" method="post" class="thumb-delete">
+                    <th:block th:replace="~{fragments/csrf :: field}"></th:block>
+                    <input type="hidden" name="id" th:value="${cat.id}"/>
+                    <input type="hidden" name="returnGroup" th:if="${returnGroup}" th:value="${returnGroup}"/>
+                    <button type="submit" class="thumb-action-btn thumb-delete-btn" title="Delete"
+                            onclick="return confirm('Delete this category and all its pages?')">×</button>
+                </form>
+                <button type="button" class="thumb-action-btn thumb-info-btn" title="Details"
+                        aria-label="Details">i</button>
+            </div>
+            <a class="item-thumb-link"
+               th:href="@{/editor/resources(group=${'category-' + cat.id})}">
+                <div class="app-logo-fallback"
+                     th:text="${cat.categoryData?.itemName} ?: cat.id">name</div>
+            </a>
+            <div class="thumb-tags">
+                <span class="thumb-tag thumb-tag-type">CAT</span>
+                <span class="thumb-tag"
+                      th:text="${cat.categoryData?.isActive} ? 'ON' : 'OFF'">ON</span>
+            </div>
+        </div>
+        <div class="resource-tip">
+            <a class="item-title" th:href="@{/editor/category/edit(id=${cat.id})}"
+               th:text="${cat.categoryData?.itemName}">Category Name</a>
+            <dl class="prop-grid">
+                <dt>Nav title</dt>
+                <dd th:text="${cat.categoryData?.navigationTitle} ?: '—'">nav title</dd>
+                <dt>Nav description</dt>
+                <dd th:text="${cat.categoryData?.navigationDescription} ?: '—'">description</dd>
+                <dt>Visible</dt>
+                <dd th:text="${cat.categoryData?.isVisible} ? 'Yes' : 'No'">Yes</dd>
+                <dt>Active</dt>
+                <dd th:text="${cat.categoryData?.isActive} ? 'Yes' : 'No'">Yes</dd>
+                <dt>Display count</dt>
+                <dd th:text="${cat.categoryData?.displayCount} ?: 0">0</dd>
+                <dt>Display priority</dt>
+                <dd th:text="${cat.categoryData?.displayPriority} ?: 0">0</dd>
+                <dt>ID</dt>
+                <dd th:text="${cat.id}">id</dd>
+            </dl>
+        </div>
+    </li>
+    <li class="playlist-row tile-row" th:fragment="playlist-row (playlist, returnGroup)"
+        th:attr="data-kind='playlist',
+                 data-id=${playlist.id},
+                 data-name=${playlist.playlistData?.title ?: playlist.playlistId},
+                 data-can-rename='true',
+                 data-can-delete='true',
+                 data-return-group=${returnGroup},
+                 data-edit-href=@{/editor/playlist/edit(id=${playlist.id})}">
+        <div class="item-thumb-wrap">
+            <div class="thumb-actions">
+                <form th:action="@{/editor/playlist/delete}" method="post" class="thumb-delete">
+                    <th:block th:replace="~{fragments/csrf :: field}"></th:block>
+                    <input type="hidden" name="id" th:value="${playlist.id}"/>
+                    <input type="hidden" name="returnGroup" th:if="${returnGroup}" th:value="${returnGroup}"/>
+                    <button type="submit" class="thumb-action-btn thumb-delete-btn" title="Delete"
+                            onclick="return confirm('Delete this playlist?')">×</button>
+                </form>
+                <button type="button" class="thumb-action-btn thumb-info-btn" title="Details"
+                        aria-label="Details">i</button>
+            </div>
+            <a class="item-thumb-link" th:href="@{/editor/playlist/edit(id=${playlist.id})}">
+                <div class="app-logo-fallback"
+                     th:text="${playlist.playlistData?.title} ?: playlist.playlistId">Playlist</div>
+            </a>
+            <div class="thumb-tags">
+                <span class="thumb-tag thumb-tag-type">PLAYLIST</span>
+                <span class="thumb-tag"
+                      th:text="${(playlist.playlistData?.tracks == null ? 0 : #lists.size(playlist.playlistData.tracks)) + ' tracks'}">0 tracks</span>
+            </div>
+        </div>
+        <div class="resource-tip">
+            <a class="item-title" th:href="@{/editor/playlist/edit(id=${playlist.id})}"
+               th:text="${playlist.playlistData?.title} ?: playlist.playlistId">Playlist</a>
+            <dl class="prop-grid">
+                <dt>Id</dt>
+                <dd th:text="${playlist.playlistId}">ocean-blue</dd>
+                <dt>Tracks</dt>
+                <dd th:text="${playlist.playlistData?.tracks == null ? 0 : #lists.size(playlist.playlistData.tracks)}">0</dd>
+                <dt>Embed</dt>
+                <dd><code th:text="'&lt;cse-playlist id=&quot;' + ${playlist.playlistId} + '&quot;&gt;&lt;/cse-playlist&gt;'">tag</code></dd>
+            </dl>
+        </div>
+    </li>
+    <div th:fragment="album-grid (page)" th:if="${page.album}" class="album-grid">
+        <figure th:each="img : ${page.albumImages}">
+            <a th:href="${img.full}" target="_blank" rel="noopener">
+                <img th:src="${img.src}" th:alt="${img.alt}"/>
+            </a>
+            <figcaption th:if="${img.description != null and !#strings.isEmpty(img.description)}"
+                        th:text="${img.description}">caption</figcaption>
+        </figure>
+    </div>
+</body>
+</html>

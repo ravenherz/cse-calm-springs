@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="en">
+<head th:replace="~{fragments/shared :: shared-head}"></head>
+<body>
+  <div class="editor-layout">
+    <aside class="editor-sidebar" th:replace="~{fragments/shared :: shared-editor-sidebar}"></aside>
+    <main class="editor-main resource-page">
+      <div th:if="${error}" class="error-message" th:text="${error}">
+        Error message
+      </div>
+      <div class="resource-browser">
+        <th:block th:replace="~{fragments/shared :: shared-editor-tree}"></th:block>
+        <section class="resource-pane">
+          <div class="resource-pane-header">
+            <div class="resource-pane-title">
+              <h2>New album</h2>
+            </div>
+            <th:block th:replace="~{fragments/shared :: editor-inline-back}"></th:block>
+          </div>
+
+          <form th:action="@{/editor/album/create}" method="post" class="form-panel">
+            <th:block th:replace="~{fragments/csrf :: field}"></th:block>
+            <div class="form-row">
+              <div class="form-group">
+                <label for="name">Album ID (URL name)</label>
+                <input type="text" id="name" name="name" placeholder="summer-2026" required/>
+              </div>
+              <div class="form-group">
+                <label for="categoryId">Category</label>
+                <select id="categoryId" name="categoryId">
+                  <option value="">-- No Category --</option>
+                  <option th:each="cat : ${categories}" th:value="${cat.id}"
+                          th:text="${cat.categoryData?.itemName != null ? cat.categoryData.itemName : cat.id}"
+                          th:selected="${selectedCategoryId != null and cat.id != null and selectedCategoryId.toString() == cat.id.toString()}">Category Name</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="form-row">
+              <div class="form-group">
+                <label for="title">Title</label>
+                <input type="text" id="title" name="title"/>
+              </div>
+              <div class="form-group">
+                <label for="header">Header</label>
+                <input type="text" id="header" name="header"/>
+              </div>
+            </div>
+
+            <div class="form-row">
+              <div class="form-group">
+                <label for="subHeader">Sub Header</label>
+                <input type="text" id="subHeader" name="subHeader"/>
+              </div>
+              <div class="form-group">
+                <label for="resourceGroupId">Resource group</label>
+                <select id="resourceGroupId" name="resourceGroupId" required>
+                  <option value="">-- Select a group --</option>
+                  <option th:each="group : ${resourceGroups}" th:value="${group.id}"
+                          th:text="${group.pathLabel}">Group</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="form-row">
+              <div class="form-group">
+                <label for="tags">Tags (comma separated)</label>
+                <input type="text" id="tags" name="tags" placeholder="tag1, tag2, tag3"/>
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label>Caption (Markdown/HTML)</label>
+              <textarea id="description" name="description" rows="8" class="editor-textarea"></textarea>
+            </div>
+
+            <p class="field-hint">The album has no cover of its own. Every image in the selected resource group is shown in the gallery.</p>
+
+            <div class="editor-actions">
+              <button type="submit" class="btn btn-primary">Create album</button>
+            </div>
+          </form>
+        </section>
+      </div>
+    </main>
+  </div>
+</body>
+</html>

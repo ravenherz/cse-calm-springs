@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Calm Springs setup</title>
+<link rel="icon" href="../../content-public/cse-core/images/favicon.ico" type="image/x-icon">
+<link rel="stylesheet" href="../../content-public/admin/css/editor.css">
+<link rel="stylesheet" href="css/install.css">
+<meta name="theme-color" content="#0b0c0f">
+</head>
+<body>
+<div class="editor-layout">
+  <header class="editor-sidebar">
+    <span class="sidebar-brand">
+      <img class="brand-mark" src="../../content-public/cse-core/images/favicon.ico" alt="">
+      <span class="brand-text">Calm Springs</span>
+    </span>
+  </header>
+  <main class="editor-main install-main">
+    <header class="page-header">
+      <h1 class="page-title">First boot</h1>
+    </header>
+    <p class="field-hint" id="install-lead">Connect Mongo, create the owner, then this installer removes itself.</p>
+    <p class="error-message" id="install-error" hidden></p>
+    <p class="field-hint" id="install-persist" hidden></p>
+
+    <section class="install-step" id="step-mongo" hidden>
+      <h2 class="install-step-title">MongoDB</h2>
+      <p class="field-hint" id="mongo-hint"></p>
+      <fieldset class="install-choice">
+        <legend class="install-choice-legend">How is Mongo prepared?</legend>
+        <label class="install-choice-option">
+          <input type="radio" name="mongo-path" value="exists" checked>
+          Database user already exists
+        </label>
+        <label class="install-choice-option">
+          <input type="radio" name="mongo-path" value="guide">
+          I only have a cluster admin
+        </label>
+      </fieldset>
+      <form id="form-mongo" class="form-panel">
+        <div class="install-grid">
+          <div class="form-group">
+            <label for="mongo-address">Address</label>
+            <input type="text" id="mongo-address" name="address" autocomplete="off"
+                placeholder="localhost or localhost:27017">
+          </div>
+          <div class="form-group">
+            <label for="mongo-port">Port</label>
+            <input type="text" id="mongo-port" name="port" value="27017" autocomplete="off">
+          </div>
+          <div class="form-group">
+            <label for="mongo-dbname">Database</label>
+            <input type="text" id="mongo-dbname" name="dbname" autocomplete="off">
+          </div>
+          <div class="form-group">
+            <label for="mongo-user">User</label>
+            <input type="text" id="mongo-user" name="user" autocomplete="off">
+          </div>
+          <div class="form-group">
+            <label for="mongo-password">Password</label>
+            <input type="password" id="mongo-password" name="password" autocomplete="new-password">
+          </div>
+        </div>
+        <div id="mongo-guide" hidden>
+          <p class="field-hint">Fill the fields above, plus the cluster admin below. Calm Springs never receives that admin password. Two steps: open a terminal, then paste commands into mongosh. Atlas: create the database user in Atlas, then choose “already exists”.</p>
+          <div class="install-grid">
+            <div class="form-group">
+              <label for="mongo-cluster-admin">Cluster admin (not sent to CSE)</label>
+              <input type="text" id="mongo-cluster-admin" autocomplete="off"
+                  placeholder="the MongoDB user that can create other users">
+            </div>
+          </div>
+          <div class="install-guide-step">
+            <div class="install-snippet-head">
+              <span class="install-snippet-label">Step 1 — Terminal</span>
+              <button type="button" class="btn btn-secondary" id="mongo-copy-terminal">Copy</button>
+            </div>
+            <p class="field-hint">Open Terminal (macOS/Linux) or PowerShell (Windows) on a computer that can reach this MongoDB. Paste the line below. mongosh will ask for the cluster admin password; type it even if nothing appears on screen.</p>
+            <pre class="install-snippet" id="mongo-terminal"></pre>
+          </div>
+          <div class="install-guide-step">
+            <p class="install-snippet-label">Step 2 — Inside mongosh</p>
+            <p class="field-hint">When the prompt looks like <code>&gt;</code> or <code>admin&gt;</code>, you are inside mongosh. Paste <strong>one chunk at a time</strong> and wait for the prompt before the next. Pasting all three together will fail.</p>
+            <div class="install-guide-chunk">
+              <div class="install-snippet-head">
+                <span class="install-snippet-label">2a — Select the database</span>
+                <button type="button" class="btn btn-secondary" id="mongo-copy-use">Copy</button>
+              </div>
+              <pre class="install-snippet" id="mongo-use"></pre>
+            </div>
+            <div class="install-guide-chunk">
+              <div class="install-snippet-head">
+                <span class="install-snippet-label">2b — Create the site user</span>
+                <button type="button" class="btn btn-secondary" id="mongo-copy-create">Copy</button>
+              </div>
+              <pre class="install-snippet" id="mongo-create"></pre>
+            </div>
+            <div class="install-guide-chunk">
+              <div class="install-snippet-head">
+                <span class="install-snippet-label">2c — Leave mongosh</span>
+                <button type="button" class="btn btn-secondary" id="mongo-copy-exit">Copy</button>
+              </div>
+              <p class="field-hint">Then come back here and press Connect.</p>
+              <pre class="install-snippet" id="mongo-exit"></pre>
+            </div>
+          </div>
+        </div>
+        <button type="submit" class="btn btn-primary">Connect</button>
+      </form>
+    </section>
+
+    <section class="install-step" id="step-owner" hidden>
+      <h2 class="install-step-title">Owner</h2>
+      <form id="form-owner" class="form-panel">
+        <div class="form-group">
+          <label for="owner-login">Login</label>
+          <input type="text" id="owner-login" name="login" autocomplete="username">
+        </div>
+        <div class="form-group">
+          <label for="owner-email">Email</label>
+          <input type="email" id="owner-email" name="email" autocomplete="email">
+        </div>
+        <div class="form-group">
+          <label for="owner-password">Password</label>
+          <input type="password" id="owner-password" name="password" autocomplete="new-password">
+        </div>
+        <div class="form-group">
+          <label for="owner-retype">Password again</label>
+          <input type="password" id="owner-retype" name="passwordRetype" autocomplete="new-password">
+        </div>
+        <button type="submit" class="btn btn-primary">Create owner</button>
+      </form>
+    </section>
+
+    <section class="install-step" id="step-finish" hidden>
+      <h2 class="install-step-title">Site</h2>
+      <p class="field-hint" id="finish-existing" hidden>This database already has an owner. Keep the existing public copy.</p>
+      <form id="form-finish" class="form-panel">
+        <div id="finish-personal">
+          <p class="field-hint">What should visitors see? Leave a field blank to hide that line.</p>
+          <div class="install-grid">
+            <div class="form-group">
+              <label for="site-title">Site title</label>
+              <input type="text" id="site-title" name="company-title" autocomplete="off"
+                  required placeholder="Your site name">
+            </div>
+            <div class="form-group">
+              <label for="company-email">Email</label>
+              <input type="text" id="company-email" name="company-email" autocomplete="off"
+                  placeholder="hello@example.com">
+            </div>
+            <div class="form-group">
+              <label for="company-phone">Phone</label>
+              <input type="text" id="company-phone" name="company-phone" autocomplete="off">
+            </div>
+            <div class="form-group">
+              <label for="company-address">Address</label>
+              <input type="text" id="company-address" name="company-address" autocomplete="off">
+            </div>
+            <div class="form-group install-grid-span">
+              <label for="company-social">Social</label>
+              <input type="text" id="company-social" name="company-social" autocomplete="off"
+                  placeholder="vk:handle soundcloud:handle">
+            </div>
+            <div class="form-group">
+              <label for="copyright-holder">Copyright holder</label>
+              <input type="text" id="copyright-holder" name="copyright-holder" autocomplete="off">
+            </div>
+            <div class="form-group">
+              <label for="copyright-since">Copyright since</label>
+              <input type="text" id="copyright-since" name="copyright-since" autocomplete="off"
+                  placeholder="year">
+            </div>
+            <div class="form-group install-grid-span">
+              <label for="copyright-comment">Copyright comment</label>
+              <input type="text" id="copyright-comment" name="copyright-comment" autocomplete="off"
+                  placeholder="All rights reserved">
+            </div>
+            <div class="form-group">
+              <label for="builder-title">Built-by name</label>
+              <input type="text" id="builder-title" name="builder-title" autocomplete="off">
+            </div>
+            <div class="form-group">
+              <label for="builder-refer">Built-by URL</label>
+              <input type="text" id="builder-refer" name="builder-refer" autocomplete="off"
+                  placeholder="https://">
+            </div>
+            <div class="form-group install-grid-span">
+              <label for="welcome-title">Welcome title</label>
+              <input type="text" id="welcome-title" name="welcome-title" autocomplete="off">
+            </div>
+            <div class="form-group install-grid-span">
+              <label for="welcome-message">Welcome message</label>
+              <textarea id="welcome-message" name="welcome-message" class="editor-textarea" rows="3"></textarea>
+            </div>
+            <div class="form-group install-grid-span">
+              <label for="welcome-description">Welcome description</label>
+              <textarea id="welcome-description" name="welcome-description" class="editor-textarea" rows="4"></textarea>
+            </div>
+          </div>
+        </div>
+        <button type="submit" class="btn btn-primary" id="finish-submit">Finish</button>
+      </form>
+    </section>
+  </main>
+</div>
+<script src="js/install.js"></script>
+</body>
+</html>

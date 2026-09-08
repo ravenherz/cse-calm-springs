@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="en">
+<head th:replace="~{fragments/shared :: shared-head}"></head>
+<body>
+  <div class="editor-layout">
+    <aside class="editor-sidebar" th:replace="~{fragments/shared :: shared-editor-sidebar}"></aside>
+    <main class="editor-main">
+      <header class="page-header">
+        <h1 class="page-title">Site data</h1>
+        <div class="page-header-actions">
+          <a class="btn btn-primary" th:if="${dbReady}" th:href="@{/editor/site-data/export}">Export</a>
+        </div>
+      </header>
+
+      <div th:if="${error}" class="error-message" th:text="${error}">Error</div>
+
+      <section class="form-panel">
+        <h2 class="settings-context-title">Export</h2>
+        <p class="field-hint">
+          Downloads the whole CMS database as a <code>.csesite</code> zip
+          (JSON collections, string ids). Media and password hashes are inside.
+          Instance secrets (<code>secret-dbms-*.json</code>) and live login
+          sessions are not.
+        </p>
+        <p class="field-hint" th:if="${!dbReady}">Connect the database before exporting.</p>
+        <div class="editor-actions" th:if="${dbReady}">
+          <a class="btn btn-primary" th:href="@{/editor/site-data/export}">Download export</a>
+        </div>
+      </section>
+
+      <section class="form-panel">
+        <h2 class="settings-context-title">Import</h2>
+        <p class="field-hint">
+          Replaces CMS documents with a <code>.csesite</code> archive (same file
+          export writes). Instance secrets stay. You will be signed out; sign in
+          with an account from the archive. Disk cache and exploded packs are
+          not rebuilt.
+        </p>
+        <form th:if="${dbReady}" th:action="@{/editor/site-data/import}" method="post"
+              enctype="multipart/form-data" class="upload-form" id="siteImportForm">
+          <th:block th:replace="~{fragments/csrf :: field}"></th:block>
+          <div class="form-group">
+            <label for="site-file">Archive</label>
+            <input type="file" id="site-file" name="file" accept=".csesite" required/>
+          </div>
+          <div class="form-group checkbox-group">
+            <label>
+              <input type="checkbox" name="confirm" value="replace" required/>
+              Replace all CMS documents on this instance
+            </label>
+          </div>
+          <div class="upload-submit">
+            <button type="submit" class="btn btn-primary" id="siteImportButton">Import</button>
+            <div class="upload-progress" id="siteImportProgress" hidden>
+              <div class="upload-progress-fill" id="siteImportProgressFill"></div>
+              <div class="upload-progress-label" id="siteImportProgressLabel">0%</div>
+            </div>
+          </div>
+        </form>
+        <p class="field-hint" th:if="${!dbReady}">Connect the database before importing.</p>
+      </section>
+    </main>
+  </div>
+  <script>
+    (function () {
+      var form = document.getElementById('siteImportForm');
+      var button = document.getElementById('siteImportButton');
+      var progress = document.getElementById('siteImportProgress');
+      var fill = document.getElementById('siteImportProgressFill');
+      var label = document.getElementById('siteImportProgressLabel');
+      if (!form || !button || !progress || !fill || !label) {
+        return;
+      }
+
+      function setProgress(percent, text) {
+        fill.style.width = Math.max(0, Math.min(100, percent)) + '%';
+        label.textContent = text;
+      }
+
+      function setFormBusy(busy) {
+        form.classList.toggle('is-busy', busy);
+        var controls = form.querySelectorAll('input, textarea, select, button');
+        for (var i = 0; i < controls.length; i++) {
+          controls[i].disabled = busy;
+        }
+      }
+
+      function showProgress() {
+        button.hidden = true;
+        progress.hidden = false;
+        progress.classList.remove('is-processing');
+        setProgress(0, '0%');
+      }
+
+      function hideProgress() {
+        progress.hidden = true;
+        progress.classList.remove('is-processing');
+        fill.style.width = '';
+        label.textContent = '';
+        button.hidden = false;
+        setFormBusy(false);
+      }
+
+      function showError(message) {
+        var main = document.querySelector('.editor-main');
+        var existing = main ? main.querySelector(':scope > .error-message') : null;
+        if (!existing) {
+          existing = document.createElement('div');
+          existing.className = 'error-message';
+          var header = main ? main.querySelector('.page-header') : null;
+          if (header) {
+            header.insertAdjacentElement('afterend', existing);
+          } else if (main) {
+            main.prepend(existing);
+          }
+        }
+        existing.textContent = message;
+        existing.hidden = false;
+      }
+
+      function samePath(left, right) {
+        try {
+          return new URL(left, window.location.origin).pathname
+              === new URL(right, window.location.origin).pathname;
+        } catch (e) {
+          return left === right;
+        }
+      }
+
+      form.addEventListener('submit', function (e) {
+        e.preventDefault();
+        if (form.classList.contains('is-busy')) {
+          return;
+        }
+        var payload = new FormData(form);
+        setFormBusy(true);
+        showProgress();
+
+        var xhr = new XMLHttpRequest();
+        xhr.open(form.method || 'POST', form.action);
+        xhr.upload.addEventListener('progress', function (event) {
+          if (!event.lengthComputable) {
+            progress.classList.add('is-processing');
+            fill.style.width = '';
+            label.textContent = 'Uploading';
+            return;
+          }
+          progress.classList.remove('is-processing');
+          var percent = Math.round((event.loaded / event.total) * 100);
+          setProgress(percent, percent + '%');
+          if (percent >= 100) {
+            label.textContent = 'Processing';
+          }
+        });
+        xhr.upload.addEventListener('load', function () {
+          progress.classList.remove('is-processing');
+          setProgress(100, 'Processing');
+        });
+        xhr.addEventListener('load', function () {
+          if (xhr.status >= 200 && xhr.status < 300 && xhr.responseURL
+              && !samePath(xhr.responseURL, form.action)) {
+            window.location.href = xhr.responseURL;
+            return;
+          }
+          var message = 'Import failed';
+          try {
+            var doc = new DOMParser().parseFromString(xhr.responseText, 'text/html');
+            var serverError = doc.querySelector('.error-message');
+            if (serverError && serverError.textContent.trim()) {
+              message = serverError.textContent.trim();
+            }
+          } catch (err) {
+          }
+          showError(message);
+          hideProgress();
+        });
+        xhr.addEventListener('error', function () {
+          showError('Import failed');
+          hideProgress();
+        });
+        xhr.addEventListener('abort', function () {
+          hideProgress();
+        });
+        xhr.send(payload);
+      });
+      window.addEventListener('pageshow', function () {
+        hideProgress();
+      });
+    })();
+  </script>
+</body>
+</html>

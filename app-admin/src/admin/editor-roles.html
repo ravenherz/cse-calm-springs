@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="en">
+<head th:replace="~{fragments/shared :: shared-head}"></head>
+<body>
+  <div class="editor-layout">
+    <aside class="editor-sidebar" th:replace="~{fragments/shared :: shared-editor-sidebar}"></aside>
+    <main class="editor-main roles-page">
+      <p class="field-hint">Exactly one owner. Transfer it from the owner row; that account becomes ADMIN. Only ADMIN and OWNER open the editor.</p>
+      <div th:if="${transferred}" class="success-message">Ownership transferred.</div>
+      <div th:if="${saved and !transferred}" class="success-message">Role saved.</div>
+      <div th:if="${error}" class="error-message" th:text="${error}">Error</div>
+
+      <section class="settings-context">
+        <h2 class="settings-context-title">Access</h2>
+        <table class="settings-table roles-matrix">
+          <thead>
+            <tr>
+              <th scope="col">Surface</th>
+              <th scope="col">Guest</th>
+              <th scope="col">Member</th>
+              <th scope="col">Moderator</th>
+              <th scope="col">Admin</th>
+              <th scope="col">Owner</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <th scope="row">Public site</th>
+              <td class="is-yes">yes</td>
+              <td class="is-yes">yes</td>
+              <td class="is-yes">yes</td>
+              <td class="is-yes">yes</td>
+              <td class="is-yes">yes</td>
+            </tr>
+            <tr>
+              <th scope="row">Editor /editor</th>
+              <td>—</td>
+              <td>—</td>
+              <td>—</td>
+              <td class="is-yes">yes</td>
+              <td class="is-yes">yes</td>
+            </tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section class="settings-context">
+        <h2 class="settings-context-title">Accounts</h2>
+        <div th:if="${accounts.empty}" class="empty-message">
+          No accounts found.
+        </div>
+        <ul class="item-list" th:unless="${accounts.empty}">
+          <li th:each="acc : ${accounts}">
+            <div class="item-info">
+              <div class="item-title">
+                <span th:text="${acc.login} ?: '[null]'">Login</span>
+                <span class="role-you" th:if="${acc.self}">you</span>
+              </div>
+              <p class="role-email" th:text="${acc.emailAddress} ?: '—'" th:title="${acc.id}">email</p>
+            </div>
+            <form th:if="${acc.canEdit}" th:action="@{/editor/roles/save}" method="post"
+                  class="item-form role-assign">
+              <th:block th:replace="~{fragments/csrf :: field}"></th:block>
+              <input type="hidden" name="id" th:value="${acc.id}"/>
+              <label class="visually-hidden" th:for="${'level-' + acc.id}">Role</label>
+              <select name="level" th:id="${'level-' + acc.id}">
+                <option th:each="lvl : ${acc.assignableLevels}"
+                        th:value="${lvl}"
+                        th:text="${lvl}"
+                        th:selected="${lvl == acc.level}">LEVEL</option>
+              </select>
+              <button type="submit" class="btn btn-primary">Save</button>
+            </form>
+            <form th:if="${canTransfer and acc.level == 'OWNER' and !transferTargets.empty}"
+                  th:action="@{/editor/roles/transfer}" method="post" class="item-form role-assign role-transfer">
+              <th:block th:replace="~{fragments/csrf :: field}"></th:block>
+              <label class="visually-hidden" for="transfer-id">New owner</label>
+              <select name="id" id="transfer-id" required>
+                <option value="" disabled selected>Transfer to…</option>
+                <option th:each="t : ${transferTargets}"
+                        th:value="${t.id}"
+                        th:text="${t.login + ' · ' + t.level}">account</option>
+              </select>
+              <button type="submit" class="btn btn-primary">Transfer</button>
+            </form>
+            <p th:if="${canTransfer and acc.level == 'OWNER' and transferTargets.empty}"
+               class="field-hint role-locked">Need another account</p>
+            <p th:if="${!canTransfer and acc.level == 'OWNER'}" class="field-hint role-locked">Owner</p>
+          </li>
+        </ul>
+      </section>
+    </main>
+  </div>
+  <script>
+    document.querySelectorAll('.role-transfer').forEach(function (form) {
+      form.addEventListener('submit', function (event) {
+        var select = form.querySelector('select[name="id"]');
+        if (!select || !select.value) {
+          event.preventDefault();
+          return;
+        }
+        if (!confirm('Transfer ownership to ' + (select.options[select.selectedIndex].text || 'this account')
+            + '? You will become ADMIN.')) {
+          event.preventDefault();
+        }
+      });
+    });
+  </script>
+</body>
+</html>

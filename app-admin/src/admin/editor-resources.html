@@ -1,0 +1,607 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="en">
+<head th:replace="~{fragments/shared :: shared-head}"></head>
+<body>
+<div class="editor-layout">
+  <aside class="editor-sidebar" th:replace="~{fragments/shared :: shared-editor-sidebar}"></aside>
+  <main class="editor-main resource-page">
+    <div th:if="${error}" class="error-message" th:text="${error}">
+      Error message
+    </div>
+
+    <div class="resource-browser">
+      <th:block th:replace="~{fragments/shared :: shared-editor-tree}"></th:block>
+      <section class="resource-pane" th:if="${selectedGroup != null}">
+        <div class="resource-pane-header">
+          <th:block th:if="${selectedGroup.locked}">
+            <th:block th:replace="~{fragments/shared :: resource-lock}"></th:block>
+          </th:block>
+          <div class="resource-pane-title">
+            <h2 th:text="${selectedGroup.pathLabel}">Unsorted</h2>
+            <span class="group-summary" th:unless="${selectedGroup.virtual or selectedGroup.categoryNode}">
+              <span th:text="${selectedGroup.descendantFileCount}">0</span> files,
+              <span th:text="${selectedGroup.descendantTotalSizeLabel}">0 bytes</span>
+            </span>
+          </div>
+        </div>
+
+        <div th:if="${paneApps != null}" class="tile-grid-wrap">
+          <ul class="item-list tile-grid">
+            <li class="resource-plus-tile">
+              <form th:action="@{/editor/apps/upload}" method="post" enctype="multipart/form-data"
+                    class="resource-plus-form" id="packUploadForm">
+                <th:block th:replace="~{fragments/csrf :: field}"></th:block>
+                <input type="hidden" name="returnGroup" th:value="${selectedGroup.id}"/>
+                <input type="hidden" name="slug" id="packSlug"/>
+                <div class="resource-plus-drop" id="packDropZone">
+                  <span class="group-toggle resource-plus-mark" aria-hidden="true"></span>
+                  <span class="visually-hidden">Upload app</span>
+                  <input type="file" id="packFile" name="file" accept=".cseapp" required/>
+                </div>
+              </form>
+            </li>
+            <th:block th:each="app : ${paneApps}">
+              <li th:replace="~{fragments/shared :: app-row(app=${app}, returnGroup=${selectedGroup.id})}"></li>
+            </th:block>
+          </ul>
+        </div>
+
+        <div th:if="${paneThemes != null}" class="tile-grid-wrap">
+          <form id="reorderForm" th:action="@{/editor/themes/reorder}" method="post" hidden>
+            <th:block th:replace="~{fragments/csrf :: field}"></th:block>
+            <input type="hidden" name="returnGroup" th:value="${selectedGroup.id}"/>
+          </form>
+          <ul class="item-list tile-grid" id="themeGrid">
+            <li class="resource-plus-tile">
+              <form th:action="@{/editor/themes/upload}" method="post" enctype="multipart/form-data"
+                    class="resource-plus-form" id="packUploadForm">
+                <th:block th:replace="~{fragments/csrf :: field}"></th:block>
+                <input type="hidden" name="returnGroup" th:value="${selectedGroup.id}"/>
+                <div class="resource-plus-drop" id="packDropZone">
+                  <span class="group-toggle resource-plus-mark" aria-hidden="true"></span>
+                  <span class="visually-hidden">Upload theme</span>
+                  <input type="file" id="packFile" name="file" accept=".csetheme" required/>
+                </div>
+              </form>
+            </li>
+            <th:block th:each="theme : ${paneThemes}">
+              <li th:replace="~{fragments/shared :: theme-row(theme=${theme}, returnGroup=${selectedGroup.id})}"></li>
+            </th:block>
+          </ul>
+        </div>
+
+        <div th:if="${panePlaylists != null}" class="tile-grid-wrap">
+          <ul class="item-list tile-grid">
+            <li class="resource-plus-tile">
+              <a class="resource-plus-form" th:href="@{/editor/playlist/create}">
+                <span class="resource-plus-drop">
+                  <span class="group-toggle resource-plus-mark" aria-hidden="true"></span>
+                  <span class="visually-hidden">New playlist</span>
+                </span>
+              </a>
+            </li>
+            <th:block th:each="playlist : ${panePlaylists}">
+              <li th:replace="~{fragments/shared :: playlist-row(playlist=${playlist}, returnGroup=${selectedGroup.id})}"></li>
+            </th:block>
+          </ul>
+        </div>
+
+        <div th:if="${paneCategories != null}" class="tile-grid-wrap">
+          <ul class="item-list tile-grid">
+            <li class="resource-plus-tile">
+              <a class="resource-plus-form" th:href="@{/editor/category/create}">
+                <span class="resource-plus-drop">
+                  <span class="group-toggle resource-plus-mark" aria-hidden="true"></span>
+                  <span class="visually-hidden">New category</span>
+                </span>
+              </a>
+            </li>
+            <th:block th:each="cat : ${paneCategories}">
+              <li th:replace="~{fragments/shared :: category-row(cat=${cat}, returnGroup='content-categories')}"></li>
+            </th:block>
+          </ul>
+        </div>
+
+        <div th:if="${panePages != null}" class="tile-grid-wrap">
+          <ul class="item-list tile-grid">
+            <li class="resource-plus-tile">
+              <a class="resource-plus-form"
+                 th:href="@{/editor/create(categoryId=${selectedGroup.categoryObjectId()})}">
+                <span class="resource-plus-drop">
+                  <span class="group-toggle resource-plus-mark" aria-hidden="true"></span>
+                  <span class="visually-hidden">New page</span>
+                </span>
+              </a>
+            </li>
+            <th:block th:each="item : ${panePages}">
+              <li th:replace="~{fragments/shared :: page-row(item=${item}, returnGroup=${selectedGroup.id})}"></li>
+            </th:block>
+          </ul>
+        </div>
+
+        <ul class="item-list" th:if="${paneApps == null and paneThemes == null and panePlaylists == null and paneCategories == null and panePages == null}">
+          <li class="resource-plus-tile" th:if="${selectedGroup.canAcceptFiles()}">
+            <form th:action="@{/editor/resources/upload}" method="post" enctype="multipart/form-data"
+                  class="resource-plus-form" id="resourceUploadForm">
+              <th:block th:replace="~{fragments/csrf :: field}"></th:block>
+              <input type="hidden" id="resourceId" name="resourceId"/>
+              <input type="hidden" id="metadata" name="metadata"/>
+              <input type="hidden" name="groupId"
+                     th:value="${selectedGroup.id}"/>
+              <input type="hidden" name="returnGroup" th:value="${selectedGroup.id}"/>
+              <div class="resource-plus-drop" id="dropZone">
+                <span class="group-toggle resource-plus-mark" aria-hidden="true"></span>
+                <span class="visually-hidden">Upload resource</span>
+                <input type="file" id="file" name="file"
+                       accept=".jpg,.jpeg,.png,.heic,.heif,.mp3,image/heic,image/heif" required/>
+              </div>
+              <div class="upload-progress" id="uploadProgress" hidden>
+                <div class="upload-progress-fill" id="uploadProgressFill"></div>
+                <div class="upload-progress-label" id="uploadProgressLabel">0%</div>
+              </div>
+            </form>
+          </li>
+          <li class="resource-folder-tile tile-row"
+              th:each="child : ${selectedGroup.children}"
+              th:classappend="${child.locked} ? 'is-locked'"
+              th:attr="data-kind=${child.categoryNode ? 'category' : (child.virtual ? 'folder' : 'group')},
+                       data-id=${child.categoryNode ? child.categoryObjectId() : child.id},
+                       data-group-id=${child.id},
+                       data-name=${child.humanReadableId},
+                       data-parent-id=${selectedGroup.id},
+                       data-can-create=${child.canCreateChild()},
+                       data-can-rename=${child.canRename() or child.canEditCategory()},
+                       data-can-delete=${child.canDelete() or child.canDeleteCategory()},
+                       data-accept-files=${child.canAcceptFiles()},
+                       data-can-drag=${child.canMove()},
+                       draggable=${child.canMove()},
+                       data-return-group=${selectedGroup.id},
+                       data-create-href=${child.canCreateCategory() ? ((cseContextPath == '/' ? '' : (cseContextPath != null ? cseContextPath : '')) + '/editor/category/create') : ''},
+                       data-create-page-href=${child.canCreatePage() ? ((cseContextPath == '/' ? '' : (cseContextPath != null ? cseContextPath : '')) + child.pageCreatePath()) : ''},
+                       data-create-page-menu=${child.canCreatePageMenu()},
+                       data-create-album-href=${child.canCreatePage() ? ((cseContextPath == '/' ? '' : (cseContextPath != null ? cseContextPath : '')) + child.albumCreatePath()) : ''},
+                       data-create-album-menu=${child.canCreatePageMenu()},
+                       data-edit-href=${child.canEditCategory() ? ((cseContextPath == '/' ? '' : (cseContextPath != null ? cseContextPath : '')) + child.categoryEditPath()) : ''}">
+            <th:block th:if="${child.locked}">
+              <th:block th:replace="~{fragments/shared :: resource-lock}"></th:block>
+            </th:block>
+            <div class="thumb-actions" th:if="${child.canDelete()}">
+              <form th:action="@{/editor/resources/group/delete}" method="post" class="thumb-delete">
+                <th:block th:replace="~{fragments/csrf :: field}"></th:block>
+                <input type="hidden" name="groupId" th:value="${child.id}"/>
+                <input type="hidden" name="returnGroup" th:value="${selectedGroup.id}"/>
+                <button type="submit" class="thumb-action-btn thumb-delete-btn" title="Delete"
+                        draggable="false"
+                        onclick="return confirm('Delete this group and all its resources?')">×</button>
+              </form>
+            </div>
+            <a class="resource-folder-link"
+               th:if="${child.href != null}"
+               th:attr="draggable=${child.canMove()} ? 'true' : 'false'"
+               th:href="${(cseContextPath == '/' ? '' : (cseContextPath != null ? cseContextPath : '')) + child.href}">
+              <span class="resource-folder-glyph" aria-hidden="true">
+                <svg class="resource-folder-mark" viewBox="0 0 24 24" focusable="false">
+                  <path d="M2.25 12.75V12A2.25 2.25 0 0 1 4.5 9.75h15A2.25 2.25 0 0 1 21.75 12v.75m-8.69-6.44-2.12-2.12a1.5 1.5 0 0 0-1.061-.44H4.5A2.25 2.25 0 0 0 2.25 6v12a2.25 2.25 0 0 0 2.25 2.25h15A2.25 2.25 0 0 0 21.75 18V9.75a2.25 2.25 0 0 0-2.25-2.25H11.81a1.5 1.5 0 0 1-1.061-.44Z"/>
+                </svg>
+              </span>
+              <span class="resource-folder-name" th:text="${child.humanReadableId}">Folder</span>
+              <span class="group-summary" th:unless="${child.virtual or child.categoryNode}">
+                <span th:text="${child.descendantFileCount}">0</span> files,
+                <span th:text="${child.descendantTotalSizeLabel}">0 bytes</span>
+              </span>
+            </a>
+            <a class="resource-folder-link"
+               th:unless="${child.href != null}"
+               th:attr="draggable=${child.canMove()} ? 'true' : 'false'"
+               th:href="@{/editor/resources(group=${child.id})}">
+              <span class="resource-folder-glyph" aria-hidden="true">
+                <svg class="resource-folder-mark" viewBox="0 0 24 24" focusable="false">
+                  <path d="M2.25 12.75V12A2.25 2.25 0 0 1 4.5 9.75h15A2.25 2.25 0 0 1 21.75 12v.75m-8.69-6.44-2.12-2.12a1.5 1.5 0 0 0-1.061-.44H4.5A2.25 2.25 0 0 0 2.25 6v12a2.25 2.25 0 0 0 2.25 2.25h15A2.25 2.25 0 0 0 21.75 18V9.75a2.25 2.25 0 0 0-2.25-2.25H11.81a1.5 1.5 0 0 1-1.061-.44Z"/>
+                </svg>
+              </span>
+              <span class="resource-folder-name" th:text="${child.humanReadableId}">Folder</span>
+              <span class="group-summary">
+                <span th:text="${child.descendantFileCount}">0</span> files,
+                <span th:text="${child.descendantTotalSizeLabel}">0 bytes</span>
+              </span>
+            </a>
+          </li>
+          <li class="resource-folder-tile resource-page-tile tile-row"
+              th:each="file : ${selectedGroup.treeFiles}"
+              th:if="${file.page}"
+              th:with="ctx=${cseContextPath == '/' ? '' : (cseContextPath != null ? cseContextPath : '')}"
+              th:attr="data-kind=${file.kind()},
+                       data-id=${file.key != null ? file.key : file.id},
+                       data-key=${file.key},
+                       data-name=${file.name},
+                       data-can-rename=${file.canRename()},
+                       data-can-delete=${file.canDelete()},
+                       data-can-activate=${file.canActivate()},
+                       data-return-group=${selectedGroup.id},
+                       data-edit-href=${file.canEdit() ? ctx + file.href : ''},
+                       data-open-href=${file.canOpen() ? ctx + file.href : ''}">
+            <a class="resource-folder-link" draggable="false"
+               th:href="${(cseContextPath == '/' ? '' : (cseContextPath != null ? cseContextPath : '')) + file.href}">
+              <span class="resource-folder-glyph" aria-hidden="true">
+                <svg class="resource-page-mark" viewBox="0 0 24 24" focusable="false">
+                  <path d="M7 3.75h6.5L19.5 10v10.25H7z"/>
+                  <path d="M13.5 3.75V10H19.5"/>
+                </svg>
+              </span>
+              <span class="resource-folder-name" th:text="${file.name}">Page</span>
+            </a>
+          </li>
+          <th:block th:each="resource : ${selectedGroup.resources}">
+            <li th:replace="~{fragments/shared :: resource-row(resource=${resource}, returnGroup=${selectedGroup.id})}"></li>
+          </th:block>
+        </ul>
+      </section>
+    </div>
+  </main>
+
+  <script>
+      var dropZone = document.getElementById('dropZone');
+      var fileInput = document.getElementById('file');
+      var resourceIdInput = document.getElementById('resourceId');
+      var uploadForm = document.getElementById('resourceUploadForm');
+
+      function slugResourceId(fileName) {
+          var lastDot = fileName.lastIndexOf('.');
+          var baseName = lastDot > 0 ? fileName.substring(0, lastDot) : fileName;
+          return baseName.toLowerCase().replace(/[^a-z0-9-]/g, '_');
+      }
+
+      function startUpload(file) {
+          resourceIdInput.value = slugResourceId(file.name);
+          if (!resourceIdInput.value) {
+              showError('Resource ID is required');
+              return;
+          }
+          extractMetadataThenSubmit(file);
+      }
+
+      if (dropZone && fileInput) {
+          dropZone.addEventListener('click', function () {
+              fileInput.click();
+          });
+          dropZone.addEventListener('dragover', function (e) {
+              if (document.body.classList.contains('is-resource-drag')
+                      || document.body.classList.contains('is-group-drag')) {
+                  return;
+              }
+              e.preventDefault();
+              dropZone.classList.add('dragover');
+              if (uploadForm) {
+                  uploadForm.classList.add('is-dragover');
+              }
+          });
+          dropZone.addEventListener('dragleave', function () {
+              dropZone.classList.remove('dragover');
+              if (uploadForm) {
+                  uploadForm.classList.remove('is-dragover');
+              }
+          });
+          dropZone.addEventListener('drop', function (e) {
+              e.preventDefault();
+              dropZone.classList.remove('dragover');
+              if (uploadForm) {
+                  uploadForm.classList.remove('is-dragover');
+              }
+              if (document.body.classList.contains('is-resource-drag')
+                      || document.body.classList.contains('is-group-drag')) {
+                  return;
+              }
+              if (e.dataTransfer.files.length > 0) {
+                  fileInput.files = e.dataTransfer.files;
+                  startUpload(e.dataTransfer.files[0]);
+              }
+          });
+          fileInput.addEventListener('change', function () {
+              if (this.files.length > 0) {
+                  startUpload(this.files[0]);
+              }
+          });
+      }
+
+      function extractMetadataThenSubmit(file) {
+          var metadata = {};
+          var extension = file.name.split('.').pop().toLowerCase();
+          var fileUrl = URL.createObjectURL(file);
+          var submitted = false;
+
+          function submitNow() {
+              if (submitted || !uploadForm) {
+                  return;
+              }
+              submitted = true;
+              document.getElementById('metadata').value = JSON.stringify(metadata);
+              URL.revokeObjectURL(fileUrl);
+              uploadForm.requestSubmit();
+          }
+
+          if (['jpg', 'jpeg', 'png', 'heic', 'heif'].indexOf(extension) !== -1) {
+              var img = new Image();
+              img.onload = function () {
+                  metadata.width = this.width;
+                  metadata.height = this.height;
+                  submitNow();
+              };
+              img.onerror = submitNow;
+              img.src = fileUrl;
+              return;
+          }
+          if (extension === 'mp3') {
+              var audio = new Audio();
+              audio.addEventListener('loadedmetadata', function () {
+                  metadata.duration = Math.round(audio.duration);
+                  submitNow();
+              });
+              audio.addEventListener('error', submitNow);
+              audio.src = fileUrl;
+              return;
+          }
+          submitNow();
+      }
+
+      (function () {
+          var form = document.getElementById('packUploadForm');
+          var dropZone = document.getElementById('packDropZone');
+          var fileInput = document.getElementById('packFile');
+          var slugInput = document.getElementById('packSlug');
+          if (!form || !dropZone || !fileInput) {
+              return;
+          }
+          var accept = (fileInput.getAttribute('accept') || '').toLowerCase();
+
+          function allowed(name) {
+              var lower = name.toLowerCase();
+              if (accept.indexOf('.cseapp') !== -1) {
+                  return lower.endsWith('.cseapp');
+              }
+              if (accept.indexOf('.csetheme') !== -1) {
+                  return lower.endsWith('.csetheme');
+              }
+              return true;
+          }
+
+          function rejectMessage() {
+              return accept.indexOf('.cseapp') !== -1
+                      ? 'Only .cseapp files are accepted'
+                      : 'Only .csetheme files are accepted';
+          }
+
+          function stemSlug(fileName) {
+              var lastDot = fileName.lastIndexOf('.');
+              var baseName = lastDot > 0 ? fileName.substring(0, lastDot) : fileName;
+              return baseName.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+          }
+
+          function startPackUpload(file) {
+              if (!allowed(file.name)) {
+                  showError(rejectMessage());
+                  fileInput.value = '';
+                  return;
+              }
+              if (slugInput) {
+                  slugInput.value = stemSlug(file.name);
+              }
+              form.requestSubmit();
+          }
+
+          dropZone.addEventListener('click', function () {
+              fileInput.click();
+          });
+          dropZone.addEventListener('dragover', function (e) {
+              if (document.body.classList.contains('is-resource-drag')
+                      || document.body.classList.contains('is-group-drag')) {
+                  return;
+              }
+              e.preventDefault();
+              dropZone.classList.add('dragover');
+              form.classList.add('is-dragover');
+          });
+          dropZone.addEventListener('dragleave', function () {
+              dropZone.classList.remove('dragover');
+              form.classList.remove('is-dragover');
+          });
+          dropZone.addEventListener('drop', function (e) {
+              e.preventDefault();
+              dropZone.classList.remove('dragover');
+              form.classList.remove('is-dragover');
+              if (document.body.classList.contains('is-resource-drag')
+                      || document.body.classList.contains('is-group-drag')) {
+                  return;
+              }
+              if (e.dataTransfer.files.length > 0) {
+                  fileInput.files = e.dataTransfer.files;
+                  startPackUpload(e.dataTransfer.files[0]);
+              }
+          });
+          fileInput.addEventListener('change', function () {
+              if (this.files.length > 0) {
+                  startPackUpload(this.files[0]);
+              }
+          });
+      })();
+
+      function showError(message) {
+          var existing = document.querySelector('.error-message');
+          if (!existing) {
+              existing = document.createElement('div');
+              existing.className = 'error-message';
+              var main = document.querySelector('.editor-main');
+              if (main) {
+                  main.insertBefore(existing, main.firstChild);
+              }
+          }
+          existing.textContent = message;
+          existing.hidden = false;
+      }
+
+      (function () {
+          var form = document.getElementById('resourceUploadForm');
+          var progress = document.getElementById('uploadProgress');
+          var fill = document.getElementById('uploadProgressFill');
+          var label = document.getElementById('uploadProgressLabel');
+          if (!form || !progress || !fill || !label) {
+              return;
+          }
+
+          function setProgress(percent, text) {
+              fill.style.width = Math.max(0, Math.min(100, percent)) + '%';
+              label.textContent = text;
+          }
+
+          function setFormBusy(busy) {
+              form.classList.toggle('is-busy', busy);
+              var controls = form.querySelectorAll('input, textarea, select, button');
+              for (var i = 0; i < controls.length; i++) {
+                  controls[i].disabled = busy;
+              }
+          }
+
+          function showProgress() {
+              progress.hidden = false;
+              progress.classList.remove('is-processing');
+              setProgress(0, '0%');
+          }
+
+          function hideProgress() {
+              progress.hidden = true;
+              progress.classList.remove('is-processing');
+              fill.style.width = '';
+              label.textContent = '';
+              setFormBusy(false);
+          }
+
+          function samePath(left, right) {
+              try {
+                  return new URL(left, window.location.origin).pathname
+                          === new URL(right, window.location.origin).pathname;
+              } catch (e) {
+                  return left === right;
+              }
+          }
+
+          form.addEventListener('submit', function (e) {
+              e.preventDefault();
+              if (form.classList.contains('is-busy')) {
+                  return;
+              }
+              var payload = new FormData(form);
+              setFormBusy(true);
+              showProgress();
+
+              var xhr = new XMLHttpRequest();
+              xhr.open(form.method || 'POST', form.action);
+              xhr.upload.addEventListener('progress', function (event) {
+                  if (!event.lengthComputable) {
+                      progress.classList.add('is-processing');
+                      fill.style.width = '';
+                      label.textContent = 'Uploading';
+                      return;
+                  }
+                  progress.classList.remove('is-processing');
+                  var percent = Math.round((event.loaded / event.total) * 100);
+                  setProgress(percent, percent + '%');
+                  if (percent >= 100) {
+                      label.textContent = 'Processing';
+                  }
+              });
+              xhr.upload.addEventListener('load', function () {
+                  progress.classList.remove('is-processing');
+                  setProgress(100, 'Processing');
+              });
+              xhr.addEventListener('load', function () {
+                  if (xhr.status >= 200 && xhr.status < 300 && xhr.responseURL
+                          && !samePath(xhr.responseURL, form.action)) {
+                      window.location.href = xhr.responseURL;
+                      return;
+                  }
+                  var message = 'Upload failed';
+                  try {
+                      var doc = new DOMParser().parseFromString(xhr.responseText, 'text/html');
+                      var serverError = doc.querySelector('.error-message');
+                      if (serverError && serverError.textContent.trim()) {
+                          message = serverError.textContent.trim();
+                      }
+                  } catch (err) {
+                  }
+                  showError(message);
+                  hideProgress();
+              });
+              xhr.addEventListener('error', function () {
+                  showError('Upload failed');
+                  hideProgress();
+              });
+              xhr.addEventListener('abort', function () {
+                  hideProgress();
+              });
+              xhr.send(payload);
+          });
+          window.addEventListener('pageshow', function () {
+              hideProgress();
+          });
+      })();
+
+      document.addEventListener('click', function (e) {
+          var infoBtn = e.target.closest('.thumb-info-btn');
+          var row = infoBtn ? infoBtn.closest('.tile-row') : null;
+          var keepTip = e.target.closest('.resource-tip');
+          document.querySelectorAll('.tile-row.tip-open').forEach(function (open) {
+              if (open !== row && !(keepTip && open.contains(keepTip))) {
+                  open.classList.remove('tip-open');
+              }
+          });
+          if (infoBtn) {
+              e.preventDefault();
+              row.classList.toggle('tip-open');
+          }
+      });
+
+      (function () {
+          var grid = document.getElementById('themeGrid');
+          if (!grid) {
+              return;
+          }
+          var dragged = null;
+          grid.querySelectorAll('li[draggable="true"]').forEach(function (row) {
+              row.addEventListener('dragstart', function (e) {
+                  if (e.target.closest('.thumb-actions, .resource-tip')) {
+                      e.preventDefault();
+                      return;
+                  }
+                  dragged = row;
+              });
+              row.addEventListener('dragover', function (e) {
+                  e.preventDefault();
+              });
+              row.addEventListener('drop', function (e) {
+                  e.preventDefault();
+                  if (!dragged || dragged === row || row.getAttribute('draggable') !== 'true') {
+                      return;
+                  }
+                  row.parentNode.insertBefore(dragged, row);
+                  var form = document.getElementById('reorderForm');
+                  if (!form) {
+                      return;
+                  }
+                  form.querySelectorAll('input[name="themeIds"]').forEach(function (n) { n.remove(); });
+                  grid.querySelectorAll('li[draggable="true"]').forEach(function (ordered) {
+                      var input = document.createElement('input');
+                      input.type = 'hidden';
+                      input.name = 'themeIds';
+                      input.value = ordered.getAttribute('data-theme-id');
+                      form.appendChild(input);
+                  });
+                  form.submit();
+              });
+          });
+      })();
+  </script>
+  <script id="script-cse-waveform" type="text/javascript"
+          th:src="@{/content-public/js/cse-waveform.js}"
+          src="../../../static/content-public/js/cse-waveform.js"></script>
+</div>
+</body>
+</html>

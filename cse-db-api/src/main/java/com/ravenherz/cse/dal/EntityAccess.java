@@ -1,0 +1,67 @@
+package com.ravenherz.cse.dal;
+
+import com.ravenherz.cse.dal.dto.AccountEntity;
+import com.ravenherz.cse.dal.dto.BasicEntity;
+import com.ravenherz.cse.dal.dto.basic.Event;
+import com.ravenherz.cse.dal.dto.basic.enums.AccessType;
+import com.ravenherz.cse.dal.dto.basic.enums.EventType;
+import com.ravenherz.cse.dal.dto.basic.enums.SecurityLevel;
+
+import java.util.Arrays;
+
+public final class EntityAccess {
+
+    private EntityAccess() {
+    }
+
+    public static boolean isAccessible(BasicEntity obtainable, AccessType accessType, AccountEntity accessor) {
+        if (obtainable == null || accessType == null) {
+            return false;
+        }
+
+        if (accessor != null && accessor.getId().equals(obtainable.getId())) {
+            return true;
+        }
+
+        try {
+            AccountEntity owner = getOwner(obtainable);
+
+            if (owner == null) {
+                return switch (accessType) {
+                    case ACCESS_READ -> true;
+                    case ACCESS_EDIT -> false;
+                    case ACCESS_DELETE -> false;
+                };
+            }
+
+            SecurityLevel relativeSecurityLevel = accessor == null ? SecurityLevel.GUEST :
+                    owner.getId().equals(accessor.getId()) ? SecurityLevel.OWNER :
+                    (accessor.getAccountData().getLevel());
+
+            if (obtainable.getSecurityData() == null ||
+                    obtainable.getSecurityData().getAccessSettings() == null ||
+                    obtainable.getSecurityData().getAccessSettings().get(accessType) == null) {
+                return switch (accessType) {
+                    case ACCESS_READ -> true;
+                    default -> false;
+                };
+            }
+            return (obtainable.getSecurityData().getAccessSettings().get(accessType).getIntLevel()
+                    <= relativeSecurityLevel.getIntLevel());
+        } catch (Exception e) {
+            return switch (accessType) {
+                case ACCESS_READ -> true;
+                default -> false;
+            };
+        }
+    }
+
+    public static AccountEntity getOwner(BasicEntity entity) {
+        return getLastEventByType(EventType.ENTITY_CREATED, entity).getOwner();
+    }
+
+    public static Event getLastEventByType(EventType eventType, BasicEntity entity) {
+        return Arrays.stream(entity.getHistoryData().getEvents()).filter(event ->
+                event.getEventType().equals(eventType)).findFirst().orElse(null);
+    }
+}

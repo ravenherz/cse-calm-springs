@@ -1,0 +1,9 @@
+{
+  "id": "client",
+  "title": "JS",
+  "author": "A. Kolesnikov",
+  "description": "Client-rendered public shell in the modern studio look. Reads GET /rest/site.",
+  "shell": "js",
+  "defaultSchema": "linen",
+  "sortOrder": 50
+}

@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="en">
+<head th:replace="~{fragments/shared :: shared-head}"></head>
+<body>
+  <div class="editor-layout">
+    <aside class="editor-sidebar" th:replace="~{fragments/shared :: shared-editor-sidebar}"></aside>
+    <main class="editor-main">
+      <p class="field-hint">Values are stored in MongoDB and override the JSON shipped in the WAR after a redeploy.</p>
+      <div th:if="${saved}" class="success-message">Settings saved.</div>
+      <div th:if="${error}" class="error-message" th:text="${error}">Error</div>
+
+      <form th:action="@{/editor/settings/save}" method="post" class="form-panel">
+        <th:block th:replace="~{fragments/csrf :: field}"></th:block>
+        <section class="settings-context" th:each="ctx : ${settingContexts}">
+          <h2 class="settings-context-title" th:text="${ctx.key}">config-view</h2>
+          <table class="settings-table">
+            <thead>
+              <tr>
+                <th scope="col">Key</th>
+                <th scope="col">Value</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr th:each="entry : ${ctx.value}">
+                <th scope="row">
+                  <label th:for="${ctx.key + '-' + entry.key}" th:text="${entry.key}">key</label>
+                </th>
+                <td>
+                  <select th:if="${entry.key == 'styles-theme' and publicThemes != null}"
+                          th:id="${ctx.key + '-' + entry.key}"
+                          th:name="${ctx.key + '::' + entry.key}"
+                          class="settings-select">
+                    <option th:each="theme : ${publicThemes}"
+                            th:value="${theme.id}"
+                            th:text="${theme.title + ' (' + theme.id + ')'}"
+                            th:selected="${theme.id == entry.value}"
+                            th:attr="data-schemas=${theme.schemasLabel},data-default=${theme.defaultSchema}">
+                      theme
+                    </option>
+                  </select>
+                  <select th:if="${entry.key == 'styles-schema' and publicThemes != null}"
+                          th:id="${ctx.key + '-' + entry.key}"
+                          th:name="${ctx.key + '::' + entry.key}"
+                          class="settings-select">
+                    <option th:each="schema : ${activeThemeSchemas}"
+                            th:value="${schema}"
+                            th:text="${schema}"
+                            th:selected="${schema == entry.value}">
+                      schema
+                    </option>
+                  </select>
+                  <input th:unless="${publicThemes != null and (entry.key == 'styles-theme' or entry.key == 'styles-schema')}"
+                         type="text"
+                         th:id="${ctx.key + '-' + entry.key}"
+                         th:name="${ctx.key + '::' + entry.key}"
+                         th:value="${entry.value}"/>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </section>
+        <div class="editor-actions">
+          <button type="submit" class="btn btn-primary">Save settings</button>
+        </div>
+      </form>
+
+      <form th:action="@{/editor/settings/save}" method="post" class="form-panel">
+        <th:block th:replace="~{fragments/csrf :: field}"></th:block>
+        <section class="settings-context">
+          <h2 class="settings-context-title">Your theme</h2>
+          <p class="field-hint">Overrides the site default while you are logged in. Leave blank to use the site theme.</p>
+          <table class="settings-table">
+            <tbody>
+              <tr>
+                <th scope="row"><label for="my-styles-theme">Theme</label></th>
+                <td>
+                  <select id="my-styles-theme" name="my-styles-theme" class="settings-select">
+                    <option value="" th:selected="${personalTheme == null or personalTheme.isEmpty()}">Site default</option>
+                    <option th:each="theme : ${publicThemes}"
+                            th:value="${theme.id}"
+                            th:text="${theme.title + ' (' + theme.id + ')'}"
+                            th:selected="${theme.id == personalTheme}"
+                            th:attr="data-schemas=${theme.schemasLabel},data-default=${theme.defaultSchema}">
+                      theme
+                    </option>
+                  </select>
+                </td>
+              </tr>
+              <tr>
+                <th scope="row"><label for="my-styles-schema">Schema</label></th>
+                <td>
+                  <select id="my-styles-schema" name="my-styles-schema" class="settings-select">
+                    <option value="">Theme default</option>
+                    <option th:each="schema : ${personalThemeSchemas}"
+                            th:value="${schema}"
+                            th:text="${schema}"
+                            th:selected="${schema == personalSchema}">
+                      schema
+                    </option>
+                  </select>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </section>
+        <div class="editor-actions">
+          <button type="submit" class="btn btn-primary">Save your theme</button>
+        </div>
+      </form>
+    </main>
+  </div>
+  <script>
+    (function () {
+      function bindThemeToSchema(themeSelect, schemaSelect, blankLabel) {
+        if (!themeSelect || !schemaSelect) {
+          return;
+        }
+        themeSelect.addEventListener('change', function () {
+          var option = themeSelect.options[themeSelect.selectedIndex];
+          var raw = option ? option.getAttribute('data-schemas') : '';
+          var fallback = option ? option.getAttribute('data-default') : '';
+          var schemas = raw ? raw.split(',').map(function (part) { return part.trim(); }).filter(Boolean) : [];
+          var previous = schemaSelect.value;
+          schemaSelect.innerHTML = '';
+          if (blankLabel != null) {
+            var blank = document.createElement('option');
+            blank.value = '';
+            blank.textContent = blankLabel;
+            schemaSelect.appendChild(blank);
+          }
+          schemas.forEach(function (schema) {
+            var opt = document.createElement('option');
+            opt.value = schema;
+            opt.textContent = schema;
+            schemaSelect.appendChild(opt);
+          });
+          if (schemas.indexOf(previous) >= 0) {
+            schemaSelect.value = previous;
+          } else if (blankLabel != null && previous === '') {
+            schemaSelect.value = '';
+          } else if (fallback && schemas.indexOf(fallback) >= 0) {
+            schemaSelect.value = fallback;
+          }
+        });
+      }
+      bindThemeToSchema(
+          document.querySelector('select[name$="::styles-theme"]'),
+          document.querySelector('select[name$="::styles-schema"]'),
+          null);
+      bindThemeToSchema(
+          document.getElementById('my-styles-theme'),
+          document.getElementById('my-styles-schema'),
+          'Theme default');
+    })();
+  </script>
+</body>
+</html>

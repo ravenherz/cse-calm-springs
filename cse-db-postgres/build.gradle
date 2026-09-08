@@ -1,0 +1,12 @@
+plugins {
+    id 'java-library'
+}
+
+apply from: rootProject.file('gradle/cse-db.gradle')
+
+description = 'CSE PostgreSQL adapter (not wired)'
+
+dependencies {
+    api project(':cse-db-api')
+    api 'org.postgresql:postgresql'
+}

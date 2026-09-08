@@ -1,0 +1,9 @@
+{
+  "id": "2000s",
+  "title": "2000s",
+  "author": "A. Kolesnikov",
+  "description": "A very basic blue-green theme",
+  "shell": "2000s",
+  "defaultSchema": "snowy",
+  "sortOrder": 10
+}

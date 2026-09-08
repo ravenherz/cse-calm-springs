@@ -1,0 +1,32 @@
+plugins {
+    id 'base'
+}
+
+import com.ravenherz.build.PackCsetheme
+
+apply from: rootProject.file('gradle/theme-shared.gradle')
+
+evaluationDependsOn(':theme-thymeleaf-modern')
+
+def themeIdVal = (findProperty('themeId') ?: 'client').toString()
+def verVal = project.version.toString()
+def modernCss = project(':theme-thymeleaf-modern').layout.projectDirectory.dir('src/css')
+
+tasks.register('packRelease', PackCsetheme) {
+    group = 'distribution'
+    description = 'Pack JS shell plus modern skin CSS into a .csetheme'
+    srcDir = layout.projectDirectory.dir('src')
+    distDir = layout.projectDirectory.dir('dist')
+    themeId = themeIdVal
+    themeVersion = verVal
+    overlayCss.from(modernCss.file('styles.css'), modernCss.file('cse-player.css'))
+    overlaySchemas.from(fileTree(modernCss.dir('color-schemas')) { include '*.css' })
+    outFile = layout.projectDirectory.file("dist/${themeIdVal}-${verVal}.csetheme")
+    outputs.upToDateWhen { false }
+}
+
+wireThemeShared(tasks.named('packRelease'))
+
+tasks.named('assemble') {
+    dependsOn tasks.named('packRelease')
+}

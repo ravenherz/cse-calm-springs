@@ -1,0 +1,41 @@
+:root {
+  color-scheme: light;
+
+  --font: "Outfit", system-ui, sans-serif;
+
+  --canvas: #f4ead4;
+  --ink: #3a2718;
+  --muted: #7a624c;
+  --accent: #b85c38;
+  --accent-soft: rgba(184, 92, 56, 0.12);
+  --line: #e0d0b4;
+  --surface: #fbf4e4;
+  --surface-2: #eadcc0;
+
+  --color-canvas: var(--canvas);
+  --color-ink: var(--ink);
+  --color-ink-muted: var(--muted);
+  --color-accent: var(--accent);
+  --color-accent-dim: var(--accent-soft);
+  --color-hairline: var(--line);
+  --color-surface: var(--surface);
+  --color-surface-2: var(--surface-2);
+  --color-body-bg: var(--canvas);
+
+  --color-item-body-bg: var(--surface);
+  --color-item-body-text: var(--ink);
+  --color-item-link-normal: var(--accent);
+  --color-item-link-hover: var(--ink);
+  --color-item-link-active: var(--ink);
+  --color-item-link-visited: #8a4a32;
+
+  --color-notification-failure-text: #8a3030;
+  --color-notification-success-text: #2d5a38;
+  --color-notification-neutral-text: var(--ink);
+  --color-notification-success-bg: #dce8de;
+  --color-notification-failure-bg: #f0d8d6;
+  --color-notification-neutral-bg: var(--surface-2);
+
+  --bg-main: none;
+  --bg-footer: none;
+}

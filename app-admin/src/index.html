@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>Calm Springs admin</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <script>
+        (function () {
+            var path = location.pathname.replace(/\/+$/, '');
+            var cut = path.indexOf('/static-pages/admin');
+            var ctx = cut >= 0 ? path.substring(0, cut) : '';
+            location.replace(ctx + '/editor/resources');
+        })();
+    </script>
+</head>
+<body>
+    <p><a href="../../editor/resources">Open editor</a></p>
+</body>
+</html>

@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<body>
+<th:block th:fragment="fields">
+  <div class="form-group">
+    <label for="playlistId">Playlist id</label>
+    <input type="text" id="playlistId" name="playlistId" required
+           placeholder="ocean-blue"
+           th:value="${playlist?.playlistId}"/>
+    <p class="field-hint">Lowercase letters, numbers, and hyphens. Embed with
+      <code>&lt;cse-playlist id="your-id"&gt;&lt;/cse-playlist&gt;</code>.</p>
+  </div>
+  <div class="form-group">
+    <label for="title">Title</label>
+    <input type="text" id="title" name="title" required
+           th:value="${playlist?.playlistData?.title}"/>
+  </div>
+  <div class="form-group">
+    <label for="description">Description</label>
+    <textarea id="description" name="description" rows="3"
+              th:text="${playlist?.playlistData?.description}"></textarea>
+  </div>
+
+  <div class="playlist-editor">
+    <section class="playlist-selected">
+      <h2>Playlist tracks</h2>
+      <p class="field-hint">Order is playback order. Title and artist overrides apply only in this playlist.</p>
+      <p class="field-hint" th:if="${selectedTracks == null or selectedTracks.empty}">No tracks yet. Add from the audio library.</p>
+      <ol id="selected-tracks" class="playlist-track-list">
+        <li th:each="track : ${selectedTracks}" class="playlist-track-row">
+          <input type="hidden" name="resourceId" th:value="${track.id}"/>
+          <div class="playlist-track-main">
+            <span class="playlist-track-label"
+                  th:text="${track.title + (track.artist != null and !track.artist.isEmpty() ? ' — ' + track.artist : '')}">Track</span>
+            <span class="playlist-track-duration" th:text="${track.durationLabel}">0:00</span>
+          </div>
+          <div class="playlist-track-overrides">
+            <input type="text" name="titleOverride" placeholder="Title override"
+                   th:value="${track.titleOverride}"/>
+            <input type="text" name="artistOverride" placeholder="Artist override"
+                   th:value="${track.artistOverride}"/>
+          </div>
+          <div class="playlist-track-actions">
+            <button type="button" class="btn btn-secondary move-up">Up</button>
+            <button type="button" class="btn btn-secondary move-down">Down</button>
+            <button type="button" class="delete-btn remove-track">Remove</button>
+          </div>
+        </li>
+      </ol>
+    </section>
+    <section class="playlist-library">
+      <h2>Audio library</h2>
+      <p class="field-hint" th:if="${audioLibrary.empty}">Upload MP3s in Catalog first.</p>
+      <p class="field-hint" id="library-exhausted" hidden>All uploaded audio is already in this playlist.</p>
+      <ul class="item-list">
+        <li th:each="track : ${audioLibrary}" class="library-row"
+            th:classappend="${selectedIds != null and selectedIds.contains(track.id)} ? ' is-in-playlist'"
+            th:attr="data-id=${track.id},data-title=${track.title},data-artist=${track.artist},data-duration=${track.durationLabel},data-number=${track.trackNumber},data-file=${track.fileName}">
+          <div class="item-info">
+            <div class="item-title" th:text="${track.title}">Title</div>
+            <div class="item-meta">
+              <span th:text="${track.artist}">artist</span>
+              <span th:text="${track.durationLabel}">0:00</span>
+              <span th:text="${track.fileName}">file.mp3</span>
+            </div>
+          </div>
+          <button type="button" class="btn btn-secondary add-track-btn">Add</button>
+        </li>
+      </ul>
+    </section>
+  </div>
+</th:block>
+
+<th:block th:fragment="scripts">
+  <script>
+    (function () {
+      var list = document.getElementById('selected-tracks');
+      if (!list) return;
+
+      function rowFromLibrary(item) {
+        var li = document.createElement('li');
+        li.className = 'playlist-track-row';
+        li.innerHTML =
+          '<input type="hidden" name="resourceId" value="">' +
+          '<div class="playlist-track-main">' +
+          '<span class="playlist-track-label"></span>' +
+          '<span class="playlist-track-duration"></span>' +
+          '</div>' +
+          '<div class="playlist-track-overrides">' +
+          '<input type="text" name="titleOverride" placeholder="Title override">' +
+          '<input type="text" name="artistOverride" placeholder="Artist override">' +
+          '</div>' +
+          '<div class="playlist-track-actions">' +
+          '<button type="button" class="btn btn-secondary move-up">Up</button>' +
+          '<button type="button" class="btn btn-secondary move-down">Down</button>' +
+          '<button type="button" class="delete-btn remove-track">Remove</button>' +
+          '</div>';
+        li.querySelector('input[name="resourceId"]').value = item.dataset.id || '';
+        var label = item.dataset.title || item.dataset.file || 'Track';
+        if (item.dataset.artist) {
+          label += ' — ' + item.dataset.artist;
+        }
+        li.querySelector('.playlist-track-label').textContent = label;
+        li.querySelector('.playlist-track-duration').textContent = item.dataset.duration || '';
+        return li;
+      }
+
+      function syncLibrary() {
+        var used = {};
+        list.querySelectorAll('input[name="resourceId"]').forEach(function (input) {
+          if (input.value) {
+            used[input.value] = true;
+          }
+        });
+        var visible = 0;
+        document.querySelectorAll('.library-row').forEach(function (row) {
+          var usedNow = !!used[row.dataset.id];
+          row.classList.toggle('is-in-playlist', usedNow);
+          if (!usedNow) {
+            visible += 1;
+          }
+        });
+        var exhausted = document.getElementById('library-exhausted');
+        if (exhausted) {
+          exhausted.hidden = visible > 0 || document.querySelectorAll('.library-row').length === 0;
+        }
+      }
+
+      document.querySelectorAll('.add-track-btn').forEach(function (btn) {
+        btn.addEventListener('click', function () {
+          var item = btn.closest('.library-row');
+          if (item && !item.classList.contains('is-in-playlist')) {
+            list.appendChild(rowFromLibrary(item));
+            syncLibrary();
+          }
+        });
+      });
+
+      list.addEventListener('click', function (e) {
+        var row = e.target.closest('.playlist-track-row');
+        if (!row) return;
+        if (e.target.classList.contains('remove-track')) {
+          row.remove();
+          syncLibrary();
+        } else if (e.target.classList.contains('move-up') && row.previousElementSibling) {
+          row.parentNode.insertBefore(row, row.previousElementSibling);
+        } else if (e.target.classList.contains('move-down') && row.nextElementSibling) {
+          row.parentNode.insertBefore(row.nextElementSibling, row);
+        }
+      });
+
+      syncLibrary();
+    })();
+  </script>
+</th:block>
+</body>
+</html>

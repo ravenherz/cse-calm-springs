@@ -1,0 +1,176 @@
+import com.ravenherz.build.utils.CargoContextResolver
+import com.ravenherz.build.utils.GitHelper
+import groovy.json.JsonBuilder
+import groovy.json.JsonSlurper
+
+buildscript {
+    repositories {
+        //maven {
+        //    url "https://plugins.gradle.org/m2/"
+        //}
+        gradlePluginPortal()
+        mavenCentral()
+    }
+
+    dependencies {
+        classpath 'com.bmuschko:gradle-cargo-plugin:2.4'
+    }
+}
+
+plugins {
+    id 'java'
+    id 'war'
+    id 'org.springframework.boot' version '3.5.8'
+    id 'io.spring.dependency-management' version '1.1.7'
+}
+
+apply plugin: 'com.bmuschko.cargo'
+
+
+group = 'com.ravenherz'
+description = 'calm-springs-engine'
+
+repositories {
+    mavenCentral()
+    maven { url 'https://jitpack.io' }
+}
+
+tasks.named("bootRun") { Task it ->
+    optimizedLaunch = false
+}
+
+dependencies {
+
+    implementation 'org.jetbrains:annotations:24.0.0'
+    LinkedHashMap<String, String> versions = [
+            'cargo':'1.10.25',
+            'spring':'6.2.11',
+            'thymeleaf':'3.1.5',
+    ]
+
+    implementation 'org.springframework.boot:spring-boot-starter-web'
+    providedRuntime 'org.springframework.boot:spring-boot-starter-tomcat'
+    testImplementation 'org.springframework.boot:spring-boot-starter-test'
+    testImplementation 'org.springframework.security:spring-security-test'
+    testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+
+    //Thymeleaf
+    implementation "org.springframework.boot:spring-boot-starter-thymeleaf:${versions['thymeleaf']}"
+
+    // HTMLHelper
+    implementation 'com.j2html:j2html:1.5.0'
+    // Markdown
+    implementation 'org.commonmark:commonmark:0.22.0'
+    // Mongo adapter (entities/ports come from cse-db-api). Postgres is not on this WAR.
+    implementation project(':cse-db-mongo')
+    implementation 'org.springframework.boot:spring-boot-starter-security'
+    // Apache
+    implementation group: 'org.apache.commons', name: 'commons-collections4', version:'4.1'
+    implementation group: 'commons-io', name: 'commons-io', version: '2.14.0'
+    implementation group: 'commons-fileupload', name: 'commons-fileupload', version: '1.6.0'
+
+    implementation 'com.github.openize-com:openize-heic-java:v26.5.1'
+    implementation 'net.jthink:jaudiotagger:3.0.1'
+    implementation 'javazoom:jlayer:1.0.1'
+
+    implementation 'org.springframework.security:spring-security-crypto'
+    implementation 'org.bouncycastle:bcprov-jdk18on:1.84'
+
+    implementation group: 'com.fasterxml.jackson.core', name: 'jackson-databind', version: '2.19.2'
+    //implementation group: 'org.apache.tomcat', name: 'tomcat-jsp-api', version:'10.1.43'
+    implementation 'jakarta.servlet:jakarta.servlet-api:6.0.0'
+    cargo "org.codehaus.cargo:cargo-core-uberjar:${versions['cargo']}",
+            "org.codehaus.cargo:cargo-ant:${versions['cargo']}"
+}
+
+tasks.named('test') {
+    useJUnitPlatform()
+}
+
+def currentVersion = '0.6.0'
+
+tasks.register('buildPreparations') {
+    doFirst {
+        String branch = GitHelper.getGitBranch()
+        def json = new JsonSlurper()
+
+        def pathToBuildInfo = project.file('./build-info/build-info.json').absolutePath
+        def buildInfo = json.parseText(file(pathToBuildInfo).text)
+        buildInfo.build.number++
+        version = "$currentVersion.${buildInfo.build.number}.${branch.replace("/", "-")}"
+        description = rootProject.name
+        buildInfo.artifact.latest.name = "${project.name}-${version}.war"
+        project.file(pathToBuildInfo).write(new JsonBuilder(buildInfo).toPrettyString())
+
+        def pathToBuildInfoProjectFile = project.file('./src/main/resources/static/content-private/configuration/config-build-info.json').absolutePath
+        def buildInfoProjectFile = json.parseText(file(pathToBuildInfoProjectFile).text)
+        buildInfoProjectFile['version-product'] = description
+        buildInfoProjectFile['version-version'] = "$currentVersion.${buildInfo.build.number}"
+        buildInfoProjectFile['version-branch'] = branch == 'main' ? "" : "${branch.toLowerCase()}"
+        project.file(pathToBuildInfoProjectFile).write(new JsonBuilder(buildInfoProjectFile).toPrettyString())
+    }
+}
+
+compileJava.dependsOn(buildPreparations)
+
+def frontendModules = rootProject.childProjects.keySet()
+        .findAll { it.startsWith('app-') || it.startsWith('theme-') }
+        .sort()
+frontendModules.each { evaluationDependsOn(":$it") }
+
+tasks.register('packFrontend') {
+    group = 'distribution'
+    description = 'Pack every app-* (.cseapp) and theme-thymeleaf-* / theme-js-* (.csetheme) module'
+    dependsOn frontendModules.collect { ":${it}:packRelease" }
+}
+
+// Include selected packs in the WAR by hand. Packing is packFrontend — do not
+// drive which modules get packed from this list. This include block will change.
+tasks.named('processResources', Copy) {
+    dependsOn tasks.named('packFrontend')
+    doFirst {
+        delete file("$buildDir/resources/main/install/themes")
+    }
+    from(project(':app-setup').tasks.named('packRelease')) {
+        into 'install'
+        rename { 'setup.cseapp' }
+    }
+    from(project(':app-admin').tasks.named('packRelease')) {
+        into 'install'
+        rename { 'admin.cseapp' }
+    }
+    from(project(':theme-thymeleaf-modern').tasks.named('packRelease')) {
+        into 'install/themes'
+        rename { 'modern.csetheme' }
+    }
+}
+
+cargo {
+    Boolean deployRemote = true
+    String deployOverride = "stage"
+    var cargoParamResolver = new CargoContextResolver(deployRemote, project, deployOverride)
+    System.out.println("deploying to '${cargoParamResolver.getWhereToDeploy()}'")
+
+    containerId = cargoParamResolver.getByKey('containerId').orDefault("tomcat10x")
+    port = cargoParamResolver.getByKey('port').orDefault(8080) as Integer
+
+    deployable {
+        def buildInfo = new JsonSlurper().parseText(file('./build-info/build-info.json').text)
+        file = project.file("./build/libs/${buildInfo.artifact.latest.name}")
+        context  = cargoParamResolver.getByKey('context').orDefault('rhz-we')
+    }
+    remote {
+        hostname = cargoParamResolver.getByKey('hostname').orDefault('127.0.0.1')
+        protocol = cargoParamResolver.getByKey('protocol').orDefault('http')
+        username = cargoParamResolver.getByKey('username').orDefault('admin')
+        password = cargoParamResolver.getByKey('password').orDefault('admin')
+    }
+}
+
+tasks.register('packBuiltinThemes') {
+    group = 'distribution'
+    description = 'Deprecated alias for packFrontend'
+    dependsOn tasks.named('packFrontend')
+}
+
+ext.resolveValue = { path }

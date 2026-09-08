@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="en">
+<head th:replace="~{fragments/shared :: shared-head}"></head>
+<body>
+  <div class="editor-layout">
+    <aside class="editor-sidebar" th:replace="~{fragments/shared :: shared-editor-sidebar}"></aside>
+    <main class="editor-main log-page">
+      <header class="page-header">
+        <h1 class="page-title">Logs</h1>
+        <div class="page-header-actions">
+          <button type="button" class="btn btn-secondary" id="log-wrap" aria-pressed="true">Wrap</button>
+          <button type="button" class="btn btn-secondary" id="log-auto" aria-pressed="true">Auto</button>
+          <select id="log-interval" class="log-interval" aria-label="Poll interval">
+            <option value="2000">2s</option>
+            <option value="5000" selected>5s</option>
+            <option value="10000">10s</option>
+            <option value="30000">30s</option>
+            <option value="60000">60s</option>
+          </select>
+          <button type="button" class="btn btn-secondary" id="log-refresh">Refresh</button>
+          <a class="btn btn-secondary" th:href="@{/editor/logs/download}">Download</a>
+        </div>
+      </header>
+
+      <p class="log-meta" id="log-meta">
+        <span th:if="${logFound}">
+          <span th:text="${logWindowLabel}">256 KB</span>
+          <span th:if="${logTruncated}"> · truncated</span>
+          <span> · </span>
+          <span th:text="${logPath}">path</span>
+        </span>
+        <span th:unless="${logFound}">No log file found</span>
+      </p>
+      <div th:if="${logError}" class="error-message" th:text="${logError}">Error</div>
+      <div th:if="${!logFound and logError == null}" class="empty-message">
+        Looked in:
+        <ul class="log-tried">
+          <li th:each="path : ${logTried}" th:text="${path}">path</li>
+        </ul>
+      </div>
+
+      <pre class="log-view" id="log-view"
+           th:attr="data-tail-url=@{/editor/logs/tail}"
+           th:text="${logText}"></pre>
+    </main>
+  </div>
+  <script>
+    (function () {
+      var view = document.getElementById('log-view');
+      var meta = document.getElementById('log-meta');
+      var refresh = document.getElementById('log-refresh');
+      var wrapBtn = document.getElementById('log-wrap');
+      var autoBtn = document.getElementById('log-auto');
+      var intervalSel = document.getElementById('log-interval');
+      var WRAP_KEY = 'cse-log-wrap';
+      var AUTO_KEY = 'cse-log-auto';
+      var INTERVAL_KEY = 'cse-log-interval';
+      var INTERVALS = [2000, 5000, 10000, 30000, 60000];
+      var DEFAULT_INTERVAL = 5000;
+      if (!view || !view.dataset.tailUrl) {
+        return;
+      }
+      function storedOn(key) {
+        try {
+          return localStorage.getItem(key) !== '0';
+        } catch (e) {
+          return true;
+        }
+      }
+      function storeOn(key, on) {
+        try {
+          localStorage.setItem(key, on ? '1' : '0');
+        } catch (e) {}
+      }
+      function storedInterval() {
+        try {
+          var n = parseInt(localStorage.getItem(INTERVAL_KEY), 10);
+          if (INTERVALS.indexOf(n) !== -1) {
+            return n;
+          }
+        } catch (e) {}
+        return DEFAULT_INTERVAL;
+      }
+      function bindToggle(btn, key, apply) {
+        apply(storedOn(key));
+        if (!btn) {
+          return;
+        }
+        btn.addEventListener('click', function () {
+          var on = btn.getAttribute('aria-pressed') !== 'true';
+          storeOn(key, on);
+          apply(on);
+        });
+      }
+      function applyWrap(on) {
+        view.classList.toggle('no-wrap', !on);
+        if (wrapBtn) {
+          wrapBtn.setAttribute('aria-pressed', on ? 'true' : 'false');
+        }
+      }
+      var autoOn = storedOn(AUTO_KEY);
+      function applyAuto(on) {
+        autoOn = on;
+        if (autoBtn) {
+          autoBtn.setAttribute('aria-pressed', on ? 'true' : 'false');
+        }
+        if (intervalSel) {
+          intervalSel.disabled = !on;
+        }
+      }
+      bindToggle(wrapBtn, WRAP_KEY, applyWrap);
+      bindToggle(autoBtn, AUTO_KEY, applyAuto);
+      function stickBottom() {
+        view.scrollTop = view.scrollHeight;
+      }
+      stickBottom();
+      function apply(data) {
+        if (!data) {
+          return;
+        }
+        view.textContent = data.text || '';
+        if (data.found) {
+          var bits = [];
+          bits.push('256 KB');
+          if (data.truncated) {
+            bits.push('truncated');
+          }
+          if (data.path) {
+            bits.push(data.path);
+          }
+          meta.textContent = bits.join(' · ');
+        } else if (data.error) {
+          meta.textContent = data.error;
+        } else {
+          meta.textContent = 'No log file found';
+        }
+        stickBottom();
+      }
+      function load() {
+        fetch(view.dataset.tailUrl, { credentials: 'same-origin' })
+          .then(function (res) {
+            if (res.status === 401 || res.status === 403) {
+              return null;
+            }
+            return res.json();
+          })
+          .then(apply)
+          .catch(function () {});
+      }
+      if (refresh) {
+        refresh.addEventListener('click', load);
+      }
+      var timer = null;
+      function startTimer(ms) {
+        if (timer) {
+          clearInterval(timer);
+        }
+        timer = setInterval(function () {
+          if (autoOn && !document.hidden) {
+            load();
+          }
+        }, ms);
+      }
+      if (intervalSel) {
+        intervalSel.value = String(storedInterval());
+        intervalSel.addEventListener('change', function () {
+          var ms = parseInt(intervalSel.value, 10);
+          if (INTERVALS.indexOf(ms) === -1) {
+            ms = DEFAULT_INTERVAL;
+            intervalSel.value = String(ms);
+          }
+          try {
+            localStorage.setItem(INTERVAL_KEY, String(ms));
+          } catch (e) {}
+          startTimer(ms);
+        });
+      }
+      startTimer(storedInterval());
+    })();
+  </script>
+</body>
+</html>

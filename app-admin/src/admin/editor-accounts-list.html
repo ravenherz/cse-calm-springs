@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="en">
+<head th:replace="~{fragments/shared :: shared-head}"></head>
+<body>
+  <div class="editor-layout">
+    <aside class="editor-sidebar" th:replace="~{fragments/shared :: shared-editor-sidebar}"></aside>
+    <main class="editor-main">
+      <div th:if="${accounts.empty}" class="empty-message">
+        No accounts found.
+      </div>
+
+      <ul class="item-list" th:unless="${accounts.empty}">
+        <li th:each="acc : ${accounts}">
+          <div class="item-info">
+            <div class="item-title" th:text="${acc.login} ?: '[null]'">Login</div>
+            <dl class="prop-grid">
+              <dt>Email</dt>
+              <dd th:text="${acc.emailAddress} ?: '—'">email</dd>
+              <dt>Level</dt>
+              <dd th:text="${acc.level} ?: '—'">level</dd>
+              <dt>Loginable</dt>
+              <dd th:text="${acc.loginable} ? 'Yes' : 'No'">Yes</dd>
+              <dt>Sessions</dt>
+              <dd th:if="${acc.sessionTotalCount == 0}">None</dd>
+              <dd th:unless="${acc.sessionTotalCount == 0}">
+                <span th:text="${acc.sessionTotalCount}">0</span> total,
+                <span th:text="${acc.sessionActiveCount}">0</span> active
+              </dd>
+              <dt>First</dt>
+              <dd th:if="${acc.sessionFirstDate != null}"
+                  class="session-info"
+                  th:title="${'Address: ' + acc.sessionFirstAddress + ', UA: ' + acc.sessionFirstUserAgent}"
+                  th:text="${#temporals.format(acc.sessionFirstDate, 'yyyy-MM-dd HH:mm')}">first</dd>
+              <dd th:unless="${acc.sessionFirstDate != null}">—</dd>
+              <dt>Last</dt>
+              <dd th:if="${acc.sessionLastDate != null}"
+                  class="session-info"
+                  th:title="${'Address: ' + acc.sessionLastAddress + ', UA: ' + acc.sessionLastUserAgent}"
+                  th:text="${#temporals.format(acc.sessionLastDate, 'yyyy-MM-dd HH:mm')}">last</dd>
+              <dd th:unless="${acc.sessionLastDate != null}">—</dd>
+              <dt>ID</dt>
+              <dd th:text="${acc.id}">id</dd>
+            </dl>
+          </div>
+          <form th:unless="${acc.level == 'OWNER'}" th:action="@{/editor/account/delete}" method="post" class="item-form">
+            <th:block th:replace="~{fragments/csrf :: field}"></th:block>
+            <input type="hidden" name="id" th:value="${acc.id}"/>
+            <button type="submit" class="delete-btn" onclick="return confirm('Delete this account?')">Delete</button>
+          </form>
+        </li>
+      </ul>
+    </main>
+  </div>
+</body>
+</html>
