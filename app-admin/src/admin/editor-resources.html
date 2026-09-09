@@ -370,12 +370,6 @@
                       : 'Only .csetheme files are accepted';
           }
 
-          function stemSlug(fileName) {
-              var lastDot = fileName.lastIndexOf('.');
-              var baseName = lastDot > 0 ? fileName.substring(0, lastDot) : fileName;
-              return baseName.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
-          }
-
           function startPackUpload(file) {
               if (!allowed(file.name)) {
                   showError(rejectMessage());
@@ -383,7 +377,7 @@
                   return;
               }
               if (slugInput) {
-                  slugInput.value = stemSlug(file.name);
+                  slugInput.value = '';
               }
               form.requestSubmit();
           }

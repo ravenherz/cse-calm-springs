@@ -43,7 +43,7 @@ public class StaticAppDeployer {
     private static final Set<String> RESERVED = Set.of(
             "index", "editor", "admin", "apps", "rest", "account", "error",
             "content-public", "content-private", "content-cache", "content-protected",
-            "static-pages", INSTALLER_SLUG, "install"
+            "static-pages", INSTALLER_SLUG, "install", "cse", "app-data"
     );
     private static final int MAX_ENTRIES = 4000;
     private static final long MAX_UNCOMPRESSED = 200L * 1024 * 1024;

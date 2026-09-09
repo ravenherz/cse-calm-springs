@@ -18,7 +18,9 @@ Tags:
 
 ## Install a pack
 
-The gold **+** accepts a `.cseapp` file. Click or drop. After install, the new tile appears in this pane (and in the tree). If the pack includes a product logo, the tile uses it.
+The gold **+** accepts a `.cseapp` file. Click or drop. The install prefix is the pack’s **`slug`** in `version.manifest` (not the zip filename). After install, the new tile appears in this pane (and in the tree) at `/static-pages/{slug}/`. If the pack includes a product logo, the tile uses it.
+
+A pack without a slug in `version.manifest` is rejected. Re-uploading a zip with the same slug replaces that install.
 
 ## Bundled vs installed
 

@@ -16,4 +16,10 @@ class StaticAppDeployerSlugTest {
         assertThrows(IllegalArgumentException.class, () -> deployer.validateSlug("admin"));
         assertDoesNotThrow(() -> deployer.validateSlug("hello"));
     }
+
+    @Test
+    void cmsPrefixCannotBeAnInstallSlug() {
+        assertThrows(IllegalArgumentException.class, () -> deployer.validateSlug("cse"));
+        assertThrows(IllegalArgumentException.class, () -> deployer.validateSlug("app-data"));
+    }
 }

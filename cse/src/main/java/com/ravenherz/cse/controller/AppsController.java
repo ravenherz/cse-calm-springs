@@ -10,6 +10,7 @@ import com.ravenherz.cse.dal.dto.basic.enums.EventType;
 import com.ravenherz.cse.present.EditorTree;
 import com.ravenherz.cse.present.ResourceGroupIndex;
 import com.ravenherz.cse.util.frontend.ShippedPackCatalog;
+import com.ravenherz.cse.util.staticapps.AppInstallSlug;
 import com.ravenherz.cse.util.staticapps.AppManifest;
 import com.ravenherz.cse.util.staticapps.StaticAppDeployer;
 import jakarta.servlet.http.HttpServletRequest;
@@ -80,12 +81,10 @@ public class AppsController extends AbstractController {
         }
 
         AppManifest manifest = staticAppDeployer.readManifest(zipBytes);
-        String normalizedSlug = slug == null ? "" : slug.trim().toLowerCase(Locale.ROOT);
-        if (normalizedSlug.isEmpty() && manifest != null && manifest.getSlug() != null) {
-            normalizedSlug = manifest.getSlug().toLowerCase(Locale.ROOT);
-        }
+        String normalizedSlug = AppInstallSlug.resolve(slug, manifest);
         if (normalizedSlug.isEmpty()) {
-            normalizedSlug = slugFromFilename(originalFilename);
+            return listWithError(request, response,
+                    "Pack needs a slug in version.manifest. The zip filename is not used.");
         }
         try {
             staticAppDeployer.validateSlug(normalizedSlug);
@@ -193,21 +192,5 @@ public class AppsController extends AbstractController {
         response.sendRedirect(request.getContextPath()
                 + EditorTree.withNotice(EditorTree.APPS_HREF, error));
         return null;
-    }
-
-    private static String slugFromFilename(String filename) {
-        if (filename == null || filename.isBlank()) {
-            return "";
-        }
-        String base = filename.trim();
-        int slash = Math.max(base.lastIndexOf('/'), base.lastIndexOf('\\'));
-        if (slash >= 0) {
-            base = base.substring(slash + 1);
-        }
-        String lower = base.toLowerCase(Locale.ROOT);
-        if (lower.endsWith(StaticAppDeployer.APP_PACKAGE_EXT)) {
-            base = base.substring(0, base.length() - StaticAppDeployer.APP_PACKAGE_EXT.length());
-        }
-        return base.toLowerCase(Locale.ROOT).replaceAll("[^a-z0-9]+", "-").replaceAll("^-|-$", "");
     }
 }
