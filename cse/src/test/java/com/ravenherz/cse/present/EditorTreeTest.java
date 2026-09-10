@@ -109,7 +109,7 @@ class EditorTreeTest {
         ResourceGroupTreeView.Assembled resources = ResourceGroupTreeView.assembleStats(List.of(), List.of());
         List<ResourceGroupDisplayDTO> roots = EditorTree.attach(resources,
                 EditorTree.contentBranch(List.of(), List.of(),
-                        List.of(new ResourceTreeFile("app-fretlab", "Fretboard Lab", "/static-pages/fretlab/")),
+                        List.of(new ResourceTreeFile("app-fretlab", "Fretboard Lab", "/apps/fretlab/")),
                         List.of(new ResourceTreeFile("playlist-1", "Ocean Blue", "/editor/playlist/edit?id=1")),
                         List.of(new ResourceTreeFile("theme-modern", "modern", "/editor/themes"))));
         ResourceGroupDisplayDTO content = roots.get(0);

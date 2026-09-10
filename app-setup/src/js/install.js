@@ -1,7 +1,7 @@
 (function () {
     function contextPrefix() {
         var path = window.location.pathname || '/';
-        var marker = '/static-pages/setup';
+        var marker = '/apps/setup';
         var index = path.indexOf(marker);
         if (index >= 0) {
             return path.substring(0, index);

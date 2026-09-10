@@ -619,10 +619,9 @@ h6 {
     border: 1px var(--color-default-accent-one) solid;
 }
 
-#loginpanel-guest-default button,
-#loginpanel-guest-signin button,
-#loginpanel-user button {
-    width: 100%;
+.account-link {
+    display: inline-block;
+    margin-top: 8px;
 }
 
 .item-description-content label {

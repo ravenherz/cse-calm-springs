@@ -11,7 +11,7 @@
             return fromMeta.length ? fromMeta : '';
         }
         var path = window.location.pathname || '/';
-        var marker = '/static-pages/';
+        var marker = '/apps/';
         var i = path.indexOf(marker);
         if (i > 0) {
             return path.substring(0, i);
@@ -21,7 +21,7 @@
 
     function inferSlug() {
         var path = window.location.pathname || '';
-        var marker = '/static-pages/';
+        var marker = '/apps/';
         var i = path.indexOf(marker);
         if (i < 0) {
             return '';

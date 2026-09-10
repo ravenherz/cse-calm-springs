@@ -383,17 +383,26 @@
         banner((err && err.message) || 'Request failed');
     }
 
+    function loginHref() {
+        return (base() ? base() : '') + '/apps/login/?next='
+            + encodeURIComponent(window.location.pathname + window.location.search);
+    }
+
     function renderWho() {
         var name = author();
         els.who.hidden = !name;
         els.who.textContent = name;
         var href = siteHref();
-        ['link-site', 'link-site-brand', 'link-signin'].forEach(function (id) {
+        ['link-site', 'link-site-brand'].forEach(function (id) {
             var link = document.getElementById(id);
             if (link) {
                 link.setAttribute('href', href);
             }
         });
+        var signin = document.getElementById('link-signin');
+        if (signin) {
+            signin.setAttribute('href', loginHref());
+        }
     }
 
     function renderProjects() {

@@ -37,7 +37,7 @@ class HeadersPhase4MvcTest {
 
     @Test
     void staticPagesSkipCsp() throws Exception {
-        mockMvc.perform(get("/static-pages/demo/"))
+        mockMvc.perform(get("/apps/demo/"))
                 .andExpect(header().doesNotExist("Content-Security-Policy"));
     }
 

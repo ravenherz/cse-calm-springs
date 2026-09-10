@@ -7,9 +7,9 @@ import com.ravenherz.cse.util.Json;
 import com.ravenherz.cse.util.PasswordHashes;
 import com.ravenherz.cse.dal.dto.AccountEntity;
 import com.ravenherz.cse.dal.dto.basic.AccountData;
+import com.ravenherz.cse.dal.dto.basic.enums.SecurityLevel;
 import com.ravenherz.cse.util.MarkdownRenderer;
 import com.ravenherz.cse.util.PlaylistEmbedProcessor;
-import com.ravenherz.cse.util.StringUtils;
 import com.ravenherz.cse.util.helpers.HttpErrorHelper;
 import com.ravenherz.cse.util.helpers.HttpErrorHelper.HttpErrorDescription;
 
@@ -186,7 +186,9 @@ public class JsonApiController extends AbstractController {
         String password = json.getOrDefault(Param.ACCOUNT_PASSWORD.name(), "");
         String passwordRetype = json.getOrDefault(Param.ACCOUNT_PASSWORD_RETYPE.name(),"");
         String email = json.getOrDefault(Param.ACCOUNT_EMAIL.name(),"");
-        String shownName = json.getOrDefault(Param.ACCOUNT_SHOWN_NAME.name(), "");
+        if (login.isBlank() || email.isBlank()) {
+            return new RestResponse(400, null, "Login and email are required");
+        }
         if (serviceProvider.getAccountService().getByLogin(login) != null) {
             return new RestResponse(400, null, "Login is already taken");
         }
@@ -199,15 +201,15 @@ public class JsonApiController extends AbstractController {
         if (passwordHashes.isTooLong(password)) {
             return new RestResponse(400, null, "Password is too long");
         }
-        if (shownName.equals("")) {
-            shownName = null;
-        }
 
         AccountEntity accountEntity = new AccountEntity(
                 new AccountData(login, passwordHashes.hash(password),
-                        email,
-                        StringUtils.generateRandomToken()));
+                        email, SecurityLevel.ACTIVE_USER));
         serviceProvider.getAccountService().insert(accountEntity);
+        AccountEntity stored = serviceProvider.getAccountService().getByLogin(login);
+        if (stored != null) {
+            issueSession(stored, request, response);
+        }
         return new RestResponse(200, null, "all done");
     }
 

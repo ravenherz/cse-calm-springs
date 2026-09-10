@@ -15,7 +15,7 @@ import java.util.UUID;
 
 /**
  * CSRF cookie is {@code Path=/} so {@code /app-data} receives it when the page is
- * under {@code /static-pages} (bootRun at {@code /}) or the WAR context is omitted.
+ * under {@code /apps} (bootRun at {@code /}) or the WAR context is omitted.
  * HttpOnly is false so JS can echo the value as {@code X-XSRF-TOKEN}.
  * A leftover context-path cookie is expired only when clearing, never in the
  * same {@code Set-Cookie} batch as a new token (Chrome treats {@code Max-Age=0}

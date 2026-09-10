@@ -2,7 +2,7 @@ package com.ravenherz.cse.security;
 
 /**
  * CSP that matches this WAR: local scripts/styles, Google Fonts, inline handlers,
- * Quill, and {@code blob:} previews. {@code /static-pages/**} is excluded in
+ * Quill, and {@code blob:} previews. {@code /apps/**} is excluded in
  * {@link SecurityConfig} so deployed {@code .cseapp} HTML is not constrained.
  */
 final class CseContentSecurityPolicy {

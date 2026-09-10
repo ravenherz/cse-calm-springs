@@ -343,51 +343,24 @@
 
   function bindAccount(site) {
     var slot = qs('account-slot');
+    var link = qs('account-link');
     if (!site.configured) {
       setHidden(slot, true);
       return;
     }
     setHidden(slot, false);
-    var guest = qs('loginpanel-guest');
-    var user = qs('loginpanel-user');
-    var summary = qs('account-summary');
-    if (site.authenticated) {
-      setHidden(guest, true);
-      setHidden(user, false);
-      if (summary) {
-        summary.textContent = site.username || 'Account';
-      }
-      var label = qs('loginpanel-username-label');
-      if (label) {
-        label.textContent = site.username || '';
-      }
-    } else {
-      setHidden(guest, false);
-      setHidden(user, true);
-      if (summary) {
-        summary.textContent = 'Account';
-      }
-      if (window.jQuery && typeof window.loginPanelInit === 'function') {
-        window.jQuery(function () {
-          window.loginPanelInit();
-        });
-      }
+    if (!link) {
+      return;
     }
-    var editor = qs('loginpanel-button-editor');
-    if (editor) {
-      editor.onclick = function () {
-        window.location.href = './editor';
-      };
+    var root = text(site.contextPath);
+    if (!root || root === '/') {
+      root = '';
+    } else if (root.charAt(root.length - 1) === '/') {
+      root = root.slice(0, -1);
     }
-    var logout = qs('loginpanel-button-logout');
-    if (logout && typeof window.loginPanelLogout === 'function') {
-      logout.onclick = window.loginPanelLogout;
-    }
-    var registerForm = qs('registration-window-form');
-    if (registerForm && typeof window.registerForm === 'function' && !registerForm.dataset.bound) {
-      registerForm.dataset.bound = '1';
-      window.registerForm('registration-window-form', 'form-account-register');
-    }
+    var next = encodeURIComponent(window.location.pathname + window.location.search);
+    link.href = root + '/apps/login/?next=' + next;
+    link.textContent = site.authenticated ? (site.username || 'Account') : 'Sign in';
   }
 
   function publicThemeUrl(site, suffix) {

@@ -19,7 +19,7 @@ import java.util.Map;
 
 @Controller
 @Scope(value = "singleton")
-@RequestMapping("/static-pages")
+@RequestMapping("/apps")
 public class StaticPagesController extends AbstractController {
 
     private static final Map<String, String> CONTENT_TYPES = Map.ofEntries(
@@ -50,7 +50,7 @@ public class StaticPagesController extends AbstractController {
             HttpServletResponse response) throws IOException {
         String relativePath = request.getRequestURI()
                 .replaceFirst(request.getContextPath(), "")
-                .replaceFirst("^/static-pages", "");
+                .replaceFirst("^/apps", "");
         if (relativePath.startsWith("/")) {
             relativePath = relativePath.substring(1);
         }

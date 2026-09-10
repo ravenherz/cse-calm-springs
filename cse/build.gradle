@@ -139,6 +139,10 @@ tasks.named('processResources', Copy) {
         into 'install'
         rename { 'admin.cseapp' }
     }
+    from(project(':app-login').tasks.named('packRelease')) {
+        into 'install'
+        rename { 'login.cseapp' }
+    }
     from(project(':theme-thymeleaf-modern').tasks.named('packRelease')) {
         into 'install/themes'
         rename { 'modern.csetheme' }

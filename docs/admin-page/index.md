@@ -7,10 +7,10 @@ Only **Admin** and **Owner** accounts can open it.
 ## Open the console
 
 1. Open the public site.
-2. Sign in from the account control (your login name, or the guest account panel on the page).
-3. Choose **Admin console**.
+2. Choose **Sign in** (your login name when you are already signed in). That opens the Sign in app at `/apps/login/`.
+3. Sign in, then choose **Admin console**.
 
-When you are already signed in as an operator, the account control lists **Admin console** and **Logout**.
+When you are already signed in as an operator, the Sign in app lists **Admin console** and **Log out**.
 
 ![Public site with an operator signed in](index-md-image-1.jpg)
 

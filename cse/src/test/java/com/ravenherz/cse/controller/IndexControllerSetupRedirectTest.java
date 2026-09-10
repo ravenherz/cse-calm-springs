@@ -42,7 +42,7 @@ class IndexControllerSetupRedirectTest {
                 null, null, null, null, null);
 
         assertNull(view);
-        assertEquals("/rhz-we/static-pages/setup/", response.getRedirectedUrl());
+        assertEquals("/rhz-we/apps/setup/", response.getRedirectedUrl());
     }
 
     @Test

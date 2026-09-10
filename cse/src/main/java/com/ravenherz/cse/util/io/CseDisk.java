@@ -22,7 +22,7 @@ public final class CseDisk {
     public static final String ROOT_INSTANCE_SLUG = "ROOT";
     static final String SITE_READY_MARKER = ".site-ready";
     private static final String CONTENT_CACHE = "content-cache";
-    private static final String STATIC_PAGES = "static-pages";
+    private static final String STATIC_PAGES = "apps";
     private static final String THEMES = "themes";
     private static final String CONTENT_PRIVATE = "content-private";
     private static final String CONFIGURATION = "configuration";
@@ -175,7 +175,7 @@ public final class CseDisk {
                 return preferred;
             }
             File fallback = new File(System.getProperty("java.io.tmpdir"),
-                    "cse-static-pages-" + instanceSlug());
+                    "cse-apps-" + instanceSlug());
             if (ensureWritable(fallback)) {
                 LOGGER.warn("Cannot write static apps under {} ; using {}", preferred.getAbsolutePath(),
                         fallback.getAbsolutePath());

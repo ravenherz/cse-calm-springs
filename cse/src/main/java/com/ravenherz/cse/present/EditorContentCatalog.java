@@ -108,7 +108,7 @@ public final class EditorContentCatalog {
         if (StaticAppDeployer.ADMIN_SLUG.equals(slug)) {
             return "/editor/resources";
         }
-        return "/static-pages/" + slug + "/";
+        return "/apps/" + slug + "/";
     }
 
     private static AppDisplayDTO fromShipped(ShippedPackCatalog.Pack pack, StaticAppDeployer deployer) {

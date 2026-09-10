@@ -14,6 +14,8 @@ class StaticAppDeployerSlugTest {
         assertThrows(IllegalArgumentException.class, () -> deployer.validateSlug("setup"));
         assertThrows(IllegalArgumentException.class, () -> deployer.validateSlug("install"));
         assertThrows(IllegalArgumentException.class, () -> deployer.validateSlug("admin"));
+        assertThrows(IllegalArgumentException.class, () -> deployer.validateSlug("login"));
+        assertThrows(IllegalArgumentException.class, () -> deployer.validateSlug("apps"));
         assertDoesNotThrow(() -> deployer.validateSlug("hello"));
     }
 

@@ -7,7 +7,7 @@
     <script>
         (function () {
             var path = location.pathname.replace(/\/+$/, '');
-            var cut = path.indexOf('/static-pages/admin');
+            var cut = path.indexOf('/apps/admin');
             var ctx = cut >= 0 ? path.substring(0, cut) : '';
             location.replace(ctx + '/editor/resources');
         })();

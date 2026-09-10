@@ -73,9 +73,11 @@ class ModernIndexTemplateTest {
         assertTrue(html.contains("#s-music-releases"), html);
         assertTrue(html.contains("id=\"s-music-releases\""), html);
         assertFalse(html.contains("#{"), "Spring EL must not treat #s- as an expression: " + html);
-        assertTrue(html.contains("id=\"loginpanel-username\""), html);
+        assertTrue(html.contains("account-link"), html);
+        assertTrue(html.contains("apps/login"), html);
+        assertFalse(html.contains("id=\"loginpanel-username\""), html);
+        assertFalse(html.contains("cse-lp.js"), html);
         assertTrue(html.contains("/content-public/themes/modern/js/jquery.min.js"), html);
-        assertTrue(html.contains("/content-public/themes/modern/js/cse-lp.js"), html);
         assertTrue(html.contains("/content-public/cse-core/css/system.css"), html);
         assertFalse(html.contains("/content-public/js/"), html);
         assertFalse(html.contains("fonts.googleapis.com"), html);
@@ -93,8 +95,21 @@ class ModernIndexTemplateTest {
         assertTrue(html.contains("stylesShell"), html);
         assertTrue(html.contains("TagCompanyName"), html);
         assertTrue(html.contains("TagCompanySocialLinks"), html);
+        assertTrue(html.contains("apps/login"), html);
+        assertFalse(html.contains("loginpanel-username"), html);
+        assertFalse(html.contains("cse-lp.js"), html);
         assertFalse(html.contains("content-public/js"), html);
         assertFalse(html.contains("fonts.googleapis.com"), html);
+    }
+
+    @Test
+    void twoThousandsThemeReplacesLoginPanelWithAppLink() throws Exception {
+        Path src = theme2000sSrc().resolve("index.html");
+        String html = Files.readString(src);
+        assertTrue(html.contains("apps/login"), html);
+        assertFalse(html.contains("loginpanel-username"), html);
+        assertFalse(html.contains("cse-lp.js"), html);
+        assertFalse(html.contains("loginPanelInit"), html);
     }
 
     private static SpringTemplateEngine engine() {
@@ -133,5 +148,17 @@ class ModernIndexTemplateTest {
             return fromRoot;
         }
         throw new IllegalStateException("theme-js-client/src/index.html not found");
+    }
+
+    private static Path theme2000sSrc() {
+        Path fromCse = Path.of("..", "theme-thymeleaf-2000s", "src").toAbsolutePath().normalize();
+        if (Files.isRegularFile(fromCse.resolve("index.html"))) {
+            return fromCse;
+        }
+        Path fromRoot = Path.of("theme-thymeleaf-2000s", "src").toAbsolutePath().normalize();
+        if (Files.isRegularFile(fromRoot.resolve("index.html"))) {
+            return fromRoot;
+        }
+        throw new IllegalStateException("theme-thymeleaf-2000s/src/index.html not found");
     }
 }

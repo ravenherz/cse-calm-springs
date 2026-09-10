@@ -39,11 +39,13 @@ public class StaticAppDeployer {
     public static final String INSTALLER_CLASSPATH = "install/setup.cseapp";
     public static final String ADMIN_SLUG = "admin";
     public static final String ADMIN_CLASSPATH = "install/admin.cseapp";
+    public static final String LOGIN_SLUG = "login";
+    public static final String LOGIN_CLASSPATH = "install/login.cseapp";
     private static final Pattern SLUG = Pattern.compile("^[a-z0-9][a-z0-9-]{0,62}$");
     private static final Set<String> RESERVED = Set.of(
             "index", "editor", "admin", "apps", "rest", "account", "error",
             "content-public", "content-private", "content-cache", "content-protected",
-            "static-pages", INSTALLER_SLUG, "install", "cse", "app-data"
+            INSTALLER_SLUG, LOGIN_SLUG, "install", "cse", "app-data"
     );
     private static final int MAX_ENTRIES = 4000;
     private static final long MAX_UNCOMPRESSED = 200L * 1024 * 1024;

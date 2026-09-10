@@ -23,6 +23,7 @@ class PublicApiDocsTest {
         assertTrue(paths.contains("/rest/site"));
         assertTrue(paths.contains("/"));
         assertTrue(paths.contains("/content-protected/**"));
+        assertTrue(paths.contains("/apps/{slug}/**"));
         assertTrue(paths.contains("/static-pages/{slug}/**"));
         assertTrue(paths.contains("/install/status"));
         assertTrue(paths.contains("/install/mongo"));

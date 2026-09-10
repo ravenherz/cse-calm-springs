@@ -1,6 +1,6 @@
 # API
 
-**API** documents the public HTTP surface for themes, the login panel, and first-boot setup. It is a reference, not a second admin.
+**API** documents the public HTTP surface for themes, the login app, and first-boot setup. It is a reference, not a second admin.
 
 Prefix every path with this instance’s context (`/` on a root install, or the context path if the engine is mounted under one). `/editor/**` is Admin HTML (forms) and is **not** listed here.
 
@@ -9,7 +9,7 @@ Prefix every path with this instance’s context (`/` on a root install, or the 
 ## Tabs
 
 - **Conventions** — cookies, CSRF, JSON envelope
-- **Account** — login panel JSON
+- **Account** — sign-in and register JSON
 - **REST helpers** — forms and markdown helpers themes call
 - **Public site** — HTML, media, `GET /rest/site` for JS shells
 - **First-boot install** — JSON while the installer is open (these routes 404 after Finish)

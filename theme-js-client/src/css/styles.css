@@ -95,43 +95,17 @@ img {
     margin-left: auto;
 }
 
-.account-menu {
-    position: relative;
-}
-
-.account-menu summary {
-    list-style: none;
-    cursor: pointer;
+.account-link {
     color: var(--muted);
     font-size: 0.9rem;
     font-weight: 500;
+    text-decoration: none;
 }
 
-.account-menu summary::-webkit-details-marker {
-    display: none;
+.account-link:hover {
+    color: var(--ink);
 }
 
-.account-panel {
-    position: absolute;
-    right: 0;
-    top: calc(100% + 10px);
-    width: 260px;
-    padding: 16px;
-    background: var(--surface);
-    border: 1px solid var(--line);
-    border-radius: 12px;
-    box-shadow: 0 16px 40px rgba(22, 21, 19, 0.12);
-}
-
-.account-panel p,
-.account-panel h6 {
-    margin: 0 0 10px;
-    font-size: 0.9rem;
-    color: var(--muted);
-}
-
-.account-panel button,
-.account-panel input,
 .state-panel button,
 .state-panel input {
     width: 100%;
@@ -145,7 +119,6 @@ img {
     font-size: 0.9rem;
 }
 
-.account-panel button:hover,
 .state-panel button:hover {
     border-color: var(--accent);
     color: var(--accent);
@@ -545,28 +518,6 @@ img {
 .notification.failure {
     background: var(--color-notification-failure-bg);
     color: var(--color-notification-failure-text);
-}
-
-#popup-registration-container {
-    position: fixed;
-    inset: 0;
-    z-index: 50;
-    display: none;
-    background: rgb(22 21 19 / 0.45);
-}
-
-#popup-registration-container:not([hidden]) {
-    display: block;
-}
-
-#registration-window-content {
-    max-width: 720px;
-    max-height: 90vh;
-    margin: 40px auto;
-    padding: 28px;
-    overflow: auto;
-    background: var(--surface);
-    border-radius: 16px;
 }
 
 .theme-modern .item-type,

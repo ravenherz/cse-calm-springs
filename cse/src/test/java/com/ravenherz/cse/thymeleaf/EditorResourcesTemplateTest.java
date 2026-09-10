@@ -252,7 +252,7 @@ class EditorResourcesTemplateTest {
         app.setSlug("fretlab");
         app.setName("Fretboard Lab");
         app.setBundled(true);
-        app.setPublicUrl("/static-pages/fretlab/");
+        app.setPublicUrl("/apps/fretlab/");
         context.setVariable("selectedGroup", apps);
         context.setVariable("panePages", null);
         context.setVariable("paneApps", List.of(app));
@@ -266,7 +266,7 @@ class EditorResourcesTemplateTest {
         app.setSizeInBytes(4096);
         context.setVariable("paneApps", List.of(app));
         String appsLogoHtml = engine.process("admin/editor-resources", context);
-        assertTrue(appsLogoHtml.contains("/static-pages/fretlab/product-logo.jpg"), appsLogoHtml);
+        assertTrue(appsLogoHtml.contains("/apps/fretlab/product-logo.jpg"), appsLogoHtml);
         assertTrue(appsLogoHtml.contains("v=4096"), appsLogoHtml);
         assertTrue(appsHtml.contains("accept=\".cseapp\""), appsHtml);
         assertTrue(appsHtml.contains(">WAR<"), appsHtml);

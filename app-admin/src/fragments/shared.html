@@ -502,7 +502,7 @@
             </div>
             <img th:if="${app.productLogo}"
                  class="item-thumb"
-                 th:src="@{/static-pages/{slug}/product-logo.jpg(slug=${app.slug}, v=${app.sizeInBytes})}"
+                 th:src="@{/apps/{slug}/product-logo.jpg(slug=${app.slug}, v=${app.sizeInBytes})}"
                  alt=""/>
             <div th:unless="${app.productLogo}" class="app-logo-fallback" th:text="${app.slug}">slug</div>
             <div class="thumb-tags">

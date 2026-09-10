@@ -16,7 +16,7 @@ public final class Strings {
     public static final String PATH_CONFIGURATION = "/static/content-private/configuration/";
     public static final String PATH_SETUP_PAGES = "/static/content-private/page-blocks/html/setup/";
     public static final String PATH_STATIC_PAGES = "/static/content-public/pages/";
-    public static final String PATH_STATIC_PAGES_DISK = "/var/cse/content-cache/static-pages/";
+    public static final String PATH_STATIC_PAGES_DISK = "/var/cse/content-cache/apps/";
     public static final String PATH_SOCIAL_LOGO_DEFAULT = "static/content-public/extensions/social-networks/default.png";
 
     public static final String POSTFIX_CONTAINER = "-container";

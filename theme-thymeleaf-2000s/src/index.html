@@ -24,9 +24,6 @@
   <script id="script-cse-csrf" type="text/javascript"
           th:src="@{/content-public/themes/__${stylesShell}__/js/cse-csrf.js(v=7)}"
           src="js/cse-csrf.js?v=7"></script>
-  <script id="script-cse-dist-sha512" type="text/javascript"
-          th:src="@{/content-public/themes/__${stylesShell}__/js/sha512.js}"
-          src="js/sha512.js"></script>
   <script id="script-cse-dist-bootstrap" type="text/javascript"
           th:src="@{/content-public/themes/__${stylesShell}__/js/bootstrap.min.js}"
           src="js/bootstrap.min.js"></script>
@@ -62,15 +59,6 @@
           th:unless="${configured}"
           th:src="@{/content-public/themes/__${stylesShell}__/js/cse-setup.js}"
           src="js/cse-setup.js"></script>
-  <script id="script-cse-lp" type="text/javascript"
-          th:if="${configured} and ${loginPanel}"
-          th:src="@{/content-public/themes/__${stylesShell}__/js/cse-lp.js}"
-          src="js/cse-lp.js"></script>
-  <script id="script-cse-tiny" type="text/javascript"
-          th:if="${configured} and ${loginPanel}"
-          th:src="@{/content-public/themes/__${stylesShell}__/js/cse-tiny.js}"
-          src="js/cse-tiny.js"></script>
-
 </head>
 <body id="page-body">
 <div class="cse-player">
@@ -128,116 +116,11 @@
                           CMS,
                           written in Java.</h6>
                       </div>
-                      <div th:if="${configured} and ${loginPanel}" class="div-wide-100">
-                        <div th:unless="${authenticated}" id="loginpanel-guest">
-                          <div id="loginpanel-guest-default">
-                            <h6>In order to use full functionality of this site you have to be a <b>registred</b>
-                              user, please register or sign in</h6>
-                            <button id="loginpanel-button-register" class="transition">New account
-                            </button>
-                            <button id="loginpanel-button-ihaveanaccount" class="transition">I have
-                              an account
-                            </button>
-                            <br>
-                          </div>
-                          <div id="loginpanel-guest-signin" hidden="hidden">
-                            <label for="loginpanel-username">Username</label>
-                            <input class="transition" name="loginpanel-input"
-                                   id="loginpanel-username" type="text" placeholder="Enter username"
-                                   required>
-                            <label for="loginpanel-password">Password</label>
-                            <input class="transition" name="loginpanel-input"
-                                   id="loginpanel-password" type="password"
-                                   placeholder="Enter password" required>
-                            <button id="loginpanel-button-signin" class="transition"
-                                    hidden="hidden">Sign in
-                            </button>
-                            <div id="loginpanel-notification-failure" class="notification failure"
-                                 hidden="true">
-                              <div class="container-fluid">
-                                <div class="row content">
-                                  <div class="icon"><h1>&#x24D8</h1></div>
-                                  <div class="text"><u><i
-                                          id="loginpanel-notification-header">Error</i></u><br>
-                                    <div id="loginpanel-notification-description">Wrong credentials,<br>try
-                                      again
-                                    </div>
-                                  </div>
-                                </div>
-                              </div>
-                            </div>
-                            <button id="loginpanel-button-idonthaveanaccount" class="transition">I
-                              don't have an account
-                            </button>
-                          </div>
-                          <script type="text/javascript">
-                            $(document).ready(function () {
-                              loginPanelInit();
-                            });
-                          </script>
-                        </div>
-                        <div th:if="${authenticated}" id="loginpanel-user">
-                          <h6>Welcome, <a class="transition" href="./user" th:utext="${username}">username</a>!
-                          </h6>
-                          <button id="loginpanel-button-editor" class="transition" onclick="window.location.href='./editor'">Admin console</button>
-                          <button id="loginpanel-button-logout" class="transition"
-                                  onclick="loginPanelLogout()">Logout
-                          </button>
-                        </div>
-                        <div id="popup-registration-container" hidden="hidden">
-                          <div id="registration-window" class="row lots-editor">
-                            <div class="col-sm-4">
-                            </div>
-                            <div class="col-sm-4">
-                              <div class="row">
-                                <div id="registration-window-content" class="col-sm-12"
-                                     style="margin-top: 50px">
-                                  <div class="item">
-                                    <div class="item-description">
-                                      <div class="item-description-content">
-                                        <div class="text-region">
-                                          <br>
-                                          <b>Dear guest</b>,<br><br>
-                                          <p>Please provide registrational data</p>
-                                          <br>
-                                          <div id="registration-window-form">
-
-                                          </div>
-                                          <script type="text/javascript">
-                                            $(document).ready(function () {
-                                              registerForm("registration-window-form",
-                                                      "form-account-register");
-                                            });
-                                          </script>
-                                          <button id="registration-window-button-cancel"
-                                                  class="transition">Cancel
-                                          </button>
-                                          <div id="registration-window-notification-failure"
-                                               class="notification failure" hidden="hidden">
-                                            <div class="container-fluid">
-                                              <div class="row content">
-                                                <div class="icon"><h1>&#x24D8</h1></div>
-                                                <div class="text"><span style="text-decoration: underline;"><i
-                                                        id="registration-window-notification-header">Error</i></span><br>
-                                                  <div
-                                                          id="registration-window-notification-description">
-                                                    Something went wrong<br>Server-side
-                                                  </div>
-                                                </div>
-                                              </div>
-                                            </div>
-                                          </div>
-                                        </div>
-                                      </div>
-                                    </div>
-                                  </div>
-                                </div>
-                              </div>
-                            </div>
-                            <div class="col-sm-4">
-                            </div>
-                          </div>
-                        </div>
+                      <div th:if="${configured}" class="div-wide-100">
+                        <h6>
+                          <a class="account-link" th:href="@{/apps/login/}"
+                             th:text="${authenticated} ? ${username} : 'Sign in'">Sign in</a>
+                        </h6>
                       </div>
                     </div>
                   </div>

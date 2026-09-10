@@ -29,7 +29,7 @@ class StaticPagesControllerInstallerTest {
 
         MockHttpServletRequest request = new MockHttpServletRequest();
         request.setContextPath("/rhz-we");
-        request.setRequestURI("/rhz-we/static-pages/setup/");
+        request.setRequestURI("/rhz-we/apps/setup/");
         MockHttpServletResponse response = new MockHttpServletResponse();
 
         assertNull(controller.getResource(request, response));

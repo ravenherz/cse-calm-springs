@@ -108,7 +108,7 @@ public class EditorSiteDataController extends AbstractController {
         deleteAuthCookies(request, response);
         if (!siteReadyGate.isConfigured()) {
             setupAppBootstrap.explodeInstaller();
-            response.sendRedirect(request.getContextPath() + "/static-pages/setup/");
+            response.sendRedirect(request.getContextPath() + "/apps/setup/");
             return null;
         }
         response.sendRedirect(request.getContextPath() + "/");

@@ -10,7 +10,7 @@ Apps are self-contained pieces that sit beside the rest of the site — experime
 
 Tags:
 
-- **WAR** — bundled with the engine (admin, setup). You do not remove these.
+- **WAR** — bundled with the engine (admin, setup, login). You do not remove these.
 - **APP** — an installed `.cseapp` pack.
 - **STORE** — the operator has enabled the JSON data store for that pack.
 - Size and company, when the pack declares them.
@@ -19,13 +19,13 @@ Tags:
 
 ## Install a pack
 
-The gold **+** accepts a `.cseapp` file. Click or drop. The install prefix is the pack’s **`slug`** in `version.manifest` (not the zip filename). After install, the new tile appears in this pane (and in the tree) at `/static-pages/{slug}/`. If the pack includes a product logo, the tile uses it.
+The gold **+** accepts a `.cseapp` file. Click or drop. The install prefix is the pack’s **`slug`** in `version.manifest` (not the zip filename). After install, the new tile appears in this pane (and in the tree) at `/apps/{slug}/`. If the pack includes a product logo, the tile uses it.
 
 A pack without a slug in `version.manifest` is rejected. Re-uploading a zip with the same slug replaces that install.
 
 ## Bundled vs installed
 
-**Calm Springs admin** and **Calm Springs setup** are the desk and the first-boot installer. Leave them. Installed packs can be removed with **×** when the tile allows it — confirmation first. Removing a pack keeps its data-store collections so a re-upload of the same slug can restore them.
+**Calm Springs admin**, **Calm Springs setup**, and **Sign in** are the desk, the first-boot installer, and the public account app. Leave them. Installed packs can be removed with **×** when the tile allows it — confirmation first. Removing a pack keeps its data-store collections so a re-upload of the same slug can restore them.
 
 Apps do not replace [themes](themes.md). A theme is the public skin; an app is an extra product on the same instance.
 

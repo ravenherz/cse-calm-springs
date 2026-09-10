@@ -31,6 +31,7 @@ class ShippedPackCatalogTest {
                 .collect(Collectors.toSet());
         assertTrue(apps.contains("setup"), apps.toString());
         assertTrue(apps.contains("admin"), apps.toString());
+        assertTrue(apps.contains("login"), apps.toString());
         assertFalse(apps.contains("projects"), apps.toString());
     }
 

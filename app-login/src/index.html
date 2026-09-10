@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sign in</title>
+<link rel="icon" href="../../content-public/cse-core/images/favicon.ico" type="image/x-icon">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../../content-public/admin/css/editor.css">
+<link rel="stylesheet" href="css/login.css">
+<meta name="theme-color" content="#0b0c0f">
+</head>
+<body>
+<div class="editor-layout">
+  <header class="editor-sidebar">
+    <a class="sidebar-brand" id="link-site-brand" href="../..">
+      <img class="brand-mark" src="../../content-public/cse-core/images/favicon.ico" alt="">
+      <span class="brand-text">Calm Springs</span>
+    </a>
+    <nav class="editor-nav">
+      <a id="nav-signin" href="./">Sign in</a>
+      <a id="nav-register" href="./?register">Create account</a>
+    </nav>
+    <div class="sidebar-foot">
+      <div class="sidebar-user" id="who" hidden></div>
+      <a class="back-link" id="link-site" href="../..">Site</a>
+    </div>
+  </header>
+  <main class="editor-main login-main">
+    <header class="page-header">
+      <h1 class="page-title" id="page-title">Sign in</h1>
+    </header>
+    <p class="error-message" id="banner-error" hidden></p>
+    <p class="success-message" id="banner-ok" hidden></p>
+    <p class="field-hint" id="panel-load">Loading…</p>
+
+    <section id="panel-setup" hidden>
+      <p class="field-hint">This site is still in first-boot setup. Finish that before signing in.</p>
+      <p><a class="btn btn-primary" id="link-setup" href="../setup/">Open setup</a></p>
+    </section>
+
+    <section id="panel-signin" hidden>
+      <p class="field-hint">Use the account for this site.</p>
+      <form id="form-signin" class="form-panel">
+        <div class="form-group">
+          <label for="loginpanel-username">Username</label>
+          <input type="text" id="loginpanel-username" name="loginpanel-username" autocomplete="username" required>
+        </div>
+        <div class="form-group">
+          <label for="loginpanel-password">Password</label>
+          <input type="password" id="loginpanel-password" name="loginpanel-password" autocomplete="current-password" required>
+        </div>
+        <button type="submit" class="btn btn-primary" id="btn-signin">Sign in</button>
+      </form>
+      <p class="field-hint">No account yet? <a id="link-to-register" href="./?register">Create one</a>.</p>
+    </section>
+
+    <section id="panel-register" hidden>
+      <p class="field-hint">Pick a login, email, and password. You can sign in right after this.</p>
+      <form id="form-register" class="form-panel">
+        <div class="form-group">
+          <label for="ACCOUNT_LOGIN">Login</label>
+          <input type="text" id="ACCOUNT_LOGIN" name="ACCOUNT_LOGIN" autocomplete="username" required
+              minlength="4" maxlength="25" pattern="[a-z0-9_-]{4,25}"
+              title="4–25 characters: lowercase letters, digits, underscore, or hyphen">
+        </div>
+        <div class="form-group">
+          <label for="ACCOUNT_EMAIL">Email</label>
+          <input type="email" id="ACCOUNT_EMAIL" name="ACCOUNT_EMAIL" autocomplete="email" required>
+        </div>
+        <div class="form-group">
+          <label for="ACCOUNT_SHOWN_NAME">Shown name</label>
+          <input type="text" id="ACCOUNT_SHOWN_NAME" name="ACCOUNT_SHOWN_NAME" autocomplete="nickname"
+              maxlength="25" placeholder="Optional">
+        </div>
+        <div class="form-group">
+          <label for="ACCOUNT_PASSWORD">Password</label>
+          <input type="password" id="ACCOUNT_PASSWORD" name="ACCOUNT_PASSWORD" autocomplete="new-password" required
+              minlength="8">
+        </div>
+        <div class="form-group">
+          <label for="ACCOUNT_PASSWORD_RETYPE">Password again</label>
+          <input type="password" id="ACCOUNT_PASSWORD_RETYPE" name="ACCOUNT_PASSWORD_RETYPE" autocomplete="new-password" required>
+        </div>
+        <button type="submit" class="btn btn-primary" id="btn-register">Create account</button>
+      </form>
+      <p class="field-hint">Already have an account? <a id="link-to-signin" href="./">Sign in</a>.</p>
+    </section>
+
+    <section id="panel-user" hidden>
+      <p class="login-welcome">Signed in as <strong id="user-name">user</strong>.</p>
+      <div class="login-actions">
+        <a class="btn btn-primary" id="link-editor" href="../../editor">Admin console</a>
+        <button type="button" class="btn btn-secondary" id="btn-logout">Log out</button>
+      </div>
+    </section>
+  </main>
+</div>
+<script src="js/login.js"></script>
+</body>
+</html>

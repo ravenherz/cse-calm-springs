@@ -36,7 +36,7 @@ public final class PublicApiDocs {
 
     private static Section account() {
         return new Section("account", "Account",
-                "JSON helpers used by the public login panel and JS themes. HTTP status for /account "
+                "JSON helpers used by the login app and JS themes. HTTP status for /account "
                         + "and most /rest POSTs is 200 even when the payload status is 400/429/500 — "
                         + "read status in the body. GET /rest/site uses a real HTTP status.",
                 List.of(
@@ -59,8 +59,9 @@ public final class PublicApiDocs {
                                 """
                                 { "status": 200 }"""),
                         new Endpoint("POST", "/account/register", "Public", true,
-                                "Create a member. Keys are the Param enum names, not the login-panel ids. "
-                                        + "ACCOUNT_SHOWN_NAME may be omitted or blank.",
+                                "Create a member. Keys are the Param enum names, not the login-form ids. "
+                                        + "ACCOUNT_SHOWN_NAME may be omitted or blank. "
+                                        + "The new account can sign in immediately (cookies are set on success).",
                                 """
                                 {
                                   "ACCOUNT_LOGIN": "ada",
@@ -83,7 +84,7 @@ public final class PublicApiDocs {
 
     private static Section rest() {
         return new Section("rest", "REST helpers",
-                "Theme and login-panel scripts POST JSON here. Success uses the RestResponse envelope "
+                "Theme and login-app scripts POST JSON here. Success uses the RestResponse envelope "
                         + "(status, restObject, message) except /rest/error and GET /rest/site.",
                 List.of(
                         new Endpoint("GET", "/rest/site", "Public", false,
@@ -150,7 +151,7 @@ public final class PublicApiDocs {
                         + "plus exploded theme packs under /content-public/themes/{id}/.",
                 List.of(
                         new Endpoint("GET", "/", "Public", false,
-                                "Theme shell. Unconfigured instances redirect to /static-pages/setup/. "
+                                "Theme shell. Unconfigured instances redirect to /apps/setup/. "
                                         + "Query: page, album, tag, category, error.",
                                 "?page={uri}  &album={uri}  &tag=  &category=  &error=",
                                 "text/html"),
@@ -159,10 +160,14 @@ public final class PublicApiDocs {
                                         + "/content-public/cse-core/images/no-image.jpg.",
                                 "/content-protected{pathPublic}",
                                 "bytes, or 302 to no-image.jpg"),
-                        new Endpoint("GET", "/static-pages/{slug}/**", "Public", false,
+                        new Endpoint("GET", "/apps/{slug}/**", "Public", false,
                                 "Exploded .cseapp files. The setup slug 404s after the site is ready.",
-                                "/static-pages/admin/",
-                                "file bytes")
+                                "/apps/admin/",
+                                "file bytes"),
+                        new Endpoint("GET", "/static-pages/{slug}/**", "Public", false,
+                                "Legacy alias. 301 to the same path under /apps/.",
+                                "/static-pages/login/",
+                                "301  /apps/login/")
                 ));
     }
 

@@ -10,7 +10,7 @@
             return fromMeta.length ? fromMeta : '/';
         }
         var path = window.location.pathname || '/';
-        var pages = path.indexOf('/static-pages/');
+        var pages = path.indexOf('/apps/');
         if (pages > 0) {
             return path.substring(0, pages);
         }

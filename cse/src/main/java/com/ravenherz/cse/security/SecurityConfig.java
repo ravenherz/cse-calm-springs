@@ -22,7 +22,7 @@ import org.springframework.web.multipart.support.MultipartFilter;
 /**
  * CSRF, frame options, nosniff, HSTS on HTTPS, and a site CSP.
  * No {@code requiresChannel} (servlet {@code CONFIDENTIAL} stays the HTTPS redirector).
- * {@code /static-pages/**} is excluded from CSP so {@code .cseapp} HTML can use its own origins.
+ * {@code /apps/**} is excluded from CSP so {@code .cseapp} HTML can use its own origins.
  */
 @Configuration
 @EnableWebSecurity
@@ -60,7 +60,7 @@ public class SecurityConfig {
                             .maxAgeInSeconds(31536000));
                     headers.addHeaderWriter(new DelegatingRequestMatcherHeaderWriter(
                             new NegatedRequestMatcher(PathPatternRequestMatcher.withDefaults()
-                                    .matcher("/static-pages/**")),
+                                    .matcher("/apps/**")),
                             new ContentSecurityPolicyHeaderWriter(CseContentSecurityPolicy.DIRECTIVES)));
                 })
                 .sessionManagement(session -> session

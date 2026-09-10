@@ -14,7 +14,7 @@ Product pitch lives in [docs/pitch.md](docs/pitch.md).
 
 ### 0.5.X (mostly 2026)
 Tomcat 10 web-app
-- External static-apps support (`.cseapp` → `/static-pages/{slug}/`)
+- External static-apps support (`.cseapp` → `/apps/{slug}/`)
 - Admin console UI rework (dedicated editor pages; public in-place modal retired)
 - Admin log tail (`/editor/logs`, ADMIN+)
 - HEIC/HEIF upload → stored JPEG; optional low-res preview (`image-upload.json`)
@@ -26,11 +26,11 @@ Tomcat 10 web-app
 - Tag listings: tagged items → actor access → active+readable categories
 - Auth: Argon2id on the server, HttpOnly/Secure/SameSite cookies, session kill on logout, SecureRandom tokens, login rate limit (`internal-docs/auth-flow.md`)
 - Spring Security: CSRF (`XSRF-TOKEN` cookie + `_csrf` on forms), cookie session in `SecurityContext` (no `HttpSession`/`formLogin`); `/editor` gated by the filter (`ROLE_ADMIN` for apps/logs)
-- Headers: `X-Frame-Options: DENY`, `X-Content-Type-Options: nosniff`, HSTS on HTTPS; CSP (inline handlers + Quill + Google Fonts; `/static-pages` excluded)
+- Headers: `X-Frame-Options: DENY`, `X-Content-Type-Options: nosniff`, HSTS on HTTPS; CSP (inline handlers + Quill + Google Fonts; `/apps` excluded)
 - Engine rename in code/data: package `com.ravenherz.cse`, Mongo collections `cse-*` (public URL still `/rhz-we`)
 - Mongo: Morphia → Spring Data (`MongoTemplate`, ObjectId refs, no `_class`); convert dumps with `scripts/migrate-morphia-to-spring-data.js`
 - First-boot installer (not the old in-theme dialogue):
-  - Packed app `app-setup/` → classpath `install/setup.cseapp` → `/static-pages/setup/` while unconfigured; `GET /` 302s there; gone after finish
+  - Packed app `app-setup/` → classpath `install/setup.cseapp` → `/apps/setup/` while unconfigured; `GET /` 302s there; gone after finish
   - `GET/POST /install/**` (status, mongo, owner, finish) until the site is ready, then 404
   - Mongo: Connect form, or skip with `CSE_MONGO_*` / `CSE_MONGODB_URI`; optional mongosh guide if you only have a cluster admin (app user must live on the **app database**, `authSource` is not `admin`)
   - Passwords: env or `/var/cse/{tomcat-context}/content-private/configuration/secret-dbms-*.json` — never editor settings, never the WAR

@@ -35,12 +35,6 @@
   <link rel="icon" href="content-public/cse-core/images/favicon.ico"
         th:href="@{/content-public/cse-core/images/favicon.ico}"
         type="image/x-icon">
-  <script id="script-cse-lp" type="text/javascript"
-          th:src="@{/content-public/themes/__${stylesShell}__/js/cse-lp.js}"
-          src="js/cse-lp.js"></script>
-  <script id="script-cse-tiny" type="text/javascript"
-          th:src="@{/content-public/themes/__${stylesShell}__/js/cse-tiny.js}"
-          src="js/cse-tiny.js"></script>
   <script id="script-cse-waveform" type="text/javascript"
           th:src="@{/content-public/themes/__${stylesShell}__/js/cse-waveform.js}"
           src="js/cse-waveform.js"></script>
@@ -82,37 +76,7 @@
   <a class="brand" id="site-brand" href="./">Calm Springs</a>
   <nav class="site-nav" id="site-nav"></nav>
   <div class="account-slot" id="account-slot" hidden>
-    <details class="account-menu">
-      <summary id="account-summary">Account</summary>
-      <div class="account-panel">
-        <div id="loginpanel-guest">
-          <div id="loginpanel-guest-default">
-            <p>Sign in to comment and use the rest of the site.</p>
-            <button id="loginpanel-button-register" class="transition">New account</button>
-            <button id="loginpanel-button-ihaveanaccount" class="transition">I have an account</button>
-          </div>
-          <div id="loginpanel-guest-signin" hidden="hidden">
-            <label for="loginpanel-username">Username</label>
-            <input class="transition" name="loginpanel-input" id="loginpanel-username" type="text" placeholder="Enter username" required>
-            <label for="loginpanel-password">Password</label>
-            <input class="transition" name="loginpanel-input" id="loginpanel-password" type="password" placeholder="Enter password" required>
-            <button id="loginpanel-button-signin" class="transition" hidden="hidden">Sign in</button>
-            <div id="loginpanel-notification-failure" class="notification failure" hidden="true">
-              <div class="icon"><h1>&#x24D8</h1></div>
-              <div class="text"><u><i id="loginpanel-notification-header">Error</i></u><br>
-                <div id="loginpanel-notification-description">Wrong credentials,<br>try again</div>
-              </div>
-            </div>
-            <button id="loginpanel-button-idonthaveanaccount" class="transition">I don't have an account</button>
-          </div>
-        </div>
-        <div id="loginpanel-user" hidden>
-          <p>Welcome, <a class="transition" href="./user" id="loginpanel-username-label">user</a></p>
-          <button id="loginpanel-button-editor" class="transition">Admin console</button>
-          <button id="loginpanel-button-logout" class="transition">Logout</button>
-        </div>
-      </div>
-    </details>
+    <a class="account-link" id="account-link" href="./apps/login/">Sign in</a>
   </div>
 </header>
 
@@ -134,25 +98,5 @@
   </div>
 </footer>
 
-<div id="popup-registration-container" hidden="hidden">
-  <div id="registration-window" class="row lots-editor">
-    <div class="col-sm-4"></div>
-    <div class="col-sm-4">
-      <div id="registration-window-content" class="col-sm-12">
-        <div class="text-region">
-          <p><b>Dear guest</b>, please provide registrational data</p>
-          <div id="registration-window-form"></div>
-          <button id="registration-window-button-cancel" class="transition">Cancel</button>
-          <div id="registration-window-notification-failure" class="notification failure" hidden="hidden">
-            <div class="icon"><h1>&#x24D8</h1></div>
-            <div class="text"><i id="registration-window-notification-header">Error</i><br>
-              <div id="registration-window-notification-description">Something went wrong<br>Server-side</div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
-</div>
 </body>
 </html>
