@@ -7,13 +7,17 @@ import org.springframework.security.web.csrf.CsrfToken;
 import org.springframework.security.web.csrf.CsrfTokenRepository;
 import org.springframework.security.web.csrf.DefaultCsrfToken;
 
+import java.net.URLDecoder;
+import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.UUID;
 
 /**
- * Same cookie flags as {@code AuthSupport}: context-path, {@code Secure} when
- * {@code X-Forwarded-Proto} is https, {@code SameSite=Lax}, 30-day max-age.
- * HttpOnly is false so {@code cse-csrf.js} can read the value.
- * A leftover {@code Path=/} cookie is expired only when clearing, never in the
+ * CSRF cookie is {@code Path=/} so {@code /app-data} receives it when the page is
+ * under {@code /static-pages} (bootRun at {@code /}) or the WAR context is omitted.
+ * HttpOnly is false so JS can echo the value as {@code X-XSRF-TOKEN}.
+ * A leftover context-path cookie is expired only when clearing, never in the
  * same {@code Set-Cookie} batch as a new token (Chrome treats {@code Max-Age=0}
  * {@code Path=/} as deleting every cookie with that name).
  */
@@ -31,29 +35,83 @@ final class CseCookieCsrfTokenRepository implements CsrfTokenRepository {
 
     @Override
     public void saveToken(CsrfToken token, HttpServletRequest request, HttpServletResponse response) {
-        String path = cookiePath(request);
         if (token == null || token.getToken() == null || token.getToken().isEmpty()) {
-            addCookie(request, response, "", 0, path);
-            if (!"/".equals(path)) {
-                addCookie(request, response, "", 0, "/");
+            addCookie(request, response, "", 0, "/");
+            String contextPath = cookiePath(request);
+            if (!"/".equals(contextPath)) {
+                addCookie(request, response, "", 0, contextPath);
             }
             return;
         }
-        addCookie(request, response, token.getToken(), COOKIE_MAX_AGE_SECONDS, path);
+        addCookie(request, response, token.getToken(), COOKIE_MAX_AGE_SECONDS, "/");
     }
 
     @Override
     public CsrfToken loadToken(HttpServletRequest request) {
-        if (request.getCookies() == null) {
+        List<String> values = cookieValues(request);
+        if (values.isEmpty()) {
             return null;
         }
+        String submitted = submittedToken(request);
+        if (submitted != null) {
+            for (String value : values) {
+                if (value.equals(submitted) || value.equals(decode(submitted))) {
+                    return new DefaultCsrfToken(HEADER_NAME, PARAMETER_NAME, value);
+                }
+            }
+        }
+        return new DefaultCsrfToken(HEADER_NAME, PARAMETER_NAME, values.get(0));
+    }
+
+    /**
+     * A leftover {@code Path=/} cookie and the context-path cookie both arrive as
+     * {@code XSRF-TOKEN}. {@code document.cookie} and the {@code Cookie} header do not
+     * always list them in the same order, so the header must pick the value.
+     */
+    private static List<String> cookieValues(HttpServletRequest request) {
+        List<String> values = new ArrayList<>();
+        if (request.getCookies() == null) {
+            return values;
+        }
         for (Cookie cookie : request.getCookies()) {
-            if (COOKIE_NAME.equals(cookie.getName()) && cookie.getValue() != null
-                    && !cookie.getValue().isBlank()) {
-                return new DefaultCsrfToken(HEADER_NAME, PARAMETER_NAME, cookie.getValue());
+            if (!COOKIE_NAME.equals(cookie.getName())) {
+                continue;
+            }
+            String value = decode(cookie.getValue());
+            if (value != null && !value.isBlank()) {
+                values.add(value);
+            }
+        }
+        return values;
+    }
+
+    private static String submittedToken(HttpServletRequest request) {
+        String header = request.getHeader(HEADER_NAME);
+        if (header != null && !header.isBlank()) {
+            return header.trim();
+        }
+        String[] parameters = request.getParameterValues(PARAMETER_NAME);
+        if (parameters == null) {
+            return null;
+        }
+        for (String parameter : parameters) {
+            if (parameter != null && !parameter.isBlank()) {
+                return parameter.trim();
             }
         }
         return null;
+    }
+
+    private static String decode(String value) {
+        if (value == null) {
+            return null;
+        }
+        String trimmed = value.trim();
+        try {
+            return URLDecoder.decode(trimmed, StandardCharsets.UTF_8);
+        } catch (IllegalArgumentException ex) {
+            return trimmed;
+        }
     }
 
     private static void addCookie(HttpServletRequest request, HttpServletResponse response,

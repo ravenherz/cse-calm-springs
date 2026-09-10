@@ -13,6 +13,7 @@ Prefix every path with this instance’s context (`/` on a root install, or the 
 - **REST helpers** — forms and markdown helpers themes call
 - **Public site** — HTML, media, `GET /rest/site` for JS shells
 - **First-boot install** — JSON while the installer is open (these routes 404 after Finish)
+- **App data** — JSON documents for installed `.cseapp` packs (`/app-data/{slug}/{table}`)
 
 Each endpoint row expands: method, path, who may call it, whether CSRF is required, and a short summary.
 
@@ -22,4 +23,4 @@ Each endpoint row expands: method, path, who may call it, whether CSRF is requir
 
 **Auth cookies.** `auth-login` and `auth-session` are HttpOnly. Scripts cannot read them; they are sent automatically on same-origin requests.
 
-**JSON envelope.** `/account/*` and most `/rest` POSTs return HTTP 200 with `{ "status", "restObject", "message" }`. Read `status` in the body. `GET /rest/site`, `/rest/error`, and `/install/**` do not use that envelope. First-boot install uses real HTTP status codes (404, 400, 409, 429).
+**JSON envelope.** `/account/*` and most `/rest` POSTs return HTTP 200 with `{ "status", "restObject", "message" }`. Read `status` in the body. `GET /rest/site`, `/rest/error`, `/install/**`, and `/app-data/**` do not use that envelope. First-boot install and app data use real HTTP status codes (404, 400, 409, 429).

@@ -1,6 +1,7 @@
 package com.ravenherz.build
 
 import groovy.json.JsonOutput
+import groovy.json.JsonSlurper
 import org.gradle.api.DefaultTask
 import org.gradle.api.file.DirectoryProperty
 import org.gradle.api.file.RegularFileProperty
@@ -100,6 +101,14 @@ abstract class PackRelease extends DefaultTask {
             }
             if (description) {
                 manifest.description = description
+            }
+            def stagedStore = new File(stage, 'store.json')
+            if (stagedStore.exists()) {
+                def store = new JsonSlurper().parse(stagedStore)
+                if (store != null) {
+                    manifest.store = store
+                }
+                stagedStore.delete()
             }
             def manifestJson = JsonOutput.prettyPrint(JsonOutput.toJson(manifest)) + '\n'
             new File(stage, 'version.manifest').setText(manifestJson, 'UTF-8')

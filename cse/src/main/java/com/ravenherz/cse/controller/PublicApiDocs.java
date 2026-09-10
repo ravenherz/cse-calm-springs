@@ -24,7 +24,7 @@ public final class PublicApiDocs {
     }
 
     public static List<Section> sections() {
-        return List.of(account(), rest(), site(), install());
+        return List.of(account(), rest(), site(), install(), appData());
     }
 
     public static List<String> paths() {
@@ -217,6 +217,63 @@ public final class PublicApiDocs {
                                 }""",
                                 """
                                 { "ok": true, "redirect": "/rhz-we/editor" }""")
+                ));
+    }
+
+    private static Section appData() {
+        return new Section("app-data", "App data",
+                "JSON documents for installed .cseapp packs. Collection names are {slug}-{table}; "
+                        + "the client never sends a collection string. HTTP status is real "
+                        + "(401, 403, 404, 413, 429, 507). CSRF on every mutating call. "
+                        + "The operator must enable the store on the Apps tile. Use cse-app-data.js "
+                        + "from /content-public/js/cse-app-data.js.",
+                List.of(
+                        new Endpoint("GET", "/app-data/{slug}/{table}", "ACL", false,
+                                "List documents. limit (cap 100), after (id cursor), mine=1. "
+                                        + "owner tables return the caller's rows unless the caller is a site admin.",
+                                "?limit=50  &after={id}  &mine=1",
+                                """
+                                { "items": [{ "id": "…", "ownerId": "…", "createdAt": "…", "updatedAt": "…", "data": {} }], "after": null }"""),
+                        new Endpoint("GET", "/app-data/{slug}/{table}/{id}", "ACL", false,
+                                "One document. 404 if missing; 401/403 when the table mode forbids the caller.",
+                                null,
+                                """
+                                { "id": "68b000000000000000000001", "ownerId": "…", "createdAt": "2026-09-08T12:00:00Z", "updatedAt": "2026-09-08T12:00:00Z", "data": { "tuning": "EADGBE" } }"""),
+                        new Endpoint("POST", "/app-data/{slug}/{table}", "ACL", true,
+                                "Create. Body is the data object, or { \"data\": {} }. "
+                                        + "ownerId comes from the session, never from the body. Rate-limited per IP+slug.",
+                                """
+                                { "tuning": "EADGBE" }""",
+                                """
+                                { "id": "…", "ownerId": "…", "createdAt": "…", "updatedAt": "…", "data": { "tuning": "EADGBE" } }"""),
+                        new Endpoint("PATCH", "/app-data/{slug}/{table}/{id}", "ACL", true,
+                                "Shallow-merge into data. Null values remove keys.",
+                                """
+                                { "tuning": "DADGAD" }""",
+                                """
+                                { "id": "…", "ownerId": "…", "createdAt": "…", "updatedAt": "…", "data": { "tuning": "DADGAD" } }"""),
+                        new Endpoint("DELETE", "/app-data/{slug}/{table}/{id}", "ACL", true,
+                                "Delete one document.",
+                                null,
+                                """
+                                { "status": 200 }"""),
+                        new Endpoint("GET", "/app-data/{slug}/_schema", "ACL", false,
+                                "Tables, access modes, and optional JSON Schema the engine stored. Store must be enabled.",
+                                null,
+                                """
+                                { "slug": "fretlab", "storeEnabled": true, "storeOpen": false, "admin": false, "tables": [{ "name": "progress", "access": "owner" }] }"""),
+                        new Endpoint("PUT", "/app-data/{slug}/_schema/{table}", "ACL", true,
+                                "Define or update a table. Site admin, or a signed-in member when storeOpen is on.",
+                                """
+                                { "access": "owner", "schema": { "type": "object" } }""",
+                                """
+                                { "name": "progress", "access": "owner", "schema": { "type": "object" } }"""),
+                        new Endpoint("PUT", "/app-data/{slug}/_grant", "ADMIN", true,
+                                "Enable the store or open schema. Catalog form POST /editor/apps/store is preferred.",
+                                """
+                                { "storeEnabled": true, "storeOpen": false }""",
+                                """
+                                { "status": 200, "storeEnabled": true, "storeOpen": false }""")
                 ));
     }
 }

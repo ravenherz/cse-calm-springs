@@ -27,7 +27,7 @@ class CseCookieCsrfTokenRepositoryTest {
         assertEquals(1, cookies.length);
         assertEquals("XSRF-TOKEN", cookies[0].getName());
         assertEquals("token-value", cookies[0].getValue());
-        assertEquals("/rhz-we", cookies[0].getPath());
+        assertEquals("/", cookies[0].getPath());
         assertEquals(CseCookieCsrfTokenRepository.COOKIE_MAX_AGE_SECONDS, cookies[0].getMaxAge());
         assertTrue(cookies[0].getSecure());
     }
@@ -43,9 +43,27 @@ class CseCookieCsrfTokenRepositoryTest {
 
         Cookie[] cookies = response.getCookies();
         assertEquals(2, cookies.length);
-        assertEquals("/rhz-we", cookies[0].getPath());
+        assertEquals("/", cookies[0].getPath());
         assertEquals(0, cookies[0].getMaxAge());
-        assertEquals("/", cookies[1].getPath());
+        assertEquals("/rhz-we", cookies[1].getPath());
         assertEquals(0, cookies[1].getMaxAge());
+    }
+
+    @Test
+    void loadTokenMatchesHeaderWhenDuplicateCookiesExist() {
+        CseCookieCsrfTokenRepository repository = new CseCookieCsrfTokenRepository();
+        MockHttpServletRequest request = new MockHttpServletRequest();
+        request.setCookies(new Cookie("XSRF-TOKEN", "stale-root"), new Cookie("XSRF-TOKEN", "context-path"));
+        request.addHeader("X-XSRF-TOKEN", "context-path");
+        assertEquals("context-path", repository.loadToken(request).getToken());
+    }
+
+    @Test
+    void loadTokenMatchesStaleHeaderWhenThatCookieIsPresent() {
+        CseCookieCsrfTokenRepository repository = new CseCookieCsrfTokenRepository();
+        MockHttpServletRequest request = new MockHttpServletRequest();
+        request.setCookies(new Cookie("XSRF-TOKEN", "stale-root"), new Cookie("XSRF-TOKEN", "context-path"));
+        request.addHeader("X-XSRF-TOKEN", "stale-root");
+        assertEquals("stale-root", repository.loadToken(request).getToken());
     }
 }

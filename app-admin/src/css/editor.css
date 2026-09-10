@@ -1513,6 +1513,24 @@ textarea.editor-textarea:focus {
 
 .checkbox-group input[type="checkbox"] { width: auto; accent-color: var(--accent); }
 
+.app-store-grant {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.app-store-grant .checkbox-group {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.85rem;
+}
+
+.app-store-grant .btn {
+  align-self: flex-start;
+}
+
 .category-badge,
 .category-badge-active {
   background: var(--gold-wash);

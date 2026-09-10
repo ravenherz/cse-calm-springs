@@ -156,6 +156,8 @@ public final class EditorContentCatalog {
         dto.setCompany(app.getAppData().getCompany());
         dto.setDescription(app.getAppData().getDescription());
         dto.setProductLogo(deployer != null && deployer.hasValidProductLogo(app.getAppData().getSlug()));
+        dto.setStoreEnabled(app.getAppData().isStoreEnabled());
+        dto.setStoreOpen(app.getAppData().isStoreOpen());
         return dto;
     }
 }

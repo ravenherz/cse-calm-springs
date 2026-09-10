@@ -11,6 +11,7 @@ import com.ravenherz.cse.dal.dto.ResourceEntity;
 import com.ravenherz.cse.dal.dto.ResourceGroupEntity;
 import com.ravenherz.cse.dal.dto.SettingContextEntity;
 import com.ravenherz.cse.dal.dto.ThemeEntity;
+import com.ravenherz.cse.store.AppStoreTableSpec;
 import com.ravenherz.cse.dal.dto.basic.AccountData;
 import com.ravenherz.cse.dal.dto.basic.AlbumData;
 import com.ravenherz.cse.dal.dto.basic.AppData;
@@ -203,6 +204,9 @@ final class CseSiteReaders {
             appData.setAuthor(text(data.get("author")));
             appData.setCompany(text(data.get("company")));
             appData.setDescription(text(data.get("description")));
+            appData.setStoreEnabled(bool(data.get("storeEnabled"), false));
+            appData.setStoreOpen(bool(data.get("storeOpen"), false));
+            appData.setStoreTables(AppStoreTableSpec.listFrom(data.get("storeTables")));
             entity.setAppData(appData);
         }
         return entity;

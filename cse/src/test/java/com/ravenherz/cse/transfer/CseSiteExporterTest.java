@@ -17,11 +17,13 @@ import com.ravenherz.cse.dal.dao.ResourceGroupService;
 import com.ravenherz.cse.dal.dao.ResourceService;
 import com.ravenherz.cse.dal.dao.ThemeService;
 import com.ravenherz.cse.dal.dto.AccountEntity;
+import com.ravenherz.cse.dal.dto.AppEntity;
 import com.ravenherz.cse.dal.dto.CategoryEntity;
 import com.ravenherz.cse.dal.dto.DataChunkEntity;
 import com.ravenherz.cse.dal.dto.ItemEntity;
 import com.ravenherz.cse.dal.dto.ResourceEntity;
 import com.ravenherz.cse.dal.dto.basic.AccountData;
+import com.ravenherz.cse.dal.dto.basic.AppData;
 import com.ravenherz.cse.dal.dto.basic.CategoryData;
 import com.ravenherz.cse.dal.dto.basic.HistoryData;
 import com.ravenherz.cse.dal.dto.basic.PageData;
@@ -248,6 +250,62 @@ class CseSiteExporterTest {
         assertEquals(1, dumpedChunks.size());
         assertEquals(chunkId.toHexString(), dumpedChunks.get(0).get("id"));
         assertEquals("Zm9vYmFy", dumpedChunks.get(0).get("data"));
+    }
+
+    @Test
+    void mongoDumpWritesAppStoreCollectionsForInstalledSlugs() throws Exception {
+        AppData appData = new AppData();
+        appData.setSlug("hello-snake");
+        appData.setStoreEnabled(true);
+        AppEntity app = new AppEntity();
+        app.setAppData(appData);
+        app.setId(new ObjectId("68b0000000000000000000a1"));
+
+        MongoTemplate mongo = mock(MongoTemplate.class);
+        DataProvider data = mock(DataProvider.class);
+        when(data.getMongoTemplate()).thenReturn(mongo);
+        when(mongo.findAll(AppEntity.class)).thenReturn(List.of(app));
+        when(mongo.getCollectionNames()).thenReturn(Set.of(
+                "hello-snake-scores", "cse-accounts", "orphan-progress"));
+
+        Document row = new Document("_id", new ObjectId("68b0000000000000000000aa"))
+                .append("ownerId", "68b000000000000000000001")
+                .append("createdAt", "2026-09-08T12:00:00Z")
+                .append("updatedAt", "2026-09-08T12:00:00Z")
+                .append("data", new Document("score", 9));
+        @SuppressWarnings("unchecked")
+        MongoCollection<Document> scores = mock(MongoCollection.class);
+        @SuppressWarnings("unchecked")
+        FindIterable<Document> found = mock(FindIterable.class);
+        when(mongo.getCollection("hello-snake-scores")).thenReturn(scores);
+        when(scores.find()).thenReturn(found);
+        when(found.into(org.mockito.ArgumentMatchers.any())).thenAnswer(invocation -> {
+            @SuppressWarnings("unchecked")
+            List<Document> into = invocation.getArgument(0);
+            into.add(row);
+            return into;
+        });
+        @SuppressWarnings("unchecked")
+        MongoCollection<Document> chunks = mock(MongoCollection.class);
+        @SuppressWarnings("unchecked")
+        FindIterable<Document> emptyChunks = mock(FindIterable.class);
+        when(mongo.getCollection(MongoCollections.DATABASE_DATACHUNKS)).thenReturn(chunks);
+        when(chunks.find()).thenReturn(emptyChunks);
+        when(emptyChunks.into(org.mockito.ArgumentMatchers.any())).thenAnswer(invocation -> invocation.getArgument(0));
+
+        ByteArrayOutputStream bytes = new ByteArrayOutputStream();
+        exporter.write(bytes, data, services, "mongodb", Map.of());
+        Map<String, String> entries = unzip(bytes.toByteArray());
+
+        assertTrue(entries.containsKey("collections/hello-snake-scores.json"));
+        assertFalse(entries.containsKey("collections/orphan-progress.json"));
+        List<Map<String, Object>> docs = JSON.readValue(entries.get("collections/hello-snake-scores.json"),
+                new TypeReference<>() {});
+        assertEquals(1, docs.size());
+        assertEquals("68b0000000000000000000aa", docs.get(0).get("id"));
+        assertEquals(9, ((Number) ((Map<?, ?>) docs.get(0).get("data")).get("score")).intValue());
+        JsonNode manifest = JSON.readTree(entries.get("manifest.json"));
+        assertEquals(1, manifest.get("collections").get("hello-snake-scores").get("count").asInt());
     }
 
     @Test

@@ -28,6 +28,17 @@ class CseSecurityResponsesTest {
         CseSecurityResponses.unauthorized(request, response);
         assertEquals(401, response.getStatus());
         assertTrue(response.getRedirectedUrl() == null || response.getRedirectedUrl().isEmpty());
+        assertTrue(response.getContentAsString().contains("Sign in required"));
+    }
+
+    @Test
+    void jsonForbiddenHasABody() throws IOException {
+        MockHttpServletRequest request = new MockHttpServletRequest();
+        request.addHeader("Accept", "application/json");
+        MockHttpServletResponse response = new MockHttpServletResponse();
+        CseSecurityResponses.forbidden(request, response, "Security check failed");
+        assertEquals(403, response.getStatus());
+        assertTrue(response.getContentAsString().contains("Security check failed"));
     }
 
     @Test

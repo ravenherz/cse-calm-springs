@@ -10,6 +10,13 @@
             return fromMeta.length ? fromMeta : '/';
         }
         var path = window.location.pathname || '/';
+        var pages = path.indexOf('/static-pages/');
+        if (pages > 0) {
+            return path.substring(0, pages);
+        }
+        if (pages === 0) {
+            return '/';
+        }
         var editor = path.indexOf('/editor');
         if (editor > 0) {
             return path.substring(0, editor);
@@ -28,8 +35,21 @@
     }
 
     function cseCsrfToken() {
-        var match = document.cookie.match(/(?:^|; )XSRF-TOKEN=([^;]*)/);
-        return match ? decodeURIComponent(match[1]) : '';
+        var tokens = [];
+        var parts = document.cookie ? document.cookie.split(';') : [];
+        for (var i = 0; i < parts.length; i++) {
+            var part = parts[i].trim();
+            if (part.indexOf('XSRF-TOKEN=') !== 0) {
+                continue;
+            }
+            var raw = part.substring('XSRF-TOKEN='.length);
+            try {
+                tokens.push(decodeURIComponent(raw));
+            } catch (e) {
+                tokens.push(raw);
+            }
+        }
+        return tokens.length ? tokens[tokens.length - 1] : '';
     }
 
     function ensureXsrfCookie() {

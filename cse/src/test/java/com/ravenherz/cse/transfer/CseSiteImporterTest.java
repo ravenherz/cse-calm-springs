@@ -12,12 +12,14 @@ import com.ravenherz.cse.dal.dao.ResourceGroupService;
 import com.ravenherz.cse.dal.dao.ResourceService;
 import com.ravenherz.cse.dal.dao.ThemeService;
 import com.ravenherz.cse.dal.dto.AccountEntity;
+import com.ravenherz.cse.dal.dto.AppEntity;
 import com.ravenherz.cse.dal.dto.CategoryEntity;
 import com.ravenherz.cse.dal.dto.DataChunkEntity;
 import com.ravenherz.cse.dal.dto.ItemEntity;
 import com.ravenherz.cse.dal.dto.ResourceEntity;
 import com.ravenherz.cse.dal.dto.SettingContextEntity;
 import com.ravenherz.cse.dal.dto.basic.AccountData;
+import com.ravenherz.cse.dal.dto.basic.AppData;
 import com.ravenherz.cse.dal.dto.basic.CategoryData;
 import com.ravenherz.cse.dal.dto.basic.HistoryData;
 import com.ravenherz.cse.dal.dto.basic.PageData;
@@ -253,6 +255,58 @@ class CseSiteImporterTest {
                 () -> importer.apply(new ByteArrayInputStream(zipOf(files)), mongo, settings));
         assertTrue(error.getMessage().contains("$oid"));
         verify(mongo, never()).save(any());
+    }
+
+    @Test
+    void importsAppStoreGrantFieldsFromAppsCollection() throws Exception {
+        AppData appData = new AppData();
+        appData.setSlug("fretlab");
+        appData.setStoreEnabled(true);
+        appData.setStoreOpen(true);
+        appData.setStoreTables(List.of(new com.ravenherz.cse.store.AppStoreTableSpec(
+                "progress", com.ravenherz.cse.store.AppStoreAccess.OWNER, null)));
+        AppEntity app = new AppEntity();
+        app.setId(new ObjectId("68b0000000000000000000a1"));
+        app.setAppData(appData);
+        when(services.getAppService().getAll()).thenReturn(List.of(app));
+
+        ByteArrayOutputStream zip = new ByteArrayOutputStream();
+        exporter.write(zip, services, "mongodb", Map.of());
+        importer.apply(new ByteArrayInputStream(zip.toByteArray()), mongo, settings);
+
+        ArgumentCaptor<Object> saved = ArgumentCaptor.forClass(Object.class);
+        verify(mongo, atLeast(1)).save(saved.capture());
+        AppEntity imported = saved.getAllValues().stream()
+                .filter(AppEntity.class::isInstance)
+                .map(AppEntity.class::cast)
+                .findFirst()
+                .orElseThrow();
+        assertEquals("fretlab", imported.getAppData().getSlug());
+        assertTrue(imported.getAppData().isStoreEnabled());
+        assertTrue(imported.getAppData().isStoreOpen());
+        assertEquals("progress", imported.getAppData().getStoreTables().get(0).getName());
+    }
+
+    @Test
+    void importsAppStoreExtrasAndDropsLeftoverAppCollections() throws Exception {
+        Map<String, String> files = new HashMap<>();
+        files.put("manifest.json", """
+                {"format":"cse-site","version":1,"collections":{}}
+                """);
+        for (String name : CseSiteFormat.COLLECTIONS) {
+            files.put("collections/" + name + ".json", "[]");
+        }
+        files.put("collections/fretlab-progress.json", """
+                [{"id":"68b0000000000000000000aa","ownerId":"68b000000000000000000001","createdAt":"2026-09-08T12:00:00Z","updatedAt":"2026-09-08T12:00:00Z","data":{"tuning":"E"}}]
+                """);
+        files.put("collections/cse-mystery.json", "[]");
+        when(mongo.getCollectionNames()).thenReturn(Set.of("hello-snake-scores"));
+
+        importer.apply(new ByteArrayInputStream(zipOf(files)), mongo, settings);
+
+        verify(mongo).insert(anyList(), org.mockito.ArgumentMatchers.eq("fretlab-progress"));
+        verify(mongo).dropCollection("hello-snake-scores");
+        verify(mongo, never()).insert(anyList(), org.mockito.ArgumentMatchers.eq("cse-mystery"));
     }
 
     private static byte[] zipOf(Map<String, String> files) throws Exception {

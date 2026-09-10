@@ -20,6 +20,8 @@ public class AppDisplayDTO {
     private String description;
     private boolean productLogo;
     private boolean bundled;
+    private boolean storeEnabled;
+    private boolean storeOpen;
 
     public String getId() {
         return id;
@@ -139,6 +141,22 @@ public class AppDisplayDTO {
 
     public void setBundled(boolean bundled) {
         this.bundled = bundled;
+    }
+
+    public boolean isStoreEnabled() {
+        return storeEnabled;
+    }
+
+    public void setStoreEnabled(boolean storeEnabled) {
+        this.storeEnabled = storeEnabled;
+    }
+
+    public boolean isStoreOpen() {
+        return storeOpen;
+    }
+
+    public void setStoreOpen(boolean storeOpen) {
+        this.storeOpen = storeOpen;
     }
 
     public String getHint() {

@@ -22,10 +22,13 @@ final class CseSiteArchive {
 
     private final JsonNode manifest;
     private final Map<String, List<Map<String, Object>>> collections;
+    private final Map<String, List<Map<String, Object>>> extras;
 
-    private CseSiteArchive(JsonNode manifest, Map<String, List<Map<String, Object>>> collections) {
+    private CseSiteArchive(JsonNode manifest, Map<String, List<Map<String, Object>>> collections,
+            Map<String, List<Map<String, Object>>> extras) {
         this.manifest = manifest;
         this.collections = collections;
+        this.extras = extras;
     }
 
     JsonNode manifest() {
@@ -34,6 +37,10 @@ final class CseSiteArchive {
 
     List<Map<String, Object>> collection(String name) {
         return collections.getOrDefault(name, List.of());
+    }
+
+    Map<String, List<Map<String, Object>>> extraCollections() {
+        return extras;
     }
 
     static CseSiteArchive read(InputStream in) throws IOException {
@@ -71,7 +78,32 @@ final class CseSiteArchive {
             }
             collections.put(name, docs);
         }
-        return new CseSiteArchive(manifest, collections);
+        Map<String, List<Map<String, Object>>> extras = new LinkedHashMap<>();
+        for (Map.Entry<String, byte[]> entry : entries.entrySet()) {
+            String path = entry.getKey();
+            if (!path.startsWith(CseSiteFormat.COLLECTIONS_DIR) || !path.endsWith(".json")) {
+                continue;
+            }
+            String name = path.substring(CseSiteFormat.COLLECTIONS_DIR.length(), path.length() - 5);
+            if (name.isEmpty() || CseSiteFormat.COLLECTIONS.contains(name)) {
+                continue;
+            }
+            List<Map<String, Object>> docs;
+            try {
+                docs = JSON.readValue(entry.getValue(), DOC_ARRAY);
+            } catch (IOException e) {
+                throw new CseSiteImportException("collections/" + name + ".json is not a JSON array.", e);
+            }
+            if (docs == null) {
+                docs = List.of();
+            }
+            if (CseSiteReaders.looksLikeBson(docs)) {
+                throw new CseSiteImportException(
+                        "Refuse mongodump/BSON JSON ($oid / $date / _class) in " + name + ".");
+            }
+            extras.put(name, docs);
+        }
+        return new CseSiteArchive(manifest, collections, extras);
     }
 
     private static Map<String, byte[]> unzip(InputStream in) throws IOException {

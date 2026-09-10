@@ -50,8 +50,10 @@
             return HTTP 200 with
             <code>{ "status", "restObject", "message" }</code>.
             Check <code>status</code> in the body.
-            <code>GET /rest/site</code>, <code>/rest/error</code>, and <code>/install/**</code>
-            do not use that envelope. JS shells read <code>GET /rest/site</code>
+            <code>GET /rest/site</code>, <code>/rest/error</code>, <code>/install/**</code>,
+            and <code>/app-data/**</code>
+            do not use that envelope. First-boot install and app data use real HTTP status.
+            JS shells read <code>GET /rest/site</code>
             (same query as <code>GET /</code>).
           </dd>
         </dl>

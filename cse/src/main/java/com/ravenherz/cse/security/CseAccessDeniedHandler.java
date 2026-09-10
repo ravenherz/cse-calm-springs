@@ -30,12 +30,13 @@ final class CseAccessDeniedHandler implements AccessDeniedHandler {
                     parameters == null ? 0 : parameters.length,
                     cookieNames(request),
                     accessDeniedException.getClass().getSimpleName());
-        } else {
-            LOGGER.warn("Access denied {} {} ({})",
-                    request.getMethod(),
-                    request.getRequestURI(),
-                    accessDeniedException.getClass().getSimpleName());
+            CseSecurityResponses.forbidden(request, response, "Security check failed");
+            return;
         }
+        LOGGER.warn("Access denied {} {} ({})",
+                request.getMethod(),
+                request.getRequestURI(),
+                accessDeniedException.getClass().getSimpleName());
         CseSecurityResponses.forbidden(request, response);
     }
 

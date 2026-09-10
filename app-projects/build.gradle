@@ -1,0 +1,30 @@
+plugins {
+    id 'base'
+}
+
+import com.ravenherz.build.PackRelease
+
+tasks.register('packRelease', PackRelease) {
+    group = 'distribution'
+    description = 'Pack src/ into a CSE Apps .cseapp archive (not copied into the WAR)'
+    srcDir = layout.projectDirectory.dir('src')
+    distDir = layout.projectDirectory.dir('dist')
+    def slugVal = (findProperty('slug') ?: rootProject.name).toString()
+    def verVal = project.version.toString()
+    archiveSlug = slugVal
+    archiveDisplayName = (findProperty('appName') ?: rootProject.name).toString()
+    archiveVersion = verVal
+    archiveAuthor = (findProperty('author') ?: '').toString()
+    archiveCompany = (findProperty('company') ?: '').toString()
+    archiveDescription = (findProperty('description') ?: '').toString()
+    if (project.findProperty('out')) {
+        outFile = layout.projectDirectory.file(project.property('out').toString())
+    } else {
+        outFile = layout.projectDirectory.file("dist/${slugVal}-${verVal}.cseapp")
+    }
+    outputs.upToDateWhen { false }
+}
+
+tasks.named('assemble') {
+    dependsOn tasks.named('packRelease')
+}

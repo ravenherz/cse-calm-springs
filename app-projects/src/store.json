@@ -1,0 +1,48 @@
+{
+  "tables": [
+    {
+      "name": "projects",
+      "access": "member-write",
+      "schema": {
+        "type": "object",
+        "properties": {
+          "name": { "type": "string", "maxLength": 80 },
+          "description": { "type": "string", "maxLength": 4000 },
+          "archived": { "type": "boolean" },
+          "author": { "type": "string" },
+          "code": { "type": "string", "maxLength": 8 },
+          "issueSeq": { "type": "integer" }
+        }
+      }
+    },
+    {
+      "name": "issues",
+      "access": "member-write",
+      "schema": {
+        "type": "object",
+        "properties": {
+          "projectId": { "type": "string" },
+          "title": { "type": "string", "maxLength": 160 },
+          "body": { "type": "string", "maxLength": 8000 },
+          "status": { "type": "string" },
+          "priority": { "type": "string" },
+          "author": { "type": "string" },
+          "taskNumber": { "type": "integer" },
+          "taskKey": { "type": "string" }
+        }
+      }
+    },
+    {
+      "name": "comments",
+      "access": "member-write",
+      "schema": {
+        "type": "object",
+        "properties": {
+          "issueId": { "type": "string" },
+          "body": { "type": "string", "maxLength": 4000 },
+          "author": { "type": "string" }
+        }
+      }
+    }
+  ]
+}

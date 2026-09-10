@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Projects</title>
+<link rel="icon" href="../../content-public/cse-core/images/favicon.ico" type="image/x-icon">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../../content-public/admin/css/editor.css">
+<link rel="stylesheet" href="css/projects.css">
+<meta name="theme-color" content="#0b0c0f">
+</head>
+<body>
+<div class="editor-layout">
+  <header class="editor-sidebar">
+    <a class="sidebar-brand" id="link-site-brand" href="../..">
+      <img class="brand-mark" src="../../content-public/cse-core/images/favicon.ico" alt="">
+      <span class="brand-text">Calm Springs</span>
+    </a>
+    <nav class="editor-nav">
+      <a class="active" href="./">Projects</a>
+    </nav>
+    <div class="sidebar-foot">
+      <div class="sidebar-user" id="who" hidden></div>
+      <a class="back-link" id="link-site" href="../..">Site</a>
+    </div>
+  </header>
+
+  <p class="error-message projects-banner" id="banner" hidden></p>
+
+  <main class="projects-main">
+    <section class="projects-panel" id="panel-load">
+      <p class="field-hint">Loading…</p>
+    </section>
+
+    <section class="projects-panel" id="panel-guest" hidden>
+      <h1 class="page-title">Projects</h1>
+      <p class="field-hint">Sign in on the site to track issues. Guests cannot read or write this board.</p>
+      <p><a class="btn btn-primary" id="link-signin" href="../..">Site</a></p>
+    </section>
+
+    <section class="projects-panel" id="panel-store" hidden>
+      <h1 class="page-title">Data store is off</h1>
+      <p class="field-hint">Install is not enough. In Catalog, open the <strong>Projects</strong> tile, press <strong>i</strong>, then <strong>Allow data store</strong>. Come back here after that.</p>
+    </section>
+
+    <section class="projects-app" id="panel-app" hidden>
+      <aside class="projects-nav">
+        <div class="projects-nav-head">
+          <h2 class="projects-nav-title">Projects</h2>
+          <button type="button" class="btn btn-primary" id="btn-new-project">New</button>
+        </div>
+        <form id="form-project" class="projects-inline-form" hidden>
+          <div class="form-group">
+            <label for="project-name">Name</label>
+            <input type="text" id="project-name" maxlength="80" autocomplete="off" required>
+          </div>
+          <div class="form-group">
+            <label for="project-code">Code</label>
+            <input type="text" id="project-code" maxlength="8" autocomplete="off" required
+                pattern="[A-Z][A-Z0-9]{1,7}" placeholder="FLAB" title="2–8 letters or digits, starting with a letter">
+          </div>
+          <p class="field-hint">Uppercase prefix for task ids. First issue becomes FLAB-1.</p>
+          <div class="form-group">
+            <label for="project-description">Description</label>
+            <textarea id="project-description" class="editor-textarea" rows="3" maxlength="4000"></textarea>
+          </div>
+          <button type="submit" class="btn btn-primary">Create</button>
+        </form>
+        <label class="projects-check">
+          <input type="checkbox" id="show-archived">
+          Archived
+        </label>
+        <nav class="projects-list" id="project-list" aria-label="Projects"></nav>
+      </aside>
+
+      <section class="projects-board" id="board">
+        <header class="board-head">
+          <div>
+            <h1 class="page-title" id="board-title">Select a project</h1>
+            <p class="board-code" id="board-code" hidden></p>
+            <p class="field-hint" id="board-lead"></p>
+          </div>
+          <div class="board-actions" id="board-actions" hidden>
+            <label class="projects-check">
+              <input type="checkbox" id="mine-only">
+              My issues
+            </label>
+            <button type="button" class="btn btn-secondary" id="btn-archive">Archive</button>
+            <button type="button" class="btn btn-delete" id="btn-delete-project">Delete</button>
+          </div>
+        </header>
+        <form id="form-project-code" class="projects-inline-form board-new-issue" hidden>
+          <div class="form-group">
+            <label for="existing-project-code">Code</label>
+            <input type="text" id="existing-project-code" maxlength="8" autocomplete="off" required
+                pattern="[A-Z][A-Z0-9]{1,7}" placeholder="FLAB" title="2–8 letters or digits, starting with a letter">
+          </div>
+          <p class="field-hint">Set a project code before adding issues. It becomes the prefix of task ids (FLAB-1).</p>
+          <button type="submit" class="btn btn-primary">Save code</button>
+        </form>
+        <form id="form-issue" class="projects-inline-form board-new-issue" hidden>
+          <div class="form-group">
+            <label for="issue-title">New issue</label>
+            <input type="text" id="issue-title" maxlength="160" autocomplete="off" required placeholder="Title">
+          </div>
+          <p class="field-hint" id="issue-key-hint">Task id is assigned on create (CODE-1, CODE-2, …).</p>
+          <div class="form-row">
+            <div class="form-group">
+              <label for="issue-priority">Priority</label>
+              <select id="issue-priority">
+                <option value="normal">Normal</option>
+                <option value="high">High</option>
+                <option value="low">Low</option>
+              </select>
+            </div>
+          </div>
+          <button type="submit" class="btn btn-primary">Add</button>
+        </form>
+        <div class="board-columns" id="board-columns" hidden>
+          <section class="board-col" data-status="open">
+            <h2 class="board-col-title">Open</h2>
+            <div class="board-col-cards"></div>
+          </section>
+          <section class="board-col" data-status="doing">
+            <h2 class="board-col-title">Doing</h2>
+            <div class="board-col-cards"></div>
+          </section>
+          <section class="board-col" data-status="done">
+            <h2 class="board-col-title">Done</h2>
+            <div class="board-col-cards"></div>
+          </section>
+        </div>
+        <p class="field-hint" id="board-empty">Create a project to start tracking issues.</p>
+      </section>
+    </section>
+  </main>
+</div>
+
+<div class="issue-backdrop" id="drawer-backdrop" hidden></div>
+<aside class="issue-drawer" id="drawer" hidden>
+  <header class="drawer-head">
+    <h2 class="drawer-title" id="drawer-heading">Issue</h2>
+    <button type="button" class="btn btn-secondary" id="btn-close-drawer">Close</button>
+  </header>
+  <form id="form-issue-edit">
+    <p class="issue-task-key" id="edit-task-key"></p>
+    <div class="form-group">
+      <label for="edit-title">Title</label>
+      <input type="text" id="edit-title" maxlength="160" required>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label for="edit-status">Status</label>
+        <select id="edit-status">
+          <option value="open">Open</option>
+          <option value="doing">Doing</option>
+          <option value="done">Done</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label for="edit-priority">Priority</label>
+        <select id="edit-priority">
+          <option value="normal">Normal</option>
+          <option value="high">High</option>
+          <option value="low">Low</option>
+        </select>
+      </div>
+    </div>
+    <div class="form-group">
+      <label for="edit-body">Body</label>
+      <textarea id="edit-body" class="editor-textarea" rows="8" maxlength="8000"></textarea>
+    </div>
+    <p class="field-hint" id="edit-meta"></p>
+    <div class="drawer-actions">
+      <button type="submit" class="btn btn-primary">Save</button>
+      <button type="button" class="btn btn-delete" id="btn-delete-issue">Delete</button>
+    </div>
+  </form>
+  <section class="drawer-comments">
+    <h3 class="board-col-title">Comments</h3>
+    <div id="comment-list"></div>
+    <form id="form-comment" class="projects-inline-form">
+      <div class="form-group">
+        <label for="comment-body">New comment</label>
+        <textarea id="comment-body" class="editor-textarea" rows="3" maxlength="4000" required></textarea>
+      </div>
+      <button type="submit" class="btn btn-primary">Comment</button>
+    </form>
+  </section>
+</aside>
+
+<script src="../../content-public/js/cse-app-data.js?v=4"></script>
+<script src="js/projects.js?v=2"></script>
+</body>
+</html>

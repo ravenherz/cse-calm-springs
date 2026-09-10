@@ -28,8 +28,10 @@ class PublicApiDocsTest {
         assertTrue(paths.contains("/install/mongo"));
         assertTrue(paths.contains("/install/owner"));
         assertTrue(paths.contains("/install/finish"));
+        assertTrue(paths.contains("/app-data/{slug}/{table}"));
+        assertTrue(paths.contains("/app-data/{slug}/_schema"));
         assertFalse(paths.stream().anyMatch(path -> path.startsWith("/editor")));
-        assertEquals(4, PublicApiDocs.sections().size());
+        assertEquals(5, PublicApiDocs.sections().size());
     }
 
     @Test

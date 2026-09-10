@@ -6,6 +6,8 @@ import org.bson.types.ObjectId;
 import java.util.ArrayList;
 import java.util.List;
 
+import com.ravenherz.cse.store.AppStoreTableSpec;
+
 public final class AppData {
 
     public static final int CHUNK_SIZE = 7000000;
@@ -22,6 +24,9 @@ public final class AppData {
     private String author;
     private String company;
     private String description;
+    private boolean storeEnabled;
+    private boolean storeOpen;
+    private List<AppStoreTableSpec> storeTables;
 
     public AppData() {
     }
@@ -119,5 +124,33 @@ public final class AppData {
 
     public void setDescription(String description) {
         this.description = description;
+    }
+
+    public boolean isStoreEnabled() {
+        return storeEnabled;
+    }
+
+    public void setStoreEnabled(boolean storeEnabled) {
+        this.storeEnabled = storeEnabled;
+    }
+
+    public boolean isStoreOpen() {
+        return storeOpen;
+    }
+
+    public void setStoreOpen(boolean storeOpen) {
+        this.storeOpen = storeOpen;
+    }
+
+    public List<AppStoreTableSpec> getStoreTables() {
+        return storeTables == null ? List.of() : storeTables;
+    }
+
+    public void setStoreTables(List<AppStoreTableSpec> storeTables) {
+        this.storeTables = storeTables == null ? new ArrayList<>() : new ArrayList<>(storeTables);
+    }
+
+    public void applyManifestTables(List<AppStoreTableSpec> fromManifest) {
+        this.storeTables = AppStoreTableSpec.merge(getStoreTables(), fromManifest);
     }
 }

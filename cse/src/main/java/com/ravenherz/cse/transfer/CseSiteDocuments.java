@@ -161,6 +161,17 @@ final class CseSiteDocuments {
         put(appData, "author", data.getAuthor());
         put(appData, "company", data.getCompany());
         put(appData, "description", data.getDescription());
+        appData.put("storeEnabled", data.isStoreEnabled());
+        appData.put("storeOpen", data.isStoreOpen());
+        List<Map<String, Object>> tables = new ArrayList<>();
+        for (var spec : data.getStoreTables()) {
+            if (spec != null) {
+                tables.add(spec.toMap());
+            }
+        }
+        if (!tables.isEmpty()) {
+            appData.put("storeTables", tables);
+        }
         doc.put("appData", appData);
         return doc;
     }

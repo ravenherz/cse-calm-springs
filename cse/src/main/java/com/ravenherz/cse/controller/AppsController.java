@@ -1,5 +1,6 @@
 package com.ravenherz.cse.controller;
 
+import com.ravenherz.cse.dal.dao.AppStoreService;
 import com.ravenherz.cse.dal.dto.AccountEntity;
 import com.ravenherz.cse.dal.dto.AppEntity;
 import com.ravenherz.cse.dal.dto.DataChunkEntity;
@@ -9,6 +10,7 @@ import com.ravenherz.cse.dal.dto.basic.HistoryData;
 import com.ravenherz.cse.dal.dto.basic.enums.EventType;
 import com.ravenherz.cse.present.EditorTree;
 import com.ravenherz.cse.present.ResourceGroupIndex;
+import com.ravenherz.cse.store.AppStoreException;
 import com.ravenherz.cse.util.frontend.ShippedPackCatalog;
 import com.ravenherz.cse.util.staticapps.AppInstallSlug;
 import com.ravenherz.cse.util.staticapps.AppManifest;
@@ -41,6 +43,9 @@ public class AppsController extends AbstractController {
 
     @Autowired
     private ResourceGroupIndex resourceGroupIndex;
+
+    @Autowired
+    private AppStoreService appStoreService;
 
     @GetMapping
     public String list(HttpServletRequest request, HttpServletResponse response)
@@ -105,6 +110,16 @@ public class AppsController extends AbstractController {
             appData.setDescription(manifest.getDescription());
         }
 
+        AppEntity existing = serviceProvider.getAppService().getBySlug(normalizedSlug);
+        if (existing != null && existing.getAppData() != null) {
+            appData.setStoreEnabled(existing.getAppData().isStoreEnabled());
+            appData.setStoreOpen(existing.getAppData().isStoreOpen());
+            appData.setStoreTables(existing.getAppData().getStoreTables());
+        }
+        if (manifest != null) {
+            appData.applyManifestTables(manifest.getStoreTables());
+        }
+
         if (base64.length() > AppData.CHUNK_SIZE) {
             appData.setLargeFile(true);
             int chunkSize = AppData.CHUNK_SIZE;
@@ -121,7 +136,6 @@ public class AppsController extends AbstractController {
             appData.setContentRaw(base64);
         }
 
-        AppEntity existing = serviceProvider.getAppService().getBySlug(normalizedSlug);
         if (existing != null) {
             serviceProvider.getAppService().deleteChunks(existing);
             existing.setAppData(appData);
@@ -182,6 +196,35 @@ public class AppsController extends AbstractController {
         } catch (Exception ex) {
             LOGGER.warn("Failed to remove disk tree for '{}'", normalizedSlug, ex);
         }
+        response.sendRedirect(request.getContextPath()
+                + EditorTree.catalogReturnHref(returnGroup, EditorTree.APPS_ID));
+        return null;
+    }
+
+    @PostMapping("/store")
+    public String store(@RequestParam("slug") String slug,
+            @RequestParam(value = "storeEnabled", defaultValue = "false") boolean storeEnabled,
+            @RequestParam(value = "storeOpen", defaultValue = "false") boolean storeOpen,
+            @RequestParam(value = "returnGroup", required = false) String returnGroup,
+            HttpServletRequest request, HttpServletResponse response)
+            throws IOException {
+        AccountEntity accessor = getAccessor(request, response);
+        if (accessor == null) {
+            return null;
+        }
+        String normalizedSlug = slug == null ? "" : slug.trim().toLowerCase(Locale.ROOT);
+        if (ShippedPackCatalog.isShippedApp(normalizedSlug) || StaticAppDeployer.isReservedSlug(normalizedSlug)) {
+            return listWithError(request, response, "Bundled apps do not have a data store");
+        }
+        try {
+            staticAppDeployer.validateSlug(normalizedSlug);
+            appStoreService.setGrant(normalizedSlug, storeEnabled, storeOpen);
+        } catch (IllegalArgumentException ex) {
+            return listWithError(request, response, "Invalid slug");
+        } catch (AppStoreException ex) {
+            return listWithError(request, response, ex.getMessage());
+        }
+        resourceGroupIndex.contentChanged();
         response.sendRedirect(request.getContextPath()
                 + EditorTree.catalogReturnHref(returnGroup, EditorTree.APPS_ID));
         return null;

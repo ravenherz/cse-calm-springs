@@ -23,6 +23,8 @@ import com.ravenherz.cse.dal.dto.ResourceEntity;
 import com.ravenherz.cse.dal.dto.ResourceGroupEntity;
 import com.ravenherz.cse.dal.dto.SettingContextEntity;
 import com.ravenherz.cse.dal.dto.ThemeEntity;
+import com.ravenherz.cse.dal.dao.impl.AppStoreServiceImpl;
+import com.ravenherz.cse.store.AppStoreNames;
 import org.bson.Document;
 import org.bson.types.ObjectId;
 import org.slf4j.Logger;
@@ -142,6 +144,7 @@ public class CseSiteExporter {
             counts.put(name, count);
             LOGGER.info("csesite export {}: {} documents", name, count);
         }
+        writeAppStoreCollections(zip, mongo, counts);
         return counts;
     }
 
@@ -189,6 +192,46 @@ public class CseSiteExporter {
         }
         closeArray(zip, gen);
         return count;
+    }
+
+    private void writeAppStoreCollections(ZipOutputStream zip, MongoTemplate mongo,
+            Map<String, Long> counts) throws IOException {
+        Set<String> slugs = new LinkedHashSet<>();
+        List<AppEntity> apps = mongo.findAll(AppEntity.class);
+        if (apps != null) {
+            for (AppEntity app : apps) {
+                if (app == null || app.getAppData() == null || app.getAppData().getSlug() == null) {
+                    continue;
+                }
+                String slug = app.getAppData().getSlug().trim().toLowerCase(java.util.Locale.ROOT);
+                if (AppStoreNames.isSlug(slug) && !AppStoreNames.isStoreIneligible(slug)) {
+                    slugs.add(slug);
+                }
+            }
+        }
+        java.util.Collection<String> names = mongo.getCollectionNames();
+        if (names == null || slugs.isEmpty()) {
+            return;
+        }
+        List<String> extra = new ArrayList<>();
+        for (String name : names) {
+            String slug = AppStoreNames.slugOf(name);
+            if (slug != null && slugs.contains(slug)) {
+                extra.add(name);
+            }
+        }
+        extra.sort(String::compareTo);
+        for (String name : extra) {
+            List<Map<String, Object>> docs = new ArrayList<>();
+            List<Document> raw = new ArrayList<>();
+            mongo.getCollection(name).find().into(raw);
+            for (Document document : raw) {
+                docs.add(AppStoreServiceImpl.toJson(document));
+            }
+            long count = writeMaps(zip, name, docs);
+            counts.put(name, count);
+            LOGGER.info("csesite export {}: {} documents", name, count);
+        }
     }
 
     private <T> long writeMapped(ZipOutputStream zip, String collection, List<T> entities,
@@ -252,7 +295,9 @@ public class CseSiteExporter {
         manifest.put("exportedAt", Instant.now().toString());
         manifest.put("sourceEngine", sourceEngine == null || sourceEngine.isBlank() ? "mongodb" : sourceEngine);
         Map<String, Object> collections = new LinkedHashMap<>();
-        for (String name : CseSiteFormat.COLLECTIONS) {
+        Set<String> names = new LinkedHashSet<>(CseSiteFormat.COLLECTIONS);
+        names.addAll(counts.keySet());
+        for (String name : names) {
             Map<String, Object> meta = new LinkedHashMap<>();
             meta.put("count", counts.getOrDefault(name, 0L));
             collections.put(name, meta);

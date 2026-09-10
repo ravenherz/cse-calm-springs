@@ -272,6 +272,11 @@ class EditorResourcesTemplateTest {
         assertTrue(appsHtml.contains(">WAR<"), appsHtml);
         assertTrue(appsHtml.contains(">Fretboard Lab<"), appsHtml);
         assertFalse(appsHtml.contains("resource-page-tile"), appsHtml);
+        app.setBundled(false);
+        context.setVariable("paneApps", List.of(app));
+        String installedHtml = engine.process("admin/editor-resources", context);
+        assertTrue(installedHtml.contains("/editor/apps/store"), installedHtml);
+        assertTrue(installedHtml.contains("Allow data store"), installedHtml);
 
         ThemeDisplayDTO theme = new ThemeDisplayDTO();
         theme.setThemeId("modern");

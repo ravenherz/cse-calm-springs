@@ -1,7 +1,15 @@
 package com.ravenherz.cse.util.staticapps;
 
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonNode;
+import com.ravenherz.cse.store.AppStoreAccess;
+import com.ravenherz.cse.store.AppStoreNames;
+import com.ravenherz.cse.store.AppStoreTableSpec;
 import com.ravenherz.cse.util.Json;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
 
 public final class AppManifest {
 
@@ -13,19 +21,26 @@ public final class AppManifest {
     private final String author;
     private final String company;
     private final String description;
+    private final List<AppStoreTableSpec> storeTables;
 
     public AppManifest(String name, String version, String slug) {
-        this(name, version, slug, null, null, null);
+        this(name, version, slug, null, null, null, List.of());
     }
 
     public AppManifest(String name, String version, String slug,
             String author, String company, String description) {
+        this(name, version, slug, author, company, description, List.of());
+    }
+
+    public AppManifest(String name, String version, String slug,
+            String author, String company, String description, List<AppStoreTableSpec> storeTables) {
         this.name = blankToNull(name);
         this.version = blankToNull(version);
         this.slug = blankToNull(slug);
         this.author = blankToNull(author);
         this.company = blankToNull(company);
         this.description = blankToNull(description);
+        this.storeTables = storeTables == null ? List.of() : List.copyOf(storeTables);
     }
 
     public static AppManifest parse(String text) {
@@ -50,7 +65,8 @@ public final class AppManifest {
                     asText(node.get("slug")),
                     asText(node.get("author")),
                     asText(node.get("company")),
-                    asText(node.get("description")));
+                    asText(node.get("description")),
+                    parseStoreTables(node.get("store")));
             if (manifest.name == null && manifest.version == null && manifest.slug == null) {
                 return null;
             }
@@ -84,6 +100,10 @@ public final class AppManifest {
         return description;
     }
 
+    public List<AppStoreTableSpec> getStoreTables() {
+        return storeTables;
+    }
+
     public String hint() {
         StringBuilder out = new StringBuilder();
         appendPart(out, name);
@@ -108,6 +128,34 @@ public final class AppManifest {
         }
         String text = node.isTextual() ? node.asText() : node.toString();
         return blankToNull(text);
+    }
+
+    private static List<AppStoreTableSpec> parseStoreTables(JsonNode store) {
+        List<AppStoreTableSpec> tables = new ArrayList<>();
+        if (store == null || !store.isObject()) {
+            return tables;
+        }
+        JsonNode rows = store.get("tables");
+        if (rows == null || !rows.isArray()) {
+            return tables;
+        }
+        for (JsonNode row : rows) {
+            if (row == null || !row.isObject()) {
+                continue;
+            }
+            String name = asText(row.get("name"));
+            if (!AppStoreNames.isTable(name)) {
+                continue;
+            }
+            AppStoreAccess access = AppStoreAccess.parseOrDefault(asText(row.get("access")));
+            Map<String, Object> schema = null;
+            JsonNode schemaNode = row.get("schema");
+            if (schemaNode != null && schemaNode.isObject()) {
+                schema = Json.MAPPER.convertValue(schemaNode, new TypeReference<>() {});
+            }
+            tables.add(new AppStoreTableSpec(name, access, schema));
+        }
+        return tables;
     }
 
     private static String blankToNull(String value) {

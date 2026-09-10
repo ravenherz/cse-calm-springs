@@ -21,6 +21,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.cookie;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @WebMvcTest(controllers = CsrfPhase3MvcTest.ProbeController.class)
@@ -38,7 +39,8 @@ class CsrfPhase3MvcTest {
         mockMvc.perform(get("/csrf-probe"))
                 .andExpect(status().isOk())
                 .andExpect(cookie().exists("XSRF-TOKEN"))
-                .andExpect(cookie().httpOnly("XSRF-TOKEN", false));
+                .andExpect(cookie().httpOnly("XSRF-TOKEN", false))
+                .andExpect(header().exists("X-XSRF-TOKEN"));
     }
 
     @Test
@@ -65,6 +67,40 @@ class CsrfPhase3MvcTest {
     void postWithTokenSucceeds() throws Exception {
         mockMvc.perform(post("/csrf-probe")
                         .with(csrf())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{}"))
+                .andExpect(status().isOk())
+                .andExpect(content().string("ok"));
+    }
+
+    @Test
+    void jsonPostWithCookieHeaderSucceedsTwice() throws Exception {
+        String token = xsrfCookie();
+        mockMvc.perform(post("/csrf-probe")
+                        .cookie(new Cookie("XSRF-TOKEN", token))
+                        .header("X-XSRF-TOKEN", token)
+                        .header("X-Requested-With", "XMLHttpRequest")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{}"))
+                .andExpect(status().isOk())
+                .andExpect(content().string("ok"));
+        mockMvc.perform(post("/csrf-probe")
+                        .cookie(new Cookie("XSRF-TOKEN", token))
+                        .header("X-XSRF-TOKEN", token)
+                        .header("X-Requested-With", "XMLHttpRequest")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{}"))
+                .andExpect(status().isOk())
+                .andExpect(content().string("ok"));
+    }
+
+    @Test
+    void jsonPostSucceedsWhenHeaderMatchesTheSecondDuplicateCookie() throws Exception {
+        String token = xsrfCookie();
+        mockMvc.perform(post("/csrf-probe")
+                        .cookie(new Cookie("XSRF-TOKEN", "stale-root-path"), new Cookie("XSRF-TOKEN", token))
+                        .header("X-XSRF-TOKEN", token)
+                        .header("X-Requested-With", "XMLHttpRequest")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{}"))
                 .andExpect(status().isOk())

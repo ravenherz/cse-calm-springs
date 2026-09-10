@@ -20,8 +20,8 @@
     <meta name="cse-context" th:content="${cseContextPath}">
     <meta name="csrf-token" th:if="${_csrf != null}" th:content="${_csrf.token}">
     <script id="script-cse-csrf" type="text/javascript"
-            th:src="@{/content-public/js/cse-csrf.js(v=7)}"
-            src="../../../static/content-public/js/cse-csrf.js?v=7"></script>
+            th:src="@{/content-public/js/cse-csrf.js(v=9)}"
+            src="../../../static/content-public/js/cse-csrf.js?v=9"></script>
     <script id="script-cse-editor" type="text/javascript"
             th:src="@{/content-public/js/cse-editor.js(v=1)}"
             src="../../../static/content-public/js/cse-editor.js?v=1"></script>
@@ -507,6 +507,7 @@
             <div th:unless="${app.productLogo}" class="app-logo-fallback" th:text="${app.slug}">slug</div>
             <div class="thumb-tags">
                 <span class="thumb-tag thumb-tag-type" th:text="${app.bundled} ? 'WAR' : 'APP'">APP</span>
+                <span class="thumb-tag" th:if="${app.storeEnabled}">STORE</span>
                 <span class="thumb-tag" th:if="${app.company != null and !#strings.isEmpty(app.company)}"
                       th:text="${app.company}">company</span>
                 <span class="thumb-tag" th:text="${app.sizeLabel}">0 bytes</span>
@@ -545,6 +546,20 @@
                 <dt>ID</dt>
                 <dd th:text="${app.id} ?: '—'">id</dd>
             </dl>
+            <form th:if="${!app.bundled}" th:action="@{/editor/apps/store}" method="post" class="app-store-grant">
+                <th:block th:replace="~{fragments/csrf :: field}"></th:block>
+                <input type="hidden" name="slug" th:value="${app.slug}"/>
+                <input type="hidden" name="returnGroup" th:if="${returnGroup}" th:value="${returnGroup}"/>
+                <label class="checkbox-group">
+                    <input type="checkbox" name="storeEnabled" value="true" th:checked="${app.storeEnabled}"/>
+                    Allow data store
+                </label>
+                <label class="checkbox-group">
+                    <input type="checkbox" name="storeOpen" value="true" th:checked="${app.storeOpen}"/>
+                    Open schema
+                </label>
+                <button type="submit" class="btn btn-primary">Save store</button>
+            </form>
         </div>
     </li>
     <li class="page-row tile-row" th:fragment="page-row (item, returnGroup)"

@@ -62,6 +62,8 @@ class EditorApiTemplateTest {
         assertTrue(html.contains(">REST helpers</a>"), html);
         assertTrue(html.contains(">Public site</a>"), html);
         assertTrue(html.contains(">First-boot install</a>"), html);
+        assertTrue(html.contains("id=\"app-data\""), html);
+        assertTrue(html.contains(">App data</a>"), html);
         assertTrue(html.contains("api-tab-panel"), html);
         assertTrue(html.contains("is-post"), html);
         assertTrue(html.contains("is-get"), html);

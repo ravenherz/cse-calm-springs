@@ -13,8 +13,11 @@ import com.ravenherz.cse.dal.dto.ResourceEntity;
 import com.ravenherz.cse.dal.dto.ResourceGroupEntity;
 import com.ravenherz.cse.dal.dto.SettingContextEntity;
 import com.ravenherz.cse.dal.dto.ThemeEntity;
+import com.ravenherz.cse.dal.dao.impl.AppStoreServiceImpl;
 import com.ravenherz.cse.present.ResourceGroupIndex;
+import com.ravenherz.cse.store.AppStoreNames;
 import com.ravenherz.cse.util.Settings;
+import org.bson.Document;
 import org.bson.types.ObjectId;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -74,6 +77,7 @@ public class CseSiteImporter {
         counts.put(MongoCollections.DATABASE_THEMES,
                 replace(mongo, ThemeEntity.class, parsed.themes));
         counts.put(MongoCollections.DATABASE_SETTINGS, replaceSettings(mongo, parsed.settings, settings));
+        importAppStores(archive, mongo, counts);
         if (settings != null) {
             settings.reloadFromMongo();
         }
@@ -168,6 +172,50 @@ public class CseSiteImporter {
             }
         }
         return stored;
+    }
+
+    private static void importAppStores(CseSiteArchive archive, MongoTemplate mongo,
+            Map<String, Integer> counts) {
+        Set<String> imported = new HashSet<>();
+        for (Map.Entry<String, List<Map<String, Object>>> extra : archive.extraCollections().entrySet()) {
+            String name = extra.getKey();
+            if (name != null && name.startsWith("cse-")) {
+                LOGGER.warn("csesite: skip unknown CMS collection {}", name);
+                continue;
+            }
+            if (!AppStoreNames.isAppCollection(name)) {
+                LOGGER.warn("csesite: skip extra collection {}", name);
+                continue;
+            }
+            List<Map<String, Object>> docs = extra.getValue() == null ? List.of() : extra.getValue();
+            replaceAppStore(mongo, name, docs);
+            imported.add(name);
+            counts.put(name, docs.size());
+        }
+        java.util.Collection<String> live = mongo.getCollectionNames();
+        if (live == null) {
+            return;
+        }
+        for (String name : live) {
+            if (AppStoreNames.isAppCollection(name) && !imported.contains(name)) {
+                mongo.dropCollection(name);
+            }
+        }
+    }
+
+    private static void replaceAppStore(MongoTemplate mongo, String collection,
+            List<Map<String, Object>> docs) {
+        mongo.dropCollection(collection);
+        List<Document> rows = new ArrayList<>();
+        for (Map<String, Object> doc : docs) {
+            Document bson = AppStoreServiceImpl.toBson(doc);
+            if (bson != null) {
+                rows.add(bson);
+            }
+        }
+        if (!rows.isEmpty()) {
+            mongo.insert(rows, collection);
+        }
     }
 
     private static boolean isOverlayWithoutSettings(String context) {
