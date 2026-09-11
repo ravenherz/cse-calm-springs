@@ -1,5 +1,8 @@
 package com.ravenherz.cse.dal;
 
+import com.ravenherz.cse.dal.dto.basic.AccessRule;
+import com.ravenherz.cse.dal.dto.basic.enums.SecurityLevel;
+import com.ravenherz.cse.dal.role.RoleSeeds;
 import org.bson.Document;
 import org.springframework.core.convert.converter.Converter;
 import org.springframework.data.convert.ReadingConverter;
@@ -11,6 +14,7 @@ import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.Month;
 import java.time.ZoneOffset;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 
@@ -27,7 +31,11 @@ public final class MongoTimeConversions {
         return new MongoCustomConversions(List.of(
                 new DateToLocalDateTimeConverter(),
                 new LocalDateTimeToDateConverter(),
-                new DocumentToLocalDateTimeConverter()));
+                new DocumentToLocalDateTimeConverter(),
+                new StringToSecurityLevelConverter(),
+                new StringToAccessRuleConverter(),
+                new DocumentToAccessRuleConverter(),
+                new AccessRuleToDocumentConverter()));
     }
 
     static LocalDateTime fromDate(Date date) {
@@ -156,5 +164,98 @@ public final class MongoTimeConversions {
         public LocalDateTime convert(Document source) {
             return fromDocument(source);
         }
+    }
+
+    @ReadingConverter
+    static final class StringToSecurityLevelConverter implements Converter<String, SecurityLevel> {
+        @Override
+        public SecurityLevel convert(String source) {
+            if (source == null || source.isBlank()) {
+                return null;
+            }
+            String name = source.trim();
+            if ("GUIDE".equals(name)) {
+                return SecurityLevel.INACTIVE_USER;
+            }
+            return SecurityLevel.valueOf(name);
+        }
+    }
+
+    @ReadingConverter
+    static final class StringToAccessRuleConverter implements Converter<String, AccessRule> {
+        @Override
+        public AccessRule convert(String source) {
+            if (source == null || source.isBlank()) {
+                return AccessRule.inheritAll();
+            }
+            String name = source.trim();
+            if ("GUIDE".equals(name)) {
+                return AccessRule.fromLegacy(SecurityLevel.OPERATOR);
+            }
+            try {
+                return AccessRule.fromLegacy(SecurityLevel.valueOf(name));
+            } catch (IllegalArgumentException ex) {
+                return AccessRule.inheritAll();
+            }
+        }
+    }
+
+    @ReadingConverter
+    static final class DocumentToAccessRuleConverter implements Converter<Document, AccessRule> {
+        @Override
+        public AccessRule convert(Document source) {
+            if (source == null) {
+                return AccessRule.inheritAll();
+            }
+            AccessRule rule = new AccessRule();
+            Object inherit = source.get("inherit");
+            rule.setInherit(!(inherit instanceof Boolean) || (Boolean) inherit);
+            rule.setRoleIds(withoutRetired(stringList(source.get("roleIds"))));
+            rule.setAccountIds(stringList(source.get("accountIds")));
+            Object legacy = source.get("legacyThreshold");
+            if (legacy != null) {
+                String name = legacy.toString();
+                rule.setLegacyThreshold("GUIDE".equals(name) ? "OPERATOR" : name);
+            }
+            return rule;
+        }
+    }
+
+    @WritingConverter
+    static final class AccessRuleToDocumentConverter implements Converter<AccessRule, Document> {
+        @Override
+        public Document convert(AccessRule source) {
+            Document document = new Document();
+            document.put("inherit", source != null && source.isInherit());
+            document.put("roleIds", source == null ? List.of() : withoutRetired(source.getRoleIds()));
+            document.put("accountIds", source == null ? List.of() : source.getAccountIds());
+            return document;
+        }
+    }
+
+    private static List<String> withoutRetired(List<String> ids) {
+        List<String> out = new ArrayList<>();
+        for (String id : ids) {
+            if (!RoleSeeds.isRetiredSlug(id)) {
+                out.add(id);
+            }
+        }
+        return out;
+    }
+
+    private static List<String> stringList(Object raw) {
+        List<String> out = new ArrayList<>();
+        if (!(raw instanceof List<?> list)) {
+            return out;
+        }
+        for (Object item : list) {
+            if (item != null) {
+                String text = item.toString().trim();
+                if (!text.isEmpty()) {
+                    out.add(text);
+                }
+            }
+        }
+        return out;
     }
 }

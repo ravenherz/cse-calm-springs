@@ -36,7 +36,7 @@ public final class ItemEntity extends BasicEntity implements Serializable {
 
     public ItemEntity(String uniqueUriName, PageData pageData,
             AccountEntity creator) {
-        super("0.1.0", null, creator);
+        super(null, creator);
         this.uniqueUriName = uniqueUriName;
         this.pageData = pageData;
         this.itemType = ItemType.PAGE;
@@ -44,7 +44,7 @@ public final class ItemEntity extends BasicEntity implements Serializable {
 
     public ItemEntity(String uniqueUriName, AlbumData albumData,
             AccountEntity creator) {
-        super("0.1.0", null, creator);
+        super(null, creator);
         this.uniqueUriName = uniqueUriName;
         this.albumData = albumData;
         this.itemType = ItemType.ALBUM;

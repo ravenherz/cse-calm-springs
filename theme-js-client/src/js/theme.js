@@ -339,6 +339,9 @@
     if (window.CsePlayer && typeof window.CsePlayer.refresh === 'function') {
       window.CsePlayer.refresh();
     }
+    if (window.CseVideoPlayer && typeof window.CseVideoPlayer.refresh === 'function') {
+      window.CseVideoPlayer.refresh();
+    }
   }
 
   function bindAccount(site) {

@@ -15,7 +15,7 @@ public final class ThemeEntity extends BasicEntity {
     }
 
     public ThemeEntity(ThemeData themeData, AccountEntity creator) {
-        super("0.1.0", null, creator);
+        super(null, creator);
         this.themeData = themeData;
     }
 

@@ -1,16 +1,15 @@
 package com.ravenherz.cse.security;
 
+import com.ravenherz.cse.dal.dao.RoleService;
 import com.ravenherz.cse.dal.dto.AccountEntity;
-import com.ravenherz.cse.dal.dto.basic.enums.SecurityLevel;
+import com.ravenherz.cse.dal.dto.RoleEntity;
 import org.bson.types.ObjectId;
 
 import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Rules for changing {@link SecurityLevel} in the editor Roles tab.
- * HTTP already requires ADMIN or OWNER to open {@code /editor/**}.
- * The site always has exactly one OWNER: granting OWNER is a transfer.
+ * Rules for changing an account’s role from the Accounts directory.
  */
 public final class AccountRolePolicy {
 
@@ -31,18 +30,37 @@ public final class AccountRolePolicy {
         }
     }
 
-    public static long ownerCount(List<AccountEntity> accounts) {
-        return ownersExcept(accounts, null).size();
+    public static boolean isOwnerRole(RoleEntity role) {
+        return role != null && role.isOwner();
     }
 
-    public static List<AccountEntity> ownersExcept(List<AccountEntity> accounts, ObjectId keepId) {
+    public static boolean isGuestRole(RoleEntity role) {
+        return role != null && role.isGuest();
+    }
+
+    public static boolean canTransfer(boolean actorIsOwner) {
+        return actorIsOwner;
+    }
+
+    public static boolean canEdit(boolean actorHasEditor, RoleEntity current) {
+        if (isOwnerRole(current)) {
+            return false;
+        }
+        return actorHasEditor;
+    }
+
+    public static long ownerCount(List<AccountEntity> accounts, RoleService roles) {
+        return ownersExcept(accounts, null, roles).size();
+    }
+
+    public static List<AccountEntity> ownersExcept(List<AccountEntity> accounts, ObjectId keepId,
+            RoleService roles) {
         List<AccountEntity> owners = new ArrayList<>();
         if (accounts == null) {
             return owners;
         }
         for (AccountEntity account : accounts) {
-            if (account == null || account.getAccountData() == null
-                    || !SecurityLevel.OWNER.equals(account.getAccountData().getLevel())) {
+            if (!AccountRoles.isOwner(account, roles)) {
                 continue;
             }
             if (keepId != null && keepId.equals(account.getId())) {
@@ -53,77 +71,51 @@ public final class AccountRolePolicy {
         return owners;
     }
 
-    public static boolean actorIsOwner(SecurityLevel actorLevel) {
-        return SecurityLevel.OWNER.equals(actorLevel);
-    }
-
-    public static boolean canTransfer(SecurityLevel actorLevel) {
-        return actorIsOwner(actorLevel);
-    }
-
-    public static boolean canEdit(SecurityLevel actorLevel, SecurityLevel current) {
-        if (current == SecurityLevel.OWNER) {
-            return false;
+    public static List<RoleEntity> assignableRoles(List<RoleEntity> customRoles, boolean actorHasEditor,
+            RoleEntity current) {
+        List<RoleEntity> out = new ArrayList<>();
+        if (!canEdit(actorHasEditor, current) || customRoles == null) {
+            return out;
         }
-        if (actorLevel == null) {
-            return false;
-        }
-        return actorLevel.getIntLevel() >= SecurityLevel.ADMIN.getIntLevel();
-    }
-
-    public static List<SecurityLevel> assignableLevels(SecurityLevel actorLevel,
-            SecurityLevel current, boolean actorIsTarget, long owners) {
-        List<SecurityLevel> levels = new ArrayList<>();
-        for (SecurityLevel level : SecurityLevel.values()) {
-            if (level == SecurityLevel.GUEST) {
+        for (RoleEntity role : customRoles) {
+            if (role == null || role.isSystem() || role.isArchived()) {
                 continue;
             }
-            if (!canOffer(actorLevel, current, level, actorIsTarget, owners)) {
-                continue;
-            }
-            levels.add(level);
+            out.add(role);
         }
-        return levels;
+        return out;
     }
 
-    public static Decision evaluate(SecurityLevel actorLevel, boolean actorIsTarget,
-            SecurityLevel current, SecurityLevel requested, long owners) {
+    public static Decision evaluate(boolean actorIsOwner, boolean actorHasEditor, boolean actorIsTarget,
+            RoleEntity current, RoleEntity requested, boolean requestedHasEditor, long owners) {
         if (requested == null) {
             return Decision.deny("unknown-level");
         }
-        if (requested == SecurityLevel.GUEST) {
+        if (isGuestRole(requested)) {
             return Decision.deny("guest-not-assignable");
         }
-        if (actorLevel == null
-                || actorLevel.getIntLevel() < SecurityLevel.ADMIN.getIntLevel()) {
+        if (!actorHasEditor) {
             return Decision.deny("forbidden");
         }
-        if (current == SecurityLevel.OWNER && requested != SecurityLevel.OWNER) {
+        if (isOwnerRole(current) && !isOwnerRole(requested)) {
             return Decision.deny("sole-owner");
         }
-        if (requested == SecurityLevel.OWNER) {
-            if (current == SecurityLevel.OWNER) {
+        if (isOwnerRole(requested)) {
+            if (isOwnerRole(current)) {
                 return Decision.allow(true);
             }
             if (owners == 0) {
                 return Decision.allow(true);
             }
-            if (actorIsOwner(actorLevel) && !actorIsTarget) {
+            if (actorIsOwner && !actorIsTarget) {
                 return Decision.forTransfer();
             }
             return Decision.deny("owner-required");
         }
-        if (actorIsTarget && requested.getIntLevel() < SecurityLevel.ADMIN.getIntLevel()) {
+        if (actorIsTarget && actorHasEditor && !requestedHasEditor) {
             return Decision.deny("self-lockout");
         }
-        return Decision.allow(loginableFor(requested));
-    }
-
-    public static boolean loginableFor(SecurityLevel level) {
-        return level != null
-                && level != SecurityLevel.GUEST
-                && level != SecurityLevel.INACTIVE_USER
-                && level != SecurityLevel.GUIDE;
+        return Decision.allow(requested.isLoginable());
     }
 
     public static String messageFor(String error) {
@@ -139,21 +131,17 @@ public final class AccountRolePolicy {
             case "self-lockout" -> "You cannot remove your own editor access.";
             case "forbidden" -> "Not allowed.";
             case "save-failed" -> "Could not save the role.";
+            case "role-in-use" -> "Reassign accounts before deleting this role.";
+            case "system-role" -> "System roles cannot be changed.";
+            case "last-editor" -> "Keep at least one non-owner role that can open Catalog.";
             default -> "Could not save the role.";
         };
     }
 
-    private static boolean canOffer(SecurityLevel actorLevel, SecurityLevel current,
-            SecurityLevel candidate, boolean actorIsTarget, long owners) {
-        if (current == SecurityLevel.OWNER) {
+    public static boolean sameId(RoleEntity role, String idHex) {
+        if (role == null || role.getId() == null || idHex == null) {
             return false;
         }
-        if (candidate == SecurityLevel.OWNER) {
-            return false;
-        }
-        if (actorIsTarget && candidate.getIntLevel() < SecurityLevel.ADMIN.getIntLevel()) {
-            return false;
-        }
-        return true;
+        return role.getId().toHexString().equals(idHex);
     }
 }

@@ -15,7 +15,7 @@ public final class AppEntity extends BasicEntity {
     }
 
     public AppEntity(AppData appData, AccountEntity creator) {
-        super("0.1.0", null, creator);
+        super(null, creator);
         this.appData = appData;
     }
 

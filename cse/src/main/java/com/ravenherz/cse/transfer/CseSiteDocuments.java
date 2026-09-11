@@ -9,9 +9,14 @@ import com.ravenherz.cse.dal.dto.ItemEntity;
 import com.ravenherz.cse.dal.dto.PlaylistEntity;
 import com.ravenherz.cse.dal.dto.ResourceEntity;
 import com.ravenherz.cse.dal.dto.ResourceGroupEntity;
+import com.ravenherz.cse.dal.dto.RoleEntity;
+import com.ravenherz.cse.dal.dto.RoleMatrixDocument;
 import com.ravenherz.cse.dal.dto.ThemeEntity;
+import com.ravenherz.cse.dal.dto.UrlTemplateEntity;
+import com.ravenherz.cse.dal.dto.basic.AccessRule;
 import com.ravenherz.cse.dal.dto.basic.AccountData;
 import com.ravenherz.cse.dal.dto.basic.AlbumData;
+import com.ravenherz.cse.dal.dto.basic.AppAccountGrant;
 import com.ravenherz.cse.dal.dto.basic.AppData;
 import com.ravenherz.cse.dal.dto.basic.CategoryData;
 import com.ravenherz.cse.dal.dto.basic.Event;
@@ -21,10 +26,11 @@ import com.ravenherz.cse.dal.dto.basic.PlaylistData;
 import com.ravenherz.cse.dal.dto.basic.PlaylistTrack;
 import com.ravenherz.cse.dal.dto.basic.ResourceData;
 import com.ravenherz.cse.dal.dto.basic.ResourceGroupData;
+import com.ravenherz.cse.dal.dto.basic.RoleGrant;
 import com.ravenherz.cse.dal.dto.basic.SecurityData;
 import com.ravenherz.cse.dal.dto.basic.ThemeData;
+import com.ravenherz.cse.dal.dto.basic.UrlTemplateData;
 import com.ravenherz.cse.dal.dto.basic.enums.AccessType;
-import com.ravenherz.cse.dal.dto.basic.enums.SecurityLevel;
 import org.bson.Document;
 import org.bson.types.Binary;
 import org.bson.types.ObjectId;
@@ -55,9 +61,12 @@ final class CseSiteDocuments {
         put(accountData, "hash", data.getHash());
         put(accountData, "emailAddress", data.getEmailAddress());
         put(accountData, "bio", data.getBio());
+        put(accountData, "shownName", data.getShownName());
+        put(accountData, "avatar", data.getAvatar());
         if (data.getLevel() != null) {
             accountData.put("level", data.getLevel().name());
         }
+        put(accountData, "roleId", data.getRoleId());
         put(accountData, "contacts", data.getContacts());
         put(accountData, "extensibleData", data.getExtensibleData());
         put(accountData, "stylesTheme", data.getStylesTheme());
@@ -143,6 +152,20 @@ final class CseSiteDocuments {
         return doc;
     }
 
+    static Map<String, Object> urlTemplate(UrlTemplateEntity entity) {
+        Map<String, Object> doc = basic(entity);
+        put(doc, "urlTemplateId", entity.getUrlTemplateId());
+        UrlTemplateData data = entity.getUrlTemplateData();
+        if (data != null) {
+            Map<String, Object> templateData = new LinkedHashMap<>();
+            put(templateData, "urlImage", data.getUrlImage());
+            put(templateData, "urlDefaultText", data.getUrlDefaultText());
+            put(templateData, "urlPattern", data.getUrlPattern());
+            doc.put("urlTemplateData", templateData);
+        }
+        return doc;
+    }
+
     static Map<String, Object> app(AppEntity entity) {
         Map<String, Object> doc = basic(entity);
         AppData data = entity.getAppData();
@@ -163,6 +186,7 @@ final class CseSiteDocuments {
         put(appData, "description", data.getDescription());
         appData.put("storeEnabled", data.isStoreEnabled());
         appData.put("storeOpen", data.isStoreOpen());
+        appData.put("storeSettings", data.storeSettings().toMap());
         List<Map<String, Object>> tables = new ArrayList<>();
         for (var spec : data.getStoreTables()) {
             if (spec != null) {
@@ -256,6 +280,47 @@ final class CseSiteDocuments {
         return ids;
     }
 
+    static Map<String, Object> role(RoleEntity entity) {
+        Map<String, Object> doc = new LinkedHashMap<>();
+        put(doc, "id", hex(entity.getId()));
+        put(doc, "entityVersion", entity.getEntityVersion());
+        put(doc, "slug", entity.getSlug());
+        put(doc, "name", entity.getName());
+        put(doc, "system", entity.getSystem());
+        doc.put("loginable", entity.isLoginable());
+        doc.put("sortOrder", entity.getSortOrder());
+        doc.put("archived", entity.isArchived());
+        return doc;
+    }
+
+    static Map<String, Object> roleMatrix(RoleMatrixDocument entity) {
+        Map<String, Object> doc = new LinkedHashMap<>();
+        put(doc, "id", hex(entity.getId()));
+        List<Map<String, Object>> grants = new ArrayList<>();
+        for (RoleGrant grant : entity.getGrants()) {
+            if (grant == null) {
+                continue;
+            }
+            Map<String, Object> row = new LinkedHashMap<>();
+            put(row, "capabilityId", grant.getCapabilityId());
+            put(row, "roleId", grant.getRoleId());
+            grants.add(row);
+        }
+        doc.put("grants", grants);
+        List<Map<String, Object>> appGrants = new ArrayList<>();
+        for (AppAccountGrant grant : entity.getAppGrants()) {
+            if (grant == null) {
+                continue;
+            }
+            Map<String, Object> row = new LinkedHashMap<>();
+            put(row, "capabilityId", grant.getCapabilityId());
+            put(row, "accountId", grant.getAccountId());
+            appGrants.add(row);
+        }
+        doc.put("appGrants", appGrants);
+        return doc;
+    }
+
     private static Map<String, Object> basic(BasicEntity entity) {
         Map<String, Object> doc = new LinkedHashMap<>();
         put(doc, "id", hex(entity.getId()));
@@ -269,12 +334,17 @@ final class CseSiteDocuments {
         if (data == null || data.getAccessSettings() == null) {
             return null;
         }
-        Map<String, String> access = new LinkedHashMap<>();
-        for (Map.Entry<AccessType, SecurityLevel> entry : data.getAccessSettings().entrySet()) {
+        Map<String, Object> access = new LinkedHashMap<>();
+        for (Map.Entry<AccessType, AccessRule> entry : data.getAccessSettings().entrySet()) {
             if (entry.getKey() == null || entry.getValue() == null) {
                 continue;
             }
-            access.put(entry.getKey().name(), entry.getValue().name());
+            AccessRule rule = entry.getValue();
+            Map<String, Object> row = new LinkedHashMap<>();
+            row.put("inherit", rule.isInherit());
+            row.put("roleIds", new ArrayList<>(rule.getRoleIds()));
+            row.put("accountIds", new ArrayList<>(rule.getAccountIds()));
+            access.put(entry.getKey().name(), row);
         }
         Map<String, Object> security = new LinkedHashMap<>();
         security.put("accessSettings", access);

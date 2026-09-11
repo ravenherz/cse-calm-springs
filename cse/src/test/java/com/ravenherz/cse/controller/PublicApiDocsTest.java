@@ -17,6 +17,7 @@ class PublicApiDocsTest {
         assertTrue(paths.contains("/account/logout"));
         assertTrue(paths.contains("/account/register"));
         assertTrue(paths.contains("/account/activate"));
+        assertTrue(paths.contains("/account/me"));
         assertTrue(paths.contains("/rest/forms/render"));
         assertTrue(paths.contains("/rest/markdown/render"));
         assertTrue(paths.contains("/rest/error"));
@@ -58,5 +59,12 @@ class PublicApiDocsTest {
                 .orElseThrow()
                 .csrf();
         assertFalse(siteCsrf);
+        boolean errorCsrf = PublicApiDocs.sections().stream()
+                .flatMap(section -> section.endpoints().stream())
+                .filter(endpoint -> "/rest/error".equals(endpoint.path()))
+                .findFirst()
+                .orElseThrow()
+                .csrf();
+        assertFalse(errorCsrf);
     }
 }

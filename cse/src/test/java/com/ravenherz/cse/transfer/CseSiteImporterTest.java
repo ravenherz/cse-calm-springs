@@ -11,6 +11,7 @@ import com.ravenherz.cse.dal.dao.PlaylistService;
 import com.ravenherz.cse.dal.dao.ResourceGroupService;
 import com.ravenherz.cse.dal.dao.ResourceService;
 import com.ravenherz.cse.dal.dao.ThemeService;
+import com.ravenherz.cse.dal.dao.UrlTemplateService;
 import com.ravenherz.cse.dal.dto.AccountEntity;
 import com.ravenherz.cse.dal.dto.AppEntity;
 import com.ravenherz.cse.dal.dto.CategoryEntity;
@@ -77,6 +78,7 @@ class CseSiteImporterTest {
         PlaylistService playlists = mock(PlaylistService.class);
         AppService apps = mock(AppService.class);
         ThemeService themes = mock(ThemeService.class);
+        UrlTemplateService urlTemplates = mock(UrlTemplateService.class);
         when(services.getAccountService()).thenReturn(accounts);
         when(services.getCategoryService()).thenReturn(categories);
         when(services.getResourceGroupService()).thenReturn(groups);
@@ -85,15 +87,18 @@ class CseSiteImporterTest {
         when(services.getPlaylistService()).thenReturn(playlists);
         when(services.getAppService()).thenReturn(apps);
         when(services.getThemeService()).thenReturn(themes);
+        when(services.getUrlTemplateService()).thenReturn(urlTemplates);
         when(accounts.getAll()).thenReturn(List.of());
         when(categories.getAll()).thenReturn(List.of());
         when(groups.getAll()).thenReturn(List.of());
         when(resourceService.getAll()).thenReturn(List.of());
+        when(resourceService.listWithContent()).thenReturn(List.of());
         when(resourceService.getDataChunks(anyList())).thenReturn(List.of());
         when(items.getAll()).thenReturn(List.of());
         when(playlists.getAll()).thenReturn(List.of());
         when(apps.getAll()).thenReturn(List.of());
         when(themes.getAll()).thenReturn(List.of());
+        when(urlTemplates.getAll()).thenReturn(List.of());
         mongo = mock(MongoTemplate.class);
         settings = mock(Settings.class);
         when(settings.isOverlayContext("config-personal")).thenReturn(true);
@@ -141,6 +146,7 @@ class CseSiteImporterTest {
         when(services.getAccountService().getAll()).thenReturn(List.of(owner));
         when(services.getCategoryService().getAll()).thenReturn(List.of(category));
         when(resourceService.getAll()).thenReturn(List.of(resource));
+        when(resourceService.listWithContent()).thenReturn(List.of(resource));
         when(resourceService.getDataChunks(anyList())).thenReturn(List.of(chunk));
         when(services.getItemService().getAll()).thenReturn(List.of(page));
 
@@ -199,6 +205,7 @@ class CseSiteImporterTest {
         assertEquals("config-personal", overlayDoc.getContext());
         assertEquals("Ada", overlayDoc.getValues().get("company-title"));
         verify(settings).reloadFromMongo();
+        assertEquals("owner", importedAccount.getAccountData().getRoleId());
     }
 
     @Test
@@ -307,6 +314,36 @@ class CseSiteImporterTest {
         verify(mongo).insert(anyList(), org.mockito.ArgumentMatchers.eq("fretlab-progress"));
         verify(mongo).dropCollection("hello-snake-scores");
         verify(mongo, never()).insert(anyList(), org.mockito.ArgumentMatchers.eq("cse-mystery"));
+    }
+
+    @Test
+    void importsOldArchiveWithoutRolesCollectionsAndFillsRoleId() throws Exception {
+        Map<String, String> files = new HashMap<>();
+        files.put("manifest.json", """
+                {"format":"cse-site","version":1,"collections":{}}
+                """);
+        for (String name : CseSiteFormat.COLLECTIONS) {
+            if (MongoCollections.DATABASE_ROLES.equals(name)
+                    || MongoCollections.DATABASE_ROLE_MATRIX.equals(name)
+                    || MongoCollections.DATABASE_URL_TEMPLATES.equals(name)) {
+                continue;
+            }
+            files.put("collections/" + name + ".json", "[]");
+        }
+        files.put("collections/cse-accounts.json", """
+                [{"id":"68b000000000000000000001","accountData":{"login":"ada","hash":"h","emailAddress":"a@x","level":"OWNER","loginable":true}}]
+                """);
+
+        importer.apply(new ByteArrayInputStream(zipOf(files)), mongo, settings);
+
+        ArgumentCaptor<Object> saved = ArgumentCaptor.forClass(Object.class);
+        verify(mongo, atLeast(1)).save(saved.capture());
+        AccountEntity imported = saved.getAllValues().stream()
+                .filter(AccountEntity.class::isInstance)
+                .map(AccountEntity.class::cast)
+                .findFirst()
+                .orElseThrow();
+        assertEquals("owner", imported.getAccountData().getRoleId());
     }
 
     private static byte[] zipOf(Map<String, String> files) throws Exception {

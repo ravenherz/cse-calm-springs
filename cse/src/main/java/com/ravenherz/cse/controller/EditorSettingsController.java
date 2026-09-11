@@ -27,7 +27,7 @@ public class EditorSettingsController extends AbstractController {
             return null;
         }
         addEditorChrome(model, accessor);
-        fillAppearance(model, accessor);
+        fillAppearance(model);
         model.addAttribute("settingContexts", settings.getStorageSnapshot());
         return "/admin/editor-settings";
     }
@@ -41,7 +41,6 @@ public class EditorSettingsController extends AbstractController {
         }
 
         String appearanceError = appearanceError(params);
-        String personalError = savePersonalTheme(accessor, params);
 
         java.util.Set<String> changedContexts = new java.util.LinkedHashSet<>();
         for (Map.Entry<String, String> entry : params.entrySet()) {
@@ -73,20 +72,18 @@ public class EditorSettingsController extends AbstractController {
 
         if (appearanceError != null) {
             model.addAttribute("error", appearanceError);
-        } else if (personalError != null) {
-            model.addAttribute("error", personalError);
         } else if (!allOk) {
             model.addAttribute("error", "Saved in memory, but MongoDB could not persist at least one group.");
         } else {
             model.addAttribute("saved", true);
         }
         addEditorChrome(model, accessor);
-        fillAppearance(model, accessor);
+        fillAppearance(model);
         model.addAttribute("settingContexts", settings.getStorageSnapshot());
         return "/admin/editor-settings";
     }
 
-    private void fillAppearance(Model model, AccountEntity accessor) {
+    private void fillAppearance(Model model) {
         if (themeCatalog == null) {
             return;
         }
@@ -96,44 +93,6 @@ public class EditorSettingsController extends AbstractController {
         ThemeInfo current = themeCatalog.find(selection.getCssId());
         model.addAttribute("activeThemeSchemas",
                 current == null ? java.util.List.of() : current.getSchemas());
-        String personalTheme = accessor.getAccountData() == null ? "" : nullToEmpty(accessor.getAccountData().getStylesTheme());
-        model.addAttribute("personalTheme", personalTheme);
-        model.addAttribute("personalSchema", accessor.getAccountData() == null
-                ? "" : nullToEmpty(accessor.getAccountData().getStylesSchema()));
-        ThemeInfo personal = themeCatalog.find(personalTheme);
-        model.addAttribute("personalThemeSchemas",
-                personal == null ? java.util.List.of() : personal.getSchemas());
-    }
-
-    private String savePersonalTheme(AccountEntity accessor, Map<String, String> params) {
-        if (!params.containsKey("my-styles-theme") && !params.containsKey("my-styles-schema")) {
-            return null;
-        }
-        String theme = params.get("my-styles-theme");
-        String schema = params.get("my-styles-schema");
-        if (theme == null) {
-            theme = "";
-        }
-        theme = theme.trim();
-        if (schema == null) {
-            schema = "";
-        }
-        schema = schema.trim();
-        if (!theme.isEmpty() && themeCatalog != null && !themeCatalog.isKnownTheme(theme)) {
-            return "Unknown personal theme: " + theme;
-        }
-        if (!theme.isEmpty() && !schema.isEmpty() && themeCatalog != null
-                && !themeCatalog.isKnownSchema(theme, schema)) {
-            return "Color schema '" + schema + "' is not part of theme '" + theme + "'";
-        }
-        accessor.getAccountData().setStylesTheme(theme.isEmpty() ? null : theme);
-        accessor.getAccountData().setStylesSchema(schema.isEmpty() ? null : schema);
-        serviceProvider.getAccountService().replace(accessor);
-        return null;
-    }
-
-    private static String nullToEmpty(String value) {
-        return value == null ? "" : value;
     }
 
     private String appearanceError(Map<String, String> params) {

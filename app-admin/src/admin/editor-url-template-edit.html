@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="en">
+<head th:replace="~{fragments/shared :: shared-head}"></head>
+<body>
+  <div class="editor-layout">
+    <aside class="editor-sidebar" th:replace="~{fragments/shared :: shared-editor-sidebar}"></aside>
+    <main class="editor-main resource-page">
+      <div th:if="${error}" class="error-message" th:text="${error}">Error</div>
+      <div class="resource-browser">
+        <th:block th:replace="~{fragments/shared :: shared-editor-tree}"></th:block>
+        <section class="resource-pane">
+          <div class="resource-pane-header">
+            <div class="resource-pane-title">
+              <h2 th:text="${template.urlTemplateId} ?: 'Edit URL template'">Edit URL template</h2>
+            </div>
+            <th:block th:replace="~{fragments/shared :: editor-inline-back}"></th:block>
+          </div>
+
+          <form th:action="@{/editor/url-template/save}" method="post" class="form-panel"
+                enctype="multipart/form-data">
+            <th:block th:replace="~{fragments/csrf :: field}"></th:block>
+            <input type="hidden" name="id" th:value="${template.id}"/>
+            <th:block th:replace="~{fragments/url-template-form :: fields}"></th:block>
+            <div class="form-group" th:if="${template.urlTemplateId}">
+              <label>Embed tag</label>
+              <p class="field-hint">Paste this into any page’s Markdown/HTML. Fill in <code>id</code>:</p>
+              <code class="embed-hint"
+                    th:text="'&lt;cse-url templateId=&quot;' + ${template.urlTemplateId} + '&quot; id=&quot;&quot;&gt;&lt;/cse-url&gt;'">tag</code>
+            </div>
+            <th:block th:replace="~{fragments/access :: panel(read=${accessRead}, edit=${accessEdit}, delete=${accessDelete}, canEdit=${accessCanEdit})}"></th:block>
+            <div class="editor-actions">
+              <button type="submit" class="btn btn-primary">Save</button>
+            </div>
+          </form>
+        </section>
+      </div>
+    </main>
+  </div>
+  <th:block th:replace="~{fragments/url-template-form :: scripts}"></th:block>
+</body>
+</html>

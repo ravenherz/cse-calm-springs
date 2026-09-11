@@ -2,23 +2,45 @@ package com.ravenherz.cse.dal.dto.basic;
 
 import com.ravenherz.cse.dal.dto.basic.enums.AccessType;
 import com.ravenherz.cse.dal.dto.basic.enums.SecurityLevel;
+import com.ravenherz.cse.dal.role.RoleSeeds;
 
+import java.util.EnumMap;
 import java.util.HashMap;
+import java.util.Map;
 
 public class EntityAccessConstants {
 
-    public static final HashMap<AccessType, SecurityLevel> DEFAULT = new HashMap<AccessType, SecurityLevel>() {
-        {
-            put(AccessType.ACCESS_READ, SecurityLevel.GUEST);
-            put(AccessType.ACCESS_EDIT, SecurityLevel.OWNER);
-            put(AccessType.ACCESS_DELETE, SecurityLevel.MODERATOR);
+    public static final Map<AccessType, AccessRule> DEFAULT = SecurityData.defaultSettings();
+
+    private EntityAccessConstants() {
+    }
+
+    public static Map<AccessType, AccessRule> forLevel(SecurityLevel threshold) {
+        Map<AccessType, AccessRule> settings = new EnumMap<>(AccessType.class);
+        settings.put(AccessType.ACCESS_READ, AccessRule.fromLegacy(threshold));
+        settings.put(AccessType.ACCESS_EDIT, AccessRule.fromLegacy(threshold));
+        settings.put(AccessType.ACCESS_DELETE, AccessRule.fromLegacy(threshold));
+        return settings;
+    }
+
+    /** @deprecated kept for callers that still pass rank maps during dual-write tests */
+    @Deprecated
+    public static Map<AccessType, SecurityLevel> legacyDefaultRanks() {
+        HashMap<AccessType, SecurityLevel> ranks = new HashMap<>();
+        ranks.put(AccessType.ACCESS_READ, SecurityLevel.GUEST);
+        ranks.put(AccessType.ACCESS_EDIT, SecurityLevel.OWNER);
+        ranks.put(AccessType.ACCESS_DELETE, SecurityLevel.MODERATOR);
+        return ranks;
+    }
+
+    public static AccessRule fromLegacyThreshold(SecurityLevel threshold) {
+        if (threshold == null) {
+            return AccessRule.inheritAll();
         }
-    };
-    public static final HashMap<AccessType, SecurityLevel> GUIDE = new HashMap<AccessType, SecurityLevel>() {
-        {
-            put(AccessType.ACCESS_READ, SecurityLevel.GUIDE);
-            put(AccessType.ACCESS_EDIT, SecurityLevel.GUIDE);
-            put(AccessType.ACCESS_DELETE, SecurityLevel.GUIDE);
+        AccessRule rule = AccessRule.fromLegacy(threshold);
+        if (rule.getRoleIds().isEmpty() && threshold != SecurityLevel.OWNER) {
+            rule.setRoleIds(RoleSeeds.slugsAtOrAbove(threshold));
         }
-    };
+        return rule;
+    }
 }

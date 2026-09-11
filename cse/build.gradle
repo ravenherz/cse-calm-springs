@@ -70,8 +70,15 @@ dependencies {
     implementation group: 'commons-fileupload', name: 'commons-fileupload', version: '1.6.0'
 
     implementation 'com.github.openize-com:openize-heic-java:v26.5.1'
+    implementation 'com.drewnoakes:metadata-extractor:2.21.0'
     implementation 'net.jthink:jaudiotagger:3.0.1'
     implementation 'javazoom:jlayer:1.0.1'
+    implementation 'org.bytedeco:javacpp:1.5.12'
+    implementation 'org.bytedeco:javacpp:1.5.12:windows-x86_64'
+    implementation 'org.bytedeco:javacpp:1.5.12:linux-x86_64'
+    implementation 'org.bytedeco:ffmpeg:7.1.1-1.5.12'
+    implementation 'org.bytedeco:ffmpeg:7.1.1-1.5.12:windows-x86_64'
+    implementation 'org.bytedeco:ffmpeg:7.1.1-1.5.12:linux-x86_64'
 
     implementation 'org.springframework.security:spring-security-crypto'
     implementation 'org.bouncycastle:bcprov-jdk18on:1.84'
@@ -85,6 +92,11 @@ dependencies {
 
 tasks.named('test') {
     useJUnitPlatform()
+}
+
+tasks.withType(org.springframework.boot.gradle.tasks.bundling.BootWar).configureEach {
+    requiresUnpack '**/ffmpeg-*.jar'
+    requiresUnpack '**/javacpp-*.jar'
 }
 
 def currentVersion = '0.7.0'
@@ -151,7 +163,7 @@ tasks.named('processResources', Copy) {
 
 cargo {
     Boolean deployRemote = true
-    String deployOverride = "production"
+    String deployOverride = "stage"
     var cargoParamResolver = new CargoContextResolver(deployRemote, project, deployOverride)
     System.out.println("deploying to '${cargoParamResolver.getWhereToDeploy()}'")
 

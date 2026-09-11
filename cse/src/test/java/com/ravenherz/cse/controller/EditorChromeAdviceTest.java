@@ -41,6 +41,19 @@ class EditorChromeAdviceTest {
         advice.editorNav(request("/editor/settings"), settings);
         assertEquals(Boolean.FALSE, settings.getAttribute("navResources"));
         assertEquals(Boolean.TRUE, settings.getAttribute("navSettings"));
+
+        ConcurrentModel transcode = new ConcurrentModel();
+        advice.editorNav(request("/editor/transcode"), transcode);
+        assertEquals(Boolean.FALSE, transcode.getAttribute("navResources"));
+        assertEquals(Boolean.TRUE, transcode.getAttribute("navTranscode"));
+        assertEquals(Boolean.FALSE, transcode.getAttribute("navInstance"));
+
+        ConcurrentModel instance = new ConcurrentModel();
+        advice.editorNav(request("/editor/instance"), instance);
+        assertEquals(Boolean.FALSE, instance.getAttribute("navResources"));
+        assertEquals(Boolean.TRUE, instance.getAttribute("navInstance"));
+        assertEquals(Boolean.FALSE, instance.getAttribute("navLogs"));
+        assertEquals(Boolean.FALSE, instance.getAttribute("navTranscode"));
     }
 
     private static MockHttpServletRequest request(String uri) {

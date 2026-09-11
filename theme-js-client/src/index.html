@@ -4,17 +4,11 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title th:text="${htmlTitle}">Calm Springs</title>
-  <script id="script-cse-dist-jquery" type="text/javascript"
-          th:src="@{/content-public/themes/__${stylesShell}__/js/jquery.min.js}"
-          src="js/jquery.min.js"></script>
   <meta name="cse-context" th:content="${cseContextPath}">
   <meta name="csrf-token" th:if="${_csrf != null}" th:content="${_csrf.token}">
-  <script id="script-cse-csrf" type="text/javascript"
-          th:src="@{/content-public/themes/__${stylesShell}__/js/cse-csrf.js(v=7)}"
-          src="js/cse-csrf.js?v=7"></script>
-  <script id="script-cse-dist-bootstrap" type="text/javascript"
-          th:src="@{/content-public/themes/__${stylesShell}__/js/bootstrap.min.js}"
-          src="js/bootstrap.min.js"></script>
+  <link rel="icon" href="content-public/cse-core/images/favicon.ico"
+        th:href="@{/content-public/cse-core/images/favicon.ico}"
+        type="image/x-icon">
   <link rel="stylesheet" type="text/css"
         th:href="@{/content-public/themes/__${stylesShell}__/css/bootstrap.min.css}"
         href="css/bootstrap.min.css">
@@ -32,15 +26,24 @@
   <link rel="stylesheet"
         th:href="@{/content-public/themes/__${stylesTheme}__/css/cse-player.css}"
         href="css/cse-player.css">
-  <link rel="icon" href="content-public/cse-core/images/favicon.ico"
-        th:href="@{/content-public/cse-core/images/favicon.ico}"
-        type="image/x-icon">
-  <script id="script-cse-waveform" type="text/javascript"
+  <script id="script-cse-dist-jquery" type="text/javascript" defer
+          th:src="@{/content-public/themes/__${stylesShell}__/js/jquery.min.js}"
+          src="js/jquery.min.js"></script>
+  <script id="script-cse-csrf" type="text/javascript" defer
+          th:src="@{/content-public/themes/__${stylesShell}__/js/cse-csrf.js(v=7)}"
+          src="js/cse-csrf.js?v=7"></script>
+  <script id="script-cse-dist-bootstrap" type="text/javascript" defer
+          th:src="@{/content-public/themes/__${stylesShell}__/js/bootstrap.min.js}"
+          src="js/bootstrap.min.js"></script>
+  <script id="script-cse-waveform" type="text/javascript" defer
           th:src="@{/content-public/themes/__${stylesShell}__/js/cse-waveform.js}"
           src="js/cse-waveform.js"></script>
-  <script id="script-cse-player" type="text/javascript"
+  <script id="script-cse-player" type="text/javascript" defer
           th:src="@{/content-public/themes/__${stylesShell}__/js/cse-player.js}"
           src="js/cse-player.js"></script>
+  <script id="script-cse-video-player" type="text/javascript" defer
+          th:src="@{/content-public/themes/__${stylesShell}__/js/cse-video-player.js}"
+          src="js/cse-video-player.js"></script>
   <script th:src="@{/content-public/themes/__${stylesShell}__/js/theme.js}"
           src="js/theme.js" defer></script>
 </head>

@@ -7,16 +7,16 @@ function getErrorDescription() {
     data[code] = codeValue;
     $.ajax({
         url: "./rest/error",
-        type: 'POST',
+        type: 'GET',
         dataType: 'json',
-        contentType: 'application/json',
-        mimeType: 'text/html',
-        data: JSON.stringify(data),
+        data: data,
         success: function (data) {
             for (var key in data){
                 let name = "errorPage-"+key+"";
                 let elem = document.getElementById(name);
-                elem.innerHTML = data[key];
+                if (elem) {
+                    elem.innerHTML = data[key];
+                }
             }
         }
     });

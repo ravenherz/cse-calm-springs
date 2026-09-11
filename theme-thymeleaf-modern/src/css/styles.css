@@ -64,7 +64,7 @@ img {
     background: color-mix(in srgb, var(--canvas) 88%, transparent);
     border-bottom: 1px solid var(--line);
     backdrop-filter: blur(16px);
-    box-shadow: rgb(0 0 0 / 17%) 0px 20px 30px -10px;
+    box-shadow: rgb(38 57 77 / 29%) 0px 20px 30px -10px;
 }
 
 .brand {
@@ -254,7 +254,7 @@ img {
 }
 
 .piece-card h3 {
-    margin-top: calc(12px * var(--main-sp));
+    margin-top: calc(20px * var(--main-sp));
     font-size: calc(1.05rem * var(--main-fs));
 }
 
@@ -364,6 +364,7 @@ img {
 .album-grid img {
     border-radius: calc(14px * var(--main-sp));
     background: var(--surface-2);
+    box-shadow: rgb(38, 57, 77) 0px 20px 30px -10px;
 }
 
 .album-grid figcaption {

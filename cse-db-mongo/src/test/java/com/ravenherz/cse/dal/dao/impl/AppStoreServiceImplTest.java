@@ -3,6 +3,7 @@ package com.ravenherz.cse.dal.dao.impl;
 import com.mongodb.client.MongoCollection;
 import com.ravenherz.cse.dal.DataProvider;
 import com.ravenherz.cse.dal.dao.AppService;
+import com.ravenherz.cse.dal.dao.AppStoreService;
 import com.ravenherz.cse.dal.dto.AppEntity;
 import com.ravenherz.cse.dal.dto.basic.AppData;
 import com.ravenherz.cse.store.AppStoreAccess;
@@ -94,6 +95,30 @@ class AppStoreServiceImplTest {
         AppStoreException error = assertThrows(AppStoreException.class,
                 () -> store.requireTable("fretlab", "secrets"));
         assertEquals(404, error.getStatus());
+    }
+
+    @Test
+    void oversizedDocumentIs413() {
+        String blob = "x".repeat(AppStoreService.MAX_DATA_BYTES + 64);
+        AppStoreException error = assertThrows(AppStoreException.class,
+                () -> store.insert("fretlab", "progress", "owner", Map.of("blob", blob)));
+        assertEquals(413, error.getStatus());
+    }
+
+    @Test
+    void perAppDocumentLimitIsEnforced() {
+        AppEntity app = enabledApp("fretlab");
+        app.getAppData().storeSettings().setMaxDataBytes(8 * 1024);
+        when(apps.getBySlug("fretlab")).thenReturn(app);
+        AppStoreException error = assertThrows(AppStoreException.class,
+                () -> store.insert("fretlab", "progress", "owner", Map.of("blob", "x".repeat(20 * 1024))));
+        assertEquals(413, error.getStatus());
+    }
+
+    @Test
+    void pictureSizedDocumentIsAccepted() {
+        store.insert("fretlab", "progress", "owner", Map.of("blob", "x".repeat(200 * 1024)));
+        verify(mongo).insert(any(Document.class), eq("fretlab-progress"));
     }
 
     @Test

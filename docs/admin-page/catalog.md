@@ -20,6 +20,7 @@ Under **Content** the tree is grouped by kind:
 - **Categories** — homepage sections, with pages and albums under each category
 - **Playlists** — listening lists
 - **Themes** — public skins
+- **URL Templates** — patterns for `<cse-url>` embeds
 
 These rows are the catalog, not ordinary media folders. You do not upload photos here; you open tiles, create items, or install packs. The Content headings themselves are locked: you work in their tiles, you do not rename those folders.
 
@@ -52,7 +53,7 @@ Delete asks for confirmation. It is permanent. Do not delete live sections unles
 
 ## Rename
 
-**Rename** turns the row into a field. Enter the name and press Enter. Categories, pages, albums, playlists, and media folders can be renamed this way when the row allows it.
+**Rename** turns the row into a field. Enter the name and press Enter. Categories, pages, albums, playlists, URL templates, and media folders can be renamed this way when the row allows it.
 
 ## Drag and drop
 

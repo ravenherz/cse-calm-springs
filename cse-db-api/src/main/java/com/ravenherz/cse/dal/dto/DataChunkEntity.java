@@ -12,7 +12,7 @@ public final class DataChunkEntity extends BasicEntity {
     }
 
     public DataChunkEntity(String data) {
-        super("0.1.0", null, null);
+        super(null, null);
         this.data = data;
     }
 

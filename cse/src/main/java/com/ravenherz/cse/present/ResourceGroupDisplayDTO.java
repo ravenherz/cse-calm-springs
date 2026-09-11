@@ -1,6 +1,7 @@
 package com.ravenherz.cse.present;
 
 import com.ravenherz.cse.dal.dto.ResourceEntity;
+import com.ravenherz.cse.dal.dto.basic.SecurityData;
 import com.ravenherz.cse.util.StringUtils;
 
 import java.util.ArrayList;
@@ -23,6 +24,10 @@ public class ResourceGroupDisplayDTO {
     private long totalSize;
     private int descendantFileCount;
     private long descendantTotalSize;
+    private boolean guestDenied;
+    private SecurityData securityData = new SecurityData();
+    private boolean accessCanEdit;
+    private String categoryItemName;
 
     public String getId() {
         return id;
@@ -260,7 +265,59 @@ public class ResourceGroupDisplayDTO {
         return !isUngrouped() && !isVirtual() && !isCategoryNode();
     }
 
+    public boolean canEditAccess() {
+        return canAcceptFiles() && !isDefaultGroup();
+    }
+
     public boolean isLocked() {
         return isUngrouped() || isDefaultGroup() || isVirtual();
+    }
+
+    public boolean isGuestDenied() {
+        return guestDenied;
+    }
+
+    public void setGuestDenied(boolean guestDenied) {
+        this.guestDenied = guestDenied;
+    }
+
+    public SecurityData getSecurityData() {
+        if (securityData == null) {
+            securityData = new SecurityData();
+        }
+        return securityData;
+    }
+
+    public void setSecurityData(SecurityData securityData) {
+        this.securityData = securityData == null ? new SecurityData() : securityData;
+    }
+
+    public boolean isAccessCanEdit() {
+        return accessCanEdit;
+    }
+
+    public void setAccessCanEdit(boolean accessCanEdit) {
+        this.accessCanEdit = accessCanEdit;
+    }
+
+    public String getCategoryItemName() {
+        return categoryItemName;
+    }
+
+    public void setCategoryItemName(String categoryItemName) {
+        this.categoryItemName = categoryItemName == null || categoryItemName.isBlank()
+                ? null : categoryItemName.trim();
+    }
+
+    public String embedTag() {
+        return isEmbeddable() ? "cse-category" : "";
+    }
+
+    public String embedId() {
+        return categoryItemName == null ? "" : categoryItemName;
+    }
+
+    public boolean isEmbeddable() {
+        return isCategoryNode() && categoryItemName != null && !categoryItemName.isBlank();
     }
 }

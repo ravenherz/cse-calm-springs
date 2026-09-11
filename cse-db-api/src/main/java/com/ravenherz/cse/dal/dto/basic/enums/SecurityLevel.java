@@ -5,7 +5,6 @@ public enum SecurityLevel {
     INACTIVE_USER(1),
     ACTIVE_USER(2),
     PRIVILEGIED_USER(3),
-    GUIDE(4),
     OPERATOR(300),
     MODERATOR(400),
     ADMIN(500),

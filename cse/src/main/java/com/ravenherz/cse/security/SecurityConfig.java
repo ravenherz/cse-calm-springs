@@ -29,9 +29,11 @@ import org.springframework.web.multipart.support.MultipartFilter;
 public class SecurityConfig {
 
     private final AuthSupport authSupport;
+    private final CapabilityService capabilityService;
 
-    public SecurityConfig(AuthSupport authSupport) {
+    public SecurityConfig(AuthSupport authSupport, CapabilityService capabilityService) {
         this.authSupport = authSupport;
+        this.capabilityService = capabilityService;
     }
 
     @Bean
@@ -46,7 +48,8 @@ public class SecurityConfig {
         http
                 .csrf(csrf -> csrf
                         .csrfTokenRepository(new CseCookieCsrfTokenRepository())
-                        .csrfTokenRequestHandler(new CseCsrfTokenRequestHandler()))
+                        .csrfTokenRequestHandler(new CseCsrfTokenRequestHandler())
+                        .ignoringRequestMatchers("/rest/error"))
                 .httpBasic(AbstractHttpConfigurer::disable)
                 .formLogin(AbstractHttpConfigurer::disable)
                 .logout(AbstractHttpConfigurer::disable)
@@ -69,11 +72,15 @@ public class SecurityConfig {
                         .authenticationEntryPoint(new CseAuthenticationEntryPoint())
                         .accessDeniedHandler(new CseAccessDeniedHandler()))
                 .authorizeHttpRequests(auth -> auth
-                        // ROLE_ADMIN is ADMIN and OWNER (see CseAuthorities.isAdmin).
-                        .requestMatchers("/editor", "/editor/**").hasRole("ADMIN")
+                        .requestMatchers("/editor", "/editor/**")
+                        .access(new EditorAccessAuthorizationManager(capabilityService))
                         .anyRequest().permitAll())
                 .addFilterAfter(new CseCookieAuthenticationFilter(authSupport),
                         SecurityContextHolderFilter.class)
+                .addFilterAfter(new AppCapabilityFilter(authSupport, capabilityService),
+                        CseCookieAuthenticationFilter.class)
+                .addFilterAfter(new SiteCapabilityFilter(authSupport, capabilityService),
+                        AppCapabilityFilter.class)
                 .addFilterAfter(new CsrfCookieFilter(), CsrfFilter.class);
         return http.build();
     }

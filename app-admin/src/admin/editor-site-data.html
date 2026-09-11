@@ -4,7 +4,7 @@
 <body>
   <div class="editor-layout">
     <aside class="editor-sidebar" th:replace="~{fragments/shared :: shared-editor-sidebar}"></aside>
-    <main class="editor-main">
+    <main class="editor-main site-data-page">
       <header class="page-header">
         <h1 class="page-title">Site data</h1>
         <div class="page-header-actions">
@@ -14,8 +14,17 @@
 
       <div th:if="${error}" class="error-message" th:text="${error}">Error</div>
 
-      <section class="form-panel">
-        <h2 class="settings-context-title">Export</h2>
+      <nav class="settings-tabs" role="tablist" aria-label="Site data">
+        <button type="button" class="is-active" role="tab" id="site-tab-export"
+                aria-controls="site-panel-export" aria-selected="true" tabindex="0"
+                data-tab="export">Export</button>
+        <button type="button" role="tab" id="site-tab-import"
+                aria-controls="site-panel-import" aria-selected="false" tabindex="-1"
+                data-tab="import">Import</button>
+      </nav>
+
+      <section class="settings-tab-panel is-active" role="tabpanel" id="site-panel-export"
+               aria-labelledby="site-tab-export">
         <p class="field-hint">
           Downloads the whole CMS database as a <code>.csesite</code> zip
           (JSON collections, string ids). Media and password hashes are inside.
@@ -23,13 +32,10 @@
           sessions are not.
         </p>
         <p class="field-hint" th:if="${!dbReady}">Connect the database before exporting.</p>
-        <div class="editor-actions" th:if="${dbReady}">
-          <a class="btn btn-primary" th:href="@{/editor/site-data/export}">Download export</a>
-        </div>
       </section>
 
-      <section class="form-panel">
-        <h2 class="settings-context-title">Import</h2>
+      <section class="settings-tab-panel" role="tabpanel" id="site-panel-import" hidden
+               aria-labelledby="site-tab-import">
         <p class="field-hint">
           Replaces CMS documents with a <code>.csesite</code> archive (same file
           export writes). Instance secrets stay. You will be signed out; sign in
@@ -37,24 +43,20 @@
           not rebuilt.
         </p>
         <form th:if="${dbReady}" th:action="@{/editor/site-data/import}" method="post"
-              enctype="multipart/form-data" class="upload-form" id="siteImportForm">
+              enctype="multipart/form-data" class="site-data-form" id="siteImportForm">
           <th:block th:replace="~{fragments/csrf :: field}"></th:block>
-          <div class="form-group">
-            <label for="site-file">Archive</label>
+          <div class="site-data-row">
+            <label class="visually-hidden" for="site-file">Archive</label>
             <input type="file" id="site-file" name="file" accept=".csesite" required/>
-          </div>
-          <div class="form-group checkbox-group">
-            <label>
+            <label class="site-data-confirm">
               <input type="checkbox" name="confirm" value="replace" required/>
-              Replace all CMS documents on this instance
+              Replace all CMS documents
             </label>
-          </div>
-          <div class="upload-submit">
             <button type="submit" class="btn btn-primary" id="siteImportButton">Import</button>
-            <div class="upload-progress" id="siteImportProgress" hidden>
-              <div class="upload-progress-fill" id="siteImportProgressFill"></div>
-              <div class="upload-progress-label" id="siteImportProgressLabel">0%</div>
-            </div>
+          </div>
+          <div class="upload-progress" id="siteImportProgress" hidden>
+            <div class="upload-progress-fill" id="siteImportProgressFill"></div>
+            <div class="upload-progress-label" id="siteImportProgressLabel">0%</div>
           </div>
         </form>
         <p class="field-hint" th:if="${!dbReady}">Connect the database before importing.</p>
@@ -62,6 +64,70 @@
     </main>
   </div>
   <script>
+    (function () {
+      var nav = document.querySelector('.site-data-page .settings-tabs');
+      if (!nav) {
+        return;
+      }
+      var tabs = nav.querySelectorAll('[role="tab"]');
+      var panels = document.querySelectorAll('.site-data-page .settings-tab-panel');
+      var byId = {};
+      var STORAGE = 'cse-site-data-tab';
+      for (var i = 0; i < panels.length; i++) {
+        byId[panels[i].id] = panels[i];
+      }
+      function show(id) {
+        if (!byId[id] && panels.length) {
+          id = panels[0].id;
+        }
+        if (!byId[id]) {
+          return;
+        }
+        for (var p = 0; p < panels.length; p++) {
+          var on = panels[p].id === id;
+          panels[p].classList.toggle('is-active', on);
+          panels[p].hidden = !on;
+        }
+        var tabName = '';
+        for (var t = 0; t < tabs.length; t++) {
+          var selected = tabs[t].getAttribute('aria-controls') === id;
+          tabs[t].classList.toggle('is-active', selected);
+          tabs[t].setAttribute('aria-selected', selected ? 'true' : 'false');
+          tabs[t].tabIndex = selected ? 0 : -1;
+          if (selected) {
+            tabName = tabs[t].getAttribute('data-tab') || '';
+          }
+        }
+        if (tabName) {
+          try {
+            localStorage.setItem(STORAGE, tabName);
+          } catch (e) {}
+          if (history.replaceState) {
+            history.replaceState(null, '', '#' + tabName);
+          }
+        }
+      }
+      function initial() {
+        var hash = window.location.hash ? window.location.hash.slice(1) : '';
+        var stored = '';
+        try {
+          stored = localStorage.getItem(STORAGE) || '';
+        } catch (e) {}
+        var name = hash || stored || 'export';
+        var id = 'site-panel-' + name;
+        return byId[id] ? id : (panels.length ? panels[0].id : '');
+      }
+      nav.addEventListener('click', function (event) {
+        var tab = event.target.closest('[role="tab"]');
+        if (!tab || !nav.contains(tab)) {
+          return;
+        }
+        event.preventDefault();
+        show(tab.getAttribute('aria-controls'));
+        tab.focus();
+      });
+      show(initial());
+    })();
     (function () {
       var form = document.getElementById('siteImportForm');
       var button = document.getElementById('siteImportButton');

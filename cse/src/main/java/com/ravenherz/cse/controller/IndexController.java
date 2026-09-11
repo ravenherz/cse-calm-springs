@@ -42,7 +42,7 @@ public class IndexController extends AbstractController {
             @RequestParam(value = "category", required = false) String category,
             @RequestParam(value = "error", required = false) String error
     ) throws IOException {
-        if (!siteReady.isConfigured() && (error == null || error.isBlank())) {
+        if (!siteReady.isConfigured()) {
             response.sendRedirect(request.getContextPath() + "/apps/"
                     + StaticAppDeployer.INSTALLER_SLUG + "/");
             return null;

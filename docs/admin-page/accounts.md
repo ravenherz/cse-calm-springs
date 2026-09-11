@@ -1,21 +1,20 @@
 # Accounts
 
-**Accounts** lists everyone who has a login on this instance. It is a directory, not a signup form. People register from the public site; you review and remove them here.
+**Accounts** is the people directory for this instance. It is not a signup form. People register from the public site; you review them here.
 
 Open **Accounts** in the top bar.
 
-Each row shows:
+Each person is a **circle** (their avatar, or a letter if they have none) with their **login** centered underneath in small white type. The signed-in account has a gold ring.
 
-| Field | Meaning |
+Right-click or click a circle for the context menu. That is the only place for:
+
+| Action | What it does |
 | --- | --- |
-| Login | Account name |
-| **Email** | Address on the account |
-| **Level** | Role. Change roles on [Roles](roles.md), not here. |
-| **Loginable** | Whether the account may sign in |
-| **Sessions** | Total and active sessions, or **None** |
-| **First** / **Last** | Session times. Hover for address and user agent when those were recorded. |
-| **ID** | Internal id |
+| **Details** | Email, role, whether they may sign in, sessions, first/last seen, id |
+| **Assign role** | Promote or demote (not Guest, not the owner). You cannot drop your own Catalog access. |
+| **Transfer ownership** | Owner only. The former owner becomes **Admin**. |
+| **Delete** | Removes a non-owner after confirmation |
 
-**Delete** removes a non-owner account after confirmation. The **Owner** row has no delete button. Transfer ownership on Roles first if you need to retire that person.
+**Search** (login field + **Search**) keeps people whose login contains that phrase. Case does not matter.
 
-You cannot create an Admin or Owner from this list. First-boot setup creates the owner; further operators are promoted on Roles.
+You cannot create an Admin or Owner from this list. First-boot setup creates the owner; further operators are promoted here.

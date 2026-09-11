@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="en">
+<head th:replace="~{fragments/shared :: shared-head}"></head>
+<body>
+  <div class="editor-layout">
+    <aside class="editor-sidebar" th:replace="~{fragments/shared :: shared-editor-sidebar}"></aside>
+    <main class="editor-main transcode-page">
+      <header class="page-header">
+        <h1 class="page-title">Transcode</h1>
+        <div class="page-header-actions">
+          <button type="button" class="btn btn-secondary" id="transcode-auto" aria-pressed="true">Auto</button>
+          <select id="transcode-interval" class="log-interval" aria-label="Poll interval">
+            <option value="1000" selected>1s</option>
+            <option value="2000">2s</option>
+            <option value="5000">5s</option>
+            <option value="10000">10s</option>
+          </select>
+          <button type="button" class="btn btn-secondary" id="transcode-refresh">Refresh</button>
+        </div>
+      </header>
+      <p class="field-hint" id="transcode-summary">
+        <th:block th:if="${queue != null and not #lists.isEmpty(queue.videos)}"
+                  th:text="|${queue.running} running · ${queue.queued} queued|">0 running · 0 queued</th:block>
+        <th:block th:if="${queue == null or #lists.isEmpty(queue.videos)}">No videos in the queue.</th:block>
+      </p>
+
+      <table class="settings-table transcode-table" id="transcode-table"
+             th:attr="data-queue-url=@{/editor/transcode/queue}">
+        <thead>
+          <tr>
+            <th scope="col">File</th>
+            <th scope="col">Author</th>
+            <th scope="col">Status</th>
+            <th scope="col">Progress</th>
+            <th scope="col">Size in</th>
+            <th scope="col">Size out</th>
+          </tr>
+        </thead>
+        <tbody id="transcode-body">
+          <tr th:if="${queue == null or #lists.isEmpty(queue.videos)}">
+            <td colspan="6" class="transcode-empty">No videos in the queue.</td>
+          </tr>
+          <th:block th:if="${queue != null}">
+          <tr th:each="video : ${queue.videos}" th:attr="data-id=${video.id}">
+            <th scope="row" th:text="${video.fileName != null ? video.fileName : video.id}">clip.mp4</th>
+            <td th:text="${video.author != null ? video.author : '—'}">—</td>
+            <td th:text="${video.status}">processing</td>
+            <td>
+              <div class="transcode-progress" th:if="${video.status == 'processing'}">
+                <div class="transcode-meter">
+                  <div class="transcode-meter-fill" th:style="|width: ${video.percent}%|"></div>
+                </div>
+                <span th:text="|${video.percent}%|">0%</span>
+              </div>
+              <span th:if="${video.status == 'queued'}">—</span>
+              <span th:if="${video.status == 'ready'}">done</span>
+              <span th:if="${video.status == 'failed'}" th:text="${video.error != null ? video.error : 'failed'}">failed</span>
+            </td>
+            <td class="transcode-num" th:text="${video.sizeIn != null ? video.sizeIn : '—'}">—</td>
+            <td class="transcode-num" th:text="${video.sizeOut != null ? video.sizeOut : '—'}">—</td>
+          </tr>
+          </th:block>
+        </tbody>
+      </table>
+    </main>
+  </div>
+  <script>
+    (function () {
+      var table = document.getElementById('transcode-table');
+      var body = document.getElementById('transcode-body');
+      var summary = document.getElementById('transcode-summary');
+      var refresh = document.getElementById('transcode-refresh');
+      var autoBtn = document.getElementById('transcode-auto');
+      var intervalSel = document.getElementById('transcode-interval');
+      var AUTO_KEY = 'cse-transcode-auto';
+      var INTERVAL_KEY = 'cse-transcode-interval';
+      var INTERVALS = [1000, 2000, 5000, 10000];
+      var DEFAULT_INTERVAL = 1000;
+      if (!table || !table.dataset.queueUrl || !body) {
+        return;
+      }
+      function storedOn(key) {
+        try {
+          return localStorage.getItem(key) !== '0';
+        } catch (e) {
+          return true;
+        }
+      }
+      function storeOn(key, on) {
+        try {
+          localStorage.setItem(key, on ? '1' : '0');
+        } catch (e) {}
+      }
+      function storedInterval() {
+        try {
+          var n = parseInt(localStorage.getItem(INTERVAL_KEY), 10);
+          if (INTERVALS.indexOf(n) !== -1) {
+            return n;
+          }
+        } catch (e) {}
+        return DEFAULT_INTERVAL;
+      }
+      var autoOn = storedOn(AUTO_KEY);
+      function applyAuto(on) {
+        autoOn = on;
+        if (autoBtn) {
+          autoBtn.setAttribute('aria-pressed', on ? 'true' : 'false');
+        }
+        if (intervalSel) {
+          intervalSel.disabled = !on;
+        }
+      }
+      applyAuto(autoOn);
+      if (autoBtn) {
+        autoBtn.addEventListener('click', function () {
+          applyAuto(autoBtn.getAttribute('aria-pressed') !== 'true');
+          storeOn(AUTO_KEY, autoOn);
+        });
+      }
+      function escapeHtml(value) {
+        return String(value == null ? '' : value)
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;');
+      }
+      function progressCell(video) {
+        var status = video.status || '';
+        if (status === 'processing') {
+          var percent = typeof video.percent === 'number' ? video.percent : 0;
+          return '<div class="transcode-progress"><div class="transcode-meter">'
+              + '<div class="transcode-meter-fill" style="width:' + percent + '%"></div></div>'
+              + '<span>' + percent + '%</span></div>';
+        }
+        if (status === 'ready') {
+          return 'done';
+        }
+        if (status === 'failed') {
+          return escapeHtml(video.error || 'failed');
+        }
+        return '—';
+      }
+      function apply(data) {
+        if (!data) {
+          return;
+        }
+        var videos = data.videos || [];
+        if (summary) {
+          if (!videos.length) {
+            summary.textContent = 'No videos in the queue.';
+          } else {
+            var text = data.running + ' running · ' + data.queued + ' queued';
+            if (data.failed) {
+              text += ' · ' + data.failed + ' failed';
+            }
+            summary.textContent = text;
+          }
+        }
+        if (!videos.length) {
+          body.innerHTML = '<tr><td colspan="6" class="transcode-empty">No videos in the queue.</td></tr>';
+          return;
+        }
+        body.innerHTML = videos.map(function (video) {
+          return '<tr data-id="' + escapeHtml(video.id) + '">'
+              + '<th scope="row">' + escapeHtml(video.fileName || video.id) + '</th>'
+              + '<td>' + escapeHtml(video.author || '—') + '</td>'
+              + '<td>' + escapeHtml(video.status || '') + '</td>'
+              + '<td>' + progressCell(video) + '</td>'
+              + '<td class="transcode-num">' + escapeHtml(video.sizeIn || '—') + '</td>'
+              + '<td class="transcode-num">' + escapeHtml(video.sizeOut || '—') + '</td></tr>';
+        }).join('');
+      }
+      function load() {
+        fetch(table.dataset.queueUrl, {
+          credentials: 'same-origin',
+          headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' }
+        }).then(function (res) {
+          if (res.status === 401 || res.status === 403) {
+            return null;
+          }
+          return res.json();
+        }).then(apply).catch(function () {});
+      }
+      if (refresh) {
+        refresh.addEventListener('click', load);
+      }
+      var timer = null;
+      function startTimer(ms) {
+        if (timer) {
+          clearInterval(timer);
+        }
+        timer = setInterval(function () {
+          if (autoOn && !document.hidden) {
+            load();
+          }
+        }, ms);
+      }
+      if (intervalSel) {
+        intervalSel.value = String(storedInterval());
+        intervalSel.addEventListener('change', function () {
+          var ms = parseInt(intervalSel.value, 10);
+          if (INTERVALS.indexOf(ms) === -1) {
+            ms = DEFAULT_INTERVAL;
+            intervalSel.value = String(ms);
+          }
+          try {
+            localStorage.setItem(INTERVAL_KEY, String(ms));
+          } catch (e) {}
+          startTimer(ms);
+        });
+      }
+      load();
+      startTimer(storedInterval());
+    })();
+  </script>
+</body>
+</html>

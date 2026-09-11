@@ -7,18 +7,21 @@ import com.ravenherz.cse.dal.dao.PlaylistService;
 import com.ravenherz.cse.dal.dao.ResourceGroupService;
 import com.ravenherz.cse.dal.dao.ResourceService;
 import com.ravenherz.cse.dal.dao.ThemeService;
+import com.ravenherz.cse.dal.dao.UrlTemplateService;
 import com.ravenherz.cse.dal.dto.BasicEntity;
 import com.ravenherz.cse.dal.dto.CategoryEntity;
 import com.ravenherz.cse.dal.dto.ItemEntity;
 import com.ravenherz.cse.dal.dto.PlaylistEntity;
 import com.ravenherz.cse.dal.dto.ResourceEntity;
 import com.ravenherz.cse.dal.dto.ResourceGroupEntity;
+import com.ravenherz.cse.dal.dto.UrlTemplateEntity;
 import com.ravenherz.cse.dal.dto.basic.AlbumData;
 import com.ravenherz.cse.dal.dto.basic.PageData;
 import com.ravenherz.cse.dal.dto.basic.PlaylistData;
 import com.ravenherz.cse.dal.dto.basic.PlaylistTrack;
-import com.ravenherz.cse.dal.dto.basic.ResourcePreviewSource;
 import com.ravenherz.cse.dal.dto.basic.ResourceSizeHint;
+import com.ravenherz.cse.dal.dto.basic.UrlTemplateData;
+import com.ravenherz.cse.util.imaging.UrlTemplateImages;
 import com.ravenherz.cse.util.io.CseDisk;
 import com.ravenherz.cse.util.staticapps.StaticAppDeployer;
 import com.ravenherz.cse.util.themes.ThemeCatalog;
@@ -55,6 +58,7 @@ public class ResourceGroupIndex {
     private final ItemService itemService;
     private final AppService appService;
     private final PlaylistService playlistService;
+    private final UrlTemplateService urlTemplateService;
     private final ThemeCatalog themeCatalog;
     private final StaticAppDeployer staticAppDeployer;
     private final ThemeService themeService;
@@ -64,26 +68,35 @@ public class ResourceGroupIndex {
     private final AtomicReference<Map<String, byte[]>> previews = new AtomicReference<>(Map.of());
 
     public ResourceGroupIndex(ResourceGroupService groupService, ResourceService resourceService) {
-        this(groupService, resourceService, null, null, null, null, null, null, null);
+        this(groupService, resourceService, null, null, null, null, null, null, null, null);
     }
 
     public ResourceGroupIndex(ResourceGroupService groupService, ResourceService resourceService,
             CategoryService categoryService, ItemService itemService) {
-        this(groupService, resourceService, categoryService, itemService, null, null, null, null, null);
+        this(groupService, resourceService, categoryService, itemService, null, null, null, null, null, null);
     }
 
     public ResourceGroupIndex(ResourceGroupService groupService, ResourceService resourceService,
             CategoryService categoryService, ItemService itemService, AppService appService,
             PlaylistService playlistService, ThemeCatalog themeCatalog) {
         this(groupService, resourceService, categoryService, itemService, appService, playlistService,
-                themeCatalog, null, null);
+                themeCatalog, null, null, null);
+    }
+
+    public ResourceGroupIndex(ResourceGroupService groupService, ResourceService resourceService,
+            CategoryService categoryService, ItemService itemService, AppService appService,
+            PlaylistService playlistService, ThemeCatalog themeCatalog,
+            StaticAppDeployer staticAppDeployer, ThemeService themeService) {
+        this(groupService, resourceService, categoryService, itemService, appService, playlistService,
+                themeCatalog, staticAppDeployer, themeService, null);
     }
 
     @Autowired
     public ResourceGroupIndex(ResourceGroupService groupService, ResourceService resourceService,
             CategoryService categoryService, ItemService itemService, AppService appService,
             PlaylistService playlistService, ThemeCatalog themeCatalog,
-            StaticAppDeployer staticAppDeployer, ThemeService themeService) {
+            StaticAppDeployer staticAppDeployer, ThemeService themeService,
+            UrlTemplateService urlTemplateService) {
         this.groupService = groupService;
         this.resourceService = resourceService;
         this.categoryService = categoryService;
@@ -93,6 +106,7 @@ public class ResourceGroupIndex {
         this.themeCatalog = themeCatalog;
         this.staticAppDeployer = staticAppDeployer;
         this.themeService = themeService;
+        this.urlTemplateService = urlTemplateService;
     }
 
     public ResourceGroupTreeView.Assembled view() {
@@ -270,6 +284,10 @@ public class ResourceGroupIndex {
         return contentCache().playlists();
     }
 
+    public List<UrlTemplateEntity> urlTemplates() {
+        return contentCache().urlTemplates();
+    }
+
     public List<CategoryEntity> categories() {
         return contentCache().categories();
     }
@@ -352,7 +370,7 @@ public class ResourceGroupIndex {
     private void rebuildLocked() {
         List<ResourceGroupEntity> groups = groupService.getAllGroups();
         List<ResourceSizeHint> hints = resourceService.listSizeHints();
-        Map<String, byte[]> thumbs = resourceThumbs(previewSources());
+        Map<String, byte[]> thumbs = resourceThumbs();
         ResourceGroupTreeView.Assembled tree = ResourceGroupTreeView.assembleStats(
                 groups == null ? List.of() : groups, hints);
         ResourceGroupTreeView.applyPreviews(tree, thumbs.keySet());
@@ -386,12 +404,13 @@ public class ResourceGroupIndex {
         List<AppDisplayDTO> apps = EditorContentCatalog.apps(appService, staticAppDeployer);
         List<ThemeDisplayDTO> themes = EditorContentCatalog.themes(themeCatalog, themeService);
         List<PlaylistEntity> playlists = loadPlaylists();
+        List<UrlTemplateEntity> urlTemplates = loadUrlTemplates();
         List<CategoryEntity> categories = loadCategories();
         List<ItemEntity> items = loadItems();
         content.set(new ContentCache(
                 EditorTree.contentBranch(categories, items, appLeaves(apps), playlistLeaves(playlists),
-                        themeLeaves(themes)),
-                apps, themes, playlists, categories, items));
+                        themeLeaves(themes), urlTemplateLeaves(urlTemplates)),
+                apps, themes, playlists, urlTemplates, categories, items));
         Map<String, byte[]> next = new HashMap<>(orEmpty(previews.get()));
         next.keySet().removeIf(id -> id == null || !ObjectId.isValid(id));
         putItemDerived(next);
@@ -411,6 +430,14 @@ public class ResourceGroupIndex {
             return List.of();
         }
         List<PlaylistEntity> all = playlistService.getAllPlaylists();
+        return all == null ? List.of() : all;
+    }
+
+    private List<UrlTemplateEntity> loadUrlTemplates() {
+        if (urlTemplateService == null) {
+            return List.of();
+        }
+        List<UrlTemplateEntity> all = urlTemplateService.getAllUrlTemplates();
         return all == null ? List.of() : all;
     }
 
@@ -451,7 +478,27 @@ public class ResourceGroupIndex {
                             : playlist.getPlaylistId());
             out.add(new ResourceTreeFile(EditorTree.playlistLeafId(playlist), name,
                     "/editor/playlist/edit?id=" + playlist.getId(), ResourceTreeFile.Mark.PLAYLIST)
-                    .withKey(playlist.getId().toString()));
+                    .withKey(playlist.getId().toString())
+                    .withEmbedId(playlist.getPlaylistId()));
+        }
+        return out;
+    }
+
+    private static List<ResourceTreeFile> urlTemplateLeaves(List<UrlTemplateEntity> templates) {
+        List<ResourceTreeFile> out = new ArrayList<>();
+        if (templates == null) {
+            return out;
+        }
+        for (UrlTemplateEntity template : templates) {
+            if (template == null || template.getId() == null) {
+                continue;
+            }
+            String name = template.getUrlTemplateId() == null || template.getUrlTemplateId().isBlank()
+                    ? template.getId().toString() : template.getUrlTemplateId();
+            out.add(new ResourceTreeFile(EditorTree.urlTemplateLeafId(template), name,
+                    "/editor/url-template/edit?id=" + template.getId(), ResourceTreeFile.Mark.URL_TEMPLATE)
+                    .withKey(template.getId().toString())
+                    .withEmbedId(template.getUrlTemplateId()));
         }
         return out;
     }
@@ -490,25 +537,17 @@ public class ResourceGroupIndex {
         return out;
     }
 
-    private List<ResourcePreviewSource> previewSources() {
-        List<ResourcePreviewSource> sources = resourceService.listPreviewSources();
-        return sources == null ? List.of() : sources;
-    }
-
-    private static Map<String, byte[]> resourceThumbs(List<ResourcePreviewSource> sources) {
+    private Map<String, byte[]> resourceThumbs() {
         Map<String, byte[]> out = new HashMap<>();
-        if (sources == null) {
-            return out;
-        }
-        for (ResourcePreviewSource source : sources) {
+        resourceService.forEachPreviewSource(source -> {
             if (source == null || source.id() == null) {
-                continue;
+                return;
             }
             byte[] jpeg = TreePreviews.jpeg(source.bytes());
             if (jpeg != null) {
                 out.put(source.id().toString(), jpeg);
             }
-        }
+        });
         return out;
     }
 
@@ -531,7 +570,8 @@ public class ResourceGroupIndex {
             return;
         }
         Map<String, byte[]> next = new HashMap<>(orEmpty(previews.get()));
-        next.keySet().removeIf(id -> id != null && (id.startsWith("page-") || id.startsWith("playlist-")));
+        next.keySet().removeIf(id -> id != null && (id.startsWith("page-") || id.startsWith("playlist-")
+                || id.startsWith("url-template-")));
         putItemDerived(next);
         previews.set(Map.copyOf(next));
         ResourceGroupTreeView.applyPreviews(local.tree(), next.keySet());
@@ -562,6 +602,15 @@ public class ResourceGroupIndex {
             byte[] jpeg = playlistThumb(playlist, thumbs);
             if (jpeg != null) {
                 thumbs.put("playlist-" + playlist.getId(), jpeg);
+            }
+        }
+        for (UrlTemplateEntity template : local.urlTemplates()) {
+            if (template == null || template.getId() == null) {
+                continue;
+            }
+            byte[] jpeg = urlTemplateThumb(template);
+            if (jpeg != null) {
+                thumbs.put("url-template-" + template.getId(), jpeg);
             }
         }
     }
@@ -638,6 +687,14 @@ public class ResourceGroupIndex {
         return null;
     }
 
+    private static byte[] urlTemplateThumb(UrlTemplateEntity template) {
+        UrlTemplateData data = template.getUrlTemplateData();
+        if (data == null) {
+            return null;
+        }
+        return TreePreviews.jpeg(UrlTemplateImages.rawBytes(data.getUrlImage()));
+    }
+
     private byte[] appThumb(AppDisplayDTO app) {
         if (app == null || !app.isProductLogo() || staticAppDeployer == null || app.getSlug() == null) {
             return null;
@@ -692,10 +749,10 @@ public class ResourceGroupIndex {
 
     private record ContentCache(ResourceGroupDisplayDTO tree, List<AppDisplayDTO> apps,
             List<ThemeDisplayDTO> themes, List<PlaylistEntity> playlists,
-            List<CategoryEntity> categories, List<ItemEntity> items) {
+            List<UrlTemplateEntity> urlTemplates, List<CategoryEntity> categories, List<ItemEntity> items) {
         static ContentCache empty() {
             return new ContentCache(EditorTree.contentBranch(List.of(), List.of()),
-                    List.of(), List.of(), List.of(), List.of(), List.of());
+                    List.of(), List.of(), List.of(), List.of(), List.of(), List.of());
         }
     }
 

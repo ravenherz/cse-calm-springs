@@ -78,7 +78,13 @@ class ModernIndexTemplateTest {
         assertFalse(html.contains("id=\"loginpanel-username\""), html);
         assertFalse(html.contains("cse-lp.js"), html);
         assertTrue(html.contains("/content-public/themes/modern/js/jquery.min.js"), html);
+        assertTrue(html.contains("cse-video-player.js"), html);
         assertTrue(html.contains("/content-public/cse-core/css/system.css"), html);
+        assertFalse(html.contains("quill.min.js"), html);
+        assertFalse(html.contains("quill.snow.css"), html);
+        int css = html.indexOf("/content-public/cse-core/css/system.css");
+        int jquery = html.indexOf("/content-public/themes/modern/js/jquery.min.js");
+        assertTrue(css >= 0 && jquery > css, html);
         assertFalse(html.contains("/content-public/js/"), html);
         assertFalse(html.contains("fonts.googleapis.com"), html);
     }
@@ -100,6 +106,10 @@ class ModernIndexTemplateTest {
         assertFalse(html.contains("cse-lp.js"), html);
         assertFalse(html.contains("content-public/js"), html);
         assertFalse(html.contains("fonts.googleapis.com"), html);
+        assertFalse(html.contains("quill.min.js"), html);
+        int cssPos = html.indexOf("cse-core/css/system.css");
+        int jqueryPos = html.indexOf("jquery.min.js");
+        assertTrue(cssPos >= 0 && jqueryPos > cssPos, html);
     }
 
     @Test
@@ -110,6 +120,10 @@ class ModernIndexTemplateTest {
         assertFalse(html.contains("loginpanel-username"), html);
         assertFalse(html.contains("cse-lp.js"), html);
         assertFalse(html.contains("loginPanelInit"), html);
+        assertFalse(html.contains("quill.min.js"), html);
+        int css = html.indexOf("cse-core/css/system.css");
+        int jquery = html.indexOf("jquery.min.js");
+        assertTrue(css >= 0 && jquery > css, html);
     }
 
     private static SpringTemplateEngine engine() {

@@ -1,0 +1,412 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="en">
+<head th:replace="~{fragments/shared :: shared-head}"></head>
+<body>
+  <div class="editor-layout">
+    <aside class="editor-sidebar" th:replace="~{fragments/shared :: shared-editor-sidebar}"></aside>
+    <main class="editor-main instance-page">
+      <header class="page-header">
+        <h1 class="page-title">Instance</h1>
+        <div class="page-header-actions">
+          <button type="button" class="btn btn-secondary" id="instance-auto" aria-pressed="true">Auto</button>
+          <select id="instance-interval" class="log-interval" aria-label="Poll interval">
+            <option value="2000">2s</option>
+            <option value="5000" selected>5s</option>
+            <option value="10000">10s</option>
+            <option value="30000">30s</option>
+          </select>
+          <button type="button" class="btn btn-secondary" id="instance-refresh">Refresh</button>
+        </div>
+      </header>
+      <p class="field-hint" id="instance-stamp">Host resources for this JVM.</p>
+
+      <div class="instance-stack" id="instance-grid"
+           th:attr="data-snapshot-url=@{/editor/instance/snapshot}"
+           th:if="${snapshot != null}">
+        <section>
+          <h2 class="settings-context-title">Host</h2>
+          <table class="settings-table">
+            <tbody>
+              <tr>
+                <th scope="row">Name</th>
+                <td data-bind="host.name" th:text="${snapshot.host.name}">host</td>
+              </tr>
+              <tr>
+                <th scope="row">OS</th>
+                <td data-bind="host.os" th:text="${snapshot.host.os}">os</td>
+              </tr>
+              <tr>
+                <th scope="row">Arch</th>
+                <td data-bind="host.arch" th:text="${snapshot.host.arch}">amd64</td>
+              </tr>
+              <tr>
+                <th scope="row">Context</th>
+                <td data-bind="host.context" th:text="${snapshot.host.context}">ROOT</td>
+              </tr>
+              <tr>
+                <th scope="row">Java</th>
+                <td data-bind="host.java" th:text="${snapshot.host.java}">21</td>
+              </tr>
+              <tr>
+                <th scope="row">Uptime</th>
+                <td data-bind="host.uptime" th:text="${snapshot.host.uptime}">0s</td>
+              </tr>
+              <tr>
+                <th scope="row">Disk root</th>
+                <td data-bind="host.diskRoot" th:text="${snapshot.host.diskRoot}">/var/cse</td>
+              </tr>
+            </tbody>
+          </table>
+        </section>
+
+        <section>
+          <h2 class="settings-context-title">Load</h2>
+          <p class="field-hint" data-bind="load.summary"
+             th:text="${snapshot.cpu.name + ' · ' + snapshot.cpu.cores + ' threads · load ' + (snapshot.cpu.loadAverage != null ? snapshot.cpu.loadAverage : '—') + ' · free ' + snapshot.memory.freeLabel}">
+            cpu
+          </p>
+          <table class="settings-table instance-load">
+            <colgroup>
+              <col class="instance-load-label">
+              <col>
+              <col class="instance-load-value">
+            </colgroup>
+            <tbody id="instance-load-body">
+              <tr>
+                <th scope="row">CPU</th>
+                <td>
+                  <div class="instance-meter" data-meter="cpu.system"
+                       th:classappend="${snapshot.cpu.systemPercent != null and snapshot.cpu.systemPercent >= 90} ? 'is-hot' : (${snapshot.cpu.systemPercent != null and snapshot.cpu.systemPercent >= 80} ? 'is-warn' : '')">
+                    <div class="instance-meter-fill"
+                         th:style="${snapshot.cpu.systemPercent != null} ? |width: ${snapshot.cpu.systemPercent}%| : 'width: 0%'"></div>
+                  </div>
+                </td>
+                <td data-bind="cpu.systemPercent"
+                    th:text="${snapshot.cpu.systemPercent != null ? snapshot.cpu.systemPercent + '%' : '—'}">—</td>
+              </tr>
+              <tr>
+                <th scope="row">Process</th>
+                <td>
+                  <div class="instance-meter" data-meter="cpu.process"
+                       th:classappend="${snapshot.cpu.processPercent != null and snapshot.cpu.processPercent >= 90} ? 'is-hot' : (${snapshot.cpu.processPercent != null and snapshot.cpu.processPercent >= 80} ? 'is-warn' : '')">
+                    <div class="instance-meter-fill"
+                         th:style="${snapshot.cpu.processPercent != null} ? |width: ${snapshot.cpu.processPercent}%| : 'width: 0%'"></div>
+                  </div>
+                </td>
+                <td data-bind="cpu.processPercent"
+                    th:text="${snapshot.cpu.processPercent != null ? snapshot.cpu.processPercent + '%' : '—'}">—</td>
+              </tr>
+              <tr>
+                <th scope="row">Physical</th>
+                <td>
+                  <div class="instance-meter" data-meter="memory.physical"
+                       th:classappend="${snapshot.memory.percent != null and snapshot.memory.percent >= 90} ? 'is-hot' : (${snapshot.memory.percent != null and snapshot.memory.percent >= 80} ? 'is-warn' : '')">
+                    <div class="instance-meter-fill"
+                         th:style="${snapshot.memory.percent != null} ? |width: ${snapshot.memory.percent}%| : 'width: 0%'"></div>
+                  </div>
+                </td>
+                <td data-bind="memory.physical">
+                  <th:block th:text="${snapshot.memory.usedLabel}">0 B</th:block>
+                  /
+                  <th:block th:text="${snapshot.memory.totalLabel}">0 B</th:block>
+                </td>
+              </tr>
+              <tr>
+                <th scope="row">JVM heap</th>
+                <td>
+                  <div class="instance-meter" data-meter="memory.heap"
+                       th:classappend="${snapshot.memory.heapPercent != null and snapshot.memory.heapPercent >= 90} ? 'is-hot' : (${snapshot.memory.heapPercent != null and snapshot.memory.heapPercent >= 80} ? 'is-warn' : '')">
+                    <div class="instance-meter-fill"
+                         th:style="${snapshot.memory.heapPercent != null} ? |width: ${snapshot.memory.heapPercent}%| : 'width: 0%'"></div>
+                  </div>
+                </td>
+                <td data-bind="memory.heap">
+                  <th:block th:text="${snapshot.memory.heapUsedLabel}">0 B</th:block>
+                  /
+                  <th:block th:text="${snapshot.memory.heapMaxLabel}">0 B</th:block>
+                </td>
+              </tr>
+              <tr th:each="disk : ${snapshot.disks}" data-disk="1"
+                  th:classappend="${disk.instance} ? 'is-instance'">
+                <th scope="row">
+                  <span th:text="${disk.name}">C:\</span>
+                  <span class="thumb-tag" th:if="${disk.instance}">CSE</span>
+                </th>
+                <td>
+                  <div class="instance-meter"
+                       th:classappend="${disk.percent != null and disk.percent >= 90} ? 'is-hot' : (${disk.percent != null and disk.percent >= 80} ? 'is-warn' : '')">
+                    <div class="instance-meter-fill"
+                         th:style="${disk.percent != null} ? |width: ${disk.percent}%| : 'width: 0%'"></div>
+                  </div>
+                </td>
+                <td>
+                  <th:block th:text="${disk.usedLabel}">0 B</th:block>
+                  /
+                  <th:block th:text="${disk.totalLabel}">0 B</th:block>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </section>
+
+        <section>
+          <h2 class="settings-context-title">GPU</h2>
+          <table class="settings-table instance-table" id="instance-gpus">
+            <thead>
+              <tr>
+                <th scope="col">Adapter</th>
+                <th scope="col">Memory</th>
+                <th scope="col">Util</th>
+                <th scope="col">Driver</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr th:each="gpu : ${snapshot.gpus}">
+                <th scope="row" th:text="${gpu.name}">GPU</th>
+                <td>
+                  <div class="instance-inline" th:if="${gpu.memoryTotalLabel != null}">
+                    <div class="instance-meter" th:if="${gpu.memoryPercent != null}"
+                         th:classappend="${gpu.memoryPercent >= 90} ? 'is-hot' : (${gpu.memoryPercent >= 80} ? 'is-warn' : '')">
+                      <div class="instance-meter-fill" th:style="|width: ${gpu.memoryPercent}%|"></div>
+                    </div>
+                    <span>
+                      <th:block th:text="${gpu.memoryUsedLabel != null ? gpu.memoryUsedLabel : '—'}">—</th:block>
+                      /
+                      <th:block th:text="${gpu.memoryTotalLabel}">0 B</th:block>
+                    </span>
+                  </div>
+                  <span th:if="${gpu.memoryTotalLabel == null}">—</span>
+                </td>
+                <td th:text="${gpu.utilization != null ? gpu.utilization + '%' : '—'}">—</td>
+                <td>
+                  <span th:text="${gpu.driver != null ? gpu.driver : '—'}">—</span>
+                  <span class="thumb-tag" th:if="${gpu.live}">nvidia-smi</span>
+                </td>
+              </tr>
+              <tr th:if="${#lists.isEmpty(snapshot.gpus)}">
+                <td colspan="4">No GPU reported.</td>
+              </tr>
+            </tbody>
+          </table>
+        </section>
+      </div>
+    </main>
+  </div>
+  <script>
+    (function () {
+      var grid = document.getElementById('instance-grid');
+      var stamp = document.getElementById('instance-stamp');
+      var refresh = document.getElementById('instance-refresh');
+      var autoBtn = document.getElementById('instance-auto');
+      var intervalSel = document.getElementById('instance-interval');
+      var AUTO_KEY = 'cse-instance-auto';
+      var INTERVAL_KEY = 'cse-instance-interval';
+      var INTERVALS = [2000, 5000, 10000, 30000];
+      var DEFAULT_INTERVAL = 5000;
+      if (!grid || !grid.dataset.snapshotUrl) {
+        return;
+      }
+      function storedOn(key) {
+        try {
+          return localStorage.getItem(key) !== '0';
+        } catch (e) {
+          return true;
+        }
+      }
+      function storeOn(key, on) {
+        try {
+          localStorage.setItem(key, on ? '1' : '0');
+        } catch (e) {}
+      }
+      function storedInterval() {
+        try {
+          var n = parseInt(localStorage.getItem(INTERVAL_KEY), 10);
+          if (INTERVALS.indexOf(n) !== -1) {
+            return n;
+          }
+        } catch (e) {}
+        return DEFAULT_INTERVAL;
+      }
+      var autoOn = storedOn(AUTO_KEY);
+      function applyAuto(on) {
+        autoOn = on;
+        if (autoBtn) {
+          autoBtn.setAttribute('aria-pressed', on ? 'true' : 'false');
+        }
+        if (intervalSel) {
+          intervalSel.disabled = !on;
+        }
+      }
+      applyAuto(autoOn);
+      if (autoBtn) {
+        autoBtn.addEventListener('click', function () {
+          applyAuto(autoBtn.getAttribute('aria-pressed') !== 'true');
+          storeOn(AUTO_KEY, autoOn);
+        });
+      }
+      function dash(value, suffix) {
+        return value == null || value === '' ? '—' : String(value) + (suffix || '');
+      }
+      function meterClass(percent) {
+        if (percent == null) {
+          return 'instance-meter';
+        }
+        if (percent >= 90) {
+          return 'instance-meter is-hot';
+        }
+        if (percent >= 80) {
+          return 'instance-meter is-warn';
+        }
+        return 'instance-meter';
+      }
+      function setMeter(name, percent) {
+        var el = grid.querySelector('[data-meter="' + name + '"]');
+        if (!el) {
+          return;
+        }
+        el.className = meterClass(percent);
+        var fill = el.querySelector('.instance-meter-fill');
+        if (fill) {
+          fill.style.width = (percent == null ? 0 : percent) + '%';
+        }
+      }
+      function setBind(name, text) {
+        var el = grid.querySelector('[data-bind="' + name + '"]');
+        if (el) {
+          el.textContent = text;
+        }
+      }
+      function escapeHtml(value) {
+        return String(value == null ? '' : value)
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;');
+      }
+      function renderDisks(disks) {
+        var body = document.getElementById('instance-load-body');
+        if (!body) {
+          return;
+        }
+        var existing = body.querySelectorAll('[data-disk]');
+        for (var i = 0; i < existing.length; i++) {
+          existing[i].remove();
+        }
+        if (!disks || !disks.length) {
+          return;
+        }
+        body.insertAdjacentHTML('beforeend', disks.map(function (disk) {
+          var value = escapeHtml(disk.usedLabel || '—') + ' / '
+              + escapeHtml(disk.totalLabel || '—');
+          return '<tr data-disk="1" class="' + (disk.instance ? 'is-instance' : '') + '">'
+              + '<th scope="row">' + escapeHtml(disk.name)
+              + (disk.instance ? ' <span class="thumb-tag">CSE</span>' : '')
+              + '</th><td><div class="' + meterClass(disk.percent)
+              + '"><div class="instance-meter-fill" style="width:'
+              + (disk.percent == null ? 0 : disk.percent) + '%"></div></div></td>'
+              + '<td>' + value + '</td></tr>';
+        }).join(''));
+      }
+      function renderGpus(gpus) {
+        var table = document.getElementById('instance-gpus');
+        var body = table ? table.querySelector('tbody') : null;
+        if (!body) {
+          return;
+        }
+        if (!gpus || !gpus.length) {
+          body.innerHTML = '<tr><td colspan="4">No GPU reported.</td></tr>';
+          return;
+        }
+        body.innerHTML = gpus.map(function (gpu) {
+          var mem = '—';
+          if (gpu.memoryTotalLabel) {
+            mem = '<div class="instance-inline">';
+            if (gpu.memoryPercent != null) {
+              mem += '<div class="' + meterClass(gpu.memoryPercent)
+                  + '"><div class="instance-meter-fill" style="width:'
+                  + gpu.memoryPercent + '%"></div></div>';
+            }
+            mem += '<span>' + escapeHtml(gpu.memoryUsedLabel || '—') + ' / '
+                + escapeHtml(gpu.memoryTotalLabel) + '</span></div>';
+          }
+          return '<tr><th scope="row">' + escapeHtml(gpu.name) + '</th><td>'
+              + mem + '</td><td>' + dash(gpu.utilization, '%') + '</td><td>'
+              + escapeHtml(gpu.driver || '—')
+              + (gpu.live ? ' <span class="thumb-tag">nvidia-smi</span>' : '')
+              + '</td></tr>';
+        }).join('');
+      }
+      function apply(data) {
+        if (!data || !data.host) {
+          return;
+        }
+        setBind('host.name', data.host.name);
+        setBind('host.os', data.host.os);
+        setBind('host.arch', data.host.arch);
+        setBind('host.context', data.host.context);
+        setBind('host.java', data.host.java);
+        setBind('host.uptime', data.host.uptime);
+        setBind('host.diskRoot', data.host.diskRoot);
+        setBind('cpu.systemPercent', dash(data.cpu.systemPercent, '%'));
+        setBind('cpu.processPercent', dash(data.cpu.processPercent, '%'));
+        setMeter('cpu.system', data.cpu.systemPercent);
+        setMeter('cpu.process', data.cpu.processPercent);
+        setBind('memory.physical', data.memory.usedLabel + ' / ' + data.memory.totalLabel);
+        setBind('memory.heap', data.memory.heapUsedLabel + ' / ' + data.memory.heapMaxLabel);
+        setMeter('memory.physical', data.memory.percent);
+        setMeter('memory.heap', data.memory.heapPercent);
+        var load = (data.cpu.name || 'CPU')
+            + ' · ' + data.cpu.cores + ' threads · load '
+            + (data.cpu.loadAverage == null ? '—' : Number(data.cpu.loadAverage).toFixed(2))
+            + ' · free ' + data.memory.freeLabel;
+        setBind('load.summary', load);
+        renderDisks(data.disks);
+        renderGpus(data.gpus);
+        if (stamp && data.sampledAt) {
+          stamp.textContent = 'Updated ' + new Date(data.sampledAt).toLocaleTimeString();
+        }
+      }
+      function load() {
+        fetch(grid.dataset.snapshotUrl, {
+          credentials: 'same-origin',
+          headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' }
+        }).then(function (res) {
+          if (res.status === 401 || res.status === 403) {
+            return null;
+          }
+          return res.json();
+        }).then(apply).catch(function () {});
+      }
+      if (refresh) {
+        refresh.addEventListener('click', load);
+      }
+      var timer = null;
+      function startTimer(ms) {
+        if (timer) {
+          clearInterval(timer);
+        }
+        timer = setInterval(function () {
+          if (autoOn && !document.hidden) {
+            load();
+          }
+        }, ms);
+      }
+      if (intervalSel) {
+        intervalSel.value = String(storedInterval());
+        intervalSel.addEventListener('change', function () {
+          var ms = parseInt(intervalSel.value, 10);
+          if (INTERVALS.indexOf(ms) === -1) {
+            ms = DEFAULT_INTERVAL;
+            intervalSel.value = String(ms);
+          }
+          try {
+            localStorage.setItem(INTERVAL_KEY, String(ms));
+          } catch (e) {}
+          startTimer(ms);
+        });
+      }
+      startTimer(storedInterval());
+    })();
+  </script>
+</body>
+</html>

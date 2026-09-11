@@ -5,6 +5,8 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.json.JsonMapper;
 
+import com.ravenherz.cse.constants.MongoCollections;
+
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -61,6 +63,10 @@ final class CseSiteArchive {
         for (String name : CseSiteFormat.COLLECTIONS) {
             byte[] bytes = entries.get(CseSiteFormat.collectionEntry(name));
             if (bytes == null) {
+                if (optionalRolesCollection(name)) {
+                    collections.put(name, List.of());
+                    continue;
+                }
                 throw new CseSiteImportException("Archive is missing collections/" + name + ".json.");
             }
             List<Map<String, Object>> docs;
@@ -145,5 +151,11 @@ final class CseSiteArchive {
 
     private static String text(JsonNode node) {
         return node == null || node.isNull() ? null : node.asText();
+    }
+
+    private static boolean optionalRolesCollection(String name) {
+        return MongoCollections.DATABASE_ROLES.equals(name)
+                || MongoCollections.DATABASE_ROLE_MATRIX.equals(name)
+                || MongoCollections.DATABASE_URL_TEMPLATES.equals(name);
     }
 }

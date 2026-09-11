@@ -31,8 +31,8 @@
             }
             canvas._waveformSamples = samples;
         }
-        var cssW = canvas.clientWidth;
-        var cssH = canvas.clientHeight;
+        var cssW = canvas.clientWidth * 2;
+        var cssH = canvas.clientHeight * 2;
         if (cssW < 1 || cssH < 1) {
             return;
         }

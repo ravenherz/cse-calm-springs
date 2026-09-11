@@ -12,11 +12,17 @@ import com.ravenherz.cse.present.ResourceGroupDisplayDTO;
 import com.ravenherz.cse.present.ResourceGroupIndex;
 import com.ravenherz.cse.present.ResourceGroupTreeView;
 import com.ravenherz.cse.util.imaging.HeicJpegConverter;
+import com.ravenherz.cse.util.imaging.ImageMetadata;
 import com.ravenherz.cse.util.imaging.ImageUploadOptions;
 import com.ravenherz.cse.util.imaging.JpegImages;
 import com.ravenherz.cse.util.Json;
 import com.ravenherz.cse.util.Mp3Metadata;
 import com.ravenherz.cse.util.Mp3Waveform;
+import com.ravenherz.cse.util.ResourceUploadLimits;
+import com.ravenherz.cse.util.UrlTemplateIds;
+import com.ravenherz.cse.util.video.VideoStatus;
+import com.ravenherz.cse.util.video.VideoTranscodeQueue;
+import com.ravenherz.cse.util.video.VideoWork;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.slf4j.Logger;
@@ -30,7 +36,9 @@ import org.bson.types.ObjectId;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
+import java.nio.file.Path;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 
 import static com.ravenherz.cse.dal.dto.basic.enums.ResourceType.IMAGE;
@@ -46,6 +54,12 @@ public class EditorResourcesController extends AbstractController {
 
     @Autowired
     private ResourceGroupIndex resourceGroupIndex;
+
+    @Autowired
+    private CatalogBatchDelete catalogBatchDelete;
+
+    @Autowired(required = false)
+    private VideoTranscodeQueue videoTranscodeQueue;
 
     @GetMapping("/resources")
     public String resourcesPage(@RequestParam(value = "error", required = false) String error,
@@ -110,22 +124,40 @@ public class EditorResourcesController extends AbstractController {
 
         ResourceType resourceType = ResourceType.getByFileName(originalFilename);
         if (resourceType == ResourceType.INVALID) {
-            model.addAttribute("error", "Invalid file type. Supported: jpg, png, heic, mp3");
+            model.addAttribute("error", "Invalid file type. Supported: jpg, png, heic, mp3, mp4, mov, webm, mkv");
             return loadResourcesWithError(model, accessor, request);
+        }
+        ResourceUploadLimits limits = ResourceUploadLimits.from(settings);
+        if (file.getSize() > limits.maxBytes(resourceType)) {
+            model.addAttribute("error", limits.tooLargeMessage(resourceType));
+            return loadResourcesWithError(model, accessor, request);
+        }
+        if (resourceType == ResourceType.VIDEO) {
+            return uploadVideo(resourceId.trim(), file, originalFilename, metadataJson, groupId,
+                    accessor, model, request, response);
         }
 
         String extension = originalFilename.substring(originalFilename.lastIndexOf(".") + 1).toLowerCase();
         byte[] content = file.getBytes();
+        ImageMetadata.Parsed imageMeta = resourceType == IMAGE ? ImageMetadata.parse(content) : null;
         ImageUploadOptions uploadOptions = ImageUploadOptions.from(settings);
         Integer convertedWidth = null;
         Integer convertedHeight = null;
+        String userId = accessor.getAccountData().getLogin();
         if (HeicJpegConverter.isHeicExtension(extension)) {
             try {
-                JpegImages.Encoded jpeg = HeicJpegConverter.toJpeg(content, uploadOptions.qualityFactor());
+                String publicPath = String.format("/%s/res/%s/%s.jpg",
+                        userId, resourceType.getPath(), resourceId.trim());
+                JpegImages.Encoded jpeg = HeicJpegConverter.toJpeg(
+                        content, uploadOptions.qualityFactor(), userId, publicPath);
                 content = jpeg.bytes();
                 extension = "jpg";
                 convertedWidth = jpeg.width();
                 convertedHeight = jpeg.height();
+            } catch (OutOfMemoryError e) {
+                LOGGER.warn("HEIC conversion ran out of memory: " + e.getMessage(), e);
+                model.addAttribute("error", "Could not convert HEIC image (not enough memory). Try exporting as JPEG first.");
+                return loadResourcesWithError(model, accessor, request);
             } catch (Exception e) {
                 LOGGER.warn("HEIC conversion failed: " + e.getMessage(), e);
                 model.addAttribute("error", "Could not convert HEIC image. Try exporting as JPEG first.");
@@ -133,7 +165,6 @@ public class EditorResourcesController extends AbstractController {
             }
         }
 
-        String userId = accessor.getAccountData().getLogin();
         String pathPublic = String.format("/%s/res/%s/%s.%s", userId, resourceType.getPath(), resourceId.trim(), extension);
 
         ResourceEntity existing = serviceProvider.getResourceService().getByPublicPath(pathPublic);
@@ -158,9 +189,11 @@ public class EditorResourcesController extends AbstractController {
                 LOGGER.warn("Failed to parse metadata: " + e.getMessage());
             }
         }
+        if (imageMeta != null) {
+            ImageMetadata.applyTo(resourceData, imageMeta);
+        }
         if (convertedWidth != null && convertedHeight != null) {
-            resourceData.addMetadata("width", String.valueOf(convertedWidth));
-            resourceData.addMetadata("height", String.valueOf(convertedHeight));
+            ImageMetadata.setDimensions(resourceData, convertedWidth, convertedHeight);
         }
         Mp3Metadata.Parsed mp3 = null;
         if (resourceType == ResourceType.AUDIO) {
@@ -175,6 +208,7 @@ public class EditorResourcesController extends AbstractController {
         fillResourceContent(resourceData, content);
 
         ResourceEntity resourceEntity = new ResourceEntity(resourceData, accessor);
+        ImageMetadata.applyCreationDate(resourceEntity, imageMeta);
         if (resourceType == IMAGE) {
             ResourceData previewData = buildImagePreview(resourceData, content, resourceId.trim(),
                     extension, userId, uploadOptions);
@@ -193,6 +227,63 @@ public class EditorResourcesController extends AbstractController {
         serviceProvider.getResourceService().insert(resourceEntity);
         resourceGroupIndex.fileAdded(resourceEntity);
 
+        redirectResources(request, response, null);
+        return null;
+    }
+
+    private String uploadVideo(String resourceId, MultipartFile file, String originalFilename,
+            String metadataJson, String groupId, AccountEntity accessor, Model model,
+            HttpServletRequest request, HttpServletResponse response) throws IOException {
+        String userId = accessor.getAccountData().getLogin();
+        String extension = originalFilename.substring(originalFilename.lastIndexOf('.') + 1)
+                .toLowerCase(Locale.ROOT);
+        String pathPublic = String.format("/%s/res/%s/%s.mp4",
+                userId, ResourceType.VIDEO.getPath(), resourceId);
+        ResourceEntity existing = serviceProvider.getResourceService().getByPublicPath(pathPublic);
+        if (existing != null) {
+            model.addAttribute("error", "Resource with this ID already exists");
+            return loadResourcesWithError(model, accessor, request);
+        }
+        Path temp = null;
+        try {
+            temp = VideoWork.temp("upload-", "." + extension);
+            file.transferTo(temp);
+            ResourceData resourceData = new ResourceData();
+            resourceData.setType(ResourceType.VIDEO);
+            resourceData.setPathPublic(pathPublic);
+            resourceData.setPathProtected(generateUniqueProtectedPath(resourceId, "mp4"));
+            if (metadataJson != null && !metadataJson.trim().isEmpty()) {
+                try {
+                    Map<String, String> metadata = Json.stringMap(metadataJson);
+                    resourceData.setMetadata(metadata);
+                } catch (Exception e) {
+                    LOGGER.warn("Failed to parse metadata: {}", e.getMessage());
+                }
+            }
+            VideoStatus.set(resourceData, VideoStatus.PROCESSING);
+            resourceData.addMetadata(VideoStatus.SOURCE_EXT_KEY, extension);
+            serviceProvider.getResourceService().fillFromFile(resourceData, temp);
+            VideoStatus.rememberSourceSize(resourceData);
+            ResourceEntity resourceEntity = new ResourceEntity(resourceData, accessor);
+            ResourceGroupEntity uploadGroup = loadGroup(groupId);
+            if (uploadGroup == null) {
+                uploadGroup = loadDefaultGroup();
+            }
+            if (uploadGroup != null) {
+                resourceEntity.setRefResourceGroup(uploadGroup);
+            }
+            serviceProvider.getResourceService().insert(resourceEntity);
+            resourceGroupIndex.fileAdded(resourceEntity);
+            if (videoTranscodeQueue != null && resourceEntity.getId() != null) {
+                videoTranscodeQueue.enqueue(resourceEntity.getId());
+            }
+        } catch (Exception e) {
+            LOGGER.warn("Video upload failed: {}", e.getMessage(), e);
+            model.addAttribute("error", "Could not store video");
+            return loadResourcesWithError(model, accessor, request);
+        } finally {
+            VideoWork.deleteQuietly(temp);
+        }
         redirectResources(request, response, null);
         return null;
     }
@@ -323,8 +414,57 @@ public class EditorResourcesController extends AbstractController {
         return null;
     }
 
+    @PostMapping("/resources/access")
+    public String updateResourceAccess(@RequestParam("pathPublic") String pathPublic,
+            Model model, HttpServletRequest request, HttpServletResponse response) throws IOException {
+        AccountEntity accessor = getAccessor(request, response);
+        if (accessor == null) {
+            return null;
+        }
+        if (pathPublic == null || pathPublic.isBlank()) {
+            model.addAttribute("error", "Resource path is required");
+            return loadResourcesWithError(model, accessor, request);
+        }
+        ResourceEntity existing = serviceProvider.getResourceService().getByPublicPath(pathPublic.trim());
+        if (existing == null) {
+            model.addAttribute("error", "Resource not found");
+            return loadResourcesWithError(model, accessor, request);
+        }
+        if (!EntityAccess.isAccessible(existing, AccessType.ACCESS_EDIT, accessor)) {
+            error(403, request, response);
+            return null;
+        }
+        applyAccess(request, existing);
+        serviceProvider.getResourceService().replace(existing);
+        redirectResources(request, response, null);
+        return null;
+    }
+
+    @PostMapping("/resources/group/access")
+    public String updateResourceGroupAccess(@RequestParam("groupId") String groupId,
+            Model model, HttpServletRequest request, HttpServletResponse response) throws IOException {
+        AccountEntity accessor = getAccessor(request, response);
+        if (accessor == null) {
+            return null;
+        }
+        ResourceGroupEntity group = loadGroup(groupId);
+        if (group == null || ResourceGroupTree.isDefault(group)) {
+            redirectResources(request, response, "invalid_group");
+            return null;
+        }
+        if (!EntityAccess.isAccessible(group, AccessType.ACCESS_EDIT, accessor)) {
+            error(403, request, response);
+            return null;
+        }
+        applyAccess(request, group);
+        serviceProvider.getResourceGroupService().replace(group);
+        resourceGroupIndex.structureChanged();
+        redirectResources(request, response, null);
+        return null;
+    }
+
     @PostMapping("/resources/group/assign")
-    public String assignResourceToGroup(@RequestParam("resourceId") String resourceId,
+    public String assignResourceToGroup(@RequestParam("resourceId") List<String> resourceIds,
                                         @RequestParam(value = "groupId", required = false) String groupId,
                                         Model model, HttpServletRequest request, HttpServletResponse response) throws IOException {
         AccountEntity accessor = getAccessor(request, response);
@@ -332,32 +472,29 @@ public class EditorResourcesController extends AbstractController {
             return null;
         }
 
-        if (resourceId == null || resourceId.trim().isEmpty()) {
-            redirectResources(request, response, null);
-            return null;
+        ResourceGroupEntity group = loadGroup(groupId);
+        if (group == null) {
+            group = loadDefaultGroup();
         }
-
-        try {
+        for (String resourceId : uniqueIds(resourceIds)) {
             ObjectId objId = parseObjectId(resourceId);
             if (objId == null) {
-                redirectResources(request, response, null);
-                return null;
+                continue;
             }
-            ResourceEntity resource = (ResourceEntity) serviceProvider.getResourceService()
-                    .getById(ResourceEntity.class, objId);
-            if (resource != null) {
+            try {
+                ResourceEntity resource = (ResourceEntity) serviceProvider.getResourceService()
+                        .getById(ResourceEntity.class, objId);
+                if (resource == null) {
+                    continue;
+                }
                 String fromGroup = ResourceGroupTreeView.statsKey(resource);
                 long bytes = ResourceGroupTreeView.byteSize(resource);
-                ResourceGroupEntity group = loadGroup(groupId);
-                if (group == null) {
-                    group = loadDefaultGroup();
-                }
                 resource.setRefResourceGroup(group);
                 serviceProvider.getResourceService().replace(resource);
                 resourceGroupIndex.fileMoved(fromGroup, ResourceGroupTreeView.statsKey(resource), bytes, resource);
+            } catch (Exception e) {
+                LOGGER.error("Failed to assign resource to group: " + e.getMessage(), e);
             }
-        } catch (Exception e) {
-            LOGGER.error("Failed to assign resource to group: " + e.getMessage(), e);
         }
 
         redirectResources(request, response, null);
@@ -365,16 +502,11 @@ public class EditorResourcesController extends AbstractController {
     }
 
     @PostMapping("/resources/group/move")
-    public String moveResourceGroup(@RequestParam("groupId") String groupId,
+    public String moveResourceGroup(@RequestParam("groupId") List<String> groupIds,
                                     @RequestParam(value = "parentId", required = false) String parentId,
                                     Model model, HttpServletRequest request, HttpServletResponse response) throws IOException {
         AccountEntity accessor = getAccessor(request, response);
         if (accessor == null) {
-            return null;
-        }
-        ObjectId groupObjId = parseObjectId(groupId);
-        if (groupObjId == null) {
-            redirectResources(request, response, "invalid_group");
             return null;
         }
         ObjectId newParentId = null;
@@ -387,16 +519,31 @@ public class EditorResourcesController extends AbstractController {
         }
         try {
             List<ResourceGroupEntity> all = allGroups();
-            ResourceGroupEntity group = ResourceGroupTree.find(all, groupObjId);
-            String refused = ResourceGroupTree.refuseMove(all, group, newParentId);
-            if (refused != null) {
+            ResourceGroupEntity parent = newParentId == null ? null : ResourceGroupTree.find(all, newParentId);
+            String refused = null;
+            boolean moved = false;
+            for (String groupId : uniqueIds(groupIds)) {
+                ObjectId groupObjId = parseObjectId(groupId);
+                if (groupObjId == null) {
+                    refused = refused == null ? "invalid_group" : refused;
+                    continue;
+                }
+                ResourceGroupEntity group = ResourceGroupTree.find(all, groupObjId);
+                String block = ResourceGroupTree.refuseMove(all, group, newParentId);
+                if (block != null) {
+                    refused = refused == null ? block : refused;
+                    continue;
+                }
+                group.setRefParentGroup(parent);
+                serviceProvider.getResourceGroupService().replace(group);
+                moved = true;
+            }
+            if (moved) {
+                resourceGroupIndex.structureChanged();
+            } else if (refused != null) {
                 redirectResources(request, response, refused);
                 return null;
             }
-            ResourceGroupEntity parent = newParentId == null ? null : ResourceGroupTree.find(all, newParentId);
-            group.setRefParentGroup(parent);
-            serviceProvider.getResourceGroupService().replace(group);
-            resourceGroupIndex.structureChanged();
         } catch (Exception e) {
             LOGGER.error("Failed to move resource group: " + e.getMessage(), e);
             redirectResources(request, response, "invalid_group");
@@ -522,6 +669,19 @@ public class EditorResourcesController extends AbstractController {
         return renameCatalogItem("group", groupId, humanReadableId, model, request, response);
     }
 
+    @PostMapping("/batch-delete")
+    public String batchDelete(@RequestParam(value = "kind", required = false) List<String> kinds,
+            @RequestParam(value = "id", required = false) List<String> ids,
+            HttpServletRequest request, HttpServletResponse response) throws IOException {
+        AccountEntity accessor = getAccessor(request, response);
+        if (accessor == null) {
+            return null;
+        }
+        String refused = catalogBatchDelete.deleteAll(kinds, ids, accessor);
+        redirectResources(request, response, refused);
+        return null;
+    }
+
     @PostMapping("/catalog/rename")
     public String renameCatalogItem(@RequestParam("kind") String kind,
             @RequestParam("id") String id,
@@ -542,6 +702,7 @@ public class EditorResourcesController extends AbstractController {
             case "resource" -> renameResource(id, next);
             case "page", "album" -> renamePageTitle(id, next);
             case "playlist" -> renamePlaylistTitle(id, next);
+            case "url-template" -> renameUrlTemplateId(id, next);
             case "category" -> renameCategoryName(id, next);
             default -> "invalid_item";
         };
@@ -644,6 +805,30 @@ public class EditorResourcesController extends AbstractController {
         return null;
     }
 
+    private String renameUrlTemplateId(String templateId, String name) {
+        ObjectId id = parseObjectId(templateId);
+        if (id == null) {
+            return "invalid_item";
+        }
+        String normalized = UrlTemplateIds.normalize(name);
+        if (!UrlTemplateIds.isValid(normalized)) {
+            return "invalid_name";
+        }
+        UrlTemplateEntity template = (UrlTemplateEntity) serviceProvider.getUrlTemplateService()
+                .getById(UrlTemplateEntity.class, id);
+        if (template == null) {
+            return "invalid_item";
+        }
+        UrlTemplateEntity clash = serviceProvider.getUrlTemplateService().getByUrlTemplateId(normalized);
+        if (clash != null && !clash.getId().equals(template.getId())) {
+            return "invalid_name";
+        }
+        template.setUrlTemplateId(normalized);
+        serviceProvider.getUrlTemplateService().replace(template);
+        resourceGroupIndex.contentChanged();
+        return null;
+    }
+
     private String renameCategoryName(String categoryId, String itemName) {
         ObjectId id = parseObjectId(categoryId);
         if (id == null) {
@@ -706,6 +891,9 @@ public class EditorResourcesController extends AbstractController {
         } catch (Exception e) {
             LOGGER.error("Failed to load resources: " + e.getMessage(), e);
         }
+        stampFolderAccess(model, accessor);
+        addAccessLookups(model);
+        model.addAttribute("accessor", accessor);
         if (!model.containsAttribute("error")) {
             String message = ResourceGroupTree.errorMessage(errorCode);
             if (message != null) {
@@ -715,6 +903,21 @@ public class EditorResourcesController extends AbstractController {
         model.addAttribute("username", accessor.getAccountData().getLogin());
     }
 
+    private void stampFolderAccess(Model model, AccountEntity accessor) {
+        Object selected = model.getAttribute("selectedGroup");
+        if (!(selected instanceof ResourceGroupDisplayDTO group) || !group.canEditAccess()) {
+            return;
+        }
+        ResourceGroupEntity live = loadGroup(group.getId());
+        if (live == null) {
+            return;
+        }
+        if (live.getSecurityData() != null) {
+            group.setSecurityData(live.getSecurityData());
+        }
+        group.setAccessCanEdit(EntityAccess.isAccessible(live, AccessType.ACCESS_EDIT, accessor));
+    }
+
     private void attachPaneEntries(Model model, String selectedId) {
         if (EditorTree.APPS_ID.equals(selectedId)) {
             model.addAttribute("paneApps", resourceGroupIndex.apps());
@@ -722,6 +925,8 @@ public class EditorResourcesController extends AbstractController {
             model.addAttribute("paneThemes", resourceGroupIndex.themes());
         } else if (EditorTree.PLAYLISTS_ID.equals(selectedId)) {
             model.addAttribute("panePlaylists", resourceGroupIndex.playlists());
+        } else if (EditorTree.URL_TEMPLATES_ID.equals(selectedId)) {
+            model.addAttribute("paneUrlTemplates", resourceGroupIndex.urlTemplates());
         } else if (EditorTree.CATEGORIES_ID.equals(selectedId)) {
             model.addAttribute("paneCategories", resourceGroupIndex.categories());
         } else if (selectedId.startsWith(EditorTree.CATEGORY_PREFIX)) {
@@ -835,6 +1040,24 @@ public class EditorResourcesController extends AbstractController {
         } catch (IllegalArgumentException e) {
             return null;
         }
+    }
+
+    static List<String> uniqueIds(List<String> raw) {
+        if (raw == null || raw.isEmpty()) {
+            return List.of();
+        }
+        List<String> ids = new java.util.ArrayList<>();
+        for (String value : raw) {
+            if (value == null) {
+                continue;
+            }
+            String trimmed = value.trim();
+            if (trimmed.isEmpty() || ids.contains(trimmed)) {
+                continue;
+            }
+            ids.add(trimmed);
+        }
+        return ids;
     }
 
     private String generateProtectedPrefix() {

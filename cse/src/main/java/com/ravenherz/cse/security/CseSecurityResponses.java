@@ -39,7 +39,10 @@ final class CseSecurityResponses {
 
     static boolean wantsJson(HttpServletRequest request) {
         String uri = request.getRequestURI();
-        if (uri != null && uri.contains("/editor/logs/tail")) {
+        if (uri != null && (uri.contains("/editor/logs/tail")
+                || uri.contains("/editor/instance/snapshot")
+                || uri.contains("/editor/video/progress")
+                || uri.contains("/editor/transcode/queue"))) {
             return true;
         }
         if ("XMLHttpRequest".equals(request.getHeader("X-Requested-With"))) {

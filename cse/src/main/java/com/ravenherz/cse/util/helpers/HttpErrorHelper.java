@@ -31,6 +31,10 @@ public class HttpErrorHelper {
             return description;
         }
 
+        public String getErrorClass() {
+            return errorClass;
+        }
+
         public HttpErrorDescription(int code, String name, String description) {
             this.code = code;
             this.name = name;

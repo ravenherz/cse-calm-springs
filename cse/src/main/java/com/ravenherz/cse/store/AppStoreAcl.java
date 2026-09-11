@@ -1,8 +1,8 @@
 package com.ravenherz.cse.store;
 
 import com.ravenherz.cse.dal.dto.AccountEntity;
-import com.ravenherz.cse.dal.dto.basic.enums.SecurityLevel;
-import com.ravenherz.cse.security.AccountRolePolicy;
+import com.ravenherz.cse.dal.role.RoleSeeds;
+import com.ravenherz.cse.security.AccessRuntime;
 
 import java.util.Objects;
 
@@ -12,15 +12,17 @@ public final class AppStoreAcl {
     }
 
     public static boolean isSiteAdmin(AccountEntity account) {
-        if (account == null || account.getAccountData() == null || account.getAccountData().getLevel() == null) {
-            return false;
-        }
-        return account.getAccountData().getLevel().getIntLevel() >= SecurityLevel.ADMIN.getIntLevel();
+        return AccessRuntime.editorAccess(account);
     }
 
     public static boolean isMember(AccountEntity account) {
-        return account != null && account.getAccountData() != null
-                && AccountRolePolicy.loginableFor(account.getAccountData().getLevel());
+        if (account == null || account.getAccountData() == null) {
+            return false;
+        }
+        if (account.getAccountData().isLoginable()) {
+            return true;
+        }
+        return RoleSeeds.loginableFor(account.getAccountData().getLevel());
     }
 
     public static String ownerId(AccountEntity account) {

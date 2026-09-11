@@ -40,12 +40,12 @@ class AppStoreAclTest {
     @Test
     void memberWriteRequiresALoginableAccount() {
         AccountEntity member = account(SecurityLevel.ACTIVE_USER, "68b000000000000000000001");
-        AccountEntity guide = account(SecurityLevel.GUIDE, "68b000000000000000000003");
+        AccountEntity inactive = account(SecurityLevel.INACTIVE_USER, "68b000000000000000000003");
         assertFalse(AppStoreAcl.canReadList(AppStoreAccess.MEMBER_WRITE, null));
         assertTrue(AppStoreAcl.canReadList(AppStoreAccess.MEMBER_WRITE, member));
-        assertFalse(AppStoreAcl.isMember(guide));
+        assertFalse(AppStoreAcl.isMember(inactive));
         assertTrue(AppStoreAcl.canWriteRow(AppStoreAccess.MEMBER_WRITE, member, "68b000000000000000000099"));
-        assertFalse(AppStoreAcl.canCreate(AppStoreAccess.MEMBER_WRITE, guide));
+        assertFalse(AppStoreAcl.canCreate(AppStoreAccess.MEMBER_WRITE, inactive));
     }
 
     @Test

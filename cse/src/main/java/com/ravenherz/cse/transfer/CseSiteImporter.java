@@ -11,10 +11,19 @@ import com.ravenherz.cse.dal.dto.ItemEntity;
 import com.ravenherz.cse.dal.dto.PlaylistEntity;
 import com.ravenherz.cse.dal.dto.ResourceEntity;
 import com.ravenherz.cse.dal.dto.ResourceGroupEntity;
+import com.ravenherz.cse.dal.dto.RoleEntity;
+import com.ravenherz.cse.dal.dto.RoleMatrixDocument;
 import com.ravenherz.cse.dal.dto.SettingContextEntity;
 import com.ravenherz.cse.dal.dto.ThemeEntity;
+import com.ravenherz.cse.dal.dto.UrlTemplateEntity;
+import com.ravenherz.cse.dal.dao.RoleMatrixService;
+import com.ravenherz.cse.dal.dao.RoleService;
 import com.ravenherz.cse.dal.dao.impl.AppStoreServiceImpl;
+import com.ravenherz.cse.dal.dto.basic.AccountData;
+import com.ravenherz.cse.dal.role.CapabilityIds;
+import com.ravenherz.cse.dal.role.RoleSeeds;
 import com.ravenherz.cse.present.ResourceGroupIndex;
+import com.ravenherz.cse.security.AccountRoles;
 import com.ravenherz.cse.store.AppStoreNames;
 import com.ravenherz.cse.util.Settings;
 import org.bson.Document;
@@ -41,14 +50,19 @@ public class CseSiteImporter {
     private static final Logger LOGGER = LoggerFactory.getLogger(CseSiteImporter.class);
 
     private final ResourceGroupIndex resourceGroupIndex;
+    private final RoleService roleService;
+    private final RoleMatrixService roleMatrixService;
 
     public CseSiteImporter() {
-        this.resourceGroupIndex = null;
+        this(null, null, null);
     }
 
     @Autowired
-    public CseSiteImporter(ResourceGroupIndex resourceGroupIndex) {
+    public CseSiteImporter(ResourceGroupIndex resourceGroupIndex, RoleService roleService,
+            RoleMatrixService roleMatrixService) {
         this.resourceGroupIndex = resourceGroupIndex;
+        this.roleService = roleService;
+        this.roleMatrixService = roleMatrixService;
     }
 
     public ImportResult apply(InputStream zip, MongoTemplate mongo, Settings settings) throws IOException {
@@ -58,6 +72,8 @@ public class CseSiteImporter {
         CseSiteArchive archive = CseSiteArchive.read(zip);
         ParsedSite parsed = parse(archive);
         Map<String, Integer> counts = new LinkedHashMap<>();
+        importRoles(mongo, parsed, counts);
+        backfillAccountRoleIds(parsed.accounts);
         counts.put(MongoCollections.DATABASE_ACCOUNTS,
                 replace(mongo, AccountEntity.class, parsed.accounts));
         counts.put(MongoCollections.DATABASE_CATEGORIES,
@@ -72,6 +88,8 @@ public class CseSiteImporter {
                 replace(mongo, ItemEntity.class, parsed.items));
         counts.put(MongoCollections.DATABASE_PLAYLISTS,
                 replace(mongo, PlaylistEntity.class, parsed.playlists));
+        counts.put(MongoCollections.DATABASE_URL_TEMPLATES,
+                replace(mongo, UrlTemplateEntity.class, parsed.urlTemplates));
         counts.put(MongoCollections.DATABASE_APPS,
                 replace(mongo, AppEntity.class, parsed.apps));
         counts.put(MongoCollections.DATABASE_THEMES,
@@ -100,8 +118,13 @@ public class CseSiteImporter {
         parsed.resources = readAll(archive.collection(MongoCollections.DATABASE_RESOURCES), CseSiteReaders::resource);
         parsed.items = readAll(archive.collection(MongoCollections.DATABASE_ITEMS), CseSiteReaders::item);
         parsed.playlists = readAll(archive.collection(MongoCollections.DATABASE_PLAYLISTS), CseSiteReaders::playlist);
+        parsed.urlTemplates = readAll(archive.collection(MongoCollections.DATABASE_URL_TEMPLATES),
+                CseSiteReaders::urlTemplate);
         parsed.apps = readAll(archive.collection(MongoCollections.DATABASE_APPS), CseSiteReaders::app);
         parsed.themes = readAll(archive.collection(MongoCollections.DATABASE_THEMES), CseSiteReaders::theme);
+        parsed.roles = readAll(archive.collection(MongoCollections.DATABASE_ROLES), CseSiteReaders::role);
+        parsed.matrix = readAll(archive.collection(MongoCollections.DATABASE_ROLE_MATRIX),
+                CseSiteReaders::roleMatrix);
         parsed.settings = new ArrayList<>();
         for (Map<String, Object> doc : archive.collection(MongoCollections.DATABASE_SETTINGS)) {
             SettingContextEntity entity = CseSiteReaders.setting(doc);
@@ -174,6 +197,111 @@ public class CseSiteImporter {
         return stored;
     }
 
+    private void importRoles(MongoTemplate mongo, ParsedSite parsed, Map<String, Integer> counts) {
+        if (parsed.roles.isEmpty()) {
+            if (roleService != null) {
+                roleService.ensureSeeded();
+                if (roleMatrixService != null) {
+                    roleMatrixService.ensureSeeded(roleService);
+                }
+            }
+            counts.put(MongoCollections.DATABASE_ROLES, 0);
+            counts.put(MongoCollections.DATABASE_ROLE_MATRIX, 0);
+            return;
+        }
+        counts.put(MongoCollections.DATABASE_ROLES, replaceDocuments(mongo, RoleEntity.class, parsed.roles));
+        if (parsed.matrix.isEmpty()) {
+            if (roleService != null) {
+                roleService.invalidateCache();
+                if (roleMatrixService != null) {
+                    roleMatrixService.ensureSeeded(roleService);
+                }
+            }
+            counts.put(MongoCollections.DATABASE_ROLE_MATRIX, 0);
+        } else {
+            counts.put(MongoCollections.DATABASE_ROLE_MATRIX,
+                    replaceDocuments(mongo, RoleMatrixDocument.class, parsed.matrix));
+        }
+        if (roleService != null) {
+            roleService.invalidateCache();
+        }
+        if (roleMatrixService != null) {
+            roleMatrixService.invalidateCache();
+            if (roleService != null) {
+                roleMatrixService.ensureSeeded(roleService);
+            }
+        }
+    }
+
+    private void backfillAccountRoleIds(List<AccountEntity> accounts) {
+        if (accounts == null) {
+            return;
+        }
+        for (AccountEntity account : accounts) {
+            if (account == null || account.getAccountData() == null) {
+                continue;
+            }
+            AccountData data = account.getAccountData();
+            RoleEntity role = null;
+            if (roleService != null && data.getRoleId() != null && !data.getRoleId().isBlank()) {
+                role = roleService.getById(data.getRoleId());
+                if (role == null) {
+                    role = roleService.getBySlug(data.getRoleId());
+                }
+            }
+            if (role == null && roleService != null) {
+                String slug = RoleSeeds.slugFor(data.getLevel());
+                if (slug == null) {
+                    slug = data.isLoginable() ? RoleSeeds.MEMBER : RoleSeeds.INACTIVE;
+                }
+                role = roleService.getBySlug(slug);
+            }
+            if (role != null) {
+                boolean editor = role.isOwner()
+                        || (roleMatrixService != null
+                        && roleMatrixService.allows(role.idHex(), CapabilityIds.EDITOR_ACCESS));
+                AccountRoles.assign(data, role, editor);
+            } else if (data.getRoleId() == null || data.getRoleId().isBlank()) {
+                String slug = RoleSeeds.slugFor(data.getLevel());
+                data.setRoleId(slug == null
+                        ? (data.isLoginable() ? RoleSeeds.MEMBER : RoleSeeds.INACTIVE)
+                        : slug);
+            }
+        }
+    }
+
+    private static <T> int replaceDocuments(MongoTemplate mongo, Class<T> type, List<T> incoming) {
+        Set<ObjectId> keep = new HashSet<>();
+        for (T entity : incoming) {
+            ObjectId id = idOf(entity);
+            if (id == null) {
+                continue;
+            }
+            mongo.save(entity);
+            keep.add(id);
+        }
+        for (T existing : mongo.findAll(type)) {
+            ObjectId id = idOf(existing);
+            if (id != null && !keep.contains(id)) {
+                mongo.remove(existing);
+            }
+        }
+        return incoming.size();
+    }
+
+    private static ObjectId idOf(Object entity) {
+        if (entity instanceof RoleEntity role) {
+            return role.getId();
+        }
+        if (entity instanceof RoleMatrixDocument matrix) {
+            return matrix.getId();
+        }
+        if (entity instanceof BasicEntity basic) {
+            return basic.getId();
+        }
+        return null;
+    }
+
     private static void importAppStores(CseSiteArchive archive, MongoTemplate mongo,
             Map<String, Integer> counts) {
         Set<String> imported = new HashSet<>();
@@ -237,8 +365,11 @@ public class CseSiteImporter {
         private List<ResourceEntity> resources = List.of();
         private List<ItemEntity> items = List.of();
         private List<PlaylistEntity> playlists = List.of();
+        private List<UrlTemplateEntity> urlTemplates = List.of();
         private List<AppEntity> apps = List.of();
         private List<ThemeEntity> themes = List.of();
+        private List<RoleEntity> roles = List.of();
+        private List<RoleMatrixDocument> matrix = List.of();
         private List<SettingContextEntity> settings = List.of();
     }
 }

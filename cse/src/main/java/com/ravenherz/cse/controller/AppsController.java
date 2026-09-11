@@ -5,6 +5,7 @@ import com.ravenherz.cse.dal.dto.AccountEntity;
 import com.ravenherz.cse.dal.dto.AppEntity;
 import com.ravenherz.cse.dal.dto.DataChunkEntity;
 import com.ravenherz.cse.dal.dto.basic.AppData;
+import com.ravenherz.cse.dal.dto.basic.AppStoreSettings;
 import com.ravenherz.cse.dal.dto.basic.Event;
 import com.ravenherz.cse.dal.dto.basic.HistoryData;
 import com.ravenherz.cse.dal.dto.basic.enums.EventType;
@@ -112,8 +113,7 @@ public class AppsController extends AbstractController {
 
         AppEntity existing = serviceProvider.getAppService().getBySlug(normalizedSlug);
         if (existing != null && existing.getAppData() != null) {
-            appData.setStoreEnabled(existing.getAppData().isStoreEnabled());
-            appData.setStoreOpen(existing.getAppData().isStoreOpen());
+            appData.applyStoreSettings(existing.getAppData().storeSettings());
             appData.setStoreTables(existing.getAppData().getStoreTables());
         }
         if (manifest != null) {
@@ -205,6 +205,9 @@ public class AppsController extends AbstractController {
     public String store(@RequestParam("slug") String slug,
             @RequestParam(value = "storeEnabled", defaultValue = "false") boolean storeEnabled,
             @RequestParam(value = "storeOpen", defaultValue = "false") boolean storeOpen,
+            @RequestParam(value = "maxDataKb", required = false) Integer maxDataKb,
+            @RequestParam(value = "maxDocs", required = false) Integer maxDocs,
+            @RequestParam(value = "maxBytesMb", required = false) Integer maxBytesMb,
             @RequestParam(value = "returnGroup", required = false) String returnGroup,
             HttpServletRequest request, HttpServletResponse response)
             throws IOException {
@@ -218,7 +221,23 @@ public class AppsController extends AbstractController {
         }
         try {
             staticAppDeployer.validateSlug(normalizedSlug);
-            appStoreService.setGrant(normalizedSlug, storeEnabled, storeOpen);
+            AppEntity app = serviceProvider.getAppService().getBySlug(normalizedSlug);
+            if (app == null || app.getAppData() == null || !app.getAppData().requestsStore()) {
+                return listWithError(request, response, "This pack does not declare a data store");
+            }
+            AppStoreSettings settings = AppStoreSettings.copyOf(app.getAppData().storeSettings());
+            settings.setEnabled(storeEnabled);
+            settings.setSchemaOpen(storeOpen);
+            if (maxDataKb != null) {
+                settings.setMaxDataBytes(maxDataKb * 1024);
+            }
+            if (maxDocs != null) {
+                settings.setMaxDocs(maxDocs);
+            }
+            if (maxBytesMb != null) {
+                settings.setMaxBytes(maxBytesMb * 1024L * 1024L);
+            }
+            appStoreService.updateStoreSettings(normalizedSlug, settings);
         } catch (IllegalArgumentException ex) {
             return listWithError(request, response, "Invalid slug");
         } catch (AppStoreException ex) {

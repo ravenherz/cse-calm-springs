@@ -11,7 +11,7 @@ import java.io.IOException;
 
 /**
  * Spring Security 6 defers writing the CSRF cookie until the token is read.
- * Force a read on every request so login / setup / error POSTs have {@code XSRF-TOKEN}.
+ * Force a read on every request so login / setup POSTs have {@code XSRF-TOKEN}.
  */
 final class CsrfCookieFilter extends OncePerRequestFilter {
 

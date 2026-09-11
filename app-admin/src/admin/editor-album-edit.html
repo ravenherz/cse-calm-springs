@@ -67,11 +67,12 @@
 
             <div class="form-group">
               <label>Caption (Markdown/HTML)</label>
-              <textarea id="description" name="description" th:text="${item.albumData?.description}" rows="8" class="editor-textarea"></textarea>
+              <textarea id="description" name="description" th:text="${item.albumData?.description}" rows="8" class="editor-textarea cse-embed-drop"></textarea>
             </div>
 
             <p class="field-hint">The album has no cover of its own. Every image in the selected resource group is shown in the gallery.</p>
 
+            <th:block th:replace="~{fragments/access :: panel(read=${accessRead}, edit=${accessEdit}, delete=${accessDelete}, canEdit=${accessCanEdit})}"></th:block>
             <div class="editor-actions">
               <button type="submit" class="btn btn-primary">Save</button>
             </div>

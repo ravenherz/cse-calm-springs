@@ -8,7 +8,10 @@ import com.ravenherz.cse.dal.dao.ItemService;
 import com.ravenherz.cse.dal.dao.PlaylistService;
 import com.ravenherz.cse.dal.dao.ResourceGroupService;
 import com.ravenherz.cse.dal.dao.ResourceService;
+import com.ravenherz.cse.dal.dao.RoleMatrixService;
+import com.ravenherz.cse.dal.dao.RoleService;
 import com.ravenherz.cse.dal.dao.ThemeService;
+import com.ravenherz.cse.dal.dao.UrlTemplateService;
 import org.springframework.stereotype.Service;
 
 @Service(value = "serviceProvider")
@@ -22,11 +25,16 @@ public class ServiceProviderImpl implements ServiceProvider {
     private final AppService appService;
     private final ThemeService themeService;
     private final PlaylistService playlistService;
+    private final UrlTemplateService urlTemplateService;
+    private final RoleService roleService;
+    private final RoleMatrixService roleMatrixService;
 
     public ServiceProviderImpl(AccountService accountService, CategoryService categoryService,
             ItemService itemService, ResourceService resourceService,
             ResourceGroupService resourceGroupService, AppService appService,
-            ThemeService themeService, PlaylistService playlistService) {
+            ThemeService themeService, PlaylistService playlistService,
+            UrlTemplateService urlTemplateService, RoleService roleService,
+            RoleMatrixService roleMatrixService) {
         this.accountService = accountService;
         this.categoryService = categoryService;
         this.itemService = itemService;
@@ -35,6 +43,9 @@ public class ServiceProviderImpl implements ServiceProvider {
         this.appService = appService;
         this.themeService = themeService;
         this.playlistService = playlistService;
+        this.urlTemplateService = urlTemplateService;
+        this.roleService = roleService;
+        this.roleMatrixService = roleMatrixService;
     }
 
     @Override
@@ -75,5 +86,20 @@ public class ServiceProviderImpl implements ServiceProvider {
     @Override
     public PlaylistService getPlaylistService() {
         return playlistService;
+    }
+
+    @Override
+    public UrlTemplateService getUrlTemplateService() {
+        return urlTemplateService;
+    }
+
+    @Override
+    public RoleService getRoleService() {
+        return roleService;
+    }
+
+    @Override
+    public RoleMatrixService getRoleMatrixService() {
+        return roleMatrixService;
     }
 }

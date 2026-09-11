@@ -9,6 +9,8 @@ import com.ravenherz.cse.dal.dto.CategoryEntity;
 import com.ravenherz.cse.dal.dto.basic.AccountData;
 import com.ravenherz.cse.dal.dto.basic.CategoryData;
 import com.ravenherz.cse.dal.dto.basic.enums.SecurityLevel;
+import com.ravenherz.cse.dal.role.RoleSeeds;
+import com.ravenherz.cse.security.AccountRoles;
 import com.ravenherz.cse.util.PasswordHashes;
 import com.ravenherz.cse.util.Settings;
 import com.ravenherz.cse.util.staticapps.StaticAppDeployer;
@@ -35,11 +37,12 @@ public class InstallService {
     private final PasswordHashes passwordHashes;
     private final StaticAppDeployer staticAppDeployer;
     private final SiteReady siteReady;
+    private final UrlTemplateSeeds urlTemplateSeeds;
     private volatile Boolean existingSite;
 
     public InstallService(Settings settings, DataProvider dataProvider, ServiceProvider serviceProvider,
             AuthSupport authSupport, PasswordHashes passwordHashes, StaticAppDeployer staticAppDeployer,
-            SiteReady siteReady) {
+            SiteReady siteReady, UrlTemplateSeeds urlTemplateSeeds) {
         this.settings = settings;
         this.dataProvider = dataProvider;
         this.serviceProvider = serviceProvider;
@@ -47,6 +50,7 @@ public class InstallService {
         this.passwordHashes = passwordHashes;
         this.staticAppDeployer = staticAppDeployer;
         this.siteReady = siteReady;
+        this.urlTemplateSeeds = urlTemplateSeeds;
     }
 
     public Map<String, Object> status() {
@@ -130,6 +134,14 @@ public class InstallService {
         }
         AccountEntity entity = new AccountEntity(new AccountData(login, passwordHashes.hash(password),
                 email, SecurityLevel.OWNER));
+        if (serviceProvider.getRoleService() != null) {
+            serviceProvider.getRoleService().ensureSeeded();
+            if (serviceProvider.getRoleMatrixService() != null) {
+                serviceProvider.getRoleMatrixService().ensureSeeded(serviceProvider.getRoleService());
+            }
+            AccountRoles.assignBySlug(entity.getAccountData(), serviceProvider.getRoleService(),
+                    RoleSeeds.OWNER, true);
+        }
         serviceProvider.getAccountService().insert(entity);
         if (!authSupport.issueSession(entity, request, response)) {
             throw new InstallException(500, "Could not start a session");
@@ -155,6 +167,7 @@ public class InstallService {
             applyPersonal(body, companyTitle);
             seedCategory(companyTitle);
         }
+        urlTemplateSeeds.ensureSeeded();
         siteReady.markFinished();
         try {
             staticAppDeployer.undeployEngineApp(StaticAppDeployer.INSTALLER_SLUG);

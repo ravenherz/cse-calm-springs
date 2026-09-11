@@ -22,7 +22,7 @@ Tags on the tile:
 
 Only one theme is **ON**. On a tile that is not live, **Activate** (on the details panel or right-click **Activate** in the tree) makes it the public skin. The previous **ON** tile becomes **PACK** or **WAR**.
 
-The public homepage follows this choice for everyone. Your own override, if you set one, lives under [Settings](settings.md) → **Your theme**.
+The public homepage follows this choice for everyone.
 
 ## Install a pack
 

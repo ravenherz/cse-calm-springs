@@ -2,6 +2,7 @@ package com.ravenherz.cse.security;
 
 import com.ravenherz.cse.controller.AuthSupport;
 import jakarta.servlet.http.Cookie;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
@@ -15,7 +16,10 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.ResponseBody;
 
+import static org.hamcrest.Matchers.containsString;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.when;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -34,6 +38,16 @@ class CsrfPhase3MvcTest {
     @MockitoBean
     private AuthSupport authSupport;
 
+    @MockitoBean
+    private CapabilityService capabilityService;
+
+    @BeforeEach
+    void stubCapabilities() {
+        when(capabilityService.allows(any(), any())).thenReturn(true);
+        when(capabilityService.allowsApp(any(), any())).thenReturn(true);
+        when(capabilityService.canOpenEditor(any())).thenReturn(true);
+    }
+
     @Test
     void getWritesXsrfCookie() throws Exception {
         mockMvc.perform(get("/csrf-probe"))
@@ -41,6 +55,22 @@ class CsrfPhase3MvcTest {
                 .andExpect(cookie().exists("XSRF-TOKEN"))
                 .andExpect(cookie().httpOnly("XSRF-TOKEN", false))
                 .andExpect(header().exists("X-XSRF-TOKEN"));
+    }
+
+    @Test
+    void restErrorPostIsNotCsrfGated() throws Exception {
+        mockMvc.perform(post("/rest/error")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"error\":\"403\"}"))
+                .andExpect(status().isOk())
+                .andExpect(content().string(containsString("Forbidden")));
+        mockMvc.perform(post("/rest/error")
+                        .cookie(new Cookie("XSRF-TOKEN", "cookie-token"))
+                        .header("X-XSRF-TOKEN", "other-token")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"error\":\"403\"}"))
+                .andExpect(status().isOk())
+                .andExpect(content().string(containsString("403")));
     }
 
     @Test

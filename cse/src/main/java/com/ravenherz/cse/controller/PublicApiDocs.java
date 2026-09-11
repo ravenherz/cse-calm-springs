@@ -74,6 +74,41 @@ public final class PublicApiDocs {
                                 { "status": 200, "message": "all done" }
 
                                 { "status": 400, "message": "Login is already taken" }"""),
+                        new Endpoint("GET", "/account/me", "Session", false,
+                                "Current account profile. Avatar is a JPEG data URL stored on AccountData. "
+                                        + "Does not return hash, sessions, or activation tokens.",
+                                null,
+                                """
+                                { "status": 200, "restObject": {
+                                    "login": "ada",
+                                    "emailAddress": "ada@example.com",
+                                    "shownName": "Ada",
+                                    "bio": "",
+                                    "avatar": "data:image/jpeg;base64,...",
+                                    "level": "ACTIVE_USER",
+                                    "admin": false
+                                  }, "message": null }
+
+                                { "status": 401, "message": "Sign in required" }"""),
+                        new Endpoint("POST", "/account/me", "Session", true,
+                                "Update email, shown name, bio, avatar, and optional password. "
+                                        + "Login cannot change. Omit ACCOUNT_AVATAR to leave the image; "
+                                        + "send an empty string to clear it. Avatar is re-encoded to a "
+                                        + "256px JPEG data URL on the account document.",
+                                """
+                                {
+                                  "ACCOUNT_EMAIL": "ada@example.com",
+                                  "ACCOUNT_SHOWN_NAME": "Ada",
+                                  "ACCOUNT_BIO": "Writes software.",
+                                  "ACCOUNT_AVATAR": "data:image/jpeg;base64,...",
+                                  "ACCOUNT_PASSWORD_CURRENT": "old-secret",
+                                  "ACCOUNT_PASSWORD": "new-secret",
+                                  "ACCOUNT_PASSWORD_RETYPE": "new-secret"
+                                }""",
+                                """
+                                { "status": 200, "restObject": { "login": "ada" }, "message": "Saved" }
+
+                                { "status": 400, "message": "Email is already taken" }"""),
                         new Endpoint("GET", "/account/activate", "Public", false,
                                 "Activate with the token stored at registration. Redirects to /?error=200 "
                                         + "or /?error=400 (HTML, not JSON).",
@@ -126,16 +161,16 @@ public final class PublicApiDocs {
                                 """
                                 { "status": 200, "restObject": "<div id='form-id'>...</div>" }"""),
                         new Endpoint("POST", "/rest/markdown/render", "Public", true,
-                                "Markdown to HTML, then expand <cse-playlist id=\"...\"/> embeds.",
+                                "Markdown to HTML, then expand <cse-playlist/> and <cse-url/> embeds.",
                                 """
                                 { "markdown": "# Hello" }""",
                                 """
                                 { "status": 200, "restObject": "<h1>Hello</h1>" }"""),
-                        new Endpoint("POST", "/rest/error", "Public", true,
-                                "Copy for /?error= codes (cse-error.js). Body is not a RestResponse envelope. "
-                                        + "Unknown codes fall back to 500.",
-                                """
-                                { "error": "401" }""",
+                        new Endpoint("GET", "/rest/error", "Public", false,
+                                "Copy for /?error= codes (cse-error.js). Query error is the HTTP code. "
+                                        + "POST {\"error\":\"401\"} is still accepted and is not CSRF-gated. "
+                                        + "Body is not a RestResponse envelope. Unknown codes fall back to 500.",
+                                "?error=401",
                                 """
                                 {
                                   "code": 401,
@@ -266,7 +301,7 @@ public final class PublicApiDocs {
                                 "Tables, access modes, and optional JSON Schema the engine stored. Store must be enabled.",
                                 null,
                                 """
-                                { "slug": "fretlab", "storeEnabled": true, "storeOpen": false, "admin": false, "tables": [{ "name": "progress", "access": "owner" }] }"""),
+                                { "slug": "fretlab", "storeEnabled": true, "storeOpen": false, "maxDataBytes": 262144, "maxDocs": 10000, "maxBytes": 33554432, "admin": false, "tables": [{ "name": "progress", "access": "owner" }] }"""),
                         new Endpoint("PUT", "/app-data/{slug}/_schema/{table}", "ACL", true,
                                 "Define or update a table. Site admin, or a signed-in member when storeOpen is on.",
                                 """
@@ -274,11 +309,12 @@ public final class PublicApiDocs {
                                 """
                                 { "name": "progress", "access": "owner", "schema": { "type": "object" } }"""),
                         new Endpoint("PUT", "/app-data/{slug}/_grant", "ADMIN", true,
-                                "Enable the store or open schema. Catalog form POST /editor/apps/store is preferred.",
+                                "Enable the store, open schema, or set per-app quotas. "
+                                        + "Catalog form POST /editor/apps/store is preferred.",
                                 """
-                                { "storeEnabled": true, "storeOpen": false }""",
+                                { "storeEnabled": true, "storeOpen": false, "maxDataBytes": 262144 }""",
                                 """
-                                { "status": 200, "storeEnabled": true, "storeOpen": false }""")
+                                { "status": 200, "storeEnabled": true, "storeOpen": false, "maxDataBytes": 262144, "maxDocs": 10000, "maxBytes": 33554432 }""")
                 ));
     }
 }

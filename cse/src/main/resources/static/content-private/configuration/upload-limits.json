@@ -1,0 +1,6 @@
+{
+  "image-upload-max-mb": "50",
+  "video-upload-max-mb": "200",
+  "audio-upload-max-mb": "50",
+  "binary-upload-max-mb": "50"
+}

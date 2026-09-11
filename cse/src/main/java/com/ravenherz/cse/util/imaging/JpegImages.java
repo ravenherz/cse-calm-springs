@@ -2,8 +2,11 @@ package com.ravenherz.cse.util.imaging;
 
 import javax.imageio.IIOImage;
 import javax.imageio.ImageIO;
+import javax.imageio.ImageReadParam;
+import javax.imageio.ImageReader;
 import javax.imageio.ImageWriteParam;
 import javax.imageio.ImageWriter;
+import javax.imageio.stream.ImageInputStream;
 import javax.imageio.stream.ImageOutputStream;
 import java.awt.Color;
 import java.awt.Graphics2D;
@@ -58,7 +61,7 @@ public final class JpegImages {
         if (imageBytes == null || imageBytes.length == 0 || maxWidth <= 0) {
             return Optional.empty();
         }
-        BufferedImage src = ImageIO.read(new ByteArrayInputStream(imageBytes));
+        BufferedImage src = read(imageBytes);
         if (src == null) {
             throw new IOException("Could not read image");
         }
@@ -92,7 +95,7 @@ public final class JpegImages {
         if (size <= 0) {
             throw new IOException("Thumb size must be positive");
         }
-        BufferedImage src = ImageIO.read(new ByteArrayInputStream(imageBytes));
+        BufferedImage src = readForThumb(imageBytes, size);
         if (src == null) {
             throw new IOException("Could not read image");
         }
@@ -117,7 +120,7 @@ public final class JpegImages {
         if (imageBytes == null || imageBytes.length == 0) {
             throw new IOException("Image is empty");
         }
-        BufferedImage src = ImageIO.read(new ByteArrayInputStream(imageBytes));
+        BufferedImage src = read(imageBytes);
         if (src == null) {
             throw new IOException("Could not read image");
         }
@@ -130,11 +133,83 @@ public final class JpegImages {
         return new Encoded(encode(src, quality), src.getWidth(), src.getHeight());
     }
 
+    /**
+     * JPEG whose longest side is at most {@code maxSide}. Aspect ratio is kept.
+     */
+    public static Encoded fit(byte[] imageBytes, int maxSide, float quality) throws IOException {
+        if (imageBytes == null || imageBytes.length == 0) {
+            throw new IOException("Image is empty");
+        }
+        if (maxSide <= 0) {
+            throw new IOException("Max side must be positive");
+        }
+        BufferedImage src = read(imageBytes);
+        if (src == null) {
+            throw new IOException("Could not read image");
+        }
+        int width = src.getWidth();
+        int height = src.getHeight();
+        int longest = Math.max(width, height);
+        if (longest <= maxSide) {
+            return new Encoded(encode(src, quality), width, height);
+        }
+        double scale = maxSide / (double) longest;
+        int newWidth = Math.max(1, (int) Math.round(width * scale));
+        int newHeight = Math.max(1, (int) Math.round(height * scale));
+        BufferedImage dest = new BufferedImage(newWidth, newHeight, BufferedImage.TYPE_INT_RGB);
+        Graphics2D graphics = dest.createGraphics();
+        graphics.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BICUBIC);
+        graphics.setRenderingHint(RenderingHints.KEY_RENDERING, RenderingHints.VALUE_RENDER_QUALITY);
+        graphics.setColor(Color.WHITE);
+        graphics.fillRect(0, 0, newWidth, newHeight);
+        graphics.drawImage(src, 0, 0, newWidth, newHeight, null);
+        graphics.dispose();
+        return new Encoded(encode(dest, quality), newWidth, newHeight);
+    }
+
     public static float clampQuality(float quality) {
         if (Float.isNaN(quality) || quality <= 0f) {
             return 0.95f;
         }
         return Math.min(1f, quality);
+    }
+
+    static BufferedImage read(byte[] imageBytes) throws IOException {
+        return read(imageBytes, 0);
+    }
+
+    static BufferedImage readForThumb(byte[] imageBytes, int targetSize) throws IOException {
+        return read(imageBytes, targetSize);
+    }
+
+    private static BufferedImage read(byte[] imageBytes, int targetSize) throws IOException {
+        ByteArrayInputStream bytes = new ByteArrayInputStream(imageBytes);
+        try (ImageInputStream in = ImageIO.createImageInputStream(bytes)) {
+            if (in == null) {
+                return ImageIO.read(new ByteArrayInputStream(imageBytes));
+            }
+            Iterator<ImageReader> readers = ImageIO.getImageReaders(in);
+            if (!readers.hasNext()) {
+                return ImageIO.read(new ByteArrayInputStream(imageBytes));
+            }
+            ImageReader reader = readers.next();
+            try {
+                reader.setInput(in, true, true);
+                ImageReadParam param = reader.getDefaultReadParam();
+                if (targetSize > 0) {
+                    int width = reader.getWidth(0);
+                    int height = reader.getHeight(0);
+                    int min = Math.min(width, height);
+                    int subsample = Math.max(1, min / Math.max(1, targetSize * 2));
+                    if (subsample > 1) {
+                        param.setSourceSubsampling(subsample, subsample, 0, 0);
+                    }
+                }
+                return reader.read(0, param);
+            } finally {
+                reader.dispose();
+            }
+        }
     }
 
     private static BufferedImage toRgb(BufferedImage src) {

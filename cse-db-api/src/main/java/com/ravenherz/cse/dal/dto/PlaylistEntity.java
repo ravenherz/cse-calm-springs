@@ -19,7 +19,7 @@ public final class PlaylistEntity extends BasicEntity implements Serializable {
     }
 
     public PlaylistEntity(String playlistId, PlaylistData playlistData, AccountEntity creator) {
-        super("0.1.0", null, creator);
+        super(null, creator);
         this.playlistId = playlistId;
         this.playlistData = playlistData;
     }

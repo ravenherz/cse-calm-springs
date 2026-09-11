@@ -1,6 +1,7 @@
 package com.ravenherz.cse.dal.dao;
 
 import com.ravenherz.cse.dal.dto.AppEntity;
+import com.ravenherz.cse.dal.dto.basic.AppStoreSettings;
 import com.ravenherz.cse.store.AppStoreDocument;
 import com.ravenherz.cse.store.AppStoreTableSpec;
 
@@ -10,9 +11,9 @@ import java.util.Map;
 public interface AppStoreService {
 
     int MAX_LIST = 100;
-    int MAX_DATA_BYTES = 64 * 1024;
-    int MAX_DOCS_PER_APP = 10_000;
-    long MAX_BYTES_PER_APP = 32L * 1024 * 1024;
+    int MAX_DATA_BYTES = AppStoreSettings.DEFAULT_MAX_DATA_BYTES;
+    int MAX_DOCS_PER_APP = AppStoreSettings.DEFAULT_MAX_DOCS;
+    long MAX_BYTES_PER_APP = AppStoreSettings.DEFAULT_MAX_BYTES;
 
     AppEntity requireApp(String slug);
 
@@ -25,6 +26,8 @@ public interface AppStoreService {
     AppStoreTableSpec requireTableOrCreate(String slug, String table);
 
     void setGrant(String slug, boolean enabled, boolean open);
+
+    void updateStoreSettings(String slug, AppStoreSettings settings);
 
     void defineTable(String slug, AppStoreTableSpec spec);
 

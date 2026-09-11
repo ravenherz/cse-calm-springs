@@ -7,6 +7,7 @@ import com.ravenherz.cse.dal.dao.AppStoreService;
 import com.ravenherz.cse.dal.dao.BasicService;
 import com.ravenherz.cse.dal.dto.AppEntity;
 import com.ravenherz.cse.dal.dto.basic.AppData;
+import com.ravenherz.cse.dal.dto.basic.AppStoreSettings;
 import com.ravenherz.cse.store.AppStoreDocument;
 import com.ravenherz.cse.store.AppStoreException;
 import com.ravenherz.cse.store.AppStoreNames;
@@ -74,9 +75,16 @@ public class AppStoreServiceImpl extends BasicService implements AppStoreService
 
     @Override
     public void setGrant(String slug, boolean enabled, boolean open) {
+        AppStoreSettings settings = AppStoreSettings.copyOf(requireApp(slug).getAppData().storeSettings());
+        settings.setEnabled(enabled);
+        settings.setSchemaOpen(open);
+        updateStoreSettings(slug, settings);
+    }
+
+    @Override
+    public void updateStoreSettings(String slug, AppStoreSettings settings) {
         AppEntity app = requireApp(slug);
-        app.getAppData().setStoreEnabled(enabled);
-        app.getAppData().setStoreOpen(open);
+        app.getAppData().applyStoreSettings(settings);
         appService.replace(app);
     }
 
@@ -112,7 +120,8 @@ public class AppStoreServiceImpl extends BasicService implements AppStoreService
         AppStoreTableSpec spec = requireTableOrCreate(slug, table);
         Map<String, Object> payload = copyData(data);
         int bytes = dataBytes(payload);
-        if (bytes > MAX_DATA_BYTES) {
+        AppStoreSettings settings = requireApp(slug).getAppData().storeSettings();
+        if (bytes > settings.resolvedMaxDataBytes()) {
             throw new AppStoreException(413, "Document data is too large");
         }
         String collection = AppStoreNames.collectionName(slug, spec.getName());
@@ -192,7 +201,8 @@ public class AppStoreServiceImpl extends BasicService implements AppStoreService
             }
         }
         int bytes = dataBytes(data);
-        if (bytes > MAX_DATA_BYTES) {
+        AppStoreSettings settings = requireApp(slug).getAppData().storeSettings();
+        if (bytes > settings.resolvedMaxDataBytes()) {
             throw new AppStoreException(413, "Document data is too large");
         }
         existing.put("data", new Document(data));
@@ -298,16 +308,17 @@ public class AppStoreServiceImpl extends BasicService implements AppStoreService
     }
 
     private void checkQuota(String slug, int extraBytes) {
+        AppStoreSettings settings = requireApp(slug).getAppData().storeSettings();
         long docs = 0;
         long bytes = extraBytes;
         for (String collection : collectionNames(slug)) {
             docs += mongo().count(new Query(), collection);
             bytes += collectionSize(collection);
         }
-        if (docs >= MAX_DOCS_PER_APP) {
+        if (docs >= settings.resolvedMaxDocs()) {
             throw new AppStoreException(507, "App data quota exceeded");
         }
-        if (bytes > MAX_BYTES_PER_APP) {
+        if (bytes > settings.resolvedMaxBytes()) {
             throw new AppStoreException(507, "App data quota exceeded");
         }
     }

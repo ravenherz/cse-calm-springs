@@ -2,7 +2,7 @@
 
 **Settings** is the live overlay: values stored in the database, used instead of the JSON shipped in the engine after a redeploy. Change copy and the public skin here without waiting on a vendor.
 
-![Settings: view keys, Save settings, Your theme](settings-md-image-1.jpg)
+![Settings: view keys and Save settings](settings-md-image-1.jpg)
 
 The page is grouped by context (build info, personal/company copy, setup, view, image upload). Each row is a **Key** and a **Value**.
 
@@ -20,15 +20,11 @@ Under **config-view**:
 
 **preview-max-width** and **quality-factor** control how large previews are made from uploaded pictures. Lower width keeps the public site light; quality is a 0–1 JPEG factor.
 
-## Your theme
-
-**Your theme** overrides the site default **while you are logged in**. Leave **Theme** on **Site default** (and **Schema** on **Theme default**) to see what guests see.
-
-**Save your theme** is separate from **Save settings**. It only stores your personal override.
-
 ## Copy and company
 
 **config-personal** holds builder link, company name, address, email, social handles, copyright lines, and welcome title. These strings show on the public site in the places the active theme uses them.
+
+**company-social** is still the old `templateId:handle` string (`vk:ravenherz youtube:ravenherz`). The footer turns each pair into a small [`cse-url`](url-templates.md) inside `<cse-urls sizeOverride="s">`. `twitter:` is treated as the `x` template. Unknown ids are skipped.
 
 **config-build-info** is version labels (branch, product, version). Treat them as display, not as a release switch.
 

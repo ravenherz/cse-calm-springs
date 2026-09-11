@@ -12,9 +12,6 @@ import com.ravenherz.cse.dal.dto.basic.enums.SecurityLevel;
 import org.bson.types.ObjectId;
 import org.junit.jupiter.api.Test;
 
-import java.util.EnumMap;
-import java.util.Map;
-
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -74,16 +71,14 @@ class EntityAccessTest {
     }
 
     @Test
-    void guideReadRequiresGuideWhenSettingsSaySo() {
+    void operatorReadRequiresOperatorWhenSettingsSaySo() {
         AccountEntity owner = account(SecurityLevel.ADMIN);
         ItemEntity page = ownedPage(owner);
-        Map<AccessType, SecurityLevel> settings = new EnumMap<>(AccessType.class);
-        settings.putAll(EntityAccessConstants.GUIDE);
-        page.setSecurityData(new SecurityData(settings));
+        page.setSecurityData(new SecurityData(EntityAccessConstants.forLevel(SecurityLevel.OPERATOR)));
 
         assertFalse(EntityAccess.isAccessible(page, AccessType.ACCESS_READ, null));
         assertFalse(EntityAccess.isAccessible(page, AccessType.ACCESS_READ, account(SecurityLevel.ACTIVE_USER)));
-        assertTrue(EntityAccess.isAccessible(page, AccessType.ACCESS_READ, account(SecurityLevel.GUIDE)));
+        assertTrue(EntityAccess.isAccessible(page, AccessType.ACCESS_READ, account(SecurityLevel.OPERATOR)));
     }
 
     private static AccountEntity account(SecurityLevel level) {

@@ -69,6 +69,7 @@ public class EditorPagesController extends AbstractController {
         model.addAttribute("selectedCategoryId", categoryId);
         addEditorChrome(model, accessor);
         EditorInline.putTreeForCreate(model, resourceGroupIndex, categoryId);
+        addAccessPanel(model, null, accessor);
 
         return "/admin/editor-page-create";
     }
@@ -177,6 +178,7 @@ public class EditorPagesController extends AbstractController {
         }
 
         newItem.setPageData(pageData);
+        applyAccess(request, newItem);
 
         try {
             serviceProvider.getItemService().insert(newItem);
@@ -237,6 +239,8 @@ public class EditorPagesController extends AbstractController {
 
         if (item.isAlbum()) {
             editorAlbumsController.fillAlbumFormLookups(model, accessor);
+            addEditorChrome(model, accessor);
+            addAccessPanel(model, item, accessor);
             return "/admin/editor-album-edit";
         }
 
@@ -245,6 +249,7 @@ public class EditorPagesController extends AbstractController {
 
         List<CategoryEntity> categories = serviceProvider.getCategoryService().getAllCategories();
         model.addAttribute("categories", categories);
+        addAccessPanel(model, item, accessor);
 
         return "/admin/editor-page-edit";
     }
@@ -276,7 +281,7 @@ public class EditorPagesController extends AbstractController {
             return null;
         }
 
-        if (!EntityAccess.isAccessible(item, AccessType.ACCESS_READ, accessor)) {
+        if (!EntityAccess.isAccessible(item, AccessType.ACCESS_EDIT, accessor)) {
             error(403, request, response);
             return null;
         }
@@ -338,6 +343,7 @@ public class EditorPagesController extends AbstractController {
         newEvents[oldEvents.length] = new Event(EventType.ENTITY_EDITED, LocalDateTime.now(), accessor);
         historyData.setEvents(newEvents);
         item.setHistoryData(historyData);
+        applyAccess(request, item);
 
         serviceProvider.getItemService().replace(item);
         resourceGroupIndex.contentChanged();
@@ -367,7 +373,7 @@ public class EditorPagesController extends AbstractController {
             return null;
         }
 
-        if (!EntityAccess.isAccessible(item, AccessType.ACCESS_READ, accessor)) {
+        if (!EntityAccess.isAccessible(item, AccessType.ACCESS_DELETE, accessor)) {
             error(403, request, response);
             return null;
         }

@@ -15,7 +15,7 @@ Tags:
 - **STORE** — the operator has enabled the JSON data store for that pack.
 - Size and company, when the pack declares them.
 
-**i** shows id, public URL, and file name. The link icon opens the public URL in a new tab. Installed (non-bundled) packs also have **Allow data store** / **Open schema** on the details panel — upload does not turn the store on.
+**i** shows id, public URL, and file name. The link icon opens the public URL in a new tab. Installed packs that declare a store (`store.json` / `store.tables`) also have **Allow data store**, **Open schema**, and size quotas on the details panel. Those choices live on the app document and survive a re-upload of the same slug. Upload does not turn the store on.
 
 ## Install a pack
 
@@ -28,6 +28,16 @@ A pack without a slug in `version.manifest` is rejected. Re-uploading a zip with
 **Calm Springs admin**, **Calm Springs setup**, and **Sign in** are the desk, the first-boot installer, and the public account app. Leave them. Installed packs can be removed with **×** when the tile allows it — confirmation first. Removing a pack keeps its data-store collections so a re-upload of the same slug can restore them.
 
 Apps do not replace [themes](themes.md). A theme is the public skin; an app is an extra product on the same instance.
+
+## Embed
+
+In a [page](pages.md) body:
+
+```html
+<cse-app id="your-slug"></cse-app>
+```
+
+The id is the pack slug. The public site shows a card (logo, name, description, version) that links to `/apps/{slug}/`. Drag the app from **Content → Apps** in the Catalog tree into the page textarea.
 
 ## Data store
 

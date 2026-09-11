@@ -15,7 +15,7 @@ public final class AccountEntity extends BasicEntity {
     }
 
     public AccountEntity(AccountData accountData) {
-        super("0.1.0");
+        super(null, null);
         this.accountData = accountData;
     }
 

@@ -49,6 +49,8 @@ class InstallServiceTest {
     @Mock
     private SiteReady siteReady;
     @Mock
+    private UrlTemplateSeeds urlTemplateSeeds;
+    @Mock
     private AccountService accountService;
     @InjectMocks
     private InstallService installService;
@@ -126,6 +128,7 @@ class InstallServiceTest {
         assertEquals("/rhz-we/editor", result.get("redirect"));
         verify(settings, never()).putValue(eq(SettingKeys.CONTEXT_DATASOURCE_PERSONAL),
                 eq(SettingKeys.KEY_TAG_COMPANY_TITLE), any());
+        verify(urlTemplateSeeds).ensureSeeded();
         verify(siteReady).markFinished();
     }
 
@@ -167,6 +170,7 @@ class InstallServiceTest {
                 SettingKeys.KEY_TAG_COMPANY_EMAIL, "");
         verify(settings).putValue(SettingKeys.CONTEXT_DATASOURCE_PERSONAL,
                 SettingKeys.KEY_TAG_COMPANY_PHONE, "555");
+        verify(urlTemplateSeeds).ensureSeeded();
         verify(siteReady).markFinished();
         verify(staticAppDeployer).undeployEngineApp(StaticAppDeployer.INSTALLER_SLUG);
     }

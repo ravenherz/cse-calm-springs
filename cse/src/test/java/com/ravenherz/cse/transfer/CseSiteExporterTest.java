@@ -16,6 +16,7 @@ import com.ravenherz.cse.dal.dao.PlaylistService;
 import com.ravenherz.cse.dal.dao.ResourceGroupService;
 import com.ravenherz.cse.dal.dao.ResourceService;
 import com.ravenherz.cse.dal.dao.ThemeService;
+import com.ravenherz.cse.dal.dao.UrlTemplateService;
 import com.ravenherz.cse.dal.dto.AccountEntity;
 import com.ravenherz.cse.dal.dto.AppEntity;
 import com.ravenherz.cse.dal.dto.CategoryEntity;
@@ -74,6 +75,7 @@ class CseSiteExporterTest {
         PlaylistService playlists = mock(PlaylistService.class);
         AppService apps = mock(AppService.class);
         ThemeService themes = mock(ThemeService.class);
+        UrlTemplateService urlTemplates = mock(UrlTemplateService.class);
         when(services.getAccountService()).thenReturn(accounts);
         when(services.getCategoryService()).thenReturn(categories);
         when(services.getResourceGroupService()).thenReturn(groups);
@@ -82,15 +84,18 @@ class CseSiteExporterTest {
         when(services.getPlaylistService()).thenReturn(playlists);
         when(services.getAppService()).thenReturn(apps);
         when(services.getThemeService()).thenReturn(themes);
+        when(services.getUrlTemplateService()).thenReturn(urlTemplates);
         when(accounts.getAll()).thenReturn(List.of());
         when(categories.getAll()).thenReturn(List.of());
         when(groups.getAll()).thenReturn(List.of());
         when(resourceService.getAll()).thenReturn(List.of());
+        when(resourceService.listWithContent()).thenReturn(List.of());
         when(resourceService.getDataChunks(anyList())).thenReturn(List.of());
         when(items.getAll()).thenReturn(List.of());
         when(playlists.getAll()).thenReturn(List.of());
         when(apps.getAll()).thenReturn(List.of());
         when(themes.getAll()).thenReturn(List.of());
+        when(urlTemplates.getAll()).thenReturn(List.of());
     }
 
     @Test
@@ -104,6 +109,8 @@ class CseSiteExporterTest {
         AccountEntity owner = new AccountEntity(new AccountData("ada", "argon2-hash", "ada@example.com",
                 SecurityLevel.OWNER));
         owner.setId(ownerId);
+        owner.getAccountData().setShownName("Ada");
+        owner.getAccountData().setAvatar("data:image/jpeg;base64,Zm9v");
         AccountData.AccountSession session = new AccountData.AccountSession(
                 "127.0.0.1", "test-agent", "live-session-token",
                 LocalDateTime.of(2026, Month.SEPTEMBER, 2, 10, 0));
@@ -137,6 +144,7 @@ class CseSiteExporterTest {
         when(services.getAccountService().getAll()).thenReturn(List.of(owner));
         when(services.getCategoryService().getAll()).thenReturn(List.of(category));
         when(resourceService.getAll()).thenReturn(List.of(resource));
+        when(resourceService.listWithContent()).thenReturn(List.of(resource));
         when(resourceService.getDataChunks(anyList())).thenReturn(List.of(chunk));
         when(services.getItemService().getAll()).thenReturn(List.of(page));
 
@@ -177,6 +185,9 @@ class CseSiteExporterTest {
         assertEquals("ada", accountData.get("login"));
         assertEquals("argon2-hash", accountData.get("hash"));
         assertEquals("OWNER", accountData.get("level"));
+        assertEquals("owner", accountData.get("roleId"));
+        assertEquals("Ada", accountData.get("shownName"));
+        assertEquals("data:image/jpeg;base64,Zm9v", accountData.get("avatar"));
         assertFalse(accountData.containsKey("sessions"));
 
         List<Map<String, Object>> items = JSON.readValue(entries.get("collections/cse-items.json"),
@@ -194,6 +205,14 @@ class CseSiteExporterTest {
         assertEquals("2026-08-22T01:14:00Z", events.get(0).get("localDateTime"));
         assertEquals(ownerId.toHexString(), events.get(0).get("ownerId"));
         assertFalse(events.get(0).containsKey("owner"));
+        @SuppressWarnings("unchecked")
+        Map<String, Object> security = (Map<String, Object>) items.get(0).get("securityData");
+        @SuppressWarnings("unchecked")
+        Map<String, Object> access = (Map<String, Object>) security.get("accessSettings");
+        @SuppressWarnings("unchecked")
+        Map<String, Object> readRule = (Map<String, Object>) access.get("ACCESS_READ");
+        assertEquals(true, readRule.get("inherit"));
+        assertTrue(readRule.containsKey("roleIds"));
 
         List<Map<String, Object>> chunks = JSON.readValue(entries.get("collections/cse-datachunks.json"),
                 new TypeReference<>() {});
@@ -250,6 +269,8 @@ class CseSiteExporterTest {
         assertEquals(1, dumpedChunks.size());
         assertEquals(chunkId.toHexString(), dumpedChunks.get(0).get("id"));
         assertEquals("Zm9vYmFy", dumpedChunks.get(0).get("data"));
+        assertTrue(entries.containsKey("collections/cse-roles.json"));
+        assertTrue(entries.containsKey("collections/cse-role-matrix.json"));
     }
 
     @Test
@@ -318,6 +339,8 @@ class CseSiteExporterTest {
         assertEquals("[]", entries.get("collections/cse-accounts.json"));
         assertEquals("[]", entries.get("collections/cse-items.json"));
         assertEquals("[]", entries.get("collections/cse-datachunks.json"));
+        assertEquals("[]", entries.get("collections/cse-roles.json"));
+        assertEquals("[]", entries.get("collections/cse-role-matrix.json"));
     }
 
     @Test

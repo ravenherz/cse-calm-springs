@@ -4,23 +4,12 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title th:text="${htmlTitle}">Title</title>
-  <script id="script-cse-dist-quill"
-          th:src="@{/content-public/themes/__${stylesShell}__/js/quill.min.js}"
-          src="js/quill.min.js" type="text/javascript"></script>
-  <link rel="stylesheet" type="text/css"
-        th:href="@{/content-public/themes/__${stylesShell}__/css/quill.snow.css}"
-        href="css/quill.snow.css">
-  <script id="script-cse-dist-jquery" type="text/javascript"
-          th:src="@{/content-public/themes/__${stylesShell}__/js/jquery.min.js}"
-          src="js/jquery.min.js"></script>
   <meta name="cse-context" th:content="${cseContextPath}">
   <meta name="csrf-token" th:if="${_csrf != null}" th:content="${_csrf.token}">
-  <script id="script-cse-csrf" type="text/javascript"
-          th:src="@{/content-public/themes/__${stylesShell}__/js/cse-csrf.js(v=7)}"
-          src="js/cse-csrf.js?v=7"></script>
-  <script id="script-cse-dist-bootstrap" type="text/javascript"
-          th:src="@{/content-public/themes/__${stylesShell}__/js/bootstrap.min.js}"
-          src="js/bootstrap.min.js"></script>
+  <link rel="icon"
+        th:href="@{/content-public/cse-core/images/favicon.ico}"
+        href="/content-public/cse-core/images/favicon.ico"
+        type="image/x-icon"/>
   <link rel="stylesheet" type="text/css"
         th:href="@{/content-public/themes/__${stylesShell}__/css/bootstrap.min.css}"
         href="css/bootstrap.min.css"/>
@@ -39,10 +28,15 @@
   <link id="styles-cse-player" rel="stylesheet" type="text/css"
         th:href="@{/content-public/themes/__${stylesTheme}__/css/cse-player.css}"
         href="../../../static/content-public/themes/modern/css/cse-player.css"/>
-  <link rel="icon"
-        th:href="@{/content-public/cse-core/images/favicon.ico}"
-        href="/content-public/cse-core/images/favicon.ico"
-        type="image/x-icon"/>
+  <script id="script-cse-dist-jquery" type="text/javascript"
+          th:src="@{/content-public/themes/__${stylesShell}__/js/jquery.min.js}"
+          src="js/jquery.min.js"></script>
+  <script id="script-cse-csrf" type="text/javascript"
+          th:src="@{/content-public/themes/__${stylesShell}__/js/cse-csrf.js(v=7)}"
+          src="js/cse-csrf.js?v=7"></script>
+  <script id="script-cse-dist-bootstrap" type="text/javascript"
+          th:src="@{/content-public/themes/__${stylesShell}__/js/bootstrap.min.js}"
+          src="js/bootstrap.min.js"></script>
   <script id="script-cse-error" type="text/javascript"
           th:unless="${isNotError}"
           th:src="@{/content-public/themes/__${stylesShell}__/js/cse-error.js}"
@@ -328,5 +322,8 @@
 <script id="script-cse-player" type="text/javascript"
         th:src="@{/content-public/themes/__${stylesShell}__/js/cse-player.js}"
         src="js/cse-player.js"></script>
+<script id="script-cse-video-player" type="text/javascript"
+        th:src="@{/content-public/themes/__${stylesShell}__/js/cse-video-player.js}"
+        src="js/cse-video-player.js"></script>
 </body>
 </html>

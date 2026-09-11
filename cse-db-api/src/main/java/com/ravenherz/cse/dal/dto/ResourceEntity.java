@@ -27,7 +27,7 @@ public final class ResourceEntity extends BasicEntity {
 
     public ResourceEntity (ResourceData resourceData,
             AccountEntity creator) {
-        super("0.1.0", null, creator);
+        super(null, creator);
         this.resourceData = resourceData;
     }
 

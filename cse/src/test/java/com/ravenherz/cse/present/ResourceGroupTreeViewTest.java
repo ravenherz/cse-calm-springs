@@ -2,9 +2,12 @@ package com.ravenherz.cse.present;
 
 import com.ravenherz.cse.dal.dto.ResourceEntity;
 import com.ravenherz.cse.dal.dto.ResourceGroupEntity;
+import com.ravenherz.cse.dal.dto.basic.EntityAccessConstants;
 import com.ravenherz.cse.dal.dto.basic.ResourceData;
 import com.ravenherz.cse.dal.dto.basic.ResourceGroupData;
 import com.ravenherz.cse.dal.dto.basic.ResourceSizeHint;
+import com.ravenherz.cse.dal.dto.basic.SecurityData;
+import com.ravenherz.cse.dal.dto.basic.enums.SecurityLevel;
 import org.bson.types.ObjectId;
 import org.junit.jupiter.api.Test;
 
@@ -60,6 +63,8 @@ class ResourceGroupTreeViewTest {
         assertTrue(travelDto.canMove());
         assertTrue(travelDto.canDelete());
         assertFalse(travelDto.isLocked());
+        assertFalse(travelDto.isGuestDenied());
+        assertFalse(defaultDto.isGuestDenied());
         assertEquals("Iceland", ResourceGroupTreeView.find(tree, iceland.getId().toString()).getHumanReadableId());
         assertEquals("Unsorted", ResourceGroupTreeView.find(tree, "missing").getHumanReadableId());
         assertEquals("Unsorted", ResourceGroupTreeView.find(tree, "ungrouped").getHumanReadableId());
@@ -168,6 +173,23 @@ class ResourceGroupTreeViewTest {
         assertEquals(1, selected.getResources().size());
         assertTrue(tree.roots().get(0).getResources().isEmpty());
         assertEquals(1, tree.roots().get(0).getOwnFileCount());
+    }
+
+    @Test
+    void guestDeniedFollowsReadAclNotSystemLock() {
+        ResourceGroupEntity defaults = group("Default");
+        ResourceGroupEntity travel = group("Travel");
+        travel.setSecurityData(new SecurityData(EntityAccessConstants.forLevel(SecurityLevel.OPERATOR)));
+        ResourceGroupTreeView.Assembled tree = ResourceGroupTreeView.assembleStats(
+                List.of(defaults, travel), List.of());
+        ResourceGroupDisplayDTO defaultDto = byName(tree.roots(), "Unsorted");
+        ResourceGroupDisplayDTO travelDto = byName(tree.roots(), "Travel");
+        assertTrue(defaultDto.isLocked());
+        assertFalse(defaultDto.isGuestDenied());
+        assertFalse(travelDto.isLocked());
+        assertTrue(travelDto.isGuestDenied());
+        assertTrue(travelDto.canEditAccess());
+        assertFalse(defaultDto.canEditAccess());
     }
 
     private static ResourceGroupDisplayDTO byName(List<ResourceGroupDisplayDTO> groups, String name) {
