@@ -16,6 +16,7 @@ import com.ravenherz.cse.dal.dto.ThemeEntity;
 import com.ravenherz.cse.dal.dto.ItemEntity;
 import com.ravenherz.cse.dal.dto.PlaylistEntity;
 import com.ravenherz.cse.dal.dto.ResourceEntity;
+import com.ravenherz.cse.dal.dto.RoleEntity;
 import com.ravenherz.cse.dal.dto.SettingContextEntity;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.mapping.callback.EntityCallbacks;
@@ -186,6 +187,8 @@ public class DataProviderImpl implements DataProvider {
                 new Index().on("resourceData.pathProtected", Sort.Direction.ASC));
         ensureIndex(mongo, PlaylistEntity.class,
                 new Index().on("playlistId", Sort.Direction.ASC).unique());
+        ensureIndex(mongo, RoleEntity.class,
+                new Index().on("slug", Sort.Direction.ASC).unique());
     }
 
     private static void ensureIndex(MongoTemplate mongo, Class<?> type, Index index) {

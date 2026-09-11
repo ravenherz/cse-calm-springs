@@ -4,6 +4,7 @@ import com.ravenherz.cse.dal.dto.AccountEntity;
 import com.ravenherz.cse.dal.dto.basic.AccountData;
 import com.ravenherz.cse.dal.dto.basic.enums.SecurityLevel;
 import org.bson.types.ObjectId;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.security.core.GrantedAuthority;
 
@@ -16,20 +17,26 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class CseAuthoritiesTest {
 
-    @Test
-    void activeUserIsRoleUserOnly() {
-        Set<String> roles = roles(account(SecurityLevel.ACTIVE_USER));
-        assertEquals(Set.of(CseAuthorities.ROLE_USER), roles);
-        assertFalse(CseAuthorities.isAdmin(account(SecurityLevel.ACTIVE_USER)));
-        assertFalse(CseAuthorities.isAdmin(account(SecurityLevel.OPERATOR)));
-        assertFalse(CseAuthorities.isAdmin(account(SecurityLevel.MODERATOR)));
+    @AfterEach
+    void unbindCapabilities() {
+        AccessRuntime.bind(null);
     }
 
     @Test
-    void adminAndOwnerGetRoleAdmin() {
+    void fromAlwaysEmitsRoleUserOnly() {
+        assertEquals(Set.of(CseAuthorities.ROLE_USER), roles(account(SecurityLevel.ACTIVE_USER)));
+        assertEquals(Set.of(CseAuthorities.ROLE_USER), roles(account(SecurityLevel.ADMIN)));
+        assertEquals(Set.of(CseAuthorities.ROLE_USER), roles(account(SecurityLevel.OWNER)));
+    }
+
+    @Test
+    void isAdminFallsBackToLegacyRankWhenCatalogUnbound() {
+        AccessRuntime.bind(null);
+        assertFalse(CseAuthorities.isAdmin(account(SecurityLevel.ACTIVE_USER)));
+        assertFalse(CseAuthorities.isAdmin(account(SecurityLevel.OPERATOR)));
+        assertFalse(CseAuthorities.isAdmin(account(SecurityLevel.MODERATOR)));
         assertTrue(CseAuthorities.isAdmin(account(SecurityLevel.ADMIN)));
         assertTrue(CseAuthorities.isAdmin(account(SecurityLevel.OWNER)));
-        assertTrue(roles(account(SecurityLevel.ADMIN)).contains(CseAuthorities.ROLE_ADMIN));
     }
 
     @Test

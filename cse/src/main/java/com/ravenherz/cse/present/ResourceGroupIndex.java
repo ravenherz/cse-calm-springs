@@ -17,7 +17,6 @@ import com.ravenherz.cse.dal.dto.basic.AlbumData;
 import com.ravenherz.cse.dal.dto.basic.PageData;
 import com.ravenherz.cse.dal.dto.basic.PlaylistData;
 import com.ravenherz.cse.dal.dto.basic.PlaylistTrack;
-import com.ravenherz.cse.dal.dto.basic.ResourcePreviewSource;
 import com.ravenherz.cse.dal.dto.basic.ResourceSizeHint;
 import com.ravenherz.cse.util.io.CseDisk;
 import com.ravenherz.cse.util.staticapps.StaticAppDeployer;
@@ -352,7 +351,7 @@ public class ResourceGroupIndex {
     private void rebuildLocked() {
         List<ResourceGroupEntity> groups = groupService.getAllGroups();
         List<ResourceSizeHint> hints = resourceService.listSizeHints();
-        Map<String, byte[]> thumbs = resourceThumbs(previewSources());
+        Map<String, byte[]> thumbs = resourceThumbs();
         ResourceGroupTreeView.Assembled tree = ResourceGroupTreeView.assembleStats(
                 groups == null ? List.of() : groups, hints);
         ResourceGroupTreeView.applyPreviews(tree, thumbs.keySet());
@@ -451,7 +450,8 @@ public class ResourceGroupIndex {
                             : playlist.getPlaylistId());
             out.add(new ResourceTreeFile(EditorTree.playlistLeafId(playlist), name,
                     "/editor/playlist/edit?id=" + playlist.getId(), ResourceTreeFile.Mark.PLAYLIST)
-                    .withKey(playlist.getId().toString()));
+                    .withKey(playlist.getId().toString())
+                    .withEmbedId(playlist.getPlaylistId()));
         }
         return out;
     }
@@ -490,25 +490,17 @@ public class ResourceGroupIndex {
         return out;
     }
 
-    private List<ResourcePreviewSource> previewSources() {
-        List<ResourcePreviewSource> sources = resourceService.listPreviewSources();
-        return sources == null ? List.of() : sources;
-    }
-
-    private static Map<String, byte[]> resourceThumbs(List<ResourcePreviewSource> sources) {
+    private Map<String, byte[]> resourceThumbs() {
         Map<String, byte[]> out = new HashMap<>();
-        if (sources == null) {
-            return out;
-        }
-        for (ResourcePreviewSource source : sources) {
+        resourceService.forEachPreviewSource(source -> {
             if (source == null || source.id() == null) {
-                continue;
+                return;
             }
             byte[] jpeg = TreePreviews.jpeg(source.bytes());
             if (jpeg != null) {
                 out.put(source.id().toString(), jpeg);
             }
-        }
+        });
         return out;
     }
 

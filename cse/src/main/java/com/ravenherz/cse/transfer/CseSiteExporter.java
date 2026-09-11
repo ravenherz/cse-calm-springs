@@ -21,6 +21,8 @@ import com.ravenherz.cse.dal.dto.ItemEntity;
 import com.ravenherz.cse.dal.dto.PlaylistEntity;
 import com.ravenherz.cse.dal.dto.ResourceEntity;
 import com.ravenherz.cse.dal.dto.ResourceGroupEntity;
+import com.ravenherz.cse.dal.dto.RoleEntity;
+import com.ravenherz.cse.dal.dto.RoleMatrixDocument;
 import com.ravenherz.cse.dal.dto.SettingContextEntity;
 import com.ravenherz.cse.dal.dto.ThemeEntity;
 import com.ravenherz.cse.dal.dao.impl.AppStoreServiceImpl;
@@ -90,7 +92,8 @@ public class CseSiteExporter {
         List<AccountEntity> accounts = typed(services.getAccountService(), AccountEntity.class);
         List<CategoryEntity> categories = typed(services.getCategoryService(), CategoryEntity.class);
         List<ResourceGroupEntity> groups = typed(services.getResourceGroupService(), ResourceGroupEntity.class);
-        List<ResourceEntity> resources = typed(services.getResourceService(), ResourceEntity.class);
+        List<ResourceEntity> resources = services.getResourceService() == null
+                ? List.of() : services.getResourceService().listWithContent();
         List<ItemEntity> items = typed(services.getItemService(), ItemEntity.class);
         List<PlaylistEntity> playlists = typed(services.getPlaylistService(), PlaylistEntity.class);
         List<AppEntity> apps = typed(services.getAppService(), AppEntity.class);
@@ -103,6 +106,10 @@ public class CseSiteExporter {
         List<DataChunkEntity> chunks = loadChunks(services.getResourceService(), chunkIds);
 
         Map<String, List<Map<String, Object>>> collections = new LinkedHashMap<>();
+        collections.put(MongoCollections.DATABASE_ROLES, mapAll(roles(services), CseSiteDocuments::role));
+        RoleMatrixDocument matrix = matrix(services);
+        collections.put(MongoCollections.DATABASE_ROLE_MATRIX,
+                matrix == null ? List.of() : List.of(CseSiteDocuments.roleMatrix(matrix)));
         collections.put(MongoCollections.DATABASE_ACCOUNTS, mapAll(accounts, CseSiteDocuments::account));
         collections.put(MongoCollections.DATABASE_CATEGORIES, mapAll(categories, CseSiteDocuments::category));
         collections.put(MongoCollections.DATABASE_RESOURCE_GROUPS, mapAll(groups, CseSiteDocuments::resourceGroup));
@@ -121,6 +128,10 @@ public class CseSiteExporter {
         Map<String, Long> counts = new LinkedHashMap<>();
         for (String name : CseSiteFormat.ZIP_WRITE_ORDER) {
             long count = switch (name) {
+                case MongoCollections.DATABASE_ROLES -> writeMapped(zip, name,
+                        mongo.findAll(RoleEntity.class), CseSiteDocuments::role);
+                case MongoCollections.DATABASE_ROLE_MATRIX -> writeMapped(zip, name,
+                        mongo.findAll(RoleMatrixDocument.class), CseSiteDocuments::roleMatrix);
                 case MongoCollections.DATABASE_ACCOUNTS -> writeMapped(zip, name,
                         mongo.findAll(AccountEntity.class), CseSiteDocuments::account);
                 case MongoCollections.DATABASE_CATEGORIES -> writeMapped(zip, name,
@@ -347,12 +358,30 @@ public class CseSiteExporter {
 
     private static <T> List<Map<String, Object>> mapAll(List<T> entities, Function<T, Map<String, Object>> mapper) {
         List<Map<String, Object>> out = new ArrayList<>();
+        if (entities == null) {
+            return out;
+        }
         for (T entity : entities) {
             if (entity != null) {
                 out.add(mapper.apply(entity));
             }
         }
         return out;
+    }
+
+    private static List<RoleEntity> roles(ServiceProvider services) {
+        if (services == null || services.getRoleService() == null) {
+            return List.of();
+        }
+        List<RoleEntity> all = services.getRoleService().getAll();
+        return all == null ? List.of() : all;
+    }
+
+    private static RoleMatrixDocument matrix(ServiceProvider services) {
+        if (services == null || services.getRoleMatrixService() == null) {
+            return null;
+        }
+        return services.getRoleMatrixService().get();
     }
 
     /**

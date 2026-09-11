@@ -42,10 +42,16 @@ class InstallControllerMvcTest {
     @MockitoBean
     private AuthSupport authSupport;
 
+    @MockitoBean
+    private com.ravenherz.cse.security.CapabilityService capabilityService;
+
     @BeforeEach
     void allowInstallPosts() {
         when(authRateLimiter.allow(any())).thenReturn(true);
         when(authSupport.clientIp(any())).thenReturn("127.0.0.1");
+        when(capabilityService.allows(any(), any())).thenReturn(true);
+        when(capabilityService.allowsApp(any(), any())).thenReturn(true);
+        when(capabilityService.canOpenEditor(any())).thenReturn(true);
     }
 
     @Test

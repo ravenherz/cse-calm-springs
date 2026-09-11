@@ -4,20 +4,87 @@
 <body>
   <div class="editor-layout">
     <aside class="editor-sidebar" th:replace="~{fragments/shared :: shared-editor-sidebar}"></aside>
-    <main class="editor-main">
+    <main class="editor-main accounts-page">
+      <header class="page-header">
+        <h1 class="page-title">Accounts</h1>
+        <form class="account-search" method="get" th:action="@{/editor/accounts}">
+          <label class="visually-hidden" for="account-q">Search login</label>
+          <input type="search" id="account-q" name="q" th:value="${q}" placeholder="Login" autocomplete="off"/>
+          <button type="submit" class="btn">Search</button>
+        </form>
+      </header>
+
+      <div th:if="${transferred}" class="success-message">Ownership transferred.</div>
+      <div th:if="${saved and !transferred}" class="success-message">Role saved.</div>
+      <div th:if="${error}" class="error-message" th:text="${error}">Error</div>
+
       <div th:if="${accounts.empty}" class="empty-message">
-        No accounts found.
+        <span th:if="${q == null or q.isEmpty()}">No accounts found.</span>
+        <span th:unless="${q == null or q.isEmpty()}">No logins match that search.</span>
       </div>
 
-      <ul class="item-list" th:unless="${accounts.empty}">
-        <li th:each="acc : ${accounts}">
-          <div class="item-info">
-            <div class="item-title" th:text="${acc.login} ?: '[null]'">Login</div>
+      <ul class="account-grid" th:unless="${accounts.empty}">
+        <li class="account-tile"
+            th:each="acc : ${accounts}"
+            th:classappend="${acc.self} ? ' is-self'">
+          <button type="button" class="account-face" aria-haspopup="menu" aria-expanded="false"
+                  th:aria-label="${acc.login} ?: 'Account'">
+            <img class="account-avatar" th:if="${acc.avatar != null}" th:src="${acc.avatar}" alt=""/>
+            <span class="account-avatar account-avatar-fallback" th:unless="${acc.avatar != null}"
+                  th:text="${acc.initial}">?</span>
+          </button>
+          <span class="account-login" th:text="${acc.login} ?: '[null]'">login</span>
+
+          <div class="account-menu" role="menu" hidden>
+            <button type="button" class="account-menu-item" role="menuitem" data-account-action="details">Details</button>
+            <div class="account-menu-flyout" th:if="${acc.canEdit and acc.assignableRoles != null and !acc.assignableRoles.empty}">
+              <button type="button" class="account-menu-item" role="menuitem" aria-haspopup="menu"
+                      data-account-action="submenu">Assign role</button>
+              <form class="account-submenu" th:action="@{/editor/roles/save}" method="post" hidden>
+                <th:block th:replace="~{fragments/csrf :: field}"></th:block>
+                <input type="hidden" name="id" th:value="${acc.id}"/>
+                <button type="submit" class="account-menu-item" role="menuitem" name="roleId"
+                        th:each="opt : ${acc.assignableRoles}"
+                        th:value="${opt.id}"
+                        th:text="${opt.name}"
+                        th:classappend="${opt.id == acc.roleId} ? ' is-current'">Role</button>
+              </form>
+            </div>
+            <div class="account-menu-flyout" th:if="${canTransfer and acc.owner and !transferTargets.empty}">
+              <button type="button" class="account-menu-item" role="menuitem" aria-haspopup="menu"
+                      data-account-action="submenu">Transfer ownership</button>
+              <form class="account-submenu role-transfer" th:action="@{/editor/roles/transfer}" method="post" hidden>
+                <th:block th:replace="~{fragments/csrf :: field}"></th:block>
+                <button type="submit" class="account-menu-item" role="menuitem" name="id"
+                        th:each="t : ${transferTargets}"
+                        th:value="${t.id}"
+                        th:text="${t.login + ' · ' + t.roleName}">account</button>
+              </form>
+            </div>
+            <p class="account-menu-hint" th:if="${canTransfer and acc.owner and transferTargets.empty}">Need another account</p>
+            <p class="account-menu-hint" th:if="${!canTransfer and acc.owner}">Owner</p>
+            <p class="account-menu-hint" th:if="${acc.lockHint != null and !acc.canEdit and !acc.owner}"
+               th:text="${acc.lockHint}">Locked</p>
+            <form th:unless="${acc.owner}" th:action="@{/editor/account/delete}" method="post" class="account-menu-danger">
+              <th:block th:replace="~{fragments/csrf :: field}"></th:block>
+              <input type="hidden" name="id" th:value="${acc.id}"/>
+              <button type="submit" class="account-menu-item is-danger" role="menuitem"
+                      onclick="return confirm('Delete this account?')">Delete</button>
+            </form>
+          </div>
+
+          <dialog class="account-details">
+            <form method="dialog" class="account-details-head">
+              <h2 class="account-details-title" th:text="${acc.login} ?: '[null]'">Login</h2>
+              <button type="submit" class="btn">Close</button>
+            </form>
             <dl class="prop-grid">
+              <dt>Shown name</dt>
+              <dd th:text="${acc.shownName} ?: '—'">name</dd>
               <dt>Email</dt>
               <dd th:text="${acc.emailAddress} ?: '—'">email</dd>
-              <dt>Level</dt>
-              <dd th:text="${acc.level} ?: '—'">level</dd>
+              <dt>Role</dt>
+              <dd th:text="${acc.roleName} ?: '—'">role</dd>
               <dt>Loginable</dt>
               <dd th:text="${acc.loginable} ? 'Yes' : 'No'">Yes</dd>
               <dt>Sessions</dt>
@@ -41,15 +108,109 @@
               <dt>ID</dt>
               <dd th:text="${acc.id}">id</dd>
             </dl>
-          </div>
-          <form th:unless="${acc.level == 'OWNER'}" th:action="@{/editor/account/delete}" method="post" class="item-form">
-            <th:block th:replace="~{fragments/csrf :: field}"></th:block>
-            <input type="hidden" name="id" th:value="${acc.id}"/>
-            <button type="submit" class="delete-btn" onclick="return confirm('Delete this account?')">Delete</button>
-          </form>
+          </dialog>
         </li>
       </ul>
     </main>
   </div>
+  <script>
+    (function () {
+      var openMenu = null;
+
+      function hideMenu(menu) {
+        if (!menu) return;
+        menu.hidden = true;
+        menu.querySelectorAll('.account-submenu').forEach(function (sub) { sub.hidden = true; });
+        var face = menu.parentElement && menu.parentElement.querySelector('.account-face');
+        if (face) face.setAttribute('aria-expanded', 'false');
+      }
+
+      function closeAll() {
+        if (openMenu) hideMenu(openMenu);
+        openMenu = null;
+      }
+
+      function place(menu, x, y) {
+        menu.style.left = '0px';
+        menu.style.top = '0px';
+        menu.hidden = false;
+        var w = menu.offsetWidth;
+        var h = menu.offsetHeight;
+        var left = Math.min(x, window.innerWidth - w - 8);
+        var top = Math.min(y, window.innerHeight - h - 8);
+        menu.style.left = Math.max(8, left) + 'px';
+        menu.style.top = Math.max(8, top) + 'px';
+      }
+
+      function openAt(tile, x, y) {
+        var menu = tile.querySelector('.account-menu');
+        if (!menu) return;
+        if (openMenu && openMenu !== menu) hideMenu(openMenu);
+        place(menu, x, y);
+        openMenu = menu;
+        var face = tile.querySelector('.account-face');
+        if (face) face.setAttribute('aria-expanded', 'true');
+      }
+
+      document.querySelectorAll('.account-tile').forEach(function (tile) {
+        var face = tile.querySelector('.account-face');
+        var menu = tile.querySelector('.account-menu');
+        if (!face || !menu) return;
+
+        face.addEventListener('contextmenu', function (event) {
+          event.preventDefault();
+          openAt(tile, event.clientX, event.clientY);
+        });
+        face.addEventListener('click', function (event) {
+          event.preventDefault();
+          var box = face.getBoundingClientRect();
+          openAt(tile, box.left, box.bottom + 6);
+        });
+
+        menu.addEventListener('click', function (event) {
+          var item = event.target.closest('[data-account-action]');
+          if (!item || !menu.contains(item)) return;
+          var action = item.getAttribute('data-account-action');
+          if (action === 'details') {
+            event.preventDefault();
+            var dialog = tile.querySelector('.account-details');
+            closeAll();
+            if (dialog && dialog.showModal) dialog.showModal();
+            return;
+          }
+          if (action === 'submenu') {
+            event.preventDefault();
+            event.stopPropagation();
+            var flyout = item.parentElement;
+            var sub = flyout && flyout.querySelector('.account-submenu');
+            if (!sub) return;
+            var opening = sub.hidden;
+            menu.querySelectorAll('.account-submenu').forEach(function (other) { other.hidden = true; });
+            sub.hidden = !opening;
+          }
+        });
+      });
+
+      document.querySelectorAll('.role-transfer').forEach(function (form) {
+        form.addEventListener('submit', function (event) {
+          var submitter = event.submitter;
+          var label = submitter && submitter.textContent ? submitter.textContent.trim() : 'this account';
+          if (!confirm('Transfer ownership to ' + label + '? You will become Admin.')) {
+            event.preventDefault();
+          }
+        });
+      });
+
+      document.addEventListener('keydown', function (event) {
+        if (event.key === 'Escape') closeAll();
+      });
+      document.addEventListener('pointerdown', function (event) {
+        if (openMenu && !openMenu.contains(event.target)
+            && !(event.target.closest && event.target.closest('.account-face'))) {
+          closeAll();
+        }
+      });
+    })();
+  </script>
 </body>
 </html>

@@ -4,8 +4,12 @@ import com.ravenherz.cse.util.io.CseDisk;
 import com.ravenherz.cse.util.io.CseDiskBinder;
 import com.ravenherz.cse.util.staticapps.StaticAppDeployer;
 import com.ravenherz.cse.util.themes.ThemeDiskResources;
+import com.ravenherz.cse.security.EditorSurfaceInterceptor;
+import com.ravenherz.cse.controller.AuthSupport;
+import com.ravenherz.cse.security.CapabilityService;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.web.servlet.config.annotation.EnableWebMvc;
+import org.springframework.web.servlet.config.annotation.InterceptorRegistry;
 import org.springframework.web.servlet.config.annotation.ResourceHandlerRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
@@ -16,8 +20,15 @@ import java.io.IOException;
 @EnableWebMvc
 public class MvcConfig implements WebMvcConfigurer {
 
-    public MvcConfig(CseDiskBinder cseDiskBinder) {
-        // Bind instance disk before /content-cache/** is mapped.
+    private final EditorSurfaceInterceptor editorSurfaceInterceptor;
+
+    public MvcConfig(CseDiskBinder cseDiskBinder, AuthSupport authSupport, CapabilityService capabilityService) {
+        this.editorSurfaceInterceptor = new EditorSurfaceInterceptor(authSupport, capabilityService);
+    }
+
+    @Override
+    public void addInterceptors(InterceptorRegistry registry) {
+        registry.addInterceptor(editorSurfaceInterceptor).addPathPatterns("/editor", "/editor/**");
     }
 
     @Override

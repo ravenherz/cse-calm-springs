@@ -288,6 +288,10 @@ public final class EditorTree {
             node.setId(CATEGORY_PREFIX + id);
             node.setParentId(CATEGORIES_ID);
             node.setHumanReadableId(name);
+            CategoryData data = category.getCategoryData();
+            if (data != null && data.getItemName() != null && !data.getItemName().isBlank()) {
+                node.setCategoryItemName(data.getItemName());
+            }
             node.setPathLabel("Content / Categories / " + name);
             node.setDepth(3);
             node.setHref("/editor/resources?group=" + CATEGORY_PREFIX + id);

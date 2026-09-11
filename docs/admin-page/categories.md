@@ -1,4 +1,4 @@
-git i# Categories
+# Categories
 
 Categories are the sections on the homepage: nav labels, how many items show on the first screen, and whether the section is live. Pages and albums hang under a category in the tree.
 
@@ -37,6 +37,16 @@ Right-click the category in the tree → **Edit**, or use **Edit** from the tile
 ## Pages under a category
 
 Right-click the category → **New page** or **New album**, or open the category pane and use **+**. See [Pages](pages.md) and [Albums](albums.md).
+
+## Embed
+
+In a page body:
+
+```html
+<cse-category id="your-category-id"></cse-category>
+```
+
+The id is the **Category Name (ID)**. The public site shows a card (title, description, page count) that links to `/?category=`. You can also drag the category from the Catalog tree into the page textarea.
 
 ## Delete
 

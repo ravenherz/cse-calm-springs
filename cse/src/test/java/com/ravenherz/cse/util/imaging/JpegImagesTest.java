@@ -40,4 +40,17 @@ class JpegImagesTest {
         assertTrue(center.getRed() < 80, center.toString());
         assertTrue(center.getBlue() < 80, center.toString());
     }
+
+    @Test
+    void squareThumbSubsampleStillFills64() throws IOException {
+        BufferedImage src = new BufferedImage(320, 240, BufferedImage.TYPE_INT_RGB);
+        Graphics2D graphics = src.createGraphics();
+        graphics.setColor(Color.ORANGE);
+        graphics.fillRect(0, 0, 320, 240);
+        graphics.dispose();
+        JpegImages.Encoded thumb = JpegImages.squareThumb(JpegImages.encode(src, 0.9f), 64, 0.8f);
+        assertEquals(64, thumb.width());
+        assertEquals(64, thumb.height());
+        assertTrue(thumb.bytes().length > 0);
+    }
 }

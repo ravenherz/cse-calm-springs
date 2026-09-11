@@ -2,16 +2,17 @@ package com.ravenherz.cse.present;
 
 import com.ravenherz.cse.dal.dto.ResourceEntity;
 import com.ravenherz.cse.dal.dto.basic.ResourceSizeHint;
+import com.ravenherz.cse.dal.dto.basic.enums.ResourceType;
 
 public record ResourceTreeFile(String id, String name, String href, Mark mark, boolean preview,
-        String key, boolean canDelete, boolean canActivate) {
+        String key, boolean canDelete, boolean canActivate, String embedKey) {
 
     public enum Mark {
         NONE, PAGE, ALBUM, PLAYLIST, APP, THEME
     }
 
     public ResourceTreeFile(String id, String name, String href, Mark mark, boolean preview) {
-        this(id, name, href, mark, preview, null, defaultCanDelete(mark, href), false);
+        this(id, name, href, mark, preview, null, defaultCanDelete(mark, href), false, null);
     }
 
     public ResourceTreeFile(String id, String name, String href, Mark mark) {
@@ -28,21 +29,25 @@ public record ResourceTreeFile(String id, String name, String href, Mark mark, b
 
     public ResourceTreeFile withPreview(boolean preview) {
         return this.preview == preview ? this
-                : new ResourceTreeFile(id, name, href, mark, preview, key, canDelete, canActivate);
+                : new ResourceTreeFile(id, name, href, mark, preview, key, canDelete, canActivate, embedKey);
     }
 
     public ResourceTreeFile withKey(String key) {
-        return new ResourceTreeFile(id, name, href, mark, preview, key, canDelete, canActivate);
+        return new ResourceTreeFile(id, name, href, mark, preview, key, canDelete, canActivate, embedKey);
     }
 
     public ResourceTreeFile withDelete(boolean canDelete) {
         return this.canDelete == canDelete ? this
-                : new ResourceTreeFile(id, name, href, mark, preview, key, canDelete, canActivate);
+                : new ResourceTreeFile(id, name, href, mark, preview, key, canDelete, canActivate, embedKey);
     }
 
     public ResourceTreeFile withActivate(boolean canActivate) {
         return this.canActivate == canActivate ? this
-                : new ResourceTreeFile(id, name, href, mark, preview, key, canDelete, canActivate);
+                : new ResourceTreeFile(id, name, href, mark, preview, key, canDelete, canActivate, embedKey);
+    }
+
+    public ResourceTreeFile withEmbedId(String embedKey) {
+        return new ResourceTreeFile(id, name, href, mark, preview, key, canDelete, canActivate, embedKey);
     }
 
     public boolean isPage() {
@@ -73,6 +78,10 @@ public record ResourceTreeFile(String id, String name, String href, Mark mark, b
         return mark == Mark.NONE && (href == null || href.isBlank());
     }
 
+    public boolean isImageFile() {
+        return isResourceFile() && name != null && ResourceType.getByFileName(name) == ResourceType.IMAGE;
+    }
+
     public String kind() {
         if (isAlbum()) {
             return "album";
@@ -90,6 +99,41 @@ public record ResourceTreeFile(String id, String name, String href, Mark mark, b
             return "theme";
         }
         return "resource";
+    }
+
+    public String embedTag() {
+        if (isAlbum() || isContentPage()) {
+            return "cse-page";
+        }
+        if (isPlaylist()) {
+            return "cse-playlist";
+        }
+        if (isApp()) {
+            return "cse-app";
+        }
+        if (isImageFile()) {
+            return "cse-image";
+        }
+        return "";
+    }
+
+    public String embedId() {
+        if (embedKey != null && !embedKey.isBlank()) {
+            return embedKey.trim();
+        }
+        if (isContentPage() || isAlbum() || isApp()) {
+            return key == null ? "" : key.trim();
+        }
+        if (isImageFile()) {
+            return id == null ? "" : id.trim();
+        }
+        return "";
+    }
+
+    public boolean isEmbeddable() {
+        String tag = embedTag();
+        String embedId = embedId();
+        return tag != null && !tag.isBlank() && embedId != null && !embedId.isBlank();
     }
 
     public boolean canEdit() {
@@ -131,7 +175,7 @@ public record ResourceTreeFile(String id, String name, String href, Mark mark, b
         if (name == null || name.isBlank()) {
             name = resource.getId().toString();
         }
-        return new ResourceTreeFile(resource.getId().toString(), name, null, Mark.NONE, false, path, true, false);
+        return new ResourceTreeFile(resource.getId().toString(), name, null, Mark.NONE, false, path, true, false, null);
     }
 
     public static ResourceTreeFile from(ResourceSizeHint hint) {
@@ -142,6 +186,6 @@ public record ResourceTreeFile(String id, String name, String href, Mark mark, b
         if (name == null || name.isBlank()) {
             name = hint.id().toString();
         }
-        return new ResourceTreeFile(hint.id().toString(), name, null, Mark.NONE, false, hint.pathPublic(), true, false);
+        return new ResourceTreeFile(hint.id().toString(), name, null, Mark.NONE, false, hint.pathPublic(), true, false, null);
     }
 }

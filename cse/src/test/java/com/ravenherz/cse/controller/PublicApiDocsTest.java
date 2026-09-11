@@ -17,6 +17,7 @@ class PublicApiDocsTest {
         assertTrue(paths.contains("/account/logout"));
         assertTrue(paths.contains("/account/register"));
         assertTrue(paths.contains("/account/activate"));
+        assertTrue(paths.contains("/account/me"));
         assertTrue(paths.contains("/rest/forms/render"));
         assertTrue(paths.contains("/rest/markdown/render"));
         assertTrue(paths.contains("/rest/error"));

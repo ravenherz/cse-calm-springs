@@ -1,5 +1,5 @@
 /**
- * CSRF for jQuery POSTs and HTML forms. Auth cookies stay HttpOnly; this reads XSRF-TOKEN only.
+ * CSRF for jQuery POSTs, raw XHR, and HTML forms. Auth cookies stay HttpOnly; this reads XSRF-TOKEN only.
  * Public HTML ids are unchanged. Native form POST stays a top-level navigation (SameSite=Lax).
  */
 (function (window, document) {
@@ -133,4 +133,45 @@
         }
         ensureCsrfOnForm(form);
     }, true);
+
+    function applyCsrfToXhr(xhr) {
+        if (!xhr || xhr._cseCsrfApplied) {
+            return;
+        }
+        ensureXsrfCookie();
+        var token = cseCsrfToken() || pageCsrfToken();
+        if (!token) {
+            return;
+        }
+        try {
+            xhr.setRequestHeader('X-XSRF-TOKEN', token);
+            xhr._cseCsrfApplied = true;
+        } catch (e) {
+        }
+    }
+
+    window.csePrepareCsrf = function (xhr, form) {
+        if (form) {
+            ensureCsrfOnForm(form);
+        } else {
+            ensureXsrfCookie();
+        }
+        applyCsrfToXhr(xhr);
+        return cseCsrfToken() || pageCsrfToken();
+    };
+
+    if (window.XMLHttpRequest && window.XMLHttpRequest.prototype) {
+        var xhrOpen = window.XMLHttpRequest.prototype.open;
+        window.XMLHttpRequest.prototype.open = function (method) {
+            this._cseXhrMethod = method;
+            return xhrOpen.apply(this, arguments);
+        };
+        var xhrSend = window.XMLHttpRequest.prototype.send;
+        window.XMLHttpRequest.prototype.send = function () {
+            if (!isSafeMethod(this._cseXhrMethod)) {
+                applyCsrfToXhr(this);
+            }
+            return xhrSend.apply(this, arguments);
+        };
+    }
 })(window, document);

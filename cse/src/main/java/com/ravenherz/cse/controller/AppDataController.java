@@ -4,6 +4,7 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.ravenherz.cse.dal.dao.AppStoreService;
 import com.ravenherz.cse.dal.dto.AccountEntity;
 import com.ravenherz.cse.dal.dto.AppEntity;
+import com.ravenherz.cse.dal.dto.basic.AppStoreSettings;
 import com.ravenherz.cse.store.AppStoreAccess;
 import com.ravenherz.cse.store.AppStoreAcl;
 import com.ravenherz.cse.store.AppStoreDocument;
@@ -59,8 +60,12 @@ public class AppDataController {
             AccountEntity accessor = authSupport.getAccessor(request, response);
             Map<String, Object> body = new LinkedHashMap<>();
             body.put("slug", app.getAppData().getSlug());
+            var store = app.getAppData().storeSettings();
             body.put("storeEnabled", true);
-            body.put("storeOpen", app.getAppData().isStoreOpen());
+            body.put("storeOpen", store.isSchemaOpen());
+            body.put("maxDataBytes", store.resolvedMaxDataBytes());
+            body.put("maxDocs", store.resolvedMaxDocs());
+            body.put("maxBytes", store.resolvedMaxBytes());
             body.put("admin", AppStoreAcl.isSiteAdmin(accessor));
             List<Map<String, Object>> tables = new ArrayList<>();
             for (AppStoreTableSpec spec : app.getAppData().getStoreTables()) {
@@ -107,13 +112,27 @@ public class AppDataController {
                 throw deny(accessor, "Not allowed");
             }
             Map<String, Object> json = parseObject(body);
-            boolean enabled = bool(json.get("storeEnabled"), appStores.isStoreEnabled(slug));
-            boolean open = bool(json.get("storeOpen"), appStores.requireApp(slug).getAppData().isStoreOpen());
-            appStores.setGrant(slug, enabled, open);
+            AppEntity app = appStores.requireApp(slug);
+            AppStoreSettings settings = AppStoreSettings.copyOf(app.getAppData().storeSettings());
+            settings.setEnabled(bool(json.get("storeEnabled"), settings.isEnabled()));
+            settings.setSchemaOpen(bool(json.get("storeOpen"), settings.isSchemaOpen()));
+            if (json.get("maxDataBytes") instanceof Number dataBytes) {
+                settings.setMaxDataBytes(dataBytes.intValue());
+            }
+            if (json.get("maxDocs") instanceof Number docs) {
+                settings.setMaxDocs(docs.intValue());
+            }
+            if (json.get("maxBytes") instanceof Number bytes) {
+                settings.setMaxBytes(bytes.longValue());
+            }
+            appStores.updateStoreSettings(slug, settings);
             return ResponseEntity.ok(Map.of(
                     "status", 200,
-                    "storeEnabled", enabled,
-                    "storeOpen", open));
+                    "storeEnabled", settings.isEnabled(),
+                    "storeOpen", settings.isSchemaOpen(),
+                    "maxDataBytes", settings.resolvedMaxDataBytes(),
+                    "maxDocs", settings.resolvedMaxDocs(),
+                    "maxBytes", settings.resolvedMaxBytes()));
         });
     }
 

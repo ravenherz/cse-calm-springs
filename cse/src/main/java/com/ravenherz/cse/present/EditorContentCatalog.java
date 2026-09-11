@@ -158,6 +158,11 @@ public final class EditorContentCatalog {
         dto.setProductLogo(deployer != null && deployer.hasValidProductLogo(app.getAppData().getSlug()));
         dto.setStoreEnabled(app.getAppData().isStoreEnabled());
         dto.setStoreOpen(app.getAppData().isStoreOpen());
+        dto.setStoreRequested(app.getAppData().requestsStore());
+        var store = app.getAppData().storeSettings();
+        dto.setStoreMaxDataKb(store.maxDataKb());
+        dto.setStoreMaxDocs(store.resolvedMaxDocs());
+        dto.setStoreMaxBytesMb(store.maxBytesMb());
         return dto;
     }
 }

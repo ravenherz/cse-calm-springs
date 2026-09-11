@@ -66,6 +66,15 @@ class EditorTreeTest {
         assertTrue(shotsNode.canEditCategory());
         assertEquals("/editor/category/edit?id=" + shots.getId(), shotsNode.categoryEditPath());
         assertEquals(shots.getId().toString(), shotsNode.categoryObjectId());
+        assertEquals("shots", shotsNode.getCategoryItemName());
+        assertEquals("cse-category", shotsNode.embedTag());
+        assertEquals("shots", shotsNode.embedId());
+        assertTrue(shotsNode.isEmbeddable());
+        assertEquals("cse-page", shotsNode.getTreeFiles().get(0).embedTag());
+        assertEquals("aurora", shotsNode.getTreeFiles().get(0).embedId());
+        assertTrue(shotsNode.getTreeFiles().get(0).isEmbeddable());
+        assertEquals("cse-page", cats.getTreeFiles().get(0).embedTag());
+        assertEquals("home", cats.getTreeFiles().get(0).embedId());
         assertFalse(cats.canEditCategory());
         assertFalse(shotsNode.isLocked());
         assertFalse(shotsNode.canCreateChild());

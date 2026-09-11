@@ -17,7 +17,7 @@ Right-click a category → **New album**. (The gold **+** on the category pane i
 | **Title** / **Header** / **Sub Header** | Same idea as a page. |
 | **Resource group** | Required. The media folder whose images become the gallery. |
 | **Tags** | Comma-separated. |
-| **Caption (Markdown/HTML)** | Text with the gallery. |
+| **Caption (Markdown/HTML)** | Text with the gallery. Same embed tags as a [page](pages.md) body. Link to this album with `<cse-page id="album-url-name">`. |
 
 **Create album** publishes the gallery. Put photos in the folder first (see [Files](files.md)); an empty group makes an empty album.
 

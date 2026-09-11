@@ -1,3 +1,50 @@
+.load-screen {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background:
+    radial-gradient(ellipse 90% 50% at 50% -20%, #1c1810 0%, transparent 55%),
+    var(--bg, #0b0c0f);
+}
+
+.load-screen[hidden] {
+  display: none;
+}
+
+.load-spinner {
+  width: 2rem;
+  height: 2rem;
+  box-sizing: border-box;
+  border: 2px solid var(--border-default, #23262f);
+  border-top-color: var(--accent, #e0b15a);
+  border-radius: 50%;
+  animation: load-spin 0.7s linear infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .load-spinner {
+    animation: load-pulse 1.2s ease-in-out infinite;
+  }
+}
+
+@keyframes load-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes load-pulse {
+  0%, 100% {
+    opacity: 0.35;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
 .login-main {
   max-width: 28rem;
 }
@@ -25,4 +72,70 @@
   margin: 0 0 16px;
   color: var(--text-primary);
   font-size: 1rem;
+}
+
+.login-identity {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 8px;
+}
+
+.login-identity .login-welcome {
+  margin: 0;
+}
+
+.login-avatar {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 1px solid var(--border-default, #23262f);
+  background: var(--bg-raised, #12141a);
+  display: block;
+}
+
+.login-avatar[hidden],
+.login-main .btn[hidden] {
+  display: none;
+}
+
+.login-avatar-lg {
+  width: 72px;
+  height: 72px;
+}
+
+.login-avatar-row {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.login-avatar-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.file-input-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.login-main .form-group > span {
+  display: block;
+  margin-bottom: 8px;
+  color: var(--text-muted);
+  font-size: 11px;
+  font-weight: 500;
+  font-family: "IBM Plex Mono", ui-monospace, monospace;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
 }

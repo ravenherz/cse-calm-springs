@@ -1,9 +1,12 @@
 package com.ravenherz.cse.present;
 
+import com.ravenherz.cse.dal.EntityAccess;
 import com.ravenherz.cse.dal.ResourceGroupTree;
 import com.ravenherz.cse.dal.dto.ResourceEntity;
 import com.ravenherz.cse.dal.dto.ResourceGroupEntity;
+import com.ravenherz.cse.dal.dto.basic.SecurityData;
 import com.ravenherz.cse.dal.dto.basic.ResourceSizeHint;
+import com.ravenherz.cse.dal.dto.basic.enums.AccessType;
 import org.bson.types.ObjectId;
 
 import java.util.ArrayList;
@@ -142,6 +145,8 @@ public final class ResourceGroupTreeView {
             applyOwn(dto, ownStats);
             dto.setTreeFiles(sortedTreeFiles(
                     treeFilesByGroupId == null ? null : treeFilesByGroupId.get(dto.getId())));
+            dto.setSecurityData(group.getSecurityData() == null ? new SecurityData() : group.getSecurityData());
+            dto.setGuestDenied(!EntityAccess.isAccessible(group, AccessType.ACCESS_READ, null));
             byId.put(dto.getId(), dto);
         }
 
@@ -460,6 +465,10 @@ public final class ResourceGroupTreeView {
         copy.setDescendantFileCount(src.getDescendantFileCount());
         copy.setDescendantTotalSize(src.getDescendantTotalSize());
         copy.setTreeFiles(new ArrayList<>(src.getTreeFiles()));
+        copy.setGuestDenied(src.isGuestDenied());
+        copy.setSecurityData(src.getSecurityData());
+        copy.setAccessCanEdit(src.isAccessCanEdit());
+        copy.setCategoryItemName(src.getCategoryItemName());
         return copy;
     }
 

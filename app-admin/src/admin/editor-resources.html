@@ -13,9 +13,7 @@
       <th:block th:replace="~{fragments/shared :: shared-editor-tree}"></th:block>
       <section class="resource-pane" th:if="${selectedGroup != null}">
         <div class="resource-pane-header">
-          <th:block th:if="${selectedGroup.locked}">
-            <th:block th:replace="~{fragments/shared :: resource-lock}"></th:block>
-          </th:block>
+          <th:block th:replace="~{fragments/shared :: folder-access-lock(group=${selectedGroup})}"></th:block>
           <div class="resource-pane-title">
             <h2 th:text="${selectedGroup.pathLabel}">Unsorted</h2>
             <span class="group-summary" th:unless="${selectedGroup.virtual or selectedGroup.categoryNode}">
@@ -23,6 +21,14 @@
               <span th:text="${selectedGroup.descendantTotalSizeLabel}">0 bytes</span>
             </span>
           </div>
+          <form th:if="${selectedGroup.canEditAccess() and accessRoles != null}"
+                th:action="@{/editor/resources/group/access}" method="post" class="access-form">
+            <th:block th:replace="~{fragments/csrf :: field}"></th:block>
+            <input type="hidden" name="groupId" th:value="${selectedGroup.id}"/>
+            <input type="hidden" name="returnGroup" th:value="${selectedGroup.id}"/>
+            <th:block th:replace="~{fragments/access :: panel(read=${selectedGroup.securityData.read}, edit=${selectedGroup.securityData.edit}, delete=${selectedGroup.securityData.delete}, canEdit=${selectedGroup.accessCanEdit})}"></th:block>
+            <button type="submit" class="btn btn-primary" th:disabled="${selectedGroup.accessCanEdit == false}">Save access</button>
+          </form>
         </div>
 
         <div th:if="${paneApps != null}" class="tile-grid-wrap">
@@ -131,9 +137,10 @@
               <input type="hidden" name="returnGroup" th:value="${selectedGroup.id}"/>
               <div class="resource-plus-drop" id="dropZone">
                 <span class="group-toggle resource-plus-mark" aria-hidden="true"></span>
-                <span class="visually-hidden">Upload resource</span>
+                <span class="visually-hidden">Upload resources</span>
                 <input type="file" id="file" name="file"
-                       accept=".jpg,.jpeg,.png,.heic,.heif,.mp3,image/heic,image/heif" required/>
+                       accept=".jpg,.jpeg,.png,.heic,.heif,.mp3,image/heic,image/heif"
+                       multiple required/>
               </div>
               <div class="upload-progress" id="uploadProgress" hidden>
                 <div class="upload-progress-fill" id="uploadProgressFill"></div>
@@ -143,7 +150,7 @@
           </li>
           <li class="resource-folder-tile tile-row"
               th:each="child : ${selectedGroup.children}"
-              th:classappend="${child.locked} ? 'is-locked'"
+              th:classappend="${child.locked or child.guestDenied} ? 'is-locked'"
               th:attr="data-kind=${child.categoryNode ? 'category' : (child.virtual ? 'folder' : 'group')},
                        data-id=${child.categoryNode ? child.categoryObjectId() : child.id},
                        data-group-id=${child.id},
@@ -162,9 +169,7 @@
                        data-create-album-href=${child.canCreatePage() ? ((cseContextPath == '/' ? '' : (cseContextPath != null ? cseContextPath : '')) + child.albumCreatePath()) : ''},
                        data-create-album-menu=${child.canCreatePageMenu()},
                        data-edit-href=${child.canEditCategory() ? ((cseContextPath == '/' ? '' : (cseContextPath != null ? cseContextPath : '')) + child.categoryEditPath()) : ''}">
-            <th:block th:if="${child.locked}">
-              <th:block th:replace="~{fragments/shared :: resource-lock}"></th:block>
-            </th:block>
+            <th:block th:replace="~{fragments/shared :: folder-access-lock(group=${child})}"></th:block>
             <div class="thumb-actions" th:if="${child.canDelete()}">
               <form th:action="@{/editor/resources/group/delete}" method="post" class="thumb-delete">
                 <th:block th:replace="~{fragments/csrf :: field}"></th:block>
@@ -240,108 +245,437 @@
   </main>
 
   <script>
-      var dropZone = document.getElementById('dropZone');
-      var fileInput = document.getElementById('file');
-      var resourceIdInput = document.getElementById('resourceId');
-      var uploadForm = document.getElementById('resourceUploadForm');
-
-      function slugResourceId(fileName) {
-          var lastDot = fileName.lastIndexOf('.');
-          var baseName = lastDot > 0 ? fileName.substring(0, lastDot) : fileName;
-          return baseName.toLowerCase().replace(/[^a-z0-9-]/g, '_');
-      }
-
-      function startUpload(file) {
-          resourceIdInput.value = slugResourceId(file.name);
-          if (!resourceIdInput.value) {
-              showError('Resource ID is required');
+      (function () {
+          var dropZone = document.getElementById('dropZone');
+          var fileInput = document.getElementById('file');
+          var form = document.getElementById('resourceUploadForm');
+          var progress = document.getElementById('uploadProgress');
+          var fill = document.getElementById('uploadProgressFill');
+          var label = document.getElementById('uploadProgressLabel');
+          if (!form || !dropZone || !fileInput || !progress || !fill || !label) {
               return;
           }
-          extractMetadataThenSubmit(file);
-      }
+          var pane = form.closest('.resource-pane');
+          var allowedExt = ['jpg', 'jpeg', 'png', 'heic', 'heif', 'mp3'];
+          var queue = [];
+          var usedIds = {};
+          var total = 0;
+          var completed = 0;
+          var failed = [];
+          var skipped = 0;
+          var lastRedirect = null;
+          var uploading = false;
 
-      if (dropZone && fileInput) {
+          function fileExtension(name) {
+              var lastDot = name.lastIndexOf('.');
+              return lastDot >= 0 ? name.substring(lastDot + 1).toLowerCase() : '';
+          }
+
+          function isAllowed(file) {
+              return file && file.name && allowedExt.indexOf(fileExtension(file.name)) !== -1;
+          }
+
+          function slugResourceId(fileName) {
+              var lastDot = fileName.lastIndexOf('.');
+              var baseName = lastDot > 0 ? fileName.substring(0, lastDot) : fileName;
+              return baseName.toLowerCase().replace(/[^a-z0-9-]/g, '_');
+          }
+
+          function uniqueResourceId(fileName) {
+              var base = slugResourceId(fileName);
+              if (!base) {
+                  base = 'resource';
+              }
+              var id = base;
+              var n = 2;
+              while (usedIds[id]) {
+                  id = base + '_' + n;
+                  n++;
+              }
+              usedIds[id] = true;
+              return id;
+          }
+
+          function isInternalDrag() {
+              return document.body.classList.contains('is-resource-drag')
+                      || document.body.classList.contains('is-group-drag');
+          }
+
+          function isOsFileDrag(e) {
+              if (isInternalDrag() || !e.dataTransfer || !e.dataTransfer.types) {
+                  return false;
+              }
+              return Array.prototype.indexOf.call(e.dataTransfer.types, 'Files') !== -1;
+          }
+
+          function setDropHighlight(on) {
+              dropZone.classList.toggle('dragover', on);
+              form.classList.toggle('is-dragover', on);
+              if (pane) {
+                  pane.classList.toggle('is-os-file-drag', on);
+              }
+          }
+
+          function collectDroppedFiles(dataTransfer, callback) {
+              var items = dataTransfer.items;
+              if (!items || !items.length || typeof items[0].webkitGetAsEntry !== 'function') {
+                  callback(Array.prototype.slice.call(dataTransfer.files || []));
+                  return;
+              }
+              var files = [];
+              var pending = 0;
+              var sawEntry = false;
+
+              function addPending() {
+                  pending++;
+              }
+
+              function donePending() {
+                  pending--;
+                  if (pending === 0) {
+                      callback(sawEntry ? files : Array.prototype.slice.call(dataTransfer.files || []));
+                  }
+              }
+
+              function walk(entry) {
+                  if (!entry) {
+                      return;
+                  }
+                  if (entry.isFile) {
+                      addPending();
+                      entry.file(function (file) {
+                          files.push(file);
+                          donePending();
+                      }, donePending);
+                      return;
+                  }
+                  if (!entry.isDirectory) {
+                      return;
+                  }
+                  var reader = entry.createReader();
+                  addPending();
+                  (function readBatch() {
+                      reader.readEntries(function (batch) {
+                          if (!batch.length) {
+                              donePending();
+                              return;
+                          }
+                          for (var i = 0; i < batch.length; i++) {
+                              walk(batch[i]);
+                          }
+                          readBatch();
+                      }, donePending);
+                  })();
+              }
+
+              addPending();
+              for (var i = 0; i < items.length; i++) {
+                  var entry = items[i].webkitGetAsEntry();
+                  if (entry) {
+                      sawEntry = true;
+                      walk(entry);
+                  }
+              }
+              donePending();
+          }
+
+          function enqueueFiles(fileList) {
+              var files = Array.prototype.slice.call(fileList || []);
+              var accepted = [];
+              var rejected = 0;
+              for (var i = 0; i < files.length; i++) {
+                  if (isAllowed(files[i])) {
+                      accepted.push(files[i]);
+                  } else {
+                      rejected++;
+                  }
+              }
+              if (!accepted.length) {
+                  if (rejected && !uploading) {
+                      showError('Invalid file type. Supported: jpg, png, heic, mp3');
+                  }
+                  return;
+              }
+              if (uploading) {
+                  skipped += rejected;
+              } else {
+                  skipped = rejected;
+              }
+              queue = queue.concat(accepted);
+              total += accepted.length;
+              if (!uploading) {
+                  startQueue();
+              }
+          }
+
+          function startQueue() {
+              uploading = true;
+              setFormBusy(true);
+              showProgress();
+              uploadNext();
+          }
+
+          function uploadNext() {
+              if (!queue.length) {
+                  finishQueue();
+                  return;
+              }
+              var file = queue.shift();
+              var resourceId = uniqueResourceId(file.name);
+              updateProgress(0, false);
+              extractMetadata(file, function (metadata) {
+                  sendFile(file, resourceId, metadata);
+              });
+          }
+
+          function extractMetadata(file, callback) {
+              var metadata = {};
+              var ext = fileExtension(file.name);
+              var fileUrl = URL.createObjectURL(file);
+              var finished = false;
+
+              function doneMeta() {
+                  if (finished) {
+                      return;
+                  }
+                  finished = true;
+                  URL.revokeObjectURL(fileUrl);
+                  callback(metadata);
+              }
+
+              if (['jpg', 'jpeg', 'png', 'heic', 'heif'].indexOf(ext) !== -1) {
+                  var img = new Image();
+                  img.onload = function () {
+                      metadata.width = this.width;
+                      metadata.height = this.height;
+                      doneMeta();
+                  };
+                  img.onerror = doneMeta;
+                  img.src = fileUrl;
+                  return;
+              }
+              if (ext === 'mp3') {
+                  var audio = new Audio();
+                  audio.addEventListener('loadedmetadata', function () {
+                      metadata.duration = Math.round(audio.duration);
+                      doneMeta();
+                  });
+                  audio.addEventListener('error', doneMeta);
+                  audio.src = fileUrl;
+                  return;
+              }
+              doneMeta();
+          }
+
+          function sendFile(file, resourceId, metadata) {
+              var payload = new FormData(form);
+              payload.delete('file');
+              payload.set('file', file);
+              payload.set('resourceId', resourceId);
+              payload.set('metadata', JSON.stringify(metadata || {}));
+
+              var xhr = new XMLHttpRequest();
+              xhr.open(form.method || 'POST', form.action);
+              var csrfToken = typeof window.csePrepareCsrf === 'function'
+                      ? window.csePrepareCsrf(xhr, form) : '';
+              if (csrfToken) {
+                  payload.set('_csrf', csrfToken);
+              }
+              xhr.upload.addEventListener('progress', function (event) {
+                  if (!event.lengthComputable) {
+                      updateProgress(0, true);
+                      return;
+                  }
+                  var percent = Math.round((event.loaded / event.total) * 100);
+                  updateProgress(percent, percent >= 100);
+              });
+              xhr.upload.addEventListener('load', function () {
+                  updateProgress(100, true);
+              });
+              xhr.addEventListener('load', function () {
+                  if (xhr.status >= 200 && xhr.status < 300 && xhr.responseURL
+                          && !samePath(xhr.responseURL, form.action)) {
+                      lastRedirect = xhr.responseURL;
+                      completed++;
+                      uploadNext();
+                      return;
+                  }
+                  var message = 'Upload failed';
+                  try {
+                      var doc = new DOMParser().parseFromString(xhr.responseText, 'text/html');
+                      var serverError = doc.querySelector('.error-message');
+                      if (serverError && serverError.textContent.trim()) {
+                          message = serverError.textContent.trim();
+                      }
+                  } catch (err) {
+                  }
+                  failed.push(file.name + ': ' + message);
+                  completed++;
+                  uploadNext();
+              });
+              xhr.addEventListener('error', function () {
+                  failed.push(file.name + ': Upload failed');
+                  completed++;
+                  uploadNext();
+              });
+              xhr.addEventListener('abort', function () {
+                  failed.push(file.name + ': Upload cancelled');
+                  completed++;
+                  uploadNext();
+              });
+              xhr.send(payload);
+          }
+
+          function finishQueue() {
+              uploading = false;
+              fileInput.value = '';
+              var notice = failed.slice(0, 8);
+              if (failed.length > 8) {
+                  notice.push('… and ' + (failed.length - 8) + ' more');
+              }
+              if (skipped > 0) {
+                  notice.push('Skipped ' + skipped + ' unsupported file' + (skipped === 1 ? '' : 's'));
+              }
+              if (failed.length === 0 && skipped === 0 && lastRedirect) {
+                  window.location.href = lastRedirect;
+                  return;
+              }
+              if (failed.length === 0 && skipped === 0) {
+                  window.location.reload();
+                  return;
+              }
+              if (lastRedirect) {
+                  try {
+                      var url = new URL(lastRedirect, window.location.origin);
+                      url.searchParams.set('notice', notice.join('\n'));
+                      window.location.href = url.toString();
+                      return;
+                  } catch (e) {
+                  }
+              }
+              showError(notice.join('\n'));
+              hideProgress();
+              resetQueue();
+          }
+
+          function resetQueue() {
+              queue = [];
+              usedIds = {};
+              total = 0;
+              completed = 0;
+              failed = [];
+              skipped = 0;
+              lastRedirect = null;
+          }
+
+          function updateProgress(filePercent, processing) {
+              var overall = total === 0 ? 0
+                      : Math.round(((completed + Math.max(0, Math.min(100, filePercent)) / 100) / total) * 100);
+              if (processing) {
+                  progress.classList.add('is-processing');
+                  fill.style.width = '';
+              } else {
+                  progress.classList.remove('is-processing');
+                  fill.style.width = Math.max(0, Math.min(100, overall)) + '%';
+              }
+              if (total > 1) {
+                  var current = Math.min(total, completed + 1);
+                  label.textContent = current + ' / ' + total;
+              } else if (processing || filePercent >= 100) {
+                  label.textContent = 'Processing';
+              } else {
+                  label.textContent = filePercent + '%';
+              }
+          }
+
+          function setFormBusy(busy) {
+              form.classList.toggle('is-busy', busy);
+              var controls = form.querySelectorAll('input, textarea, select, button');
+              for (var i = 0; i < controls.length; i++) {
+                  if (controls[i].type === 'hidden') {
+                      continue;
+                  }
+                  controls[i].disabled = busy;
+              }
+          }
+
+          function showProgress() {
+              progress.hidden = false;
+              updateProgress(0, false);
+          }
+
+          function hideProgress() {
+              progress.hidden = true;
+              progress.classList.remove('is-processing');
+              fill.style.width = '';
+              label.textContent = '';
+              setFormBusy(false);
+          }
+
+          function samePath(left, right) {
+              try {
+                  return new URL(left, window.location.origin).pathname
+                          === new URL(right, window.location.origin).pathname;
+              } catch (e) {
+                  return left === right;
+              }
+          }
+
+          function onOsDragOver(e) {
+              if (!isOsFileDrag(e)) {
+                  return;
+              }
+              e.preventDefault();
+              e.dataTransfer.dropEffect = 'copy';
+              setDropHighlight(true);
+          }
+
+          function onOsDragLeave(e) {
+              if (!isOsFileDrag(e)) {
+                  return;
+              }
+              var next = e.relatedTarget;
+              var host = pane || dropZone;
+              if (next && host.contains(next)) {
+                  return;
+              }
+              setDropHighlight(false);
+          }
+
+          function onOsDrop(e) {
+              if (!isOsFileDrag(e)) {
+                  return;
+              }
+              e.preventDefault();
+              e.stopPropagation();
+              setDropHighlight(false);
+              collectDroppedFiles(e.dataTransfer, enqueueFiles);
+          }
+
           dropZone.addEventListener('click', function () {
+              if (form.classList.contains('is-busy')) {
+                  return;
+              }
               fileInput.click();
           });
-          dropZone.addEventListener('dragover', function (e) {
-              if (document.body.classList.contains('is-resource-drag')
-                      || document.body.classList.contains('is-group-drag')) {
-                  return;
-              }
-              e.preventDefault();
-              dropZone.classList.add('dragover');
-              if (uploadForm) {
-                  uploadForm.classList.add('is-dragover');
-              }
-          });
-          dropZone.addEventListener('dragleave', function () {
-              dropZone.classList.remove('dragover');
-              if (uploadForm) {
-                  uploadForm.classList.remove('is-dragover');
-              }
-          });
-          dropZone.addEventListener('drop', function (e) {
-              e.preventDefault();
-              dropZone.classList.remove('dragover');
-              if (uploadForm) {
-                  uploadForm.classList.remove('is-dragover');
-              }
-              if (document.body.classList.contains('is-resource-drag')
-                      || document.body.classList.contains('is-group-drag')) {
-                  return;
-              }
-              if (e.dataTransfer.files.length > 0) {
-                  fileInput.files = e.dataTransfer.files;
-                  startUpload(e.dataTransfer.files[0]);
-              }
-          });
+          var dropHost = pane || dropZone;
+          dropHost.addEventListener('dragover', onOsDragOver);
+          dropHost.addEventListener('dragleave', onOsDragLeave);
+          dropHost.addEventListener('drop', onOsDrop);
           fileInput.addEventListener('change', function () {
               if (this.files.length > 0) {
-                  startUpload(this.files[0]);
+                  enqueueFiles(this.files);
+                  this.value = '';
               }
           });
-      }
-
-      function extractMetadataThenSubmit(file) {
-          var metadata = {};
-          var extension = file.name.split('.').pop().toLowerCase();
-          var fileUrl = URL.createObjectURL(file);
-          var submitted = false;
-
-          function submitNow() {
-              if (submitted || !uploadForm) {
-                  return;
-              }
-              submitted = true;
-              document.getElementById('metadata').value = JSON.stringify(metadata);
-              URL.revokeObjectURL(fileUrl);
-              uploadForm.requestSubmit();
-          }
-
-          if (['jpg', 'jpeg', 'png', 'heic', 'heif'].indexOf(extension) !== -1) {
-              var img = new Image();
-              img.onload = function () {
-                  metadata.width = this.width;
-                  metadata.height = this.height;
-                  submitNow();
-              };
-              img.onerror = submitNow;
-              img.src = fileUrl;
-              return;
-          }
-          if (extension === 'mp3') {
-              var audio = new Audio();
-              audio.addEventListener('loadedmetadata', function () {
-                  metadata.duration = Math.round(audio.duration);
-                  submitNow();
-              });
-              audio.addEventListener('error', submitNow);
-              audio.src = fileUrl;
-              return;
-          }
-          submitNow();
-      }
+          form.addEventListener('submit', function (e) {
+              e.preventDefault();
+          });
+          window.addEventListener('pageshow', function () {
+              hideProgress();
+              resetQueue();
+          });
+      })();
 
       (function () {
           var form = document.getElementById('packUploadForm');
@@ -431,112 +765,6 @@
           existing.textContent = message;
           existing.hidden = false;
       }
-
-      (function () {
-          var form = document.getElementById('resourceUploadForm');
-          var progress = document.getElementById('uploadProgress');
-          var fill = document.getElementById('uploadProgressFill');
-          var label = document.getElementById('uploadProgressLabel');
-          if (!form || !progress || !fill || !label) {
-              return;
-          }
-
-          function setProgress(percent, text) {
-              fill.style.width = Math.max(0, Math.min(100, percent)) + '%';
-              label.textContent = text;
-          }
-
-          function setFormBusy(busy) {
-              form.classList.toggle('is-busy', busy);
-              var controls = form.querySelectorAll('input, textarea, select, button');
-              for (var i = 0; i < controls.length; i++) {
-                  controls[i].disabled = busy;
-              }
-          }
-
-          function showProgress() {
-              progress.hidden = false;
-              progress.classList.remove('is-processing');
-              setProgress(0, '0%');
-          }
-
-          function hideProgress() {
-              progress.hidden = true;
-              progress.classList.remove('is-processing');
-              fill.style.width = '';
-              label.textContent = '';
-              setFormBusy(false);
-          }
-
-          function samePath(left, right) {
-              try {
-                  return new URL(left, window.location.origin).pathname
-                          === new URL(right, window.location.origin).pathname;
-              } catch (e) {
-                  return left === right;
-              }
-          }
-
-          form.addEventListener('submit', function (e) {
-              e.preventDefault();
-              if (form.classList.contains('is-busy')) {
-                  return;
-              }
-              var payload = new FormData(form);
-              setFormBusy(true);
-              showProgress();
-
-              var xhr = new XMLHttpRequest();
-              xhr.open(form.method || 'POST', form.action);
-              xhr.upload.addEventListener('progress', function (event) {
-                  if (!event.lengthComputable) {
-                      progress.classList.add('is-processing');
-                      fill.style.width = '';
-                      label.textContent = 'Uploading';
-                      return;
-                  }
-                  progress.classList.remove('is-processing');
-                  var percent = Math.round((event.loaded / event.total) * 100);
-                  setProgress(percent, percent + '%');
-                  if (percent >= 100) {
-                      label.textContent = 'Processing';
-                  }
-              });
-              xhr.upload.addEventListener('load', function () {
-                  progress.classList.remove('is-processing');
-                  setProgress(100, 'Processing');
-              });
-              xhr.addEventListener('load', function () {
-                  if (xhr.status >= 200 && xhr.status < 300 && xhr.responseURL
-                          && !samePath(xhr.responseURL, form.action)) {
-                      window.location.href = xhr.responseURL;
-                      return;
-                  }
-                  var message = 'Upload failed';
-                  try {
-                      var doc = new DOMParser().parseFromString(xhr.responseText, 'text/html');
-                      var serverError = doc.querySelector('.error-message');
-                      if (serverError && serverError.textContent.trim()) {
-                          message = serverError.textContent.trim();
-                      }
-                  } catch (err) {
-                  }
-                  showError(message);
-                  hideProgress();
-              });
-              xhr.addEventListener('error', function () {
-                  showError('Upload failed');
-                  hideProgress();
-              });
-              xhr.addEventListener('abort', function () {
-                  hideProgress();
-              });
-              xhr.send(payload);
-          });
-          window.addEventListener('pageshow', function () {
-              hideProgress();
-          });
-      })();
 
       document.addEventListener('click', function (e) {
           var infoBtn = e.target.closest('.thumb-info-btn');

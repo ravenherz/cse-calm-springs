@@ -54,12 +54,18 @@ class AppDataControllerMvcTest {
     private AuthSupport authSupport;
 
     @MockitoBean
+    private com.ravenherz.cse.security.CapabilityService capabilityService;
+
+    @MockitoBean
     private AppStoreRateLimiter rateLimiter;
 
     @BeforeEach
     void allowWrites() {
         when(rateLimiter.allow(any())).thenReturn(true);
         when(authSupport.clientIp(any())).thenReturn("127.0.0.1");
+        when(capabilityService.allows(any(), any())).thenReturn(true);
+        when(capabilityService.allowsApp(any(), any())).thenReturn(true);
+        when(capabilityService.canOpenEditor(any())).thenReturn(true);
     }
 
     @Test

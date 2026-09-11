@@ -91,6 +91,7 @@ public class EditorAlbumsController extends AbstractController {
         albumData.setRefResourceGroup(group);
 
         ItemEntity newItem = new ItemEntity(name.trim(), albumData, accessor);
+        applyAccess(request, newItem);
         if (categoryId != null && !categoryId.trim().isEmpty()) {
             try {
                 org.bson.types.ObjectId catObjId = new org.bson.types.ObjectId(categoryId.trim());
@@ -167,6 +168,7 @@ public class EditorAlbumsController extends AbstractController {
         newEvents[oldEvents.length] = new Event(EventType.ENTITY_EDITED, LocalDateTime.now(), accessor);
         historyData.setEvents(newEvents);
         item.setHistoryData(historyData);
+        applyAccess(request, item);
 
         serviceProvider.getItemService().replace(item);
         resourceGroupIndex.contentChanged();
@@ -178,6 +180,7 @@ public class EditorAlbumsController extends AbstractController {
         fillAlbumFormLookups(model, accessor);
         model.addAttribute("selectedCategoryId", categoryId);
         EditorInline.putTreeForAlbumCreate(model, resourceGroupIndex, categoryId);
+        addAccessPanel(model, null, accessor);
         return "/admin/editor-album-create";
     }
 
@@ -187,6 +190,7 @@ public class EditorAlbumsController extends AbstractController {
         addEditorChrome(model, accessor);
         if (model.getAttribute("item") instanceof ItemEntity item) {
             EditorInline.putTreeForItem(model, resourceGroupIndex, item);
+            addAccessPanel(model, item, accessor);
         }
     }
 

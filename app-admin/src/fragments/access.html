@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<body>
+<th:block th:fragment="panel (read, edit, delete, canEdit)">
+  <section class="settings-context access-panel" th:if="${accessRoles != null}">
+    <details class="access-disclosure">
+      <summary class="access-summary">
+        <h2 class="settings-context-title">Access</h2>
+        <p class="field-hint">Who may read, edit, or delete this. Inherit uses the parent (category, folder). Extra people always add, never remove.</p>
+      </summary>
+      <div class="access-body">
+        <input type="hidden" name="accessPosted" value="1"/>
+        <div class="access-tabs" role="tablist" aria-label="Access actions">
+          <button type="button" class="is-active" role="tab" data-access-tab="read"
+                  aria-selected="true" tabindex="0">Read</button>
+          <button type="button" role="tab" data-access-tab="edit"
+                  aria-selected="false" tabindex="-1">Edit</button>
+          <button type="button" role="tab" data-access-tab="delete"
+                  aria-selected="false" tabindex="-1">Delete</button>
+        </div>
+        <th:block th:replace="~{fragments/access :: action(title='Read', prefix='accessRead', rule=${read}, allowGuest=true, canEdit=${canEdit}, key='read', active=${true})}"/>
+        <th:block th:replace="~{fragments/access :: action(title='Edit', prefix='accessEdit', rule=${edit}, allowGuest=false, canEdit=${canEdit}, key='edit', active=${false})}"/>
+        <th:block th:replace="~{fragments/access :: action(title='Delete', prefix='accessDelete', rule=${delete}, allowGuest=false, canEdit=${canEdit}, key='delete', active=${false})}"/>
+      </div>
+    </details>
+  </section>
+</th:block>
+
+<th:block th:fragment="action (title, prefix, rule, allowGuest, canEdit, key, active)">
+  <div class="access-action" role="tabpanel"
+       th:classappend="${active == true} ? 'is-active'"
+       th:attr="data-access-panel=${key}, aria-label=${title}">
+    <label class="access-field-label">Roles</label>
+    <details class="access-check-dropdown">
+      <summary class="access-check-summary">Inherit from parent</summary>
+      <div class="access-check-menu">
+        <label>
+          <input type="checkbox" th:name="${prefix + 'Inherit'}" value="true"
+                 th:checked="${rule == null or rule.inherit}"
+                 th:disabled="${canEdit == false}"/>
+          Inherit from parent
+        </label>
+        <div class="access-roles">
+          <label th:each="role : ${accessRoles}" th:if="${allowGuest or !role.guest}">
+            <input type="checkbox" th:name="${prefix + 'RoleIds'}" th:value="${role.idHex}"
+                   th:checked="${rule != null and rule.roleIds.contains(role.idHex)}"
+                   th:disabled="${canEdit == false or rule == null or rule.inherit}"/>
+            <span th:text="${role.name}">Role</span>
+          </label>
+        </div>
+      </div>
+    </details>
+    <label class="access-field-label">Extra people</label>
+    <select th:name="${prefix + 'AccountIds'}" multiple size="4" th:disabled="${canEdit == false}">
+      <option th:each="acc : ${accessAccounts}"
+              th:value="${acc.id}"
+              th:selected="${rule != null and rule.accountIds.contains(acc.id.toHexString())}"
+              th:text="${acc.accountData.login + (acc.accountData.shownName != null and !acc.accountData.shownName.isEmpty() ? ' · ' + acc.accountData.shownName : '')}">user</option>
+    </select>
+  </div>
+</th:block>
+</body>
+</html>

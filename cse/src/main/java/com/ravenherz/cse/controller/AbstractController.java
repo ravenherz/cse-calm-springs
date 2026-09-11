@@ -1,8 +1,14 @@
 package com.ravenherz.cse.controller;
 
+import com.ravenherz.cse.dal.EntityAccess;
 import com.ravenherz.cse.dal.ServiceProvider;
 import com.ravenherz.cse.dal.dto.AccountEntity;
+import com.ravenherz.cse.dal.dto.BasicEntity;
+import com.ravenherz.cse.dal.dto.basic.enums.AccessType;
+import com.ravenherz.cse.dal.role.CapabilityIds;
 import com.ravenherz.cse.install.SiteReady;
+import com.ravenherz.cse.security.AccessForms;
+import com.ravenherz.cse.security.CapabilityService;
 import com.ravenherz.cse.util.Settings;
 import com.ravenherz.cse.util.html.ControllerAccessibleTag;
 import com.ravenherz.cse.util.html.CustomHtmlTag;
@@ -35,6 +41,7 @@ public abstract class AbstractController {
     protected ThemeCatalog themeCatalog;
 
     private AuthSupport authSupport;
+    private CapabilityService capabilityService;
 
     @Autowired
     public void setSettings(Settings settingsImpl) {
@@ -64,6 +71,11 @@ public abstract class AbstractController {
     @Autowired
     public void setAuthSupport(AuthSupport authSupport) {
         this.authSupport = authSupport;
+    }
+
+    @Autowired(required = false)
+    public void setCapabilityService(CapabilityService capabilityService) {
+        this.capabilityService = capabilityService;
     }
 
     protected AccountEntity getAccessor(HttpServletRequest request, HttpServletResponse response) {
@@ -100,6 +112,46 @@ public abstract class AbstractController {
     protected void addEditorChrome(Model model, AccountEntity accessor) {
         model.addAttribute("username", accessor.getAccountData().getLogin());
         addTheme(model);
+        boolean editor = capabilityService == null || capabilityService.canOpenEditor(accessor);
+        model.addAttribute("showNavCatalog", editor);
+        model.addAttribute("showNavAccounts", allows(accessor, CapabilityIds.EDITOR_ACCOUNTS));
+        model.addAttribute("showNavRoles", allows(accessor, CapabilityIds.EDITOR_ROLES));
+        model.addAttribute("showNavSettings", allows(accessor, CapabilityIds.EDITOR_SETTINGS));
+        model.addAttribute("showNavSiteData", allows(accessor, CapabilityIds.EDITOR_SITE_DATA));
+        model.addAttribute("showNavApi", editor);
+        model.addAttribute("showNavLogs", allows(accessor, CapabilityIds.EDITOR_LOGS));
+        model.addAttribute("canEditMatrix", com.ravenherz.cse.security.AccountRoles.isOwner(accessor,
+                serviceProvider == null ? null : serviceProvider.getRoleService()));
+    }
+
+    private boolean allows(AccountEntity accessor, String capabilityId) {
+        return capabilityService == null || capabilityService.allows(accessor, capabilityId);
+    }
+
+    protected void addAccessLookups(Model model) {
+        if (serviceProvider == null || serviceProvider.getRoleService() == null) {
+            return;
+        }
+        List<AccountEntity> accounts = serviceProvider.getAccountService() == null
+                ? List.of() : serviceProvider.getAccountService().getAllAccounts();
+        AccessForms.addLookups(model, serviceProvider.getRoleService(), accounts);
+    }
+
+    protected void addAccessPanel(Model model, BasicEntity entity, AccountEntity accessor) {
+        if (serviceProvider == null || serviceProvider.getRoleService() == null) {
+            return;
+        }
+        boolean canEdit = entity == null
+                || EntityAccess.isAccessible(entity, AccessType.ACCESS_EDIT, accessor);
+        AccessForms.addToModel(model, entity, serviceProvider.getRoleService(),
+                serviceProvider.getAccountService().getAllAccounts(), canEdit);
+    }
+
+    protected void applyAccess(HttpServletRequest request, BasicEntity entity) {
+        if (serviceProvider == null || serviceProvider.getRoleService() == null) {
+            return;
+        }
+        AccessForms.apply(request, entity, serviceProvider.getRoleService());
     }
 
     protected void addTheme(Model model) {

@@ -58,6 +58,7 @@
                 </label>
               </div>
             </div>
+            <th:block th:replace="~{fragments/access :: panel(read=${accessRead}, edit=${accessEdit}, delete=${accessDelete}, canEdit=${accessCanEdit})}"></th:block>
             <div class="editor-actions">
               <button type="submit" class="btn btn-primary">Create category</button>
             </div>

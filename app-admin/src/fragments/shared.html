@@ -20,14 +20,14 @@
     <meta name="cse-context" th:content="${cseContextPath}">
     <meta name="csrf-token" th:if="${_csrf != null}" th:content="${_csrf.token}">
     <script id="script-cse-csrf" type="text/javascript"
-            th:src="@{/content-public/js/cse-csrf.js(v=9)}"
-            src="../../../static/content-public/js/cse-csrf.js?v=9"></script>
+            th:src="@{/content-public/js/cse-csrf.js(v=10)}"
+            src="../../../static/content-public/js/cse-csrf.js?v=10"></script>
     <script id="script-cse-editor" type="text/javascript"
-            th:src="@{/content-public/js/cse-editor.js(v=1)}"
-            src="../../../static/content-public/js/cse-editor.js?v=1"></script>
+            th:src="@{/content-public/js/cse-editor.js(v=4)}"
+            src="../../../static/content-public/js/cse-editor.js?v=4"></script>
     <script id="script-cse-editor-tree" type="text/javascript"
-            th:src="@{/content-public/js/cse-editor-tree.js(v=9)}"
-            src="../../../static/content-public/js/cse-editor-tree.js?v=9"></script>
+            th:src="@{/content-public/js/cse-editor-tree.js(v=10)}"
+            src="../../../static/content-public/js/cse-editor-tree.js?v=10"></script>
 </head>
 <body>
     <div class="editor-layout">
@@ -40,32 +40,39 @@
                 <span class="brand-text">Calm Springs</span>
             </a>
             <nav class="editor-nav" th:fragment="shared-editor-nav">
-                <a th:href="@{/editor/resources}"
+                <a th:if="${showNavCatalog == null or showNavCatalog}"
+                   th:href="@{/editor/resources}"
                    th:classappend="${navResources} ? 'active' : ''">
                     Catalog
                 </a>
                 <span class="nav-sep" aria-hidden="true"></span>
-                <a th:href="@{/editor/accounts}"
+                <a th:if="${showNavAccounts == null or showNavAccounts}"
+                   th:href="@{/editor/accounts}"
                    th:classappend="${navAccounts} ? 'active' : ''">
                     Accounts
                 </a>
-                <a th:href="@{/editor/roles}"
+                <a th:if="${showNavRoles == null or showNavRoles}"
+                   th:href="@{/editor/roles}"
                    th:classappend="${navRoles} ? 'active' : ''">
                     Roles
                 </a>
-                <a th:href="@{/editor/settings}"
+                <a th:if="${showNavSettings == null or showNavSettings}"
+                   th:href="@{/editor/settings}"
                    th:classappend="${navSettings} ? 'active' : ''">
                     Settings
                 </a>
-                <a th:href="@{/editor/site-data}"
+                <a th:if="${showNavSiteData == null or showNavSiteData}"
+                   th:href="@{/editor/site-data}"
                    th:classappend="${navSiteData} ? 'active' : ''">
                     Site data
                 </a>
-                <a th:href="@{/editor/api}"
+                <a th:if="${showNavApi == null or showNavApi}"
+                   th:href="@{/editor/api}"
                    th:classappend="${navApi} ? 'active' : ''">
                     API
                 </a>
-                <a th:href="@{/editor/logs}"
+                <a th:if="${showNavLogs == null or showNavLogs}"
+                   th:href="@{/editor/logs}"
                    th:classappend="${navLogs} ? 'active' : ''">
                     Logs
                 </a>
@@ -189,6 +196,9 @@
     </div>
     <li class="resource-row tile-row" draggable="true"
         th:fragment="resource-row (resource, returnGroup)"
+        th:with="guestDenied=${T(com.ravenherz.cse.security.AccessForms).guestDenied(resource)},
+                 fileCanEdit=${T(com.ravenherz.cse.security.AccessForms).canEdit(resource, accessor)}"
+        th:classappend="${guestDenied} ? 'is-locked'"
         th:attr="data-kind='resource',
                  data-id=${resource.id},
                  data-key=${resource.resourceData.pathPublic},
@@ -200,6 +210,9 @@
                  data-return-group=${returnGroup},
                  data-download-href=@{/editor/resources/download(pathPublic=${resource.resourceData.pathPublic})}">
         <div class="item-thumb-wrap">
+            <th:block th:if="${guestDenied}">
+                <th:block th:replace="~{fragments/shared :: resource-guest-lock}"></th:block>
+            </th:block>
             <div class="thumb-actions">
                 <form th:action="@{/editor/resources/delete}" method="post" class="thumb-delete">
                     <th:block th:replace="~{fragments/csrf :: field}"></th:block>
@@ -323,6 +336,14 @@
                     </dl>
                 </div>
             </th:block>
+            <form th:if="${accessRoles != null}" th:action="@{/editor/resources/access}" method="post" class="tip-access-form">
+                <th:block th:replace="~{fragments/csrf :: field}"></th:block>
+                <input type="hidden" name="pathPublic"
+                       th:value="${resource.resourceData.pathPublic}"/>
+                <input type="hidden" name="returnGroup" th:value="${returnGroup}"/>
+                <th:block th:replace="~{fragments/access :: panel(read=${resource.securityData?.read}, edit=${resource.securityData?.edit}, delete=${resource.securityData?.delete}, canEdit=${fileCanEdit})}"></th:block>
+                <button type="submit" class="btn btn-primary" th:disabled="${fileCanEdit == false}">Save access</button>
+            </form>
         </div>
     </li>
     <th:block th:fragment="resource-lock">
@@ -331,6 +352,21 @@
                 <path d="M16.5 10.5V6.75a4.5 4.5 0 1 0-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 0 0 2.25-2.25v-6.75a2.25 2.25 0 0 0-2.25-2.25H6.75a2.25 2.25 0 0 0-2.25 2.25v6.75a2.25 2.25 0 0 0 2.25 2.25Z"/>
             </svg>
         </span>
+    </th:block>
+    <th:block th:fragment="resource-guest-lock">
+        <span class="resource-lock-overlay" title="Not readable by Guest" aria-hidden="true">
+            <svg class="resource-lock" viewBox="0 0 24 24" focusable="false">
+                <path d="M16.5 10.5V6.75a4.5 4.5 0 1 0-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 0 0 2.25-2.25v-6.75a2.25 2.25 0 0 0-2.25-2.25H6.75a2.25 2.25 0 0 0-2.25 2.25v6.75a2.25 2.25 0 0 0 2.25 2.25Z"/>
+            </svg>
+        </span>
+    </th:block>
+    <th:block th:fragment="folder-access-lock (group)">
+        <th:block th:if="${group.guestDenied}">
+            <th:block th:replace="~{fragments/shared :: resource-guest-lock}"></th:block>
+        </th:block>
+        <th:block th:if="${group.locked and not group.guestDenied}">
+            <th:block th:replace="~{fragments/shared :: resource-lock}"></th:block>
+        </th:block>
     </th:block>
     <th:block th:fragment="resource-asterisk">
         <span class="resource-asterisk-overlay" title="Open" aria-hidden="true">
@@ -365,7 +401,8 @@
              data-can-delete-category=${group.canDeleteCategory()},
              data-category-id=${group.canDeleteCategory() ? group.categoryObjectId() : ''},
              data-can-drag=${group.canMove()}, data-accept-files=${group.canAcceptFiles()},
-             data-virtual=${group.virtual}, draggable=${group.canMove()},
+             data-virtual=${group.virtual}, draggable=${group.canMove() or group.embeddable},
+             data-embed-tag=${group.embedTag()}, data-embed-id=${group.embedId()},
              data-create-href=${group.canCreateCategory() ? ((cseContextPath == '/' ? '' : (cseContextPath != null ? cseContextPath : '')) + '/editor/category/create') : ''},
              data-create-page-href=${group.canCreatePage() ? ((cseContextPath == '/' ? '' : (cseContextPath != null ? cseContextPath : '')) + group.pageCreatePath()) : ''},
              data-create-page-menu=${group.canCreatePageMenu()},
@@ -377,33 +414,29 @@
                     aria-label="Expand group"
                     th:attr="aria-expanded=${selectedGroup != null and group.containsInSubtree(selectedGroup.id)}">
                 <span class="resource-tree-folder-host"
-                      th:classappend="${group.locked} ? 'is-locked'">
+                      th:classappend="${group.locked or group.guestDenied} ? 'is-locked'">
                     <th:block th:replace="~{fragments/shared :: resource-tree-folders}"></th:block>
-                    <th:block th:if="${group.locked}">
-                        <th:block th:replace="~{fragments/shared :: resource-lock}"></th:block>
-                    </th:block>
+                    <th:block th:replace="~{fragments/shared :: folder-access-lock(group=${group})}"></th:block>
                     <th:block th:replace="~{fragments/shared :: resource-asterisk}"></th:block>
                 </span>
             </button>
             <span class="resource-tree-toggle is-leaf" th:unless="${group.hasExpandableChildren()}"
                   aria-hidden="true">
                 <span class="resource-tree-folder-host"
-                      th:classappend="${group.locked} ? 'is-locked'">
+                      th:classappend="${group.locked or group.guestDenied} ? 'is-locked'">
                     <th:block th:replace="~{fragments/shared :: resource-tree-folders}"></th:block>
-                    <th:block th:if="${group.locked}">
-                        <th:block th:replace="~{fragments/shared :: resource-lock}"></th:block>
-                    </th:block>
+                    <th:block th:replace="~{fragments/shared :: folder-access-lock(group=${group})}"></th:block>
                     <th:block th:replace="~{fragments/shared :: resource-asterisk}"></th:block>
                 </span>
             </span>
             <a class="resource-tree-link"
                th:if="${group.href != null}"
-               th:attr="draggable=${group.canMove()} ? 'true' : 'false'"
+               th:attr="draggable=${group.canMove() or group.embeddable} ? 'true' : 'false'"
                th:href="${(cseContextPath == '/' ? '' : (cseContextPath != null ? cseContextPath : '')) + group.href}"
                th:text="${group.humanReadableId}">Group</a>
             <a class="resource-tree-link"
                th:unless="${group.href != null}"
-               th:attr="draggable=${group.canMove()} ? 'true' : 'false'"
+               th:attr="draggable=${group.canMove() or group.embeddable} ? 'true' : 'false'"
                th:href="@{/editor/resources(group=${group.id})}"
                th:text="${group.humanReadableId}">Group</a>
         </div>
@@ -432,8 +465,10 @@
              data-can-activate=${file.canActivate()},
              data-return-group=${groupId},
              data-edit-href=${file.canEdit() ? ctx + file.href : ''},
-             data-open-href=${file.canOpen() ? ctx + file.href : ''}"
-             draggable="false">
+             data-open-href=${file.canOpen() ? ctx + file.href : ''},
+             data-embed-tag=${file.embedTag()},
+             data-embed-id=${file.embedId()},
+             draggable=${file.embeddable}">
             <span class="resource-tree-icon" aria-hidden="true">
                 <span class="resource-tree-file-host"
                       th:classappend="${file.album} ? 'is-album' : (${file.contentPage} ? 'is-page' : '')">
@@ -445,11 +480,12 @@
                         <path d="M7 3.75h6.5L19.5 10v10.25H7z"/>
                         <path d="M13.5 3.75V10H19.5"/>
                     </svg>
-                    <span class="resource-tree-file-mark" th:if="${file.album}">A</span>
-                    <span class="resource-tree-file-mark" th:if="${file.contentPage}">P</span>
+                    <span class="resource-tree-file-mark" th:if="${file.album}">Album</span>
+                    <span class="resource-tree-file-mark" th:if="${file.contentPage}">Page</span>
                 </span>
             </span>
-            <a class="resource-tree-link" draggable="false"
+            <a class="resource-tree-link"
+               th:attr="draggable=${file.embeddable}"
                th:href="${(cseContextPath == '/' ? '' : (cseContextPath != null ? cseContextPath : '')) + file.href}"
                th:text="${file.name}">file.jpg</a>
         </div>
@@ -463,7 +499,9 @@
              data-can-rename=${file.canRename()},
              data-can-delete=${file.canDelete()},
              data-return-group=${groupId},
-             data-download-href=@{/editor/resources/download(pathPublic=${file.key})}"
+             data-download-href=@{/editor/resources/download(pathPublic=${file.key})},
+             data-embed-tag=${file.embedTag()},
+             data-embed-id=${file.embedId()}"
              draggable="true">
             <span class="resource-tree-icon" aria-hidden="true">
                 <img th:if="${file.preview}"
@@ -546,10 +584,12 @@
                 <dt>ID</dt>
                 <dd th:text="${app.id} ?: '—'">id</dd>
             </dl>
-            <form th:if="${!app.bundled}" th:action="@{/editor/apps/store}" method="post" class="app-store-grant">
+            <form th:if="${!app.bundled and app.storeRequested}"
+                  th:action="@{/editor/apps/store}" method="post" class="app-store-grant">
                 <th:block th:replace="~{fragments/csrf :: field}"></th:block>
                 <input type="hidden" name="slug" th:value="${app.slug}"/>
                 <input type="hidden" name="returnGroup" th:if="${returnGroup}" th:value="${returnGroup}"/>
+                <p class="field-hint">Storage for this install. Kept when you re-upload the same slug.</p>
                 <label class="checkbox-group">
                     <input type="checkbox" name="storeEnabled" value="true" th:checked="${app.storeEnabled}"/>
                     Allow data store
@@ -558,7 +598,27 @@
                     <input type="checkbox" name="storeOpen" value="true" th:checked="${app.storeOpen}"/>
                     Open schema
                 </label>
-                <button type="submit" class="btn btn-primary">Save store</button>
+                <div class="app-store-limits">
+                    <div class="form-group">
+                        <label th:for="${'store-max-data-kb-' + app.slug}">Document max (KB)</label>
+                        <input type="number" th:id="${'store-max-data-kb-' + app.slug}"
+                               name="maxDataKb" min="4" max="2048" required
+                               th:value="${app.storeMaxDataKb}"/>
+                    </div>
+                    <div class="form-group">
+                        <label th:for="${'store-max-docs-' + app.slug}">Max documents</label>
+                        <input type="number" th:id="${'store-max-docs-' + app.slug}"
+                               name="maxDocs" min="1" max="1000000" required
+                               th:value="${app.storeMaxDocs}"/>
+                    </div>
+                    <div class="form-group">
+                        <label th:for="${'store-max-bytes-mb-' + app.slug}">Store max (MB)</label>
+                        <input type="number" th:id="${'store-max-bytes-mb-' + app.slug}"
+                               name="maxBytesMb" min="1" max="2048" required
+                               th:value="${app.storeMaxBytesMb}"/>
+                    </div>
+                </div>
+                <button type="submit" class="btn btn-primary">Save storage</button>
             </form>
         </div>
     </li>

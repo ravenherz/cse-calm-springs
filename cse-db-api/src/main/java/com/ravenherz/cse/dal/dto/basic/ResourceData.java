@@ -8,7 +8,7 @@ import org.bson.types.ObjectId;
 
 import java.util.ArrayList;
 import java.util.Base64;
-import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -83,12 +83,16 @@ public final class ResourceData {
     }
 
     public void setMetadata(Map<String, String> metadata) {
-        this.metadata = metadata;
+        if (metadata == null) {
+            this.metadata = null;
+        } else {
+            this.metadata = new LinkedHashMap<>(metadata);
+        }
     }
 
     public void addMetadata(String key, String value) {
         if (this.metadata == null) {
-            this.metadata = new HashMap<>();
+            this.metadata = new LinkedHashMap<>();
         }
         this.metadata.put(key, value);
     }
