@@ -204,7 +204,7 @@ public class JsonApiController extends AbstractController {
 
         AccountEntity accountEntity = new AccountEntity(
                 new AccountData(login, passwordHashes.hash(password),
-                        email, SecurityLevel.ACTIVE_USER));
+                        email, SecurityLevel.INACTIVE_USER));
         serviceProvider.getAccountService().insert(accountEntity);
         AccountEntity stored = serviceProvider.getAccountService().getByLogin(login);
         if (stored != null) {

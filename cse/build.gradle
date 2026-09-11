@@ -106,7 +106,7 @@ tasks.register('buildPreparations') {
         def buildInfoProjectFile = json.parseText(file(pathToBuildInfoProjectFile).text)
         buildInfoProjectFile['version-product'] = description
         buildInfoProjectFile['version-version'] = "$currentVersion.${buildInfo.build.number}"
-        buildInfoProjectFile['version-branch'] = branch == 'main' ? "" : "${branch.toLowerCase()}"
+        buildInfoProjectFile['version-branch'] = branch == 'master' ? "" : "${branch.toLowerCase()}"
         project.file(pathToBuildInfoProjectFile).write(new JsonBuilder(buildInfoProjectFile).toPrettyString())
     }
 }
@@ -151,7 +151,7 @@ tasks.named('processResources', Copy) {
 
 cargo {
     Boolean deployRemote = true
-    String deployOverride = "stage"
+    String deployOverride = "production"
     var cargoParamResolver = new CargoContextResolver(deployRemote, project, deployOverride)
     System.out.println("deploying to '${cargoParamResolver.getWhereToDeploy()}'")
 

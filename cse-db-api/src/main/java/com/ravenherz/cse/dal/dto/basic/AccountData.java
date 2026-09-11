@@ -120,7 +120,7 @@ public final class AccountData {
     private HashMap<String, String> extensibleData;
     private String stylesTheme;
     private String stylesSchema;
-    private boolean loginable = true;
+    private boolean loginable = false;
     private Set<AccountSession> sessions;
     private String activationToken;
     public AccountData() {
@@ -143,7 +143,7 @@ public final class AccountData {
         this.hash = hash;
         this.emailAddress = emailAddress;
         this.level = level;
-        loginable = !level.equals(SecurityLevel.GUIDE);
+        this.loginable = false;
     }
 
     public String getLogin() {
