@@ -5,6 +5,7 @@ import com.ravenherz.cse.dal.dto.AccountEntity;
 import com.ravenherz.cse.dal.dto.basic.AccountData;
 import com.ravenherz.cse.dal.dto.basic.enums.SecurityLevel;
 import org.bson.types.ObjectId;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
@@ -31,6 +32,23 @@ class EditorGateMvcTest {
 
     @MockitoBean
     private AuthSupport authSupport;
+
+    @MockitoBean
+    private CapabilityService capabilityService;
+
+    @BeforeEach
+    void stubCapabilities() {
+        when(capabilityService.allows(any(), any())).thenReturn(true);
+        when(capabilityService.allowsApp(any(), any())).thenReturn(true);
+        when(capabilityService.canOpenEditor(any())).thenAnswer(invocation -> {
+            AccountEntity account = invocation.getArgument(0);
+            if (account == null || account.getAccountData() == null
+                    || account.getAccountData().getLevel() == null) {
+                return false;
+            }
+            return account.getAccountData().getLevel().getIntLevel() >= SecurityLevel.ADMIN.getIntLevel();
+        });
+    }
 
     @Test
     void guestHtmlEditorRedirects401() throws Exception {

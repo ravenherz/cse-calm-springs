@@ -22,6 +22,10 @@ public class AppDisplayDTO {
     private boolean bundled;
     private boolean storeEnabled;
     private boolean storeOpen;
+    private boolean storeRequested;
+    private int storeMaxDataKb = 256;
+    private int storeMaxDocs = 10_000;
+    private int storeMaxBytesMb = 32;
 
     public String getId() {
         return id;
@@ -157,6 +161,38 @@ public class AppDisplayDTO {
 
     public void setStoreOpen(boolean storeOpen) {
         this.storeOpen = storeOpen;
+    }
+
+    public boolean isStoreRequested() {
+        return storeRequested;
+    }
+
+    public void setStoreRequested(boolean storeRequested) {
+        this.storeRequested = storeRequested;
+    }
+
+    public int getStoreMaxDataKb() {
+        return storeMaxDataKb;
+    }
+
+    public void setStoreMaxDataKb(int storeMaxDataKb) {
+        this.storeMaxDataKb = storeMaxDataKb;
+    }
+
+    public int getStoreMaxDocs() {
+        return storeMaxDocs;
+    }
+
+    public void setStoreMaxDocs(int storeMaxDocs) {
+        this.storeMaxDocs = storeMaxDocs;
+    }
+
+    public int getStoreMaxBytesMb() {
+        return storeMaxBytesMb;
+    }
+
+    public void setStoreMaxBytesMb(int storeMaxBytesMb) {
+        this.storeMaxBytesMb = storeMaxBytesMb;
     }
 
     public String getHint() {

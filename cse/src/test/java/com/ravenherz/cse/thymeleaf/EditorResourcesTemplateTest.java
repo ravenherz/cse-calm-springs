@@ -3,9 +3,15 @@ package com.ravenherz.cse.thymeleaf;
 import com.ravenherz.cse.dal.dto.CategoryEntity;
 import com.ravenherz.cse.dal.dto.ItemEntity;
 import com.ravenherz.cse.dal.dto.PlaylistEntity;
+import com.ravenherz.cse.dal.dto.ResourceEntity;
+import com.ravenherz.cse.dal.dto.RoleEntity;
 import com.ravenherz.cse.dal.dto.basic.CategoryData;
+import com.ravenherz.cse.dal.dto.basic.EntityAccessConstants;
 import com.ravenherz.cse.dal.dto.basic.PageData;
 import com.ravenherz.cse.dal.dto.basic.PlaylistData;
+import com.ravenherz.cse.dal.dto.basic.ResourceData;
+import com.ravenherz.cse.dal.dto.basic.SecurityData;
+import com.ravenherz.cse.dal.dto.basic.enums.ResourceType;
 import com.ravenherz.cse.present.AppDisplayDTO;
 import com.ravenherz.cse.present.ResourceGroupDisplayDTO;
 import com.ravenherz.cse.present.ResourceTreeFile;
@@ -43,6 +49,7 @@ class EditorResourcesTemplateTest {
         categories.setHref("/editor/resources?group=content-categories");
         ResourceGroupDisplayDTO music = group("category-music", "music", "Content / Categories / music", 3);
         music.setHref("/editor/resources?group=category-music");
+        music.setCategoryItemName("music");
         music.setTreeFiles(List.of(
                 new ResourceTreeFile("page-host", "Host (2015)", "/editor/edit?name=host",
                         ResourceTreeFile.Mark.PAGE).withKey("host"),
@@ -130,8 +137,8 @@ class EditorResourcesTemplateTest {
         assertTrue(html.contains("resource-tree-file-mark"), html);
         assertTrue(html.contains("is-page"), html);
         assertTrue(html.contains("is-album"), html);
-        assertTrue(html.contains(">P<"), html);
-        assertTrue(html.contains(">A<"), html);
+        assertTrue(html.contains(">Page<"), html);
+        assertTrue(html.contains(">Album<"), html);
         assertTrue(html.contains("aurora.jpg"), html);
         assertTrue(html.contains("resource-tree-file-preview"), html);
         assertTrue(html.contains("/rhz-we/editor/resources/tree-preview/file1"), html);
@@ -141,6 +148,8 @@ class EditorResourcesTemplateTest {
         assertTrue(html.contains("/rhz-we/editor/resources?group=content-categories"), html);
         assertTrue(html.contains("/rhz-we/editor/resources?group=category-music"), html);
         assertTrue(html.contains("resource-plus-tile"), html);
+        assertTrue(html.contains("id=\"file\""), html);
+        assertTrue(html.contains("multiple"), html);
         assertTrue(html.contains("id=\"group-travel\""), html);
         assertTrue(html.contains("id=\"group-y2024\""), html);
         assertFalse(html.contains("id=\"group-ungrouped\""), html);
@@ -181,6 +190,12 @@ class EditorResourcesTemplateTest {
         assertTrue(html.contains("id=\"resource-category-delete-form\""), html);
         assertTrue(html.contains("/editor/category/delete"), html);
         assertTrue(html.contains("data-can-delete-category=\"true\""), html);
+        assertTrue(html.contains("data-embed-tag=\"cse-category\""), html);
+        assertTrue(html.contains("data-embed-id=\"music\""), html);
+        assertTrue(html.contains("data-embed-tag=\"cse-page\""), html);
+        assertTrue(html.contains("data-embed-id=\"host\""), html);
+        assertTrue(html.contains("data-embed-tag=\"cse-image\""), html);
+        assertTrue(html.contains("data-embed-id=\"file1\""), html);
         assertTrue(html.contains("data-category-id=\"music\""), html);
         assertTrue(html.contains("data-kind=\"category\""), html);
         assertTrue(html.contains("data-kind=\"group\""), html);
@@ -275,8 +290,14 @@ class EditorResourcesTemplateTest {
         app.setBundled(false);
         context.setVariable("paneApps", List.of(app));
         String installedHtml = engine.process("admin/editor-resources", context);
-        assertTrue(installedHtml.contains("/editor/apps/store"), installedHtml);
-        assertTrue(installedHtml.contains("Allow data store"), installedHtml);
+        assertFalse(installedHtml.contains("/editor/apps/store"), installedHtml);
+        app.setStoreRequested(true);
+        context.setVariable("paneApps", List.of(app));
+        String storeHtml = engine.process("admin/editor-resources", context);
+        assertTrue(storeHtml.contains("/editor/apps/store"), storeHtml);
+        assertTrue(storeHtml.contains("Allow data store"), storeHtml);
+        assertTrue(storeHtml.contains("Save storage"), storeHtml);
+        assertTrue(storeHtml.contains("Document max (KB)"), storeHtml);
 
         ThemeDisplayDTO theme = new ThemeDisplayDTO();
         theme.setThemeId("modern");
@@ -463,6 +484,8 @@ class EditorResourcesTemplateTest {
                 || pageHtml.contains("resource-tree-file is-selected\""), pageHtml);
         assertTrue(pageHtml.contains("href=\"/rhz-we/editor/resources?group=category-music\""), pageHtml);
         assertFalse(pageHtml.contains("page-header"), pageHtml);
+        assertTrue(pageHtml.contains("cse-embed-drop"), pageHtml);
+        assertTrue(pageHtml.contains("cse-page"), pageHtml);
 
         context.setVariable("selectedLeafId", null);
         context.setVariable("category", category);
@@ -481,6 +504,7 @@ class EditorResourcesTemplateTest {
         assertTrue(createHtml.contains("name=\"name\""), createHtml);
         assertTrue(createHtml.contains(">New page<"), createHtml);
         assertTrue(createHtml.contains("Create page"), createHtml);
+        assertTrue(createHtml.contains("cse-embed-drop"), createHtml);
 
         context.setVariable("resourceGroups", List.of());
         String albumHtml = engine.process("admin/editor-album-create", context);
@@ -512,7 +536,8 @@ class EditorResourcesTemplateTest {
         playlists.setTreeFiles(List.of(new ResourceTreeFile(
                 "playlist-" + playlist.getId(), "Ocean Blue",
                 "/editor/playlist/edit?id=" + playlist.getId(),
-                ResourceTreeFile.Mark.PLAYLIST).withKey(playlist.getId().toString())));
+                ResourceTreeFile.Mark.PLAYLIST).withKey(playlist.getId().toString())
+                        .withEmbedId("ocean-blue")));
         context.setVariable("selectedGroup", playlists);
         context.setVariable("resourceGroupTree", List.of(playlists));
         context.setVariable("audioLibrary", List.of());
@@ -528,6 +553,8 @@ class EditorResourcesTemplateTest {
         assertFalse(playlistCreateHtml.contains("page-header"), playlistCreateHtml);
         assertTrue(playlistCreateHtml.contains("href=\"/rhz-we/editor/resources?group=content-playlists\""),
                 playlistCreateHtml);
+        assertTrue(playlistCreateHtml.contains("data-embed-tag=\"cse-playlist\""), playlistCreateHtml);
+        assertTrue(playlistCreateHtml.contains("data-embed-id=\"ocean-blue\""), playlistCreateHtml);
 
         context.setVariable("playlist", playlist);
         context.setVariable("selectedLeafId", "playlist-" + playlist.getId());
@@ -540,6 +567,81 @@ class EditorResourcesTemplateTest {
         assertFalse(playlistEditHtml.contains("page-header"), playlistEditHtml);
         assertTrue(playlistEditHtml.contains("resource-tree-file is-selected")
                 || playlistEditHtml.contains("resource-tree-file is-selected\""), playlistEditHtml);
+    }
+
+    @Test
+    void catalogEmbedsAccessOnFileTipNotVirtualPane() {
+        RoleEntity member = new RoleEntity();
+        member.setId(new ObjectId());
+        member.setSlug("member");
+        member.setName("Member");
+
+        ResourceGroupDisplayDTO content = group("content", "Content", "Content", 1);
+        content.setVirtual(true);
+        content.setHref("/editor/resources?group=content");
+        ResourceGroupDisplayDTO travel = group("travel", "Travel", "Travel", 1);
+        travel.setHref("/editor/resources?group=travel");
+        travel.setGuestDenied(true);
+        ResourceGroupDisplayDTO y2024 = group("y2024", "2024", "Travel / 2024", 2);
+        y2024.setParentId("travel");
+        y2024.setAccessCanEdit(true);
+        ResourceGroupDisplayDTO iceland = group("iceland", "Iceland", "Travel / 2024 / Iceland", 3);
+        iceland.setParentId("y2024");
+        iceland.setGuestDenied(true);
+        y2024.getChildren().add(iceland);
+        travel.getChildren().add(y2024);
+
+        ResourceData data = new ResourceData();
+        data.setPathPublic("/u/res/image/aurora.jpg");
+        data.setType(ResourceType.IMAGE);
+        ResourceEntity file = new ResourceEntity(data, null);
+        file.setId(new ObjectId());
+        file.setSecurityData(new SecurityData(EntityAccessConstants.GUIDE));
+        y2024.setResources(List.of(file));
+
+        SpringTemplateEngine engine = engine();
+        MockServletContext servletContext = new MockServletContext();
+        JakartaServletWebApplication application = JakartaServletWebApplication.buildApplication(servletContext);
+        MockHttpServletRequest request = new MockHttpServletRequest(servletContext);
+        request.setContextPath("/rhz-we");
+        request.setRequestURI("/rhz-we/editor/resources");
+        MockHttpServletResponse response = new MockHttpServletResponse();
+        WebContext context = new WebContext(application.buildExchange(request, response));
+        context.setVariable("resourceGroupTree", List.of(content, travel));
+        context.setVariable("assignableGroups", List.of(travel, y2024));
+        context.setVariable("selectedGroup", y2024);
+        context.setVariable("selectedLeafId", null);
+        context.setVariable("defaultGroupId", "default-id");
+        context.setVariable("cseContextPath", "/rhz-we");
+        context.setVariable("username", "owner");
+        context.setVariable("accessRoles", List.of(member));
+        context.setVariable("accessAccounts", List.of());
+        context.setVariable("navResources", true);
+
+        String html = engine.process("admin/editor-resources", context);
+        assertFalse(html.contains("${"), html);
+        assertTrue(html.contains("name=\"accessPosted\""), html);
+        assertTrue(html.contains("access-disclosure"), html);
+        assertTrue(html.contains("access-summary"), html);
+        assertFalse(html.contains("access-disclosure\" open"), html);
+        assertTrue(html.contains("access-tabs"), html);
+        assertTrue(html.contains("access-check-dropdown"), html);
+        assertTrue(html.contains("access-check-summary"), html);
+        assertTrue(html.contains("data-access-tab=\"read\""), html);
+        assertTrue(html.contains("data-access-tab=\"edit\""), html);
+        assertTrue(html.contains("data-access-tab=\"delete\""), html);
+        assertTrue(html.contains("data-access-panel=\"read\""), html);
+        assertTrue(html.contains("/editor/resources/access"), html);
+        assertTrue(html.contains("/editor/resources/group/access"), html);
+        assertTrue(html.contains("Not readable by Guest"), html);
+        assertTrue(html.contains("tip-access-form"), html);
+        assertTrue(html.contains("Save access"), html);
+
+        context.setVariable("selectedGroup", content);
+        String contentHtml = engine.process("admin/editor-resources", context);
+        assertFalse(contentHtml.contains("name=\"accessPosted\""), contentHtml);
+        assertFalse(contentHtml.contains("/editor/resources/group/access"), contentHtml);
+        assertFalse(contentHtml.contains("tip-access-form"), contentHtml);
     }
 
     private static ResourceGroupDisplayDTO group(String id, String name, String path, int depth) {

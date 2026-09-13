@@ -15,6 +15,7 @@ import com.ravenherz.cse.store.AppStoreTableSpec;
 import com.ravenherz.cse.dal.dto.basic.AccountData;
 import com.ravenherz.cse.dal.dto.basic.AlbumData;
 import com.ravenherz.cse.dal.dto.basic.AppData;
+import com.ravenherz.cse.dal.dto.basic.AppStoreSettings;
 import com.ravenherz.cse.dal.dto.basic.CategoryData;
 import com.ravenherz.cse.dal.dto.basic.Event;
 import com.ravenherz.cse.dal.dto.basic.HistoryData;
@@ -23,12 +24,18 @@ import com.ravenherz.cse.dal.dto.basic.PlaylistData;
 import com.ravenherz.cse.dal.dto.basic.PlaylistTrack;
 import com.ravenherz.cse.dal.dto.basic.ResourceData;
 import com.ravenherz.cse.dal.dto.basic.ResourceGroupData;
+import com.ravenherz.cse.dal.dto.RoleEntity;
+import com.ravenherz.cse.dal.dto.RoleMatrixDocument;
+import com.ravenherz.cse.dal.dto.basic.AccessRule;
+import com.ravenherz.cse.dal.dto.basic.AppAccountGrant;
+import com.ravenherz.cse.dal.dto.basic.RoleGrant;
 import com.ravenherz.cse.dal.dto.basic.SecurityData;
 import com.ravenherz.cse.dal.dto.basic.ThemeData;
 import com.ravenherz.cse.dal.dto.basic.enums.AccessType;
 import com.ravenherz.cse.dal.dto.basic.enums.EventType;
 import com.ravenherz.cse.dal.dto.basic.enums.ResourceType;
 import com.ravenherz.cse.dal.dto.basic.enums.SecurityLevel;
+import com.ravenherz.cse.dal.role.RoleSeeds;
 import org.bson.types.ObjectId;
 
 import java.time.LocalDateTime;
@@ -60,16 +67,88 @@ final class CseSiteReaders {
             accountData.setHash(text(data.get("hash")));
             accountData.setEmailAddress(text(data.get("emailAddress")));
             accountData.setBio(text(data.get("bio")));
+            accountData.setShownName(text(data.get("shownName")));
+            accountData.setAvatar(text(data.get("avatar")));
             accountData.setLevel(enumOrNull(SecurityLevel.class, data.get("level")));
             accountData.setContacts(stringHash(data.get("contacts")));
             accountData.setExtensibleData(stringHash(data.get("extensibleData")));
             accountData.setStylesTheme(text(data.get("stylesTheme")));
             accountData.setStylesSchema(text(data.get("stylesSchema")));
             accountData.setLoginable(bool(data.get("loginable"), true));
+            accountData.setRoleId(text(data.get("roleId")));
+            if (accountData.getRoleId() == null || accountData.getRoleId().isBlank()) {
+                String slug = RoleSeeds.slugFor(accountData.getLevel());
+                if (slug == null) {
+                    slug = accountData.isLoginable() ? RoleSeeds.MEMBER : RoleSeeds.INACTIVE;
+                }
+                accountData.setRoleId(slug);
+            }
             accountData.setActivationToken(text(data.get("activationToken")));
             accountData.setSessions(null);
             entity.setAccountData(accountData);
         }
+        return entity;
+    }
+
+    static RoleEntity role(Map<String, Object> doc) {
+        if (doc == null) {
+            return null;
+        }
+        RoleEntity entity = new RoleEntity();
+        ObjectId id = objectId(doc.get("id"));
+        if (id == null) {
+            id = new ObjectId();
+        }
+        entity.setId(id);
+        entity.setEntityVersion(text(doc.get("entityVersion")));
+        String slug = text(doc.get("slug"));
+        if (slug == null || slug.isBlank()) {
+            return null;
+        }
+        entity.setSlug(slug.trim().toLowerCase(java.util.Locale.ROOT));
+        entity.setName(text(doc.get("name")));
+        entity.setSystem(text(doc.get("system")));
+        entity.setLoginable(bool(doc.get("loginable"), false));
+        entity.setSortOrder(intValue(doc.get("sortOrder"), 100));
+        entity.setArchived(bool(doc.get("archived"), false));
+        return entity;
+    }
+
+    static RoleMatrixDocument roleMatrix(Map<String, Object> doc) {
+        RoleMatrixDocument entity = new RoleMatrixDocument();
+        ObjectId id = objectId(doc == null ? null : doc.get("id"));
+        entity.setId(id == null ? RoleMatrixDocument.SINGLETON_ID : id);
+        if (doc == null) {
+            return entity;
+        }
+        List<RoleGrant> grants = new ArrayList<>();
+        for (Object row : list(doc.get("grants"))) {
+            Map<String, Object> grantDoc = map(row);
+            if (grantDoc == null) {
+                continue;
+            }
+            String capabilityId = text(grantDoc.get("capabilityId"));
+            String roleId = text(grantDoc.get("roleId"));
+            if (capabilityId == null || roleId == null || capabilityId.isBlank() || roleId.isBlank()) {
+                continue;
+            }
+            grants.add(new RoleGrant(capabilityId, roleId));
+        }
+        entity.setGrants(grants);
+        List<AppAccountGrant> appGrants = new ArrayList<>();
+        for (Object row : list(doc.get("appGrants"))) {
+            Map<String, Object> grantDoc = map(row);
+            if (grantDoc == null) {
+                continue;
+            }
+            String capabilityId = text(grantDoc.get("capabilityId"));
+            String accountId = text(grantDoc.get("accountId"));
+            if (capabilityId == null || accountId == null || capabilityId.isBlank() || accountId.isBlank()) {
+                continue;
+            }
+            appGrants.add(new AppAccountGrant(capabilityId, accountId));
+        }
+        entity.setAppGrants(appGrants);
         return entity;
     }
 
@@ -206,6 +285,10 @@ final class CseSiteReaders {
             appData.setDescription(text(data.get("description")));
             appData.setStoreEnabled(bool(data.get("storeEnabled"), false));
             appData.setStoreOpen(bool(data.get("storeOpen"), false));
+            AppStoreSettings imported = AppStoreSettings.fromMap(map(data.get("storeSettings")));
+            if (imported != null) {
+                appData.applyStoreSettings(imported);
+            }
             appData.setStoreTables(AppStoreTableSpec.listFrom(data.get("storeTables")));
             entity.setAppData(appData);
         }
@@ -307,20 +390,56 @@ final class CseSiteReaders {
         if (doc == null) {
             return null;
         }
-        Map<AccessType, SecurityLevel> access = new LinkedHashMap<>();
+        Map<AccessType, AccessRule> access = new LinkedHashMap<>();
         Map<String, Object> settings = map(doc.get("accessSettings"));
         if (settings != null) {
             for (Map.Entry<String, Object> entry : settings.entrySet()) {
                 AccessType type = enumOrNull(AccessType.class, entry.getKey());
-                SecurityLevel level = enumOrNull(SecurityLevel.class, entry.getValue());
-                if (type != null && level != null) {
-                    access.put(type, level);
+                AccessRule rule = accessRule(entry.getValue());
+                if (type != null && rule != null) {
+                    access.put(type, rule);
                 }
             }
         }
         SecurityData data = new SecurityData();
-        data.setAccessSettings(access);
+        if (!access.isEmpty()) {
+            data.setAccessSettings(access);
+        }
         return data;
+    }
+
+    private static AccessRule accessRule(Object raw) {
+        if (raw == null) {
+            return AccessRule.inheritAll();
+        }
+        Map<String, Object> object = map(raw);
+        if (object != null) {
+            AccessRule rule = new AccessRule();
+            rule.setInherit(bool(object.get("inherit"), true));
+            List<String> roleIds = new ArrayList<>();
+            for (Object id : list(object.get("roleIds"))) {
+                if (id != null && !id.toString().isBlank()) {
+                    roleIds.add(id.toString().trim());
+                }
+            }
+            rule.setRoleIds(roleIds);
+            List<String> accountIds = new ArrayList<>();
+            for (Object id : list(object.get("accountIds"))) {
+                if (id != null && !id.toString().isBlank()) {
+                    accountIds.add(id.toString().trim());
+                }
+            }
+            rule.setAccountIds(accountIds);
+            if (object.get("legacyThreshold") != null) {
+                rule.setLegacyThreshold(object.get("legacyThreshold").toString());
+            }
+            return rule;
+        }
+        SecurityLevel level = enumOrNull(SecurityLevel.class, raw);
+        if (level == null) {
+            return AccessRule.inheritAll();
+        }
+        return AccessRule.fromLegacy(level);
     }
 
     private static HistoryData history(Map<String, Object> doc) {

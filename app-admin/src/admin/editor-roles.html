@@ -5,106 +5,159 @@
   <div class="editor-layout">
     <aside class="editor-sidebar" th:replace="~{fragments/shared :: shared-editor-sidebar}"></aside>
     <main class="editor-main roles-page">
-      <p class="field-hint">Exactly one owner. Transfer it from the owner row; that account becomes ADMIN. Only ADMIN and OWNER open the editor.</p>
-      <div th:if="${transferred}" class="success-message">Ownership transferred.</div>
-      <div th:if="${saved and !transferred}" class="success-message">Role saved.</div>
+      <p class="field-hint">Owner edits who may use each surface. Guest is people who are not signed in.</p>
+      <div th:if="${matrixSaved}" class="success-message">Access saved.</div>
+      <div th:if="${saved and !matrixSaved}" class="success-message">Role saved.</div>
       <div th:if="${error}" class="error-message" th:text="${error}">Error</div>
 
-      <section class="settings-context">
-        <h2 class="settings-context-title">Access</h2>
-        <table class="settings-table roles-matrix">
-          <thead>
-            <tr>
-              <th scope="col">Surface</th>
-              <th scope="col">Guest</th>
-              <th scope="col">Member</th>
-              <th scope="col">Moderator</th>
-              <th scope="col">Admin</th>
-              <th scope="col">Owner</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr>
-              <th scope="row">Public site</th>
-              <td class="is-yes">yes</td>
-              <td class="is-yes">yes</td>
-              <td class="is-yes">yes</td>
-              <td class="is-yes">yes</td>
-              <td class="is-yes">yes</td>
-            </tr>
-            <tr>
-              <th scope="row">Editor /editor</th>
-              <td>—</td>
-              <td>—</td>
-              <td>—</td>
-              <td class="is-yes">yes</td>
-              <td class="is-yes">yes</td>
-            </tr>
-          </tbody>
-        </table>
+      <section class="settings-context" th:if="${canCrudRoles}">
+        <h2 class="settings-context-title">Roles</h2>
+        <form th:action="@{/editor/roles/create}" method="post" class="item-form role-assign">
+          <th:block th:replace="~{fragments/csrf :: field}"></th:block>
+          <label class="visually-hidden" for="new-role-name">Name</label>
+          <input type="text" id="new-role-name" name="name" maxlength="40" placeholder="Name" required/>
+          <label class="visually-hidden" for="new-role-slug">Slug</label>
+          <input type="text" id="new-role-slug" name="slug" maxlength="32" placeholder="slug" required/>
+          <label><input type="checkbox" name="loginable" value="true" checked/> Can sign in</label>
+          <button type="submit" class="btn btn-primary">Add role</button>
+        </form>
       </section>
 
       <section class="settings-context">
-        <h2 class="settings-context-title">Accounts</h2>
-        <div th:if="${accounts.empty}" class="empty-message">
-          No accounts found.
-        </div>
-        <ul class="item-list" th:unless="${accounts.empty}">
-          <li th:each="acc : ${accounts}">
-            <div class="item-info">
-              <div class="item-title">
-                <span th:text="${acc.login} ?: '[null]'">Login</span>
-                <span class="role-you" th:if="${acc.self}">you</span>
-              </div>
-              <p class="role-email" th:text="${acc.emailAddress} ?: '—'" th:title="${acc.id}">email</p>
+        <h2 class="settings-context-title">Access</h2>
+        <form th:action="@{/editor/roles/matrix}" method="post" id="roles-matrix-form">
+          <th:block th:replace="~{fragments/csrf :: field}"></th:block>
+          <nav class="roles-tabs" role="tablist" aria-label="Access groups">
+            <button type="button"
+                    role="tab"
+                    th:each="group, iter : ${matrixGroups}"
+                    th:id="${'tab-matrix-' + group.id}"
+                    th:classappend="${iter.first} ? 'is-active'"
+                    th:attr="aria-controls=${'matrix-' + group.id}, aria-selected=${iter.first}, tabindex=${iter.first} ? 0 : -1"
+                    th:text="${group.label}">Account</button>
+          </nav>
+          <div class="roles-tab-panel"
+               role="tabpanel"
+               th:each="group, iter : ${matrixGroups}"
+               th:id="${'matrix-' + group.id}"
+               th:classappend="${iter.first} ? 'is-active'"
+               th:hidden="${!iter.first}"
+               th:attr="aria-labelledby=${'tab-matrix-' + group.id}">
+            <div class="roles-matrix-wrap">
+              <table class="settings-table roles-matrix">
+                <thead>
+                  <tr>
+                    <th scope="col">Surface</th>
+                    <th scope="col" th:each="role : ${matrixRoles}"
+                        th:text="${role.name}">Role</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr th:each="row : ${group.rows}">
+                    <th scope="row">
+                      <span class="roles-cap">
+                        <span th:text="${row.label}">Capability</span>
+                        <span class="roles-cap-hint"
+                              th:if="${!#strings.isEmpty(row.hint)}"
+                              th:title="${row.hint}"
+                              th:aria-label="${row.hint}">?</span>
+                      </span>
+                    </th>
+                    <td th:each="role : ${matrixRoles}">
+                      <input type="checkbox"
+                             th:name="grant"
+                             th:value="${row.id + '|' + role.idHex}"
+                             th:checked="${row.cells.get(role.idHex)}"
+                             th:disabled="${!canEditMatrix or role.owner or (!row.guestSafe and role.guest)}"/>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
             </div>
-            <form th:if="${acc.canEdit}" th:action="@{/editor/roles/save}" method="post"
-                  class="item-form role-assign">
-              <th:block th:replace="~{fragments/csrf :: field}"></th:block>
-              <input type="hidden" name="id" th:value="${acc.id}"/>
-              <label class="visually-hidden" th:for="${'level-' + acc.id}">Role</label>
-              <select name="level" th:id="${'level-' + acc.id}">
-                <option th:each="lvl : ${acc.assignableLevels}"
-                        th:value="${lvl}"
-                        th:text="${lvl}"
-                        th:selected="${lvl == acc.level}">LEVEL</option>
-              </select>
-              <button type="submit" class="btn btn-primary">Save</button>
-            </form>
-            <form th:if="${canTransfer and acc.level == 'OWNER' and !transferTargets.empty}"
-                  th:action="@{/editor/roles/transfer}" method="post" class="item-form role-assign role-transfer">
-              <th:block th:replace="~{fragments/csrf :: field}"></th:block>
-              <label class="visually-hidden" for="transfer-id">New owner</label>
-              <select name="id" id="transfer-id" required>
-                <option value="" disabled selected>Transfer to…</option>
-                <option th:each="t : ${transferTargets}"
-                        th:value="${t.id}"
-                        th:text="${t.login + ' · ' + t.level}">account</option>
-              </select>
-              <button type="submit" class="btn btn-primary">Transfer</button>
-            </form>
-            <p th:if="${canTransfer and acc.level == 'OWNER' and transferTargets.empty}"
-               class="field-hint role-locked">Need another account</p>
-            <p th:if="${!canTransfer and acc.level == 'OWNER'}" class="field-hint role-locked">Owner</p>
-          </li>
-        </ul>
+          </div>
+          <div class="editor-actions" th:if="${canEditMatrix}">
+            <button type="submit" class="btn btn-primary">Save access</button>
+          </div>
+        </form>
       </section>
     </main>
   </div>
   <script>
-    document.querySelectorAll('.role-transfer').forEach(function (form) {
-      form.addEventListener('submit', function (event) {
-        var select = form.querySelector('select[name="id"]');
-        if (!select || !select.value) {
+    (function () {
+      var form = document.getElementById('roles-matrix-form');
+      if (!form) return;
+      var dirty = false;
+      form.addEventListener('change', function () { dirty = true; });
+      form.addEventListener('submit', function () { dirty = false; });
+      window.addEventListener('beforeunload', function (event) {
+        if (dirty) {
           event.preventDefault();
-          return;
-        }
-        if (!confirm('Transfer ownership to ' + (select.options[select.selectedIndex].text || 'this account')
-            + '? You will become ADMIN.')) {
-          event.preventDefault();
+          event.returnValue = '';
         }
       });
-    });
+    })();
+    (function () {
+      var nav = document.querySelector('.roles-tabs');
+      if (!nav) {
+        return;
+      }
+      var tabs = nav.querySelectorAll('[role="tab"]');
+      var panels = document.querySelectorAll('.roles-tab-panel');
+      var byId = {};
+      for (var i = 0; i < panels.length; i++) {
+        byId[panels[i].id] = panels[i];
+      }
+
+      function show(id) {
+        if (!byId[id] && panels.length) {
+          id = panels[0].id;
+        }
+        for (var p = 0; p < panels.length; p++) {
+          var on = panels[p].id === id;
+          panels[p].classList.toggle('is-active', on);
+          panels[p].hidden = !on;
+        }
+        for (var t = 0; t < tabs.length; t++) {
+          var selected = tabs[t].getAttribute('aria-controls') === id;
+          tabs[t].classList.toggle('is-active', selected);
+          tabs[t].setAttribute('aria-selected', selected ? 'true' : 'false');
+          tabs[t].tabIndex = selected ? 0 : -1;
+        }
+      }
+
+      nav.addEventListener('click', function (event) {
+        var tab = event.target.closest('[role="tab"]');
+        if (!tab || !nav.contains(tab)) {
+          return;
+        }
+        event.preventDefault();
+        show(tab.getAttribute('aria-controls'));
+        tab.focus();
+      });
+      nav.addEventListener('keydown', function (event) {
+        var list = Array.prototype.slice.call(tabs);
+        var index = list.indexOf(document.activeElement);
+        if (index < 0) {
+          return;
+        }
+        var next = -1;
+        if (event.key === 'ArrowRight' || event.key === 'ArrowDown') {
+          next = (index + 1) % list.length;
+        } else if (event.key === 'ArrowLeft' || event.key === 'ArrowUp') {
+          next = (index - 1 + list.length) % list.length;
+        } else if (event.key === 'Home') {
+          next = 0;
+        } else if (event.key === 'End') {
+          next = list.length - 1;
+        }
+        if (next < 0) {
+          return;
+        }
+        event.preventDefault();
+        list[next].focus();
+        show(list[next].getAttribute('aria-controls'));
+      });
+    })();
   </script>
 </body>
 </html>

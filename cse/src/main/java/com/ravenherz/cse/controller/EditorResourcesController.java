@@ -12,6 +12,7 @@ import com.ravenherz.cse.present.ResourceGroupDisplayDTO;
 import com.ravenherz.cse.present.ResourceGroupIndex;
 import com.ravenherz.cse.present.ResourceGroupTreeView;
 import com.ravenherz.cse.util.imaging.HeicJpegConverter;
+import com.ravenherz.cse.util.imaging.ImageMetadata;
 import com.ravenherz.cse.util.imaging.ImageUploadOptions;
 import com.ravenherz.cse.util.imaging.JpegImages;
 import com.ravenherz.cse.util.Json;
@@ -101,6 +102,10 @@ public class EditorResourcesController extends AbstractController {
             model.addAttribute("error", "File is required");
             return loadResourcesWithError(model, accessor, request);
         }
+        if (file.getSize() > 50L * 1024 * 1024) {
+            model.addAttribute("error", "File is too large (50 MB max)");
+            return loadResourcesWithError(model, accessor, request);
+        }
 
         String originalFilename = file.getOriginalFilename();
         if (originalFilename == null || !originalFilename.contains(".")) {
@@ -116,6 +121,7 @@ public class EditorResourcesController extends AbstractController {
 
         String extension = originalFilename.substring(originalFilename.lastIndexOf(".") + 1).toLowerCase();
         byte[] content = file.getBytes();
+        ImageMetadata.Parsed imageMeta = resourceType == IMAGE ? ImageMetadata.parse(content) : null;
         ImageUploadOptions uploadOptions = ImageUploadOptions.from(settings);
         Integer convertedWidth = null;
         Integer convertedHeight = null;
@@ -126,6 +132,10 @@ public class EditorResourcesController extends AbstractController {
                 extension = "jpg";
                 convertedWidth = jpeg.width();
                 convertedHeight = jpeg.height();
+            } catch (OutOfMemoryError e) {
+                LOGGER.warn("HEIC conversion ran out of memory: " + e.getMessage(), e);
+                model.addAttribute("error", "Could not convert HEIC image (not enough memory). Try exporting as JPEG first.");
+                return loadResourcesWithError(model, accessor, request);
             } catch (Exception e) {
                 LOGGER.warn("HEIC conversion failed: " + e.getMessage(), e);
                 model.addAttribute("error", "Could not convert HEIC image. Try exporting as JPEG first.");
@@ -158,9 +168,11 @@ public class EditorResourcesController extends AbstractController {
                 LOGGER.warn("Failed to parse metadata: " + e.getMessage());
             }
         }
+        if (imageMeta != null) {
+            ImageMetadata.applyTo(resourceData, imageMeta);
+        }
         if (convertedWidth != null && convertedHeight != null) {
-            resourceData.addMetadata("width", String.valueOf(convertedWidth));
-            resourceData.addMetadata("height", String.valueOf(convertedHeight));
+            ImageMetadata.setDimensions(resourceData, convertedWidth, convertedHeight);
         }
         Mp3Metadata.Parsed mp3 = null;
         if (resourceType == ResourceType.AUDIO) {
@@ -175,6 +187,7 @@ public class EditorResourcesController extends AbstractController {
         fillResourceContent(resourceData, content);
 
         ResourceEntity resourceEntity = new ResourceEntity(resourceData, accessor);
+        ImageMetadata.applyCreationDate(resourceEntity, imageMeta);
         if (resourceType == IMAGE) {
             ResourceData previewData = buildImagePreview(resourceData, content, resourceId.trim(),
                     extension, userId, uploadOptions);
@@ -319,6 +332,55 @@ public class EditorResourcesController extends AbstractController {
         }
         existing.getResourceData().setImageDescription(imageDescription);
         serviceProvider.getResourceService().replace(existing);
+        redirectResources(request, response, null);
+        return null;
+    }
+
+    @PostMapping("/resources/access")
+    public String updateResourceAccess(@RequestParam("pathPublic") String pathPublic,
+            Model model, HttpServletRequest request, HttpServletResponse response) throws IOException {
+        AccountEntity accessor = getAccessor(request, response);
+        if (accessor == null) {
+            return null;
+        }
+        if (pathPublic == null || pathPublic.isBlank()) {
+            model.addAttribute("error", "Resource path is required");
+            return loadResourcesWithError(model, accessor, request);
+        }
+        ResourceEntity existing = serviceProvider.getResourceService().getByPublicPath(pathPublic.trim());
+        if (existing == null) {
+            model.addAttribute("error", "Resource not found");
+            return loadResourcesWithError(model, accessor, request);
+        }
+        if (!EntityAccess.isAccessible(existing, AccessType.ACCESS_EDIT, accessor)) {
+            error(403, request, response);
+            return null;
+        }
+        applyAccess(request, existing);
+        serviceProvider.getResourceService().replace(existing);
+        redirectResources(request, response, null);
+        return null;
+    }
+
+    @PostMapping("/resources/group/access")
+    public String updateResourceGroupAccess(@RequestParam("groupId") String groupId,
+            Model model, HttpServletRequest request, HttpServletResponse response) throws IOException {
+        AccountEntity accessor = getAccessor(request, response);
+        if (accessor == null) {
+            return null;
+        }
+        ResourceGroupEntity group = loadGroup(groupId);
+        if (group == null || ResourceGroupTree.isDefault(group)) {
+            redirectResources(request, response, "invalid_group");
+            return null;
+        }
+        if (!EntityAccess.isAccessible(group, AccessType.ACCESS_EDIT, accessor)) {
+            error(403, request, response);
+            return null;
+        }
+        applyAccess(request, group);
+        serviceProvider.getResourceGroupService().replace(group);
+        resourceGroupIndex.structureChanged();
         redirectResources(request, response, null);
         return null;
     }
@@ -706,6 +768,9 @@ public class EditorResourcesController extends AbstractController {
         } catch (Exception e) {
             LOGGER.error("Failed to load resources: " + e.getMessage(), e);
         }
+        stampFolderAccess(model, accessor);
+        addAccessLookups(model);
+        model.addAttribute("accessor", accessor);
         if (!model.containsAttribute("error")) {
             String message = ResourceGroupTree.errorMessage(errorCode);
             if (message != null) {
@@ -713,6 +778,21 @@ public class EditorResourcesController extends AbstractController {
             }
         }
         model.addAttribute("username", accessor.getAccountData().getLogin());
+    }
+
+    private void stampFolderAccess(Model model, AccountEntity accessor) {
+        Object selected = model.getAttribute("selectedGroup");
+        if (!(selected instanceof ResourceGroupDisplayDTO group) || !group.canEditAccess()) {
+            return;
+        }
+        ResourceGroupEntity live = loadGroup(group.getId());
+        if (live == null) {
+            return;
+        }
+        if (live.getSecurityData() != null) {
+            group.setSecurityData(live.getSecurityData());
+        }
+        group.setAccessCanEdit(EntityAccess.isAccessible(live, AccessType.ACCESS_EDIT, accessor));
     }
 
     private void attachPaneEntries(Model model, String selectedId) {

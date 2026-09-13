@@ -20,6 +20,8 @@ public final class CseSiteFormat {
      * Suggested import order (parents before refs). Not the zip physical order.
      */
     public static final List<String> COLLECTIONS = List.of(
+            MongoCollections.DATABASE_ROLES,
+            MongoCollections.DATABASE_ROLE_MATRIX,
             MongoCollections.DATABASE_ACCOUNTS,
             MongoCollections.DATABASE_CATEGORIES,
             MongoCollections.DATABASE_RESOURCE_GROUPS,
@@ -36,6 +38,8 @@ public final class CseSiteFormat {
      * Blobs last. Importers must use {@link #COLLECTIONS}, not zip order.
      */
     public static final List<String> ZIP_WRITE_ORDER = List.of(
+            MongoCollections.DATABASE_ROLES,
+            MongoCollections.DATABASE_ROLE_MATRIX,
             MongoCollections.DATABASE_ACCOUNTS,
             MongoCollections.DATABASE_CATEGORIES,
             MongoCollections.DATABASE_RESOURCE_GROUPS,

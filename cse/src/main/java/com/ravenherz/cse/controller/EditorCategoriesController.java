@@ -53,6 +53,7 @@ public class EditorCategoriesController extends AbstractController {
 
         addEditorChrome(model, accessor);
         EditorInline.putTreeForCategoryCreate(model, resourceGroupIndex);
+        addAccessPanel(model, null, accessor);
 
         return "/admin/editor-category-create";
     }
@@ -87,6 +88,7 @@ public class EditorCategoriesController extends AbstractController {
         categoryData.setDisplayPriority(parseIntOrZero(displayPriority));
 
         CategoryEntity newCategory = new CategoryEntity(categoryData, accessor);
+        applyAccess(request, newCategory);
 
         try {
             serviceProvider.getCategoryService().insert(newCategory);
@@ -137,6 +139,7 @@ public class EditorCategoriesController extends AbstractController {
         model.addAttribute("category", category);
         addEditorChrome(model, accessor);
         EditorInline.putTreeForCategory(model, resourceGroupIndex, category);
+        addAccessPanel(model, category, accessor);
 
         return "/admin/editor-category-edit";
     }
@@ -198,6 +201,7 @@ public class EditorCategoriesController extends AbstractController {
         newEvents[oldEvents.length] = new Event(EventType.ENTITY_EDITED, LocalDateTime.now(), accessor);
         historyData.setEvents(newEvents);
         category.setHistoryData(historyData);
+        applyAccess(request, category);
 
         serviceProvider.getCategoryService().replace(category);
         resourceGroupIndex.contentChanged();

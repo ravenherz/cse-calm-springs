@@ -1,11 +1,11 @@
 package com.ravenherz.cse.dal.dto;
 
+import com.ravenherz.cse.dal.dto.basic.AccessRule;
 import com.ravenherz.cse.dal.dto.basic.Event;
 import com.ravenherz.cse.dal.dto.basic.HistoryData;
 import com.ravenherz.cse.dal.dto.basic.SecurityData;
 import com.ravenherz.cse.dal.dto.basic.enums.AccessType;
 import com.ravenherz.cse.dal.dto.basic.enums.EventType;
-import com.ravenherz.cse.dal.dto.basic.enums.SecurityLevel;
 import org.bson.types.ObjectId;
 import org.springframework.data.annotation.Id;
 import org.springframework.lang.Nullable;
@@ -34,7 +34,7 @@ public abstract class BasicEntity implements Serializable {
         this(entityVersion, null, null);
     }
 
-    public BasicEntity(String entityVersion, @Nullable Map<AccessType, SecurityLevel> accessSettings,
+    public BasicEntity(String entityVersion, @Nullable Map<AccessType, AccessRule> accessSettings,
             @Nullable AccountEntity creator) {
         this.securityData = accessSettings == null ? getDefaultSecurityData()
                 : new SecurityData(accessSettings);
@@ -108,5 +108,17 @@ public abstract class BasicEntity implements Serializable {
                 .filter(event -> EventType.ENTITY_CREATED.equals(event.getEventType()))
                 .map(Event::getLocalDateTime)
                 .findFirst().orElse(LocalDateTime.now());
+    }
+
+    public void setCreationLocalDateTime(LocalDateTime dateTime) {
+        if (dateTime == null || historyData == null || historyData.getEvents() == null) {
+            return;
+        }
+        for (Event event : historyData.getEvents()) {
+            if (EventType.ENTITY_CREATED.equals(event.getEventType())) {
+                event.setLocalDateTime(dateTime);
+                return;
+            }
+        }
     }
 }

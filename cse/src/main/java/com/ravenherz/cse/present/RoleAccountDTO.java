@@ -7,11 +7,15 @@ public class RoleAccountDTO {
     private String login;
     private String emailAddress;
     private String level;
+    private String roleId;
+    private String roleName;
+    private boolean owner;
     private boolean loginable;
     private boolean self;
     private boolean canEdit;
     private String lockHint;
     private List<String> assignableLevels;
+    private List<RoleOptionDTO> assignableRoles;
 
     public String getId() { return id; }
     public void setId(String id) { this.id = id; }
@@ -24,6 +28,15 @@ public class RoleAccountDTO {
 
     public String getLevel() { return level; }
     public void setLevel(String level) { this.level = level; }
+
+    public String getRoleId() { return roleId; }
+    public void setRoleId(String roleId) { this.roleId = roleId; }
+
+    public String getRoleName() { return roleName; }
+    public void setRoleName(String roleName) { this.roleName = roleName; }
+
+    public boolean isOwner() { return owner; }
+    public void setOwner(boolean owner) { this.owner = owner; }
 
     public boolean isLoginable() { return loginable; }
     public void setLoginable(boolean loginable) { this.loginable = loginable; }
@@ -39,4 +52,7 @@ public class RoleAccountDTO {
 
     public List<String> getAssignableLevels() { return assignableLevels; }
     public void setAssignableLevels(List<String> assignableLevels) { this.assignableLevels = assignableLevels; }
+
+    public List<RoleOptionDTO> getAssignableRoles() { return assignableRoles; }
+    public void setAssignableRoles(List<RoleOptionDTO> assignableRoles) { this.assignableRoles = assignableRoles; }
 }

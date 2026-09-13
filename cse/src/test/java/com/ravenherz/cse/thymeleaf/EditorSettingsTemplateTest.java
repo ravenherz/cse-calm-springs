@@ -45,9 +45,6 @@ class EditorSettingsTemplateTest {
         context.setVariable("settingContexts", contexts);
         context.setVariable("publicThemes", List.of(modern, paper, client));
         context.setVariable("activeThemeSchemas", schemas);
-        context.setVariable("personalTheme", "");
-        context.setVariable("personalSchema", "");
-        context.setVariable("personalThemeSchemas", List.of());
         context.setVariable("cseContextPath", "/rhz-we");
         context.setVariable("resourceGroupTree", List.of());
         context.setVariable("selectedGroup", null);
@@ -69,8 +66,9 @@ class EditorSettingsTemplateTest {
         String html = engine.process("admin/editor-settings", context);
 
         assertFalse(html.contains("${"), html);
-        assertTrue(html.contains("id=\"my-styles-theme\""), html);
-        assertTrue(html.contains("id=\"my-styles-schema\""), html);
+        assertFalse(html.contains("id=\"my-styles-theme\""), html);
+        assertFalse(html.contains("id=\"my-styles-schema\""), html);
+        assertFalse(html.contains("Save your theme"), html);
         assertTrue(html.contains("bindThemeToSchema"), html);
         assertTrue(html.contains("atelier, chalk, charcoal, ivory, linen, midnight, studio"), html);
         assertTrue(html.contains("data-default=\"linen\""), html);

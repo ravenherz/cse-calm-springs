@@ -6,8 +6,18 @@ import java.util.List;
 public class AccountDisplayDTO {
     private String id;
     private String login;
+    private String shownName;
+    private String avatar;
+    private String initial;
     private String emailAddress;
     private String level;
+    private String roleId;
+    private String roleName;
+    private boolean owner;
+    private boolean self;
+    private boolean canEdit;
+    private String lockHint;
+    private List<RoleOptionDTO> assignableRoles;
     private boolean loginable;
     private int sessionTotalCount;
     private int sessionActiveCount;
@@ -24,11 +34,41 @@ public class AccountDisplayDTO {
     public String getLogin() { return login; }
     public void setLogin(String login) { this.login = login; }
 
+    public String getShownName() { return shownName; }
+    public void setShownName(String shownName) { this.shownName = shownName; }
+
+    public String getAvatar() { return avatar; }
+    public void setAvatar(String avatar) { this.avatar = avatar; }
+
+    public String getInitial() { return initial; }
+    public void setInitial(String initial) { this.initial = initial; }
+
     public String getEmailAddress() { return emailAddress; }
     public void setEmailAddress(String emailAddress) { this.emailAddress = emailAddress; }
 
     public String getLevel() { return level; }
     public void setLevel(String level) { this.level = level; }
+
+    public String getRoleId() { return roleId; }
+    public void setRoleId(String roleId) { this.roleId = roleId; }
+
+    public String getRoleName() { return roleName; }
+    public void setRoleName(String roleName) { this.roleName = roleName; }
+
+    public boolean isOwner() { return owner; }
+    public void setOwner(boolean owner) { this.owner = owner; }
+
+    public boolean isSelf() { return self; }
+    public void setSelf(boolean self) { this.self = self; }
+
+    public boolean isCanEdit() { return canEdit; }
+    public void setCanEdit(boolean canEdit) { this.canEdit = canEdit; }
+
+    public String getLockHint() { return lockHint; }
+    public void setLockHint(String lockHint) { this.lockHint = lockHint; }
+
+    public List<RoleOptionDTO> getAssignableRoles() { return assignableRoles; }
+    public void setAssignableRoles(List<RoleOptionDTO> assignableRoles) { this.assignableRoles = assignableRoles; }
 
     public boolean isLoginable() { return loginable; }
     public void setLoginable(boolean loginable) { this.loginable = loginable; }

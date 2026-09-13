@@ -1,7 +1,7 @@
 package com.ravenherz.cse.dal.dto.events;
 
+import com.ravenherz.cse.util.CseEmbedProcessor;
 import com.ravenherz.cse.util.MarkdownRenderer;
-import com.ravenherz.cse.util.PlaylistEmbedProcessor;
 import com.ravenherz.cse.dal.dto.ItemEntity;
 import com.ravenherz.cse.dal.dto.ResourceEntity;
 import com.ravenherz.cse.dal.dto.basic.AlbumData;
@@ -65,18 +65,28 @@ public class PageEvent extends PageData {
         }
 
         public static PageEventComment toPageEventComment(Comment comment) {
+            LocalDateTime published = comment == null ? null : comment.getPublicationTime();
+            String date = "";
+            String time = "";
+            if (published != null) {
+                date = String.format("%s %s, %s",
+                        published.toLocalDate().getMonth()
+                                .getDisplayName(TextStyle.FULL, Locale.ENGLISH),
+                        getDayOfMonth(published.toLocalDate().getDayOfMonth()),
+                        published.getYear());
+                time = published.format(fmt).replace("AM", "am").replace("PM", "pm");
+            }
+            return new PageEventComment(authorLogin(comment), date, time,
+                    comment == null ? null : comment.getMessage());
+        }
 
-            return new PageEventComment(comment.getAuthor().getAccountData().getLogin(),
-                    String.format("%s %s, %s",
-                            comment.getPublicationTime().toLocalDate().getMonth()
-                                    .getDisplayName(TextStyle.FULL, Locale.ENGLISH),
-                            getDayOfMonth(
-                                    comment.getPublicationTime().toLocalDate().getDayOfMonth()),
-                            comment.getPublicationTime().getYear()
-                    ),
-                    comment.getPublicationTime().format(fmt).replace("AM", "am")
-                            .replace("PM", "pm"),
-                    comment.getMessage());
+        private static String authorLogin(Comment comment) {
+            if (comment == null || comment.getAuthor() == null
+                    || comment.getAuthor().getAccountData() == null) {
+                return "Unknown";
+            }
+            String login = comment.getAuthor().getAccountData().getLogin();
+            return login == null || login.isBlank() ? "Unknown" : login;
         }
 
         private static String getDayOfMonth(int dayOfMonth) {
@@ -109,7 +119,7 @@ public class PageEvent extends PageData {
         super(pageData.getTitle(),
                 pageData.getHeader(),
                 pageData.getSubHeader(),
-                PlaylistEmbedProcessor.expand(MarkdownRenderer.render(pageData.getDescription())),
+                CseEmbedProcessor.expand(MarkdownRenderer.render(pageData.getDescription())),
                 pageData.getTags());
         this.uniqueUriName = uniqueUriName;
         this.pageLink = "./?page=" + uniqueUriName;
@@ -132,7 +142,7 @@ public class PageEvent extends PageData {
         super(albumTitle(item),
                 albumHeader(item),
                 albumSubHeader(item),
-                PlaylistEmbedProcessor.expand(MarkdownRenderer.render(albumDescription(item))),
+                CseEmbedProcessor.expand(MarkdownRenderer.render(albumDescription(item))),
                 albumTags(item));
         this.uniqueUriName = item.getUniqueUriName();
         this.pageLink = "./?album=" + uniqueUriName;
@@ -205,7 +215,9 @@ public class PageEvent extends PageData {
         }
 
         return pageData.getComments().stream()
-                .sorted(Comparator.comparing(Comment::getPublicationTime).reversed())
+                .filter(Objects::nonNull)
+                .sorted(Comparator.comparing(Comment::getPublicationTime,
+                        Comparator.nullsLast(Comparator.reverseOrder())))
                 .map(PageEventConverter::toPageEventComment)
                 .collect(Collectors.toList());
     }

@@ -21,9 +21,9 @@ When you are already signed in as an operator, the Sign in app lists **Admin con
 The console always shows the same top bar:
 
 - **Catalog** — the tree and the working pane
-- **Accounts** — who can sign in
-- **Roles** — who may use the editor, and ownership
-- **Settings** — site copy, the live theme, image upload, your personal theme
+- **Accounts** — people, roles on each person, ownership
+- **Roles** — who may use the editor
+- **Settings** — site copy, the live theme, image upload
 - **Site data** — export and import a `.csesite` archive
 - **API** — public HTTP surface for themes and login
 - **Logs** — live tail of the engine log
@@ -42,9 +42,9 @@ Catalog is the home. The first open lands on **Unsorted** when that is the defau
 - [Playlists](playlists.md) — site-owned listening lists
 - [Apps](apps.md) — bundled WARs and `.cseapp` packs
 - [Themes](themes.md) — skins, Activate, `.csetheme` packs
-- [Accounts](accounts.md) — the people list
-- [Roles](roles.md) — access matrix and owner transfer
-- [Settings](settings.md) — database overlay and your theme
+- [Accounts](accounts.md) — people as circles; search, role, and transfer
+- [Roles](roles.md) — tabbed access matrix
+- [Settings](settings.md) — database overlay and the live theme
 - [Site data](site-data.md) — take the archive with you
 - [API](api.md) — conventions and endpoint tabs
 - [Logs](logs.md) — wrap, auto-tail, download

@@ -26,10 +26,12 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.Base64;
-import java.util.LinkedHashMap;
+import java.util.HashSet;
 import java.util.List;
-import java.util.Map;
+import java.util.Set;
+import java.util.function.Consumer;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 @Repository(value = "resourceService")
 public class ResourceServiceImpl extends BasicService implements ResourceService {
@@ -52,7 +54,14 @@ public class ResourceServiceImpl extends BasicService implements ResourceService
 
     @Override
     public List<BasicEntity> getAll() {
-        return new java.util.ArrayList<>(mongo().findAll(ResourceEntity.class));
+        Query query = new Query();
+        excludeBinaries(query);
+        return new ArrayList<>(mongo().find(query, ResourceEntity.class));
+    }
+
+    @Override
+    public List<ResourceEntity> listWithContent() {
+        return new ArrayList<>(mongo().findAll(ResourceEntity.class));
     }
 
     @Override
@@ -130,8 +139,9 @@ public class ResourceServiceImpl extends BasicService implements ResourceService
         if (group == null || group.getId() == null) {
             return new ArrayList<>();
         }
-        return mongo().find(Query.query(Criteria.where("refResourceGroup").is(group.getId())),
-                ResourceEntity.class)
+        Query query = Query.query(Criteria.where("refResourceGroup").is(group.getId()));
+        excludeBinaries(query);
+        return mongo().find(query, ResourceEntity.class)
                 .stream()
                 .filter(resource -> resource.getResourceData() != null
                         && resource.getResourceData().getType() == ResourceType.IMAGE)
@@ -165,28 +175,20 @@ public class ResourceServiceImpl extends BasicService implements ResourceService
     }
 
     @Override
-    public List<ResourcePreviewSource> listPreviewSources() {
-        Map<ObjectId, byte[]> byId = new LinkedHashMap<>();
-        Query previewQuery = new Query();
+    public void forEachPreviewSource(Consumer<ResourcePreviewSource> consumer) {
+        if (consumer == null) {
+            return;
+        }
+        Set<ObjectId> seen = new HashSet<>();
+        Query previewQuery = new Query(new Criteria().orOperator(
+                Criteria.where("previewData.contentRaw").exists(true),
+                Criteria.where("previewData.pathProtected").exists(true)));
         previewQuery.fields()
                 .include("previewData.contentRaw")
                 .include("previewData.pathProtected");
-        for (Document doc : mongo().find(previewQuery, Document.class, MongoCollections.DATABASE_RESOURCES)) {
-            if (doc == null) {
-                continue;
-            }
-            ObjectId id = objectId(doc.get("_id"));
-            if (id == null) {
-                continue;
-            }
-            Document preview = nested(doc, "previewData");
-            byte[] bytes = decodeRaw(preview);
-            if (bytes == null) {
-                bytes = cachedBytes(pathProtected(preview));
-            }
-            if (bytes != null) {
-                byId.put(id, bytes);
-            }
+        try (Stream<Document> stream = mongo().stream(previewQuery, Document.class,
+                MongoCollections.DATABASE_RESOURCES)) {
+            stream.forEach(doc -> emitPreview(doc, seen, consumer, true));
         }
         Query images = Query.query(new Criteria().andOperator(
                 Criteria.where("resourceData.type").is(ResourceType.IMAGE),
@@ -196,34 +198,38 @@ public class ResourceServiceImpl extends BasicService implements ResourceService
                 .include("resourceData.pathProtected")
                 .include("resourceData.largeFile")
                 .include("previewData.pathProtected");
-        for (Document doc : mongo().find(images, Document.class, MongoCollections.DATABASE_RESOURCES)) {
-            if (doc == null) {
-                continue;
-            }
-            ObjectId id = objectId(doc.get("_id"));
-            if (id == null || byId.containsKey(id)) {
-                continue;
-            }
+        try (Stream<Document> stream = mongo().stream(images, Document.class,
+                MongoCollections.DATABASE_RESOURCES)) {
+            stream.forEach(doc -> emitPreview(doc, seen, consumer, false));
+        }
+    }
+
+    private void emitPreview(Document doc, Set<ObjectId> seen,
+            Consumer<ResourcePreviewSource> consumer, boolean previewOnly) {
+        if (doc == null) {
+            return;
+        }
+        ObjectId id = objectId(doc.get("_id"));
+        if (id == null || seen.contains(id)) {
+            return;
+        }
+        Document preview = nested(doc, "previewData");
+        byte[] bytes = decodeRaw(preview);
+        if (bytes == null) {
+            bytes = cachedBytes(pathProtected(preview));
+        }
+        if (bytes == null && !previewOnly) {
             Document resource = nested(doc, "resourceData");
-            byte[] bytes = null;
             if (!isLarge(resource)) {
                 bytes = decodeRaw(resource);
             }
             if (bytes == null) {
-                bytes = cachedBytes(pathProtected(nested(doc, "previewData")));
-            }
-            if (bytes == null) {
                 bytes = cachedBytes(pathProtected(resource));
             }
-            if (bytes != null) {
-                byId.put(id, bytes);
-            }
         }
-        List<ResourcePreviewSource> out = new ArrayList<>(byId.size());
-        for (Map.Entry<ObjectId, byte[]> entry : byId.entrySet()) {
-            out.add(new ResourcePreviewSource(entry.getKey(), entry.getValue()));
+        if (bytes != null && seen.add(id)) {
+            consumer.accept(new ResourcePreviewSource(id, bytes));
         }
-        return out;
     }
 
     @Override
@@ -234,8 +240,12 @@ public class ResourceServiceImpl extends BasicService implements ResourceService
                         Criteria.where("refResourceGroup").exists(false))
                 : Criteria.where("refResourceGroup").is(groupId);
         Query query = Query.query(group);
-        query.fields().exclude("resourceData.contentRaw").exclude("previewData.contentRaw");
+        excludeBinaries(query);
         return new ArrayList<>(mongo().find(query, ResourceEntity.class));
+    }
+
+    private static void excludeBinaries(Query query) {
+        query.fields().exclude("resourceData.contentRaw").exclude("previewData.contentRaw");
     }
 
     private static ObjectId objectId(Object raw) {

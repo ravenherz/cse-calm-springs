@@ -9,10 +9,19 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="../../content-public/admin/css/editor.css">
-<link rel="stylesheet" href="css/projects.css">
+<link rel="stylesheet" href="css/projects.css?v=10">
+<style>
+.load-screen{position:fixed;inset:0;z-index:100;display:flex;align-items:center;justify-content:center;background:#0b0c0f}
+.load-screen[hidden]{display:none}
+.load-spinner{width:2rem;height:2rem;box-sizing:border-box;border:2px solid #23262f;border-top-color:#e0b15a;border-radius:50%;animation:load-spin .7s linear infinite}
+@keyframes load-spin{to{transform:rotate(360deg)}}
+</style>
 <meta name="theme-color" content="#0b0c0f">
 </head>
 <body>
+<div class="load-screen" id="panel-load" role="status" aria-live="polite" aria-busy="true" aria-label="Loading">
+  <span class="load-spinner" aria-hidden="true"></span>
+</div>
 <div class="editor-layout">
   <header class="editor-sidebar">
     <a class="sidebar-brand" id="link-site-brand" href="../..">
@@ -31,10 +40,6 @@
   <p class="error-message projects-banner" id="banner" hidden></p>
 
   <main class="projects-main">
-    <section class="projects-panel" id="panel-load">
-      <p class="field-hint">Loading…</p>
-    </section>
-
     <section class="projects-panel" id="panel-guest" hidden>
       <h1 class="page-title">Projects</h1>
       <p class="field-hint">Sign in to track issues. Guests cannot read or write this board.</p>
@@ -50,90 +55,162 @@
       <aside class="projects-nav">
         <div class="projects-nav-head">
           <h2 class="projects-nav-title">Projects</h2>
-          <button type="button" class="btn btn-primary" id="btn-new-project">New</button>
         </div>
-        <form id="form-project" class="projects-inline-form" hidden>
-          <div class="form-group">
-            <label for="project-name">Name</label>
-            <input type="text" id="project-name" maxlength="80" autocomplete="off" required>
-          </div>
-          <div class="form-group">
-            <label for="project-code">Code</label>
-            <input type="text" id="project-code" maxlength="8" autocomplete="off" required
-                pattern="[A-Z][A-Z0-9]{1,7}" placeholder="FLAB" title="2–8 letters or digits, starting with a letter">
-          </div>
-          <p class="field-hint">Uppercase prefix for task ids. First issue becomes FLAB-1.</p>
-          <div class="form-group">
-            <label for="project-description">Description</label>
-            <textarea id="project-description" class="editor-textarea" rows="3" maxlength="4000"></textarea>
-          </div>
-          <button type="submit" class="btn btn-primary">Create</button>
-        </form>
         <label class="projects-check">
           <input type="checkbox" id="show-archived">
-          Archived
+          Archived projects
         </label>
+        <label class="projects-check">
+          <input type="checkbox" id="mine-only">
+          My issues
+        </label>
+        <p class="field-hint projects-nav-hint">Check projects to include them in Backlog and Archive.</p>
         <nav class="projects-list" id="project-list" aria-label="Projects"></nav>
       </aside>
 
-      <section class="projects-board" id="board">
-        <header class="board-head">
-          <div>
-            <h1 class="page-title" id="board-title">Select a project</h1>
-            <p class="board-code" id="board-code" hidden></p>
-            <p class="field-hint" id="board-lead"></p>
-          </div>
-          <div class="board-actions" id="board-actions" hidden>
-            <label class="projects-check">
-              <input type="checkbox" id="mine-only">
-              My issues
-            </label>
-            <button type="button" class="btn btn-secondary" id="btn-archive">Archive</button>
-            <button type="button" class="btn btn-delete" id="btn-delete-project">Delete</button>
-          </div>
-        </header>
-        <form id="form-project-code" class="projects-inline-form board-new-issue" hidden>
-          <div class="form-group">
-            <label for="existing-project-code">Code</label>
-            <input type="text" id="existing-project-code" maxlength="8" autocomplete="off" required
-                pattern="[A-Z][A-Z0-9]{1,7}" placeholder="FLAB" title="2–8 letters or digits, starting with a letter">
-          </div>
-          <p class="field-hint">Set a project code before adding issues. It becomes the prefix of task ids (FLAB-1).</p>
-          <button type="submit" class="btn btn-primary">Save code</button>
-        </form>
-        <form id="form-issue" class="projects-inline-form board-new-issue" hidden>
-          <div class="form-group">
-            <label for="issue-title">New issue</label>
-            <input type="text" id="issue-title" maxlength="160" autocomplete="off" required placeholder="Title">
-          </div>
-          <p class="field-hint" id="issue-key-hint">Task id is assigned on create (CODE-1, CODE-2, …).</p>
-          <div class="form-row">
-            <div class="form-group">
-              <label for="issue-priority">Priority</label>
-              <select id="issue-priority">
-                <option value="normal">Normal</option>
-                <option value="high">High</option>
-                <option value="low">Low</option>
-              </select>
+      <section class="projects-stage">
+        <nav class="projects-tabs" role="tablist" aria-label="Projects views">
+          <button type="button" class="projects-tab-btn is-active" role="tab" id="tab-btn-work" data-tab="work" aria-selected="true">Active work</button>
+          <button type="button" class="projects-tab-btn" role="tab" id="tab-btn-backlog" data-tab="backlog" aria-selected="false">Backlog</button>
+          <button type="button" class="projects-tab-btn" role="tab" id="tab-btn-archive" data-tab="archive" aria-selected="false">Archive</button>
+          <span class="projects-tabs-sep" aria-hidden="true"></span>
+          <button type="button" class="projects-tab-btn" role="tab" id="tab-btn-new-feature" data-tab="new-feature" aria-selected="false">Create feature</button>
+          <button type="button" class="projects-tab-btn" role="tab" id="tab-btn-new-project" data-tab="new-project" aria-selected="false">Create project</button>
+        </nav>
+
+        <section class="projects-tab is-active" id="tab-work" data-tab="work" role="tabpanel" aria-labelledby="tab-btn-work">
+          <header class="board-head">
+            <div>
+              <h1 class="page-title" id="board-title">Select a project</h1>
+              <p class="board-code" id="board-code" hidden></p>
+              <p class="field-hint" id="board-lead"></p>
             </div>
+            <div class="board-actions" id="board-actions" hidden>
+              <button type="button" class="btn btn-secondary" id="btn-archive">Archive project</button>
+              <button type="button" class="btn btn-delete" id="btn-delete-project">Delete</button>
+            </div>
+          </header>
+          <form id="form-project-code" class="projects-inline-form board-new-issue" hidden>
+            <div class="form-group">
+              <label for="existing-project-code">Code</label>
+              <input type="text" id="existing-project-code" maxlength="8" autocomplete="off" required
+                  pattern="[A-Z][A-Z0-9]{1,7}" placeholder="PROJ" title="2–8 letters or digits, starting with a letter">
+            </div>
+            <p class="field-hint">Set a project code before adding issues. It becomes the prefix of task ids (PROJ-1).</p>
+            <button type="submit" class="btn btn-primary">Save code</button>
+          </form>
+          <div class="board-columns" id="board-columns" hidden>
+            <section class="board-col" data-status="open">
+              <h2 class="board-col-title">Open</h2>
+              <div class="board-col-cards"></div>
+            </section>
+            <section class="board-col" data-status="doing">
+              <h2 class="board-col-title">Doing</h2>
+              <div class="board-col-cards"></div>
+            </section>
+            <section class="board-col" data-status="done">
+              <h2 class="board-col-title">Done</h2>
+              <div class="board-col-cards"></div>
+            </section>
           </div>
-          <button type="submit" class="btn btn-primary">Add</button>
-        </form>
-        <div class="board-columns" id="board-columns" hidden>
-          <section class="board-col" data-status="open">
-            <h2 class="board-col-title">Open</h2>
-            <div class="board-col-cards"></div>
-          </section>
-          <section class="board-col" data-status="doing">
-            <h2 class="board-col-title">Doing</h2>
-            <div class="board-col-cards"></div>
-          </section>
-          <section class="board-col" data-status="done">
-            <h2 class="board-col-title">Done</h2>
-            <div class="board-col-cards"></div>
-          </section>
-        </div>
-        <p class="field-hint" id="board-empty">Create a project to start tracking issues.</p>
+          <p class="field-hint" id="board-empty">Create a project to start tracking issues.</p>
+        </section>
+
+        <section class="projects-tab" id="tab-backlog" data-tab="backlog" role="tabpanel" aria-labelledby="tab-btn-backlog" hidden>
+          <header class="board-head">
+            <div>
+              <h1 class="page-title">Backlog</h1>
+              <p class="field-hint">Features that are not archived. Take one into Active work to start.</p>
+            </div>
+          </header>
+          <div class="issue-list" id="backlog-list"></div>
+          <p class="field-hint tab-empty" id="backlog-empty">Nothing in the backlog. Create a feature to add one.</p>
+        </section>
+
+        <section class="projects-tab" id="tab-archive" data-tab="archive" role="tabpanel" aria-labelledby="tab-btn-archive" hidden>
+          <header class="board-head">
+            <div>
+              <h1 class="page-title">Archive</h1>
+              <p class="field-hint" id="archive-lead">Archived features for the checked projects.</p>
+            </div>
+          </header>
+          <div class="issue-list" id="archive-list"></div>
+          <p class="field-hint tab-empty" id="archive-empty">No archived features for the checked projects.</p>
+        </section>
+
+        <section class="projects-tab" id="tab-new-feature" data-tab="new-feature" role="tabpanel" aria-labelledby="tab-btn-new-feature" hidden>
+          <header class="board-head">
+            <div>
+              <h1 class="page-title">Create feature</h1>
+              <p class="field-hint">New work lands in the backlog. Take it into Active work when you are ready.</p>
+            </div>
+          </header>
+          <form id="form-issue" class="projects-form">
+            <div class="form-group">
+              <label for="feature-project">Project</label>
+              <select id="feature-project" required></select>
+            </div>
+            <p class="field-hint" id="issue-key-hint">Task id is assigned on create (CODE-1, CODE-2, …).</p>
+            <div class="form-group">
+              <span class="kind-label">Category</span>
+              <div class="kind-picker" id="feature-kind-picker" role="radiogroup" aria-label="Category"></div>
+            </div>
+            <div class="form-group">
+              <label for="issue-title">Title</label>
+              <input type="text" id="issue-title" maxlength="160" autocomplete="off" required placeholder="Title">
+            </div>
+            <div class="form-row">
+              <div class="form-group">
+                <label for="issue-priority">Priority</label>
+                <select id="issue-priority">
+                  <option value="normal">Normal</option>
+                  <option value="high">High</option>
+                  <option value="low">Low</option>
+                </select>
+              </div>
+            </div>
+            <div class="form-group">
+              <label for="feature-body">Body</label>
+              <textarea id="feature-body" class="editor-textarea" rows="8" maxlength="8000"></textarea>
+            </div>
+            <div class="form-group">
+              <span class="kind-label">Pictures</span>
+              <div class="picture-toolbar">
+                <input type="file" id="feature-pictures" class="file-input-hidden" accept="image/*" multiple>
+                <button type="button" class="btn btn-secondary" id="btn-feature-pictures">Add pictures</button>
+                <p class="field-hint">Images are stored as JPEG in the pictures table. A few screenshots per feature is enough.</p>
+              </div>
+              <div class="picture-grid" id="feature-picture-previews"></div>
+            </div>
+            <button type="submit" class="btn btn-primary">Create feature</button>
+          </form>
+        </section>
+
+        <section class="projects-tab" id="tab-new-project" data-tab="new-project" role="tabpanel" aria-labelledby="tab-btn-new-project" hidden>
+          <header class="board-head">
+            <div>
+              <h1 class="page-title">Create project</h1>
+              <p class="field-hint">A project is a board with its own task-id prefix.</p>
+            </div>
+          </header>
+          <form id="form-project" class="projects-form">
+            <div class="form-group">
+              <label for="project-name">Name</label>
+              <input type="text" id="project-name" maxlength="80" autocomplete="off" required>
+            </div>
+            <div class="form-group">
+              <label for="project-code">Code</label>
+              <input type="text" id="project-code" maxlength="8" autocomplete="off" required
+                  pattern="[A-Z][A-Z0-9]{1,7}" placeholder="PROJ" title="2–8 letters or digits, starting with a letter">
+            </div>
+            <p class="field-hint">Uppercase prefix for task ids. First issue becomes PROJ-1.</p>
+            <div class="form-group">
+              <label for="project-description">Description</label>
+              <textarea id="project-description" class="editor-textarea" rows="3" maxlength="4000"></textarea>
+            </div>
+            <button type="submit" class="btn btn-primary">Create project</button>
+          </form>
+        </section>
       </section>
     </section>
   </main>
@@ -150,6 +227,10 @@
     <div class="form-group">
       <label for="edit-title">Title</label>
       <input type="text" id="edit-title" maxlength="160" required>
+    </div>
+    <div class="form-group">
+      <span class="kind-label">Category</span>
+      <div class="kind-picker" id="edit-kind-picker" role="radiogroup" aria-label="Category"></div>
     </div>
     <div class="form-row">
       <div class="form-group">
@@ -173,9 +254,18 @@
       <label for="edit-body">Body</label>
       <textarea id="edit-body" class="editor-textarea" rows="8" maxlength="8000"></textarea>
     </div>
+    <div class="form-group">
+      <span class="kind-label">Pictures</span>
+      <div class="picture-toolbar">
+        <input type="file" id="edit-pictures" class="file-input-hidden" accept="image/*" multiple>
+        <button type="button" class="btn btn-secondary" id="btn-edit-pictures">Add pictures</button>
+      </div>
+      <div class="picture-grid" id="edit-picture-list"></div>
+    </div>
     <p class="field-hint" id="edit-meta"></p>
     <div class="drawer-actions">
       <button type="submit" class="btn btn-primary">Save</button>
+      <button type="button" class="btn btn-secondary" id="btn-issue-lane" hidden></button>
       <button type="button" class="btn btn-delete" id="btn-delete-issue">Delete</button>
     </div>
   </form>
@@ -193,6 +283,6 @@
 </aside>
 
 <script src="../../content-public/js/cse-app-data.js?v=4"></script>
-<script src="js/projects.js?v=3"></script>
+<script src="js/projects.js?v=9"></script>
 </body>
 </html>

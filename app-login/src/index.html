@@ -10,9 +10,18 @@
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="../../content-public/admin/css/editor.css">
 <link rel="stylesheet" href="css/login.css">
+<style>
+.load-screen{position:fixed;inset:0;z-index:100;display:flex;align-items:center;justify-content:center;background:#0b0c0f}
+.load-screen[hidden]{display:none}
+.load-spinner{width:2rem;height:2rem;box-sizing:border-box;border:2px solid #23262f;border-top-color:#e0b15a;border-radius:50%;animation:load-spin .7s linear infinite}
+@keyframes load-spin{to{transform:rotate(360deg)}}
+</style>
 <meta name="theme-color" content="#0b0c0f">
 </head>
 <body>
+<div class="load-screen" id="panel-load" role="status" aria-live="polite" aria-busy="true" aria-label="Loading">
+  <span class="load-spinner" aria-hidden="true"></span>
+</div>
 <div class="editor-layout">
   <header class="editor-sidebar">
     <a class="sidebar-brand" id="link-site-brand" href="../..">
@@ -34,7 +43,6 @@
     </header>
     <p class="error-message" id="banner-error" hidden></p>
     <p class="success-message" id="banner-ok" hidden></p>
-    <p class="field-hint" id="panel-load">Loading…</p>
 
     <section id="panel-setup" hidden>
       <p class="field-hint">This site is still in first-boot setup. Finish that before signing in.</p>
@@ -90,11 +98,68 @@
     </section>
 
     <section id="panel-user" hidden>
-      <p class="login-welcome">Signed in as <strong id="user-name">user</strong>.</p>
+      <div class="login-identity">
+        <img class="login-avatar login-avatar-lg" id="user-avatar" alt="" hidden>
+        <div>
+          <p class="login-welcome">Signed in as <strong id="user-name">user</strong>.</p>
+          <p class="field-hint" id="user-shown" hidden></p>
+        </div>
+      </div>
       <div class="login-actions">
         <a class="btn btn-primary" id="link-editor" href="../../editor">Admin console</a>
+        <a class="btn btn-secondary" id="link-edit" href="./?edit">Edit account</a>
         <button type="button" class="btn btn-secondary" id="btn-logout">Log out</button>
       </div>
+    </section>
+
+    <section id="panel-edit" hidden>
+      <p class="field-hint">Login stays the same. Avatar is stored on the account as a JPEG.</p>
+      <form id="form-edit" class="form-panel">
+        <div class="form-group">
+          <span>Avatar</span>
+          <div class="login-avatar-row">
+            <img class="login-avatar login-avatar-lg" id="edit-avatar-preview" alt="" hidden>
+            <div class="login-avatar-actions">
+              <input type="file" id="edit-avatar" class="file-input-hidden" accept="image/*">
+              <button type="button" class="btn btn-secondary" id="btn-edit-avatar">Upload image</button>
+              <button type="button" class="btn btn-secondary" id="btn-clear-avatar" hidden>Remove</button>
+            </div>
+          </div>
+        </div>
+        <div class="form-group">
+          <label for="EDIT_LOGIN">Login</label>
+          <input type="text" id="EDIT_LOGIN" name="EDIT_LOGIN" autocomplete="username" disabled>
+        </div>
+        <div class="form-group">
+          <label for="EDIT_SHOWN_NAME">Shown name</label>
+          <input type="text" id="EDIT_SHOWN_NAME" name="EDIT_SHOWN_NAME" autocomplete="nickname"
+              maxlength="25">
+        </div>
+        <div class="form-group">
+          <label for="EDIT_EMAIL">Email</label>
+          <input type="email" id="EDIT_EMAIL" name="EDIT_EMAIL" autocomplete="email" required>
+        </div>
+        <div class="form-group">
+          <label for="EDIT_BIO">Bio</label>
+          <textarea id="EDIT_BIO" name="EDIT_BIO" class="editor-textarea" rows="4" maxlength="2000"></textarea>
+        </div>
+        <div class="form-group">
+          <label for="EDIT_PASSWORD_CURRENT">Current password</label>
+          <input type="password" id="EDIT_PASSWORD_CURRENT" name="EDIT_PASSWORD_CURRENT"
+              autocomplete="current-password">
+        </div>
+        <div class="form-group">
+          <label for="EDIT_PASSWORD">New password</label>
+          <input type="password" id="EDIT_PASSWORD" name="EDIT_PASSWORD" autocomplete="new-password"
+              minlength="8">
+        </div>
+        <div class="form-group">
+          <label for="EDIT_PASSWORD_RETYPE">New password again</label>
+          <input type="password" id="EDIT_PASSWORD_RETYPE" name="EDIT_PASSWORD_RETYPE"
+              autocomplete="new-password">
+        </div>
+        <button type="submit" class="btn btn-primary" id="btn-save-account">Save</button>
+      </form>
     </section>
   </main>
 </div>

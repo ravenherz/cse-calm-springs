@@ -8,6 +8,8 @@ import com.ravenherz.cse.dal.dao.ItemService;
 import com.ravenherz.cse.dal.dao.PlaylistService;
 import com.ravenherz.cse.dal.dao.ResourceService;
 import com.ravenherz.cse.dal.dao.ResourceGroupService;
+import com.ravenherz.cse.dal.dao.RoleMatrixService;
+import com.ravenherz.cse.dal.dao.RoleService;
 
 public interface ServiceProvider {
 
@@ -26,4 +28,8 @@ public interface ServiceProvider {
     ThemeService getThemeService();
 
     PlaylistService getPlaylistService();
+
+    RoleService getRoleService();
+
+    RoleMatrixService getRoleMatrixService();
 }

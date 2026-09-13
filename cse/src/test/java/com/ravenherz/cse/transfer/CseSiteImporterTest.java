@@ -199,6 +199,7 @@ class CseSiteImporterTest {
         assertEquals("config-personal", overlayDoc.getContext());
         assertEquals("Ada", overlayDoc.getValues().get("company-title"));
         verify(settings).reloadFromMongo();
+        assertEquals("owner", importedAccount.getAccountData().getRoleId());
     }
 
     @Test
@@ -307,6 +308,35 @@ class CseSiteImporterTest {
         verify(mongo).insert(anyList(), org.mockito.ArgumentMatchers.eq("fretlab-progress"));
         verify(mongo).dropCollection("hello-snake-scores");
         verify(mongo, never()).insert(anyList(), org.mockito.ArgumentMatchers.eq("cse-mystery"));
+    }
+
+    @Test
+    void importsOldArchiveWithoutRolesCollectionsAndFillsRoleId() throws Exception {
+        Map<String, String> files = new HashMap<>();
+        files.put("manifest.json", """
+                {"format":"cse-site","version":1,"collections":{}}
+                """);
+        for (String name : CseSiteFormat.COLLECTIONS) {
+            if (MongoCollections.DATABASE_ROLES.equals(name)
+                    || MongoCollections.DATABASE_ROLE_MATRIX.equals(name)) {
+                continue;
+            }
+            files.put("collections/" + name + ".json", "[]");
+        }
+        files.put("collections/cse-accounts.json", """
+                [{"id":"68b000000000000000000001","accountData":{"login":"ada","hash":"h","emailAddress":"a@x","level":"OWNER","loginable":true}}]
+                """);
+
+        importer.apply(new ByteArrayInputStream(zipOf(files)), mongo, settings);
+
+        ArgumentCaptor<Object> saved = ArgumentCaptor.forClass(Object.class);
+        verify(mongo, atLeast(1)).save(saved.capture());
+        AccountEntity imported = saved.getAllValues().stream()
+                .filter(AccountEntity.class::isInstance)
+                .map(AccountEntity.class::cast)
+                .findFirst()
+                .orElseThrow();
+        assertEquals("owner", imported.getAccountData().getRoleId());
     }
 
     private static byte[] zipOf(Map<String, String> files) throws Exception {

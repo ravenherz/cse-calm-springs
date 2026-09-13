@@ -1,6 +1,7 @@
 package com.ravenherz.cse.dal.dto.basic;
 
 import com.ravenherz.cse.dal.dto.basic.enums.SecurityLevel;
+import com.ravenherz.cse.dal.role.RoleSeeds;
 import org.springframework.data.mongodb.core.index.Indexed;
 
 import java.time.LocalDateTime;
@@ -115,7 +116,10 @@ public final class AccountData {
     @Indexed
     private String emailAddress;
     private String bio;
+    private String shownName;
+    private String avatar;
     private SecurityLevel level;
+    private String roleId;
     private HashMap<String, String> contacts;
     private HashMap<String, String> extensibleData;
     private String stylesTheme;
@@ -134,6 +138,7 @@ public final class AccountData {
         this.emailAddress = emailAddress;
         this.level = SecurityLevel.INACTIVE_USER;
         this.loginable = false;
+        this.roleId = RoleSeeds.INACTIVE;
         this.activationToken = activationToken;
     }
 
@@ -143,7 +148,8 @@ public final class AccountData {
         this.hash = hash;
         this.emailAddress = emailAddress;
         this.level = level;
-        this.loginable = false;
+        this.loginable = RoleSeeds.loginableFor(level);
+        this.roleId = RoleSeeds.slugFor(level);
     }
 
     public String getLogin() {
@@ -178,12 +184,36 @@ public final class AccountData {
         this.bio = bio;
     }
 
+    public String getShownName() {
+        return shownName;
+    }
+
+    public void setShownName(String shownName) {
+        this.shownName = shownName;
+    }
+
+    public String getAvatar() {
+        return avatar;
+    }
+
+    public void setAvatar(String avatar) {
+        this.avatar = avatar;
+    }
+
     public SecurityLevel getLevel() {
         return level;
     }
 
     public void setLevel(SecurityLevel level) {
         this.level = level;
+    }
+
+    public String getRoleId() {
+        return roleId;
+    }
+
+    public void setRoleId(String roleId) {
+        this.roleId = roleId;
     }
 
     public HashMap<String, String> getContacts() {
@@ -255,7 +285,10 @@ public final class AccountData {
                 Objects.equals(hash, that.hash) &&
                 Objects.equals(emailAddress, that.emailAddress) &&
                 Objects.equals(bio, that.bio) &&
+                Objects.equals(shownName, that.shownName) &&
+                Objects.equals(avatar, that.avatar) &&
                 level == that.level &&
+                Objects.equals(roleId, that.roleId) &&
                 Objects.equals(contacts, that.contacts) &&
                 Objects.equals(extensibleData, that.extensibleData) &&
                 Objects.equals(sessions, that.sessions);
@@ -264,8 +297,8 @@ public final class AccountData {
     @Override public int hashCode() {
 
         return Objects
-                .hash(login, hash, emailAddress, bio, level, contacts, extensibleData, loginable,
-                        sessions);
+                .hash(login, hash, emailAddress, bio, shownName, avatar, level, roleId, contacts,
+                        extensibleData, loginable, sessions);
     }
 
     @Override public String toString() {
@@ -274,7 +307,10 @@ public final class AccountData {
                 ", hash='" + hash + '\'' +
                 ", emailAddress='" + emailAddress + '\'' +
                 ", bio='" + bio + '\'' +
+                ", shownName='" + shownName + '\'' +
+                ", avatar=" + (avatar == null ? "null" : ("chars=" + avatar.length())) +
                 ", level=" + level +
+                ", roleId='" + roleId + '\'' +
                 ", contacts=" + contacts +
                 ", extensibleData=" + extensibleData +
                 ", loginable=" + loginable +
@@ -288,6 +324,7 @@ public final class AccountData {
                 loginable = true;
                 this.activationToken = null;
                 this.level = SecurityLevel.ACTIVE_USER;
+                this.roleId = RoleSeeds.MEMBER;
                 return true;
             } else {
                 return false;

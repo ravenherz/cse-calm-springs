@@ -26,6 +26,8 @@
           "body": { "type": "string", "maxLength": 8000 },
           "status": { "type": "string" },
           "priority": { "type": "string" },
+          "category": { "type": "string" },
+          "lane": { "type": "string" },
           "author": { "type": "string" },
           "taskNumber": { "type": "integer" },
           "taskKey": { "type": "string" }
@@ -40,6 +42,20 @@
         "properties": {
           "issueId": { "type": "string" },
           "body": { "type": "string", "maxLength": 4000 },
+          "author": { "type": "string" }
+        }
+      }
+    },
+    {
+      "name": "pictures",
+      "access": "member-write",
+      "schema": {
+        "type": "object",
+        "properties": {
+          "issueId": { "type": "string" },
+          "name": { "type": "string", "maxLength": 160 },
+          "mime": { "type": "string", "maxLength": 64 },
+          "data": { "type": "string", "maxLength": 240000 },
           "author": { "type": "string" }
         }
       }

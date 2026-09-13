@@ -101,6 +101,7 @@ public class EditorPlaylistsController extends AbstractController {
         data.setDescription(blankToNull(description));
         data.setTracks(tracks);
         PlaylistEntity playlist = new PlaylistEntity(normalizedId, data, accessor);
+        applyAccess(request, playlist);
         try {
             serviceProvider.getPlaylistService().insert(playlist);
             resourceGroupIndex.contentChanged();
@@ -185,6 +186,7 @@ public class EditorPlaylistsController extends AbstractController {
         newEvents[oldEvents.length] = new Event(EventType.ENTITY_EDITED, LocalDateTime.now(), accessor);
         historyData.setEvents(newEvents);
         playlist.setHistoryData(historyData);
+        applyAccess(request, playlist);
         serviceProvider.getPlaylistService().replace(playlist);
         resourceGroupIndex.contentChanged();
         response.sendRedirect(request.getContextPath() + EditorTree.PLAYLISTS_HREF);
@@ -244,6 +246,7 @@ public class EditorPlaylistsController extends AbstractController {
         } else {
             EditorInline.putTreeForPlaylistCreate(model, resourceGroupIndex);
         }
+        addAccessPanel(model, playlist, accessor);
     }
 
     private List<AudioResourceView> audioLibrary() {

@@ -31,6 +31,7 @@ import java.awt.image.BufferedImage;
 import java.io.ByteArrayInputStream;
 import java.util.Base64;
 import java.util.List;
+import java.util.function.Consumer;
 
 import javax.imageio.ImageIO;
 
@@ -39,6 +40,8 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -92,8 +95,7 @@ class ResourceGroupIndexTest {
         when(groups.getAllGroups()).thenReturn(List.of(travel));
         when(resources.listSizeHints()).thenReturn(List.of(
                 new ResourceSizeHint(fileId, travel.getId(), "/u/res/image/cat.jpg", 50)));
-        when(resources.listPreviewSources()).thenReturn(List.of(
-                new ResourcePreviewSource(fileId, tinyJpeg())));
+        stubPreviewSources(resources, new ResourcePreviewSource(fileId, tinyJpeg()));
         ResourceGroupIndex index = new ResourceGroupIndex(groups, resources);
         ResourceGroupDisplayDTO first = index.view().roots().get(0);
         assertTrue(first.getTreeFiles().get(0).preview());
@@ -102,10 +104,10 @@ class ResourceGroupIndexTest {
         BufferedImage out = ImageIO.read(new ByteArrayInputStream(stored));
         assertEquals(TreePreviews.SIZE, out.getWidth());
         assertEquals(TreePreviews.SIZE, out.getHeight());
-        verify(resources, times(1)).listPreviewSources();
+        verify(resources, times(1)).forEachPreviewSource(any());
         index.fileAdded(travel.getId().toString(), 10);
         assertNotNull(index.treePreview(fileId.toString()));
-        verify(resources, times(1)).listPreviewSources();
+        verify(resources, times(1)).forEachPreviewSource(any());
     }
 
     @Test
@@ -115,7 +117,7 @@ class ResourceGroupIndexTest {
         ResourceService resources = mock(ResourceService.class);
         when(groups.getAllGroups()).thenReturn(List.of(travel));
         when(resources.listSizeHints()).thenReturn(List.of());
-        when(resources.listPreviewSources()).thenReturn(List.of());
+        stubPreviewSources(resources);
         ResourceGroupIndex index = new ResourceGroupIndex(groups, resources);
         index.view();
         ResourceEntity file = imageWithPreview(travel, tinyJpeg());
@@ -124,7 +126,7 @@ class ResourceGroupIndexTest {
         assertEquals(1, after.getTreeFiles().size());
         assertTrue(after.getTreeFiles().get(0).preview());
         assertNotNull(index.treePreview(file.getId().toString()));
-        verify(resources, times(1)).listPreviewSources();
+        verify(resources, times(1)).forEachPreviewSource(any());
     }
 
     @Test
@@ -161,8 +163,7 @@ class ResourceGroupIndexTest {
         when(groups.getAllGroups()).thenReturn(List.of(travel));
         when(resources.listSizeHints()).thenReturn(List.of(
                 new ResourceSizeHint(fileId, travel.getId(), "/u/res/image/cat.jpg", 50)));
-        when(resources.listPreviewSources()).thenReturn(List.of(
-                new ResourcePreviewSource(fileId, tinyJpeg())));
+        stubPreviewSources(resources, new ResourcePreviewSource(fileId, tinyJpeg()));
         ResourceGroupIndex index = new ResourceGroupIndex(groups, resources);
         index.view();
         ResourceEntity file = imageWithPreview(travel, tinyJpeg());
@@ -195,8 +196,7 @@ class ResourceGroupIndexTest {
         when(groups.getAllGroups()).thenReturn(List.of(unsorted));
         when(resources.listSizeHints()).thenReturn(List.of(
                 new ResourceSizeHint(fileId, unsorted.getId(), "/u/res/image/aurora.jpg", 50)));
-        when(resources.listPreviewSources()).thenReturn(List.of(
-                new ResourcePreviewSource(fileId, tinyJpeg())));
+        stubPreviewSources(resources, new ResourcePreviewSource(fileId, tinyJpeg()));
         when(categories.getAllCategories()).thenReturn(List.of(shots));
         when(items.getAll()).thenReturn(List.of(page));
         ResourceGroupIndex index = new ResourceGroupIndex(groups, resources, categories, items);
@@ -397,6 +397,19 @@ class ResourceGroupIndexTest {
                 .filter(file -> ("theme-" + themeId).equals(file.id()))
                 .findFirst()
                 .orElse(null);
+    }
+
+    private static void stubPreviewSources(ResourceService resources, ResourcePreviewSource... sources) {
+        doAnswer(invocation -> {
+            Consumer<ResourcePreviewSource> consumer = invocation.getArgument(0);
+            if (consumer == null) {
+                return null;
+            }
+            for (ResourcePreviewSource source : sources) {
+                consumer.accept(source);
+            }
+            return null;
+        }).when(resources).forEachPreviewSource(any());
     }
 
     private static ResourceGroupEntity group(String name) {

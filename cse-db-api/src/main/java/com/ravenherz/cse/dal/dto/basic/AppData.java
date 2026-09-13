@@ -26,6 +26,7 @@ public final class AppData {
     private String description;
     private boolean storeEnabled;
     private boolean storeOpen;
+    private AppStoreSettings storeSettings;
     private List<AppStoreTableSpec> storeTables;
 
     public AppData() {
@@ -127,19 +128,53 @@ public final class AppData {
     }
 
     public boolean isStoreEnabled() {
-        return storeEnabled;
+        return storeSettings().isEnabled();
     }
 
     public void setStoreEnabled(boolean storeEnabled) {
         this.storeEnabled = storeEnabled;
+        storeSettings().setEnabled(storeEnabled);
     }
 
     public boolean isStoreOpen() {
-        return storeOpen;
+        return storeSettings().isSchemaOpen();
     }
 
     public void setStoreOpen(boolean storeOpen) {
         this.storeOpen = storeOpen;
+        storeSettings().setSchemaOpen(storeOpen);
+    }
+
+    public AppStoreSettings getStoreSettings() {
+        return storeSettings;
+    }
+
+    public void setStoreSettings(AppStoreSettings storeSettings) {
+        applyStoreSettings(storeSettings);
+    }
+
+    public AppStoreSettings storeSettings() {
+        if (storeSettings == null) {
+            storeSettings = AppStoreSettings.fromLegacy(storeEnabled, storeOpen);
+        }
+        return storeSettings;
+    }
+
+    public void applyStoreSettings(AppStoreSettings incoming) {
+        if (incoming == null) {
+            if (storeSettings == null) {
+                storeSettings = AppStoreSettings.fromLegacy(storeEnabled, storeOpen);
+            }
+            return;
+        }
+        AppStoreSettings copy = AppStoreSettings.copyOf(incoming);
+        this.storeSettings = copy;
+        this.storeEnabled = copy.isEnabled();
+        this.storeOpen = copy.isSchemaOpen();
+    }
+
+    public boolean requestsStore() {
+        return !getStoreTables().isEmpty();
     }
 
     public List<AppStoreTableSpec> getStoreTables() {

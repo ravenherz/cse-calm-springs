@@ -2,14 +2,17 @@ package com.ravenherz.cse.controller;
 
 import com.ravenherz.cse.controller.objects.RestResponse;
 import com.ravenherz.cse.controller.publicsite.PublicSiteApi;
+import com.ravenherz.cse.util.AccountProfile;
 import com.ravenherz.cse.util.AuthRateLimiter;
 import com.ravenherz.cse.util.Json;
 import com.ravenherz.cse.util.PasswordHashes;
 import com.ravenherz.cse.dal.dto.AccountEntity;
 import com.ravenherz.cse.dal.dto.basic.AccountData;
 import com.ravenherz.cse.dal.dto.basic.enums.SecurityLevel;
+import com.ravenherz.cse.dal.role.RoleSeeds;
+import com.ravenherz.cse.security.AccountRoles;
 import com.ravenherz.cse.util.MarkdownRenderer;
-import com.ravenherz.cse.util.PlaylistEmbedProcessor;
+import com.ravenherz.cse.util.CseEmbedProcessor;
 import com.ravenherz.cse.util.helpers.HttpErrorHelper;
 import com.ravenherz.cse.util.helpers.HttpErrorHelper.HttpErrorDescription;
 
@@ -47,7 +50,10 @@ public class JsonApiController extends AbstractController {
         ACCOUNT_PASSWORD("ACCOUNT_PASSWORD", true),
         ACCOUNT_PASSWORD_RETYPE("ACCOUNT_PASSWORD_RETYPE", true),
         ACCOUNT_EMAIL("ACCOUNT_EMAIL", true),
-        ACCOUNT_SHOWN_NAME("ACCOUNT_SHOWN_NAME", true);
+        ACCOUNT_SHOWN_NAME("ACCOUNT_SHOWN_NAME", true),
+        ACCOUNT_BIO("ACCOUNT_BIO"),
+        ACCOUNT_AVATAR("ACCOUNT_AVATAR"),
+        ACCOUNT_PASSWORD_CURRENT("ACCOUNT_PASSWORD_CURRENT");
 
         Param(String key) {
             required = false;
@@ -132,7 +138,7 @@ public class JsonApiController extends AbstractController {
     public @ResponseBody RestResponse renderMarkdown(@RequestBody String body) {
         Map<String, String> json = getMapOfJsonBody(body);
         String markdown = json.getOrDefault("markdown", "");
-        String html = PlaylistEmbedProcessor.expand(MarkdownRenderer.render(markdown));
+        String html = CseEmbedProcessor.expand(MarkdownRenderer.render(markdown));
         return new RestResponse(200, html, null);
     }
 
@@ -202,9 +208,17 @@ public class JsonApiController extends AbstractController {
             return new RestResponse(400, null, "Password is too long");
         }
 
-        AccountEntity accountEntity = new AccountEntity(
-                new AccountData(login, passwordHashes.hash(password),
-                        email, SecurityLevel.INACTIVE_USER));
+        String shownName = json.getOrDefault(Param.ACCOUNT_SHOWN_NAME.name(), "").trim();
+        if (shownName.length() > AccountProfile.SHOWN_NAME_MAX) {
+            return new RestResponse(400, null, "Shown name is too long");
+        }
+        AccountData accountData = new AccountData(login, passwordHashes.hash(password),
+                email, SecurityLevel.INACTIVE_USER);
+        AccountRoles.assignBySlug(accountData, serviceProvider.getRoleService(), RoleSeeds.INACTIVE, false);
+        if (!shownName.isEmpty()) {
+            accountData.setShownName(shownName);
+        }
+        AccountEntity accountEntity = new AccountEntity(accountData);
         serviceProvider.getAccountService().insert(accountEntity);
         AccountEntity stored = serviceProvider.getAccountService().getByLogin(login);
         if (stored != null) {
@@ -254,5 +268,34 @@ public class JsonApiController extends AbstractController {
         }
         authRateLimiter.recordSuccess(ip);
         return new RestResponse(200);
+    }
+
+    @RequestMapping(value = "/account/me", method = RequestMethod.GET)
+    public @ResponseBody RestResponse accountMe(HttpServletRequest request,
+            HttpServletResponse response) {
+        AccountEntity account = getAccessor(request, response);
+        if (account == null || account.getAccountData() == null) {
+            return new RestResponse(401, null, "Sign in required");
+        }
+        return new RestResponse(200, AccountProfile.view(account.getAccountData()), null);
+    }
+
+    @RequestMapping(value = "/account/me", method = RequestMethod.POST)
+    public @ResponseBody RestResponse accountUpdate(HttpServletRequest request,
+            HttpServletResponse response, @RequestBody String body) {
+        AccountEntity account = getAccessor(request, response);
+        if (account == null || account.getAccountData() == null) {
+            return new RestResponse(401, null, "Sign in required");
+        }
+        Map<String, String> json = getMapOfJsonBody(body);
+        String error = AccountProfile.apply(account.getAccountData(), json, passwordHashes,
+                serviceProvider.getAccountService());
+        if (error != null) {
+            return new RestResponse(400, null, error);
+        }
+        if (!serviceProvider.getAccountService().replace(account)) {
+            return new RestResponse(500, null, "Could not save the account");
+        }
+        return new RestResponse(200, AccountProfile.view(account.getAccountData()), "Saved");
     }
 }

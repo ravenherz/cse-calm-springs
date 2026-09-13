@@ -4,7 +4,6 @@ import com.ravenherz.cse.constants.SettingKeys;
 import com.ravenherz.cse.dal.dao.ThemeService;
 import com.ravenherz.cse.dal.dto.AccountEntity;
 import com.ravenherz.cse.dal.dto.ThemeEntity;
-import com.ravenherz.cse.dal.dto.basic.AccountData;
 import com.ravenherz.cse.util.Settings;
 import com.ravenherz.cse.util.frontend.ShippedPackCatalog;
 import com.ravenherz.cse.util.io.CseDisk;
@@ -113,13 +112,6 @@ public class ThemeCatalog {
     public ThemeSelection resolve(AccountEntity account) {
         ThemeInfo theme = find(settings.getValue(SettingKeys.CONTEXT_DATASOURCE_VIEW,
                 SettingKeys.KEY_STYLES_THEME));
-        String personalTheme = accountTheme(account);
-        if (personalTheme != null) {
-            ThemeInfo override = find(personalTheme);
-            if (override != null) {
-                theme = override;
-            }
-        }
         if (theme == null) {
             theme = find(ThemeSelection.FALLBACK_THEME);
         }
@@ -131,10 +123,7 @@ public class ThemeCatalog {
             return ThemeSelection.fallback();
         }
         String schema = settings.getValue(SettingKeys.CONTEXT_DATASOURCE_VIEW, SettingKeys.KEY_STYLES_SCHEMA);
-        String personalSchema = accountSchema(account);
-        if (personalSchema != null && theme.hasSchema(personalSchema)) {
-            schema = personalSchema;
-        } else if (!theme.hasSchema(schema)) {
+        if (!theme.hasSchema(schema)) {
             schema = theme.getDefaultSchema();
         }
         if (schema == null && !theme.getSchemas().isEmpty()) {
@@ -320,24 +309,6 @@ public class ThemeCatalog {
 
     private ThemeService themes() {
         return themeService == null ? null : themeService.getIfAvailable();
-    }
-
-    private static String accountTheme(AccountEntity account) {
-        AccountData data = account == null ? null : account.getAccountData();
-        if (data == null) {
-            return null;
-        }
-        String value = data.getStylesTheme();
-        return value == null || value.isBlank() ? null : value.trim();
-    }
-
-    private static String accountSchema(AccountEntity account) {
-        AccountData data = account == null ? null : account.getAccountData();
-        if (data == null) {
-            return null;
-        }
-        String value = data.getStylesSchema();
-        return value == null || value.isBlank() ? null : value.trim();
     }
 
     private static String firstNonBlank(String... values) {

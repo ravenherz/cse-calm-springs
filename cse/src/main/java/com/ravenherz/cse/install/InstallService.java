@@ -9,6 +9,8 @@ import com.ravenherz.cse.dal.dto.CategoryEntity;
 import com.ravenherz.cse.dal.dto.basic.AccountData;
 import com.ravenherz.cse.dal.dto.basic.CategoryData;
 import com.ravenherz.cse.dal.dto.basic.enums.SecurityLevel;
+import com.ravenherz.cse.dal.role.RoleSeeds;
+import com.ravenherz.cse.security.AccountRoles;
 import com.ravenherz.cse.util.PasswordHashes;
 import com.ravenherz.cse.util.Settings;
 import com.ravenherz.cse.util.staticapps.StaticAppDeployer;
@@ -130,6 +132,14 @@ public class InstallService {
         }
         AccountEntity entity = new AccountEntity(new AccountData(login, passwordHashes.hash(password),
                 email, SecurityLevel.OWNER));
+        if (serviceProvider.getRoleService() != null) {
+            serviceProvider.getRoleService().ensureSeeded();
+            if (serviceProvider.getRoleMatrixService() != null) {
+                serviceProvider.getRoleMatrixService().ensureSeeded(serviceProvider.getRoleService());
+            }
+            AccountRoles.assignBySlug(entity.getAccountData(), serviceProvider.getRoleService(),
+                    RoleSeeds.OWNER, true);
+        }
         serviceProvider.getAccountService().insert(entity);
         if (!authSupport.issueSession(entity, request, response)) {
             throw new InstallException(500, "Could not start a session");

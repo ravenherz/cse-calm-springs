@@ -36,7 +36,7 @@ In a [page](pages.md) body:
 <cse-playlist id="your-id"></cse-playlist>
 ```
 
-Use the same id you entered on the form.
+Use the same id you entered on the form. You can also drag the playlist from the Catalog tree into the page textarea.
 
 ## Edit and delete
 

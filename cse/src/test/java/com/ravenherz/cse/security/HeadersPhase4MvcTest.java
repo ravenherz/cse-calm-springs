@@ -1,6 +1,7 @@
 package com.ravenherz.cse.security;
 
 import com.ravenherz.cse.controller.AuthSupport;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
@@ -11,6 +12,8 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ResponseBody;
 
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -24,6 +27,16 @@ class HeadersPhase4MvcTest {
 
     @MockitoBean
     private AuthSupport authSupport;
+
+    @MockitoBean
+    private CapabilityService capabilityService;
+
+    @BeforeEach
+    void stubCapabilities() {
+        when(capabilityService.allows(any(), any())).thenReturn(true);
+        when(capabilityService.allowsApp(any(), any())).thenReturn(true);
+        when(capabilityService.canOpenEditor(any())).thenReturn(true);
+    }
 
     @Test
     void getSendsFrameOptionsNosniffAndCsp() throws Exception {
