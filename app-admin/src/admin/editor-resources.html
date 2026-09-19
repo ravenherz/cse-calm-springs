@@ -160,7 +160,7 @@
                 <span class="group-toggle resource-plus-mark" aria-hidden="true"></span>
                 <span class="visually-hidden">Upload resources</span>
                 <input type="file" id="file" name="file"
-                       accept=".jpg,.jpeg,.png,.heic,.heif,.mp3,.mp4,.mov,.m4v,.webm,.mkv,image/heic,image/heif,video/mp4,video/quicktime,video/webm"
+                       accept=".jpg,.jpeg,.png,.heic,.heif,.mp3,.mp4,.mov,.m4v,.webm,.mkv,.pdf,image/heic,image/heif,video/mp4,video/quicktime,video/webm,application/pdf"
                        multiple required/>
               </div>
               <div class="upload-progress" id="uploadProgress" hidden>
@@ -277,7 +277,7 @@
               return;
           }
           var pane = form.closest('.resource-pane');
-          var allowedExt = ['jpg', 'jpeg', 'png', 'heic', 'heif', 'mp3', 'mp4', 'mov', 'm4v', 'webm', 'mkv'];
+          var allowedExt = ['jpg', 'jpeg', 'png', 'heic', 'heif', 'mp3', 'mp4', 'mov', 'm4v', 'webm', 'mkv', 'pdf'];
           var queue = [];
           var usedIds = {};
           var total = 0;
@@ -413,7 +413,7 @@
               }
               if (!accepted.length) {
                   if (rejected && !uploading) {
-                      showError('Invalid file type. Supported: jpg, png, heic, mp3, mp4, mov, webm, mkv');
+                      showError('Invalid file type. Supported: jpg, png, heic, mp3, mp4, mov, webm, mkv, pdf');
                   }
                   return;
               }

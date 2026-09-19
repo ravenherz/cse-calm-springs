@@ -161,7 +161,7 @@ public final class PublicApiDocs {
                                 """
                                 { "status": 200, "restObject": "<div id='form-id'>...</div>" }"""),
                         new Endpoint("POST", "/rest/markdown/render", "Public", true,
-                                "Markdown to HTML, then expand <cse-playlist/> and <cse-url/> embeds.",
+                                "Markdown to HTML, then expand <cse-playlist/>, <cse-url/>, <cse-binary/>, <cv-card/>, and <cse-md/> embeds.",
                                 """
                                 { "markdown": "# Hello" }""",
                                 """

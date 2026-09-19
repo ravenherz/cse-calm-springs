@@ -15,7 +15,10 @@ class ResourceTypeTest {
         assertEquals(ResourceType.VIDEO, ResourceType.getByFileName("a/b/c.webm"));
         assertEquals(ResourceType.VIDEO, ResourceType.getByFileName("film.mkv"));
         assertEquals(ResourceType.VIDEO, ResourceType.getByFileName("phone.m4v"));
+        assertEquals(ResourceType.BINARY, ResourceType.getByFileName("resume.pdf"));
+        assertEquals(ResourceType.BINARY, ResourceType.getByFileName("/u/res/binaries/brief.PDF"));
         assertEquals(ResourceType.INVALID, ResourceType.getByFileName("notes.txt"));
         assertEquals("video", ResourceType.VIDEO.getPath());
+        assertEquals("binaries", ResourceType.BINARY.getPath());
     }
 }

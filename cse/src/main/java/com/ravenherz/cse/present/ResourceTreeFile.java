@@ -90,6 +90,10 @@ public record ResourceTreeFile(String id, String name, String href, Mark mark, b
         return isResourceFile() && name != null && ResourceType.getByFileName(name) == ResourceType.VIDEO;
     }
 
+    public boolean isBinaryFile() {
+        return isResourceFile() && name != null && ResourceType.getByFileName(name) == ResourceType.BINARY;
+    }
+
     public String kind() {
         if (isAlbum()) {
             return "album";
@@ -131,6 +135,9 @@ public record ResourceTreeFile(String id, String name, String href, Mark mark, b
         if (isVideoFile()) {
             return "cse-video";
         }
+        if (isBinaryFile()) {
+            return "cse-binary";
+        }
         return "";
     }
 
@@ -141,7 +148,7 @@ public record ResourceTreeFile(String id, String name, String href, Mark mark, b
         if (isContentPage() || isAlbum() || isApp()) {
             return key == null ? "" : key.trim();
         }
-        if (isImageFile() || isVideoFile()) {
+        if (isImageFile() || isVideoFile() || isBinaryFile()) {
             return id == null ? "" : id.trim();
         }
         return "";

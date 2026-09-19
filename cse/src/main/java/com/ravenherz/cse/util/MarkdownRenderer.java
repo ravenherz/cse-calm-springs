@@ -11,6 +11,13 @@ public class MarkdownRenderer {
         if (markdown == null || markdown.isEmpty()) {
             return "";
         }
+        return renderDocument(CseMdProcessor.expand(markdown));
+    }
+
+    static String renderDocument(String markdown) {
+        if (markdown == null || markdown.isEmpty()) {
+            return "";
+        }
         return RENDERER.render(PARSER.parse(markdown));
     }
 }

@@ -22,6 +22,16 @@ class ResourceTreeFileTest {
     }
 
     @Test
+    void pdfFilesEmbedAsCseBinary() {
+        ResourceTreeFile pdf = ResourceTreeFile.from(resource(ResourceType.BINARY,
+                "/u/res/binaries/resume.pdf"));
+        assertTrue(pdf.isBinaryFile());
+        assertEquals("cse-binary", pdf.embedTag());
+        assertEquals(pdf.id(), pdf.embedId());
+        assertTrue(pdf.isEmbeddable());
+    }
+
+    @Test
     void imageFilesStillEmbedAsCseImage() {
         ResourceTreeFile image = ResourceTreeFile.from(resource(ResourceType.IMAGE,
                 "/u/res/images/cover.jpg"));

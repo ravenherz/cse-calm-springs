@@ -156,6 +156,7 @@ class EditorResourcesTemplateTest {
         assertTrue(html.contains("id=\"file\""), html);
         assertTrue(html.contains("multiple"), html);
         assertTrue(html.contains(".mp4"), html);
+        assertTrue(html.contains(".pdf"), html);
         assertTrue(html.contains("/rhz-we/editor/video/progress"), html);
         assertTrue(html.contains("data-video-progress-url"), html);
         assertFalse(html.contains("thumb-tag-processing'))"), html);

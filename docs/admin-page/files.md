@@ -1,6 +1,6 @@
 # Files
 
-Media lives in folders under **root**, beside the Content branch. Folders nest the way a studio files things. Photos and MP3s in those folders are what albums, pages, and playlists draw from.
+Media lives in folders under **root**, beside the Content branch. Folders nest the way a studio files things. Photos, MP3s, videos, and PDFs in those folders are what albums, pages, and playlists draw from.
 
 ![Unsorted: locked pane, upload plus, image tiles](files-md-image-1.jpg)
 
@@ -24,8 +24,10 @@ The gold **+** tile accepts:
 
 - Images: `.jpg`, `.jpeg`, `.png`, `.heic`, `.heif`
 - Audio: `.mp3`
+- Video: `.mp4`, `.mov`, `.m4v`, `.webm`, `.mkv`
+- PDF: `.pdf`
 
-Click **+** or drop a file on it. A progress bar runs on the tile while the file is stored. HEIC from an iPhone is accepted; the engine makes a web preview so the public site stays light.
+Click **+** or drop a file on it. A progress bar runs on the tile while the file is stored. HEIC from an iPhone is accepted; the engine makes a web preview so the public site stays light. A PDF stores a JPEG of the first page. Drag it into a page as `<cse-binary>`.
 
 ## Tiles
 
@@ -36,7 +38,7 @@ Right-click a file in the tree for **Download**, **Rename**, and **Delete** when
 ## Where files show up
 
 - **Albums** show every image in a chosen resource group. See [Albums](albums.md).
-- **Pages** can pick a featured image from uploaded pictures. See [Pages](pages.md).
+- **Pages** can pick a featured image from uploaded pictures, and embed a PDF with `<cse-binary>`. See [Pages](pages.md).
 - **Playlists** add tracks from uploaded MP3s. See [Playlists](playlists.md).
 
 Upload into the folder you will actually use. Unsorted works, but a named folder keeps the tree honest.

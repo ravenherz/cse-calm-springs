@@ -14,7 +14,9 @@ import org.junit.jupiter.api.Test;
 
 import java.util.List;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class CseEmbedProcessorTest {
@@ -84,6 +86,91 @@ class CseEmbedProcessorTest {
         assertTrue(html.contains("cse-embed-missing"));
         assertTrue(html.contains("Video not found"));
         assertFalse(html.contains("<video"));
+    }
+
+    @Test
+    void binaryExpandsPreviewAndLink() {
+        ObjectId id = new ObjectId();
+        ResourceEntity pdf = image(id, "/user/res/binaries/resume.pdf", ResourceType.BINARY);
+        ResourceData preview = new ResourceData();
+        preview.setType(ResourceType.IMAGE);
+        preview.setPathPublic("/user/res/binaries/resume.pdf.low-res.jpg");
+        pdf.setPreviewData(preview);
+        CseEmbedProcessor processor = processor(pdf);
+        String byId = processor.expandHtml("<cse-binary id=\"" + id + "\"></cse-binary>");
+        assertTrue(byId.contains("class=\"cse-embed cse-embed-binary\""));
+        assertTrue(byId.contains("cse-embed-media"));
+        assertTrue(byId.contains("href=\"./content-protected/user/res/binaries/resume.pdf\""));
+        assertTrue(byId.contains("src=\"./content-protected/user/res/binaries/resume.pdf.low-res.jpg\""));
+        assertTrue(byId.contains("target=\"_blank\""));
+        assertFalse(byId.contains("cse-embed-title"));
+        assertFalse(byId.contains("<cse-binary"));
+        String byPath = processor.expandHtml("<cse-binary id=\"/user/res/binaries/resume.pdf\" />");
+        assertTrue(byPath.contains("href=\"./content-protected/user/res/binaries/resume.pdf\""));
+        assertFalse(byId.contains("width:400px"));
+        assertFalse(byId.contains("textOverride"));
+    }
+
+    @Test
+    void binaryHonorsWidthHeightAndTextOverride() {
+        ObjectId id = new ObjectId();
+        ResourceEntity pdf = image(id, "/user/res/binaries/resume.pdf", ResourceType.BINARY);
+        ResourceData preview = new ResourceData();
+        preview.setType(ResourceType.IMAGE);
+        preview.setPathPublic("/user/res/binaries/resume.pdf.low-res.jpg");
+        pdf.setPreviewData(preview);
+        CseEmbedProcessor processor = processor(pdf);
+        String html = processor.expandHtml(
+                "<cse-binary id=\"" + id + "\" width=\"400px\" height=\"300\" textOverride=\"CV\"></cse-binary>");
+        assertTrue(html.contains("max-width:400px"));
+        assertTrue(html.contains("max-height:300px"));
+        assertFalse(html.contains("width:400px;height:300px"));
+        assertTrue(html.contains("class=\"cse-embed-title\">CV</span>"));
+        assertFalse(html.contains("class=\"cse-embed-title\">resume.pdf</span>"));
+        assertFalse(html.contains("<cse-binary"));
+    }
+
+    @Test
+    void binarySizeMIsCompactRowWithTitle() {
+        ObjectId id = new ObjectId();
+        ResourceEntity pdf = image(id, "/user/res/binaries/resume.pdf", ResourceType.BINARY);
+        ResourceData preview = new ResourceData();
+        preview.setType(ResourceType.IMAGE);
+        preview.setPathPublic("/user/res/binaries/resume.pdf.low-res.jpg");
+        pdf.setPreviewData(preview);
+        CseEmbedProcessor processor = processor(pdf);
+        String html = processor.expandHtml(
+                "<cse-binary id=\"" + id + "\" size=\"m\" width=\"400px\"></cse-binary>");
+        assertTrue(html.contains("cse-embed-binary"));
+        assertTrue(html.contains("cse-embed-m\""));
+        assertTrue(html.contains("class=\"cse-embed-title\">resume.pdf</span>"));
+        assertFalse(html.contains("width:400px"));
+        assertFalse(html.contains("<cse-binary"));
+        String named = processor.expandHtml(
+                "<cse-binary id=\"" + id + "\" size=\"m\" textOverride=\"CV\"></cse-binary>");
+        assertTrue(named.contains("class=\"cse-embed-title\">CV</span>"));
+        assertFalse(named.contains("class=\"cse-embed-title\">resume.pdf</span>"));
+    }
+
+    @Test
+    void binaryMaxPxParsesOptionalCssPixels() {
+        assertNull(CseEmbedProcessor.optionalMaxPx(null));
+        assertNull(CseEmbedProcessor.optionalMaxPx(""));
+        assertNull(CseEmbedProcessor.optionalMaxPx("wide"));
+        assertEquals(400, CseEmbedProcessor.optionalMaxPx("400px"));
+        assertEquals(16, CseEmbedProcessor.optionalMaxPx("8"));
+        assertEquals(4096, CseEmbedProcessor.optionalMaxPx("4096px"));
+    }
+
+    @Test
+    void imageResourceDoesNotExpandAsBinary() {
+        ObjectId id = new ObjectId();
+        ResourceEntity image = image(id, "/user/res/images/cover.jpg", ResourceType.IMAGE);
+        CseEmbedProcessor processor = processor(image);
+        String html = processor.expandHtml("<cse-binary id=\"" + id + "\"></cse-binary>");
+        assertTrue(html.contains("cse-embed-missing"));
+        assertTrue(html.contains("File not found"));
+        assertFalse(html.contains("<img"));
     }
 
     @Test
@@ -181,6 +268,16 @@ class CseEmbedProcessorTest {
         assertTrue(pageHtml.contains("Hello"));
         assertTrue(pageHtml.contains("A greeting"));
         assertTrue(pageHtml.contains(">Page<"));
+        assertFalse(pageHtml.contains("cse-embed-m\""));
+
+        String compact = processor.expandHtml("<cse-page id=\"hello\" size=\"m\"></cse-page>");
+        assertTrue(compact.contains("cse-embed-m\""));
+        assertTrue(compact.contains("cse-embed-title"));
+        assertTrue(compact.contains("Hello"));
+        assertFalse(compact.contains("A greeting"));
+        assertFalse(compact.contains(">Page<"));
+        assertFalse(compact.contains("cse-embed-desc"));
+        assertFalse(compact.contains("cse-embed-meta"));
 
         String albumHtml = processor.expandHtml("<cse-page id=\"shots\"></cse-page>");
         assertTrue(albumHtml.contains("href=\"./?album=shots\""));
@@ -245,6 +342,46 @@ class CseEmbedProcessorTest {
         CseEmbedProcessor processor = processor(null);
         String html = processor.expandHtml("<cse-other id=\"x\"></cse-other>");
         assertTrue(html.contains("<cse-other id=\"x\"></cse-other>"));
+    }
+
+    @Test
+    void cvCardExpandsCompanyRoleIntervalAndImage() {
+        ObjectId id = new ObjectId();
+        ResourceEntity image = image(id, "/user/res/images/zvuk.png", ResourceType.IMAGE);
+        CseEmbedProcessor processor = processor(image);
+        String html = processor.expandHtml(
+                "<cv-card imageId=\"" + id + "\" imageRectangle=\"256px\""
+                        + " company=\"Zvuk\" role=\"Senior Big Data Engineer\""
+                        + " interval=\"2025-09-01;2025-10-01\" location=\"Moscow\"></cv-card>");
+        assertTrue(html.contains("class=\"cv-card\""));
+        assertTrue(html.contains("width:256px;height:256px"));
+        assertTrue(html.contains("src=\"./content-protected/user/res/images/zvuk.png\""));
+        assertTrue(html.contains("<h3>Zvuk</h3>"));
+        assertTrue(html.contains("class=\"cv-card-role\">Senior Big Data Engineer</strong>"));
+        assertTrue(html.contains("September 2025 – October (1 month)"));
+        assertTrue(html.contains("class=\"cv-card-location\">Moscow</span>"));
+        assertFalse(html.contains("<cv-card"));
+    }
+
+    @Test
+    void cseMdExpandsInsideEmbedProcessor() {
+        CseEmbedProcessor processor = processor(null);
+        String html = processor.expandHtml("<cse-md paddingLeft=\"250px\">**Hi**</cse-md>");
+        assertTrue(html.contains("class=\"cse-md\""));
+        assertTrue(html.contains("padding-left:250px"));
+        assertTrue(html.contains("<strong>Hi</strong>"));
+        assertFalse(html.contains("<cse-md"));
+    }
+
+    @Test
+    void cvCardWithoutImageKeepsTextAndDefaultSize() {
+        CseEmbedProcessor processor = processor(null);
+        String html = processor.expandHtml(
+                "<cv-card company=\"Zvuk\" role=\"Engineer\" interval=\"2025-09-01;2025-10-01\"></cv-card>");
+        assertTrue(html.contains("cv-card-placeholder"));
+        assertTrue(html.contains("width:64px;height:64px"));
+        assertTrue(html.contains("<h3>Zvuk</h3>"));
+        assertFalse(html.contains("<img"));
     }
 
     private static CseEmbedProcessor processor(ResourceEntity image) {

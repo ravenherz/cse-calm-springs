@@ -69,10 +69,13 @@
                 <code>&lt;cse-url templateId="…" id="…"&gt;</code>,
                 <code>&lt;cse-image id="…"&gt;</code>,
                 <code>&lt;cse-video id="…"&gt;</code>,
-                <code>&lt;cse-page id="…"&gt;</code>,
+                <code>&lt;cse-binary id="…" size="m" textOverride="…"&gt;</code>,
+                <code>&lt;cse-page id="…" size="m"&gt;</code>,
                 <code>&lt;cse-category id="…"&gt;</code>,
-                or <code>&lt;cse-app id="…"&gt;</code>.
-                Drag a page, category, app, playlist, URL template, image, or video from the Catalog tree.</p>
+                <code>&lt;cse-app id="…"&gt;</code>,
+                <code>&lt;cv-card company="…" role="…" interval="yyyy-MM-dd;Now"&gt;</code>,
+                or <code>&lt;cse-md paddingLeft="250px"&gt;</code>.
+                Drag a page, category, app, playlist, URL template, image, video, or PDF from the Catalog tree.</p>
             </div>
 
             <th:block th:replace="~{fragments/access :: panel(read=${accessRead}, edit=${accessEdit}, delete=${accessDelete}, canEdit=${accessCanEdit})}"></th:block>

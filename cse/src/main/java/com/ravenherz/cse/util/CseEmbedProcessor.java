@@ -63,12 +63,19 @@ public class CseEmbedProcessor {
 
     private static final Pattern ID_ATTR = Pattern.compile(
             "(?i)\\bid\\s*=\\s*[\"']([^\"']+)[\"']");
+    private static final Pattern ATTR = Pattern.compile(
+            "(?i)\\b([a-zA-Z][\\w-]*)\\s*=\\s*[\"']([^\"']*)[\"']");
     private static final Pattern IMAGE_TAG = tagPattern("cse-image");
     private static final Pattern VIDEO_TAG = tagPattern("cse-video");
+    private static final Pattern BINARY_TAG = tagPattern("cse-binary");
     private static final Pattern CATEGORY_TAG = tagPattern("cse-category");
     private static final Pattern PAGE_TAG = tagPattern("cse-page");
     private static final Pattern APP_TAG = tagPattern("cse-app");
+    private static final Pattern CV_CARD_TAG = tagPattern("cv-card");
     private static final int EXCERPT_LEN = 160;
+    private static final int DEFAULT_CV_IMAGE_PX = 64;
+    private static final int MIN_BINARY_PX = 16;
+    private static final int MAX_BINARY_PX = 4096;
 
     private static volatile CseEmbedProcessor instance;
 
@@ -157,11 +164,117 @@ public class CseEmbedProcessor {
         if (html == null || html.isEmpty()) {
             return html == null ? "" : html;
         }
-        String out = expandTag(html, IMAGE_TAG, this::renderImage);
+        String out = CseMdProcessor.expand(html);
+        out = expandTag(out, IMAGE_TAG, this::renderImage);
         out = expandTag(out, VIDEO_TAG, this::renderVideo);
+        out = expandAttrs(out, BINARY_TAG, this::renderBinary);
         out = expandTag(out, CATEGORY_TAG, this::renderCategory);
-        out = expandTag(out, PAGE_TAG, this::renderPage);
-        return expandTag(out, APP_TAG, this::renderApp);
+        out = expandAttrs(out, PAGE_TAG, this::renderPage);
+        out = expandTag(out, APP_TAG, this::renderApp);
+        return expandCvCards(out);
+    }
+
+    private String expandCvCards(String html) {
+        Matcher matcher = CV_CARD_TAG.matcher(html);
+        StringBuffer out = new StringBuffer();
+        while (matcher.find()) {
+            String attrs = matcher.group(1) == null ? "" : matcher.group(1);
+            matcher.appendReplacement(out, Matcher.quoteReplacement(renderCvCard(attrs)));
+        }
+        matcher.appendTail(out);
+        return out.toString();
+    }
+
+    private String renderCvCard(String attrs) {
+        String company = attr(attrs, "company").trim();
+        String role = attr(attrs, "role").trim();
+        String interval = CvEmploymentInterval.format(attr(attrs, "interval"));
+        String location = attr(attrs, "location").trim();
+        int size = cvImageSizePx(attr(attrs, "imageRectangle"));
+        String imageId = attr(attrs, "imageId").trim();
+        String src = "";
+        String alt = company;
+        if (!imageId.isEmpty()) {
+            ResourceEntity resource = images.find(imageId);
+            if (isPublicImage(resource)) {
+                ResourceData data = resource.getResourceData();
+                src = publicSrc(data.getPathPublic());
+                if (alt.isBlank()) {
+                    alt = firstNonBlank(data.getImageDescription(), data.getFileName());
+                }
+            }
+        }
+        StringBuilder html = new StringBuilder();
+        html.append("<div class=\"cv-card\">");
+        html.append("<div class=\"cv-card-media\" style=\"width:").append(size)
+                .append("px;height:").append(size).append("px\">");
+        if (!src.isBlank()) {
+            html.append("<img src=\"").append(escape(src)).append("\" alt=\"")
+                    .append(escape(alt)).append("\"/>");
+        } else {
+            html.append("<span class=\"cv-card-placeholder\" aria-hidden=\"true\"></span>");
+        }
+        html.append("</div><div class=\"cv-card-body\">");
+        if (!company.isBlank()) {
+            html.append("<h3>").append(escape(company)).append("</h3>");
+        }
+        if (!role.isBlank()) {
+            html.append("<strong class=\"cv-card-role\">").append(escape(role)).append("</strong>");
+        }
+        if (!interval.isBlank()) {
+            html.append("<span class=\"cv-card-interval\">").append(escape(interval)).append("</span>");
+        }
+        if (!location.isBlank()) {
+            html.append("<span class=\"cv-card-location\">").append(escape(location)).append("</span>");
+        }
+        html.append("</div></div>");
+        return html.toString();
+    }
+
+    static int cvImageSizePx(String raw) {
+        if (raw == null || raw.isBlank()) {
+            return DEFAULT_CV_IMAGE_PX;
+        }
+        Matcher matcher = Pattern.compile("^\\s*(\\d{1,4})\\s*(px)?\\s*$", Pattern.CASE_INSENSITIVE)
+                .matcher(raw);
+        if (!matcher.matches()) {
+            return DEFAULT_CV_IMAGE_PX;
+        }
+        int size = Integer.parseInt(matcher.group(1));
+        if (size < 16) {
+            return 16;
+        }
+        return Math.min(size, 1024);
+    }
+
+    static Integer optionalMaxPx(String raw) {
+        if (raw == null || raw.isBlank()) {
+            return null;
+        }
+        Matcher matcher = Pattern.compile("^\\s*(\\d{1,4})\\s*(px)?\\s*$", Pattern.CASE_INSENSITIVE)
+                .matcher(raw);
+        if (!matcher.matches()) {
+            return null;
+        }
+        int size = Integer.parseInt(matcher.group(1));
+        if (size < MIN_BINARY_PX) {
+            return MIN_BINARY_PX;
+        }
+        return Math.min(size, MAX_BINARY_PX);
+    }
+
+    private static String binaryMediaStyle(Integer width, Integer height) {
+        if (width == null && height == null) {
+            return "";
+        }
+        StringBuilder style = new StringBuilder("width:auto;height:auto;flex:0 0 auto;min-height:0;");
+        if (width != null) {
+            style.append("max-width:").append(width).append("px;");
+        }
+        if (height != null) {
+            style.append("max-height:").append(height).append("px;");
+        }
+        return style.toString();
     }
 
     private static String expandTag(String html, Pattern tag, Function<String, String> renderer) {
@@ -172,6 +285,17 @@ public class CseEmbedProcessor {
             Matcher idMatcher = ID_ATTR.matcher(attrs);
             String id = idMatcher.find() ? idMatcher.group(1).trim() : "";
             matcher.appendReplacement(out, Matcher.quoteReplacement(renderer.apply(id)));
+        }
+        matcher.appendTail(out);
+        return out.toString();
+    }
+
+    private static String expandAttrs(String html, Pattern tag, Function<String, String> renderer) {
+        Matcher matcher = tag.matcher(html);
+        StringBuffer out = new StringBuffer();
+        while (matcher.find()) {
+            String attrs = matcher.group(1) == null ? "" : matcher.group(1);
+            matcher.appendReplacement(out, Matcher.quoteReplacement(renderer.apply(attrs)));
         }
         matcher.appendTail(out);
         return out.toString();
@@ -228,6 +352,29 @@ public class CseEmbedProcessor {
         return html.toString();
     }
 
+    private String renderBinary(String attrs) {
+        String id = attr(attrs, "id").trim();
+        ResourceEntity resource = images.find(id);
+        if (!isPublicBinary(resource)) {
+            return missing("binary", "File not found");
+        }
+        ResourceData data = resource.getResourceData();
+        String href = publicSrc(data.getPathPublic());
+        if (href.isBlank()) {
+            return missing("binary", "File not found");
+        }
+        boolean compact = isMediumEmbed(attr(attrs, "size"));
+        String title = firstNonBlank(attr(attrs, "textOverride"),
+                compact ? firstNonBlank(data.getImageDescription(), data.getFileName()) : "");
+        String preview = "";
+        if (resource.getPreviewData() != null) {
+            preview = publicSrc(resource.getPreviewData().getPathPublic());
+        }
+        return card("binary", href, preview, title, "", "", compact, true,
+                compact ? "" : binaryMediaStyle(optionalMaxPx(attr(attrs, "width")),
+                        optionalMaxPx(attr(attrs, "height"))));
+    }
+
     private String renderCategory(String id) {
         CategoryEntity category = categories.findByItemName(id);
         CategoryData data = category == null ? null : category.getCategoryData();
@@ -248,7 +395,9 @@ public class CseEmbedProcessor {
         return card("category", href, publicSrc(pathOf(cover)), title, desc, meta);
     }
 
-    private String renderPage(String id) {
+    private String renderPage(String attrs) {
+        String id = attr(attrs, "id").trim();
+        boolean compact = isMediumEmbed(attr(attrs, "size"));
         ItemEntity item = pages.findByName(id);
         if (item == null || item.getUniqueUriName() == null || item.getUniqueUriName().isBlank()
                 || !publiclyReadable(item)) {
@@ -273,7 +422,7 @@ public class CseEmbedProcessor {
         }
         String href = album ? "./?album=" + escapeUrl(uri) : "./?page=" + escapeUrl(uri);
         return card("page", href, publicSrc(pathOf(pages.featuredImage(item))),
-                title, desc, album ? "Album" : "Page");
+                title, compact ? "" : desc, compact ? "" : (album ? "Album" : "Page"), compact);
     }
 
     private String renderApp(String id) {
@@ -305,25 +454,59 @@ public class CseEmbedProcessor {
 
     private static String card(String kind, String href, String src, String title,
             String desc, String meta) {
+        return card(kind, href, src, title, desc, meta, false, false, "");
+    }
+
+    private static String card(String kind, String href, String src, String title,
+            String desc, String meta, boolean compact) {
+        return card(kind, href, src, title, desc, meta, compact, false, "");
+    }
+
+    private static String card(String kind, String href, String src, String title,
+            String desc, String meta, boolean compact, boolean newTab, String mediaStyle) {
         StringBuilder html = new StringBuilder();
-        html.append("<a class=\"cse-embed cse-embed-").append(escape(kind))
-                .append("\" href=\"").append(escape(href)).append("\">");
-        html.append("<span class=\"cse-embed-media\">");
+        html.append("<a class=\"cse-embed cse-embed-").append(escape(kind));
+        if (compact) {
+            html.append(" cse-embed-m");
+        }
+        html.append("\" href=\"").append(escape(href)).append("\"");
+        if (newTab) {
+            html.append(" target=\"_blank\" rel=\"noopener\"");
+        }
+        html.append(">");
+        html.append("<span class=\"cse-embed-media\"");
+        if (mediaStyle != null && !mediaStyle.isBlank()) {
+            html.append(" style=\"").append(mediaStyle).append("\"");
+        }
+        html.append(">");
         if (src != null && !src.isBlank()) {
             html.append("<img src=\"").append(escape(src)).append("\" alt=\"\"/>");
         } else {
             html.append("<span class=\"cse-embed-placeholder\" aria-hidden=\"true\"></span>");
         }
-        html.append("</span><span class=\"cse-embed-body\">");
-        html.append("<span class=\"cse-embed-title\">").append(escape(title)).append("</span>");
-        if (desc != null && !desc.isBlank()) {
-            html.append("<span class=\"cse-embed-desc\">").append(escape(desc)).append("</span>");
+        boolean hasBody = (title != null && !title.isBlank())
+                || (!compact && desc != null && !desc.isBlank())
+                || (!compact && meta != null && !meta.isBlank());
+        if (hasBody) {
+            html.append("</span><span class=\"cse-embed-body\">");
+            if (title != null && !title.isBlank()) {
+                html.append("<span class=\"cse-embed-title\">").append(escape(title)).append("</span>");
+            }
+            if (!compact && desc != null && !desc.isBlank()) {
+                html.append("<span class=\"cse-embed-desc\">").append(escape(desc)).append("</span>");
+            }
+            if (!compact && meta != null && !meta.isBlank()) {
+                html.append("<span class=\"cse-embed-meta\">").append(escape(meta)).append("</span>");
+            }
+            html.append("</span></a>");
+        } else {
+            html.append("</span></a>");
         }
-        if (meta != null && !meta.isBlank()) {
-            html.append("<span class=\"cse-embed-meta\">").append(escape(meta)).append("</span>");
-        }
-        html.append("</span></a>");
         return html.toString();
+    }
+
+    private static boolean isMediumEmbed(String size) {
+        return size != null && "m".equalsIgnoreCase(size.trim());
     }
 
     private static String missing(String kind, String label) {
@@ -353,6 +536,18 @@ public class CseEmbedProcessor {
         }
         String path = data.getPathPublic();
         return path != null && ResourceType.getByFileName(path) == ResourceType.VIDEO;
+    }
+
+    private static boolean isPublicBinary(ResourceEntity resource) {
+        if (resource == null || resource.getResourceData() == null || !publiclyReadable(resource)) {
+            return false;
+        }
+        ResourceData data = resource.getResourceData();
+        if (data.getType() == ResourceType.BINARY) {
+            return true;
+        }
+        String path = data.getPathPublic();
+        return path != null && ResourceType.getByFileName(path) == ResourceType.BINARY;
     }
 
     private static boolean publiclyReadable(BasicEntity entity) {
@@ -544,6 +739,19 @@ public class CseEmbedProcessor {
             }
         }
         return out.toString();
+    }
+
+    private static String attr(String attrs, String name) {
+        if (attrs == null || attrs.isBlank() || name == null) {
+            return "";
+        }
+        Matcher matcher = ATTR.matcher(attrs);
+        while (matcher.find()) {
+            if (name.equalsIgnoreCase(matcher.group(1))) {
+                return matcher.group(2);
+            }
+        }
+        return "";
     }
 
     private static String escape(String value) {

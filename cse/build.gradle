@@ -61,6 +61,7 @@ dependencies {
     implementation 'com.j2html:j2html:1.5.0'
     // Markdown
     implementation 'org.commonmark:commonmark:0.22.0'
+    implementation 'org.apache.pdfbox:pdfbox:3.0.5'
     // Mongo adapter (entities/ports come from cse-db-api). Postgres is not on this WAR.
     implementation project(':cse-db-mongo')
     implementation 'org.springframework.boot:spring-boot-starter-security'
@@ -163,7 +164,7 @@ tasks.named('processResources', Copy) {
 
 cargo {
     Boolean deployRemote = true
-    String deployOverride = "stage"
+    String deployOverride = "production"
     var cargoParamResolver = new CargoContextResolver(deployRemote, project, deployOverride)
     System.out.println("deploying to '${cargoParamResolver.getWhereToDeploy()}'")
 

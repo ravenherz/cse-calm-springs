@@ -17,6 +17,7 @@ class ResourceUploadLimitsTest {
         assertEquals(50, limits.maxMb(ResourceType.IMAGE));
         assertEquals(200, limits.maxMb(ResourceType.VIDEO));
         assertEquals(50, limits.maxMb(ResourceType.AUDIO));
+        assertEquals(50, limits.maxMb(ResourceType.BINARY));
         assertEquals(50, limits.binaryMb());
         assertEquals(50L * 1024 * 1024, limits.maxBytes(ResourceType.IMAGE));
         assertEquals(200L * 1024 * 1024, limits.maxBytes(ResourceType.VIDEO));

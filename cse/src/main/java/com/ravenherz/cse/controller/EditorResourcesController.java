@@ -15,6 +15,7 @@ import com.ravenherz.cse.util.imaging.HeicJpegConverter;
 import com.ravenherz.cse.util.imaging.ImageMetadata;
 import com.ravenherz.cse.util.imaging.ImageUploadOptions;
 import com.ravenherz.cse.util.imaging.JpegImages;
+import com.ravenherz.cse.util.imaging.PdfPreviews;
 import com.ravenherz.cse.util.Json;
 import com.ravenherz.cse.util.Mp3Metadata;
 import com.ravenherz.cse.util.Mp3Waveform;
@@ -128,7 +129,7 @@ public class EditorResourcesController extends AbstractController {
 
         ResourceType resourceType = ResourceType.getByFileName(originalFilename);
         if (resourceType == ResourceType.INVALID) {
-            model.addAttribute("error", "Invalid file type. Supported: jpg, png, heic, mp3, mp4, mov, webm, mkv");
+            model.addAttribute("error", "Invalid file type. Supported: jpg, png, heic, mp3, mp4, mov, webm, mkv, pdf");
             return loadResourcesWithError(model, accessor, request);
         }
         ResourceUploadLimits limits = ResourceUploadLimits.from(settings);
@@ -143,6 +144,10 @@ public class EditorResourcesController extends AbstractController {
 
         String extension = originalFilename.substring(originalFilename.lastIndexOf(".") + 1).toLowerCase();
         byte[] content = file.getBytes();
+        if (resourceType == ResourceType.BINARY && !PdfPreviews.looksLikePdf(content)) {
+            model.addAttribute("error", "Invalid PDF");
+            return loadResourcesWithError(model, accessor, request);
+        }
         ImageMetadata.Parsed imageMeta = resourceType == IMAGE ? ImageMetadata.parse(content) : null;
         ImageUploadOptions uploadOptions = ImageUploadOptions.from(settings);
         Integer convertedWidth = null;
@@ -217,6 +222,9 @@ public class EditorResourcesController extends AbstractController {
             ResourceData previewData = buildImagePreview(resourceData, content, resourceId.trim(),
                     extension, userId, uploadOptions);
             resourceEntity.setPreviewData(previewData);
+        } else if (resourceType == ResourceType.BINARY) {
+            resourceEntity.setPreviewData(buildPdfPreview(resourceData, content, resourceId.trim(),
+                    extension, userId, uploadOptions));
         } else if (mp3 != null && mp3.artworkBytes() != null) {
             resourceEntity.setPreviewData(buildAudioCoverPreview(mp3.artworkBytes(),
                     resourceId.trim(), userId, uploadOptions));
@@ -1113,6 +1121,32 @@ public class EditorResourcesController extends AbstractController {
             return previewData;
         } catch (Exception e) {
             LOGGER.warn("Could not create image preview: " + e.getMessage(), e);
+            return null;
+        }
+    }
+
+    private ResourceData buildPdfPreview(ResourceData original, byte[] content, String resourceId,
+            String originalExtension, String userId, ImageUploadOptions options) {
+        try {
+            JpegImages.Encoded jpeg = PdfPreviews.firstPage(content, options.previewMaxWidth(),
+                    options.qualityFactor());
+            String previewPublic = String.format("/%s/res/%s/%s.%s.low-res.jpg",
+                    userId, original.getType().getPath(), resourceId, originalExtension);
+            if (serviceProvider.getResourceService().getByPublicPath(previewPublic) != null) {
+                LOGGER.warn("Preview public path already exists, skipping preview: " + previewPublic);
+                return null;
+            }
+            ResourceData previewData = new ResourceData();
+            previewData.setType(IMAGE);
+            previewData.setPathPublic(previewPublic);
+            previewData.setPathProtected(generateUniqueProtectedPath(
+                    resourceId + "." + originalExtension + ".low-res", "jpg"));
+            previewData.addMetadata("width", String.valueOf(jpeg.width()));
+            previewData.addMetadata("height", String.valueOf(jpeg.height()));
+            fillResourceContent(previewData, jpeg.bytes());
+            return previewData;
+        } catch (Exception e) {
+            LOGGER.warn("Could not create PDF preview: " + e.getMessage(), e);
             return null;
         }
     }

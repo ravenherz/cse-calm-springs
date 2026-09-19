@@ -28,4 +28,13 @@ class ResourceFileNamesTest {
         assertNull(ResourceFileNames.nextPathPublic("/u/res/image/cat.jpg", "", ResourceType.IMAGE));
         assertNull(ResourceFileNames.nextPathPublic("/u/res/image/cat.jpg", "nope.txt", ResourceType.IMAGE));
     }
+
+    @Test
+    void keepsPdfExtensionForBinary() {
+        assertEquals("/u/res/binaries/brief.pdf",
+                ResourceFileNames.nextPathPublic("/u/res/binaries/resume.pdf", "brief",
+                        ResourceType.BINARY));
+        assertNull(ResourceFileNames.nextPathPublic("/u/res/binaries/resume.pdf", "cover.jpg",
+                ResourceType.BINARY));
+    }
 }
