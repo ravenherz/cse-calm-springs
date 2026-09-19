@@ -26,8 +26,8 @@
             th:src="@{/content-public/js/cse-editor.js(v=4)}"
             src="../../../static/content-public/js/cse-editor.js?v=4"></script>
     <script id="script-cse-editor-tree" type="text/javascript"
-            th:src="@{/content-public/js/cse-editor-tree.js(v=10)}"
-            src="../../../static/content-public/js/cse-editor-tree.js?v=10"></script>
+            th:src="@{/content-public/js/cse-editor-tree.js(v=12)}"
+            src="../../../static/content-public/js/cse-editor-tree.js?v=12"></script>
 </head>
 <body>
     <div class="editor-layout">
@@ -75,6 +75,16 @@
                    th:href="@{/editor/logs}"
                    th:classappend="${navLogs} ? 'active' : ''">
                     Logs
+                </a>
+                <a th:if="${showNavTranscode == null or showNavTranscode}"
+                   th:href="@{/editor/transcode}"
+                   th:classappend="${navTranscode} ? 'active' : ''">
+                    Transcode
+                </a>
+                <a th:if="${showNavInstance == null or showNavInstance}"
+                   th:href="@{/editor/instance}"
+                   th:classappend="${navInstance} ? 'active' : ''">
+                    Instance
                 </a>
             </nav>
             <div class="sidebar-foot">
@@ -162,6 +172,11 @@
                 <input type="hidden" name="themeId" id="catalogDeleteTheme"/>
                 <input type="hidden" name="groupId" id="catalogDeleteGroup"/>
             </form>
+            <form id="catalog-batch-delete-form" method="post" hidden
+                  th:action="@{/editor/batch-delete}">
+                <th:block th:replace="~{fragments/csrf :: field}"></th:block>
+                <input type="hidden" name="returnGroup" id="catalogBatchReturn"/>
+            </form>
             <form id="catalog-activate-form" hidden
                   th:action="@{/editor/themes/activate}" method="post">
                 <th:block th:replace="~{fragments/csrf :: field}"></th:block>
@@ -197,7 +212,8 @@
     <li class="resource-row tile-row" draggable="true"
         th:fragment="resource-row (resource, returnGroup)"
         th:with="guestDenied=${T(com.ravenherz.cse.security.AccessForms).guestDenied(resource)},
-                 fileCanEdit=${T(com.ravenherz.cse.security.AccessForms).canEdit(resource, accessor)}"
+                 fileCanEdit=${T(com.ravenherz.cse.security.AccessForms).canEdit(resource, accessor)},
+                 videoProcessing=${T(com.ravenherz.cse.util.video.VideoStatus).processing(resource.resourceData)}"
         th:classappend="${guestDenied} ? 'is-locked'"
         th:attr="data-kind='resource',
                  data-id=${resource.id},
@@ -208,7 +224,8 @@
                  data-resource-id=${resource.id},
                  data-group-id=${resource.refResourceGroup != null ? resource.refResourceGroup.id.toString() : defaultGroupId},
                  data-return-group=${returnGroup},
-                 data-download-href=@{/editor/resources/download(pathPublic=${resource.resourceData.pathPublic})}">
+                 data-download-href=@{/editor/resources/download(pathPublic=${resource.resourceData.pathPublic})},
+                 data-video-status=${videoProcessing ? 'processing' : ''}">
         <div class="item-thumb-wrap">
             <th:block th:if="${guestDenied}">
                 <th:block th:replace="~{fragments/shared :: resource-guest-lock}"></th:block>
@@ -254,7 +271,17 @@
             </div>
             <div class="thumb-tags">
                 <span class="thumb-tag thumb-tag-type" th:text="${resource.resourceData.type}">IMAGE</span>
-                <span class="thumb-tag" th:text="${resource.resourceData.sizeLabel}">0 bytes</span>
+                <span class="thumb-tag thumb-tag-processing"
+                      th:if="${videoProcessing}"
+                      data-video-percent>0%</span>
+                <span class="thumb-tag thumb-tag-failed"
+                      th:if="${T(com.ravenherz.cse.util.video.VideoStatus).failed(resource.resourceData)}">Failed</span>
+                <span class="thumb-tag thumb-tag-size" th:text="${resource.resourceData.sizeLabel}">0 bytes</span>
+            </div>
+            <div class="thumb-progress"
+                 th:if="${videoProcessing}"
+                 aria-hidden="true">
+                <div class="thumb-progress-fill"></div>
             </div>
         </div>
         <div class="resource-tip">
@@ -315,13 +342,29 @@
                         </form>
                     </dd>
                 </th:block>
-                <th:block th:if="${resource.resourceData.type.name() != 'AUDIO' and resource.resourceData.metadata != null}">
+                <th:block th:if="${resource.resourceData.type.name() == 'IMAGE' and resource.resourceData.metadata != null}">
                     <th:block th:each="entry : ${resource.resourceData.metadata}">
                         <dt th:text="${entry.key}">key</dt>
                         <dd th:text="${entry.value}">value</dd>
                     </th:block>
                 </th:block>
             </dl>
+            <th:block th:if="${resource.resourceData.type.name() == 'VIDEO' and resource.resourceData.metadata != null and !resource.resourceData.metadata.isEmpty()}">
+                <dl class="prop-grid">
+                    <dt th:if="${resource.resourceData.metadata.get('width') != null}">Size</dt>
+                    <dd th:if="${resource.resourceData.metadata.get('width') != null}"
+                        th:text="${resource.resourceData.metadata.get('width') + ' × ' + resource.resourceData.metadata.get('height')}">1280 × 720</dd>
+                    <dt th:if="${resource.resourceData.metadata.get('duration') != null}">Duration</dt>
+                    <dd th:if="${resource.resourceData.metadata.get('duration') != null}"
+                        th:text="${resource.resourceData.metadata.get('duration') + ' s'}">0 s</dd>
+                    <dt>Transcode</dt>
+                    <dd data-video-transcode
+                        th:text="${resource.resourceData.metadata.get('transcode') ?: 'ready'}">ready</dd>
+                    <dt th:if="${resource.resourceData.metadata.get('transcodeError') != null}">Error</dt>
+                    <dd th:if="${resource.resourceData.metadata.get('transcodeError') != null}"
+                        th:text="${resource.resourceData.metadata.get('transcodeError')}">error</dd>
+                </dl>
+            </th:block>
             <th:block th:if="${resource.resourceData.type.name() == 'AUDIO' and resource.resourceData.metadata != null and !resource.resourceData.metadata.isEmpty()}">
                 <div class="tip-imported">
                     <div class="tip-imported-label">From file tags</div>
@@ -882,6 +925,50 @@
                 <dd th:text="${playlist.playlistData?.tracks == null ? 0 : #lists.size(playlist.playlistData.tracks)}">0</dd>
                 <dt>Embed</dt>
                 <dd><code th:text="'&lt;cse-playlist id=&quot;' + ${playlist.playlistId} + '&quot;&gt;&lt;/cse-playlist&gt;'">tag</code></dd>
+            </dl>
+        </div>
+    </li>
+    <li class="url-template-row tile-row" th:fragment="url-template-row (template, returnGroup)"
+        th:attr="data-kind='url-template',
+                 data-id=${template.id},
+                 data-name=${template.urlTemplateId},
+                 data-can-rename='true',
+                 data-can-delete='true',
+                 data-return-group=${returnGroup},
+                 data-edit-href=@{/editor/url-template/edit(id=${template.id})}">
+        <div class="item-thumb-wrap">
+            <div class="thumb-actions">
+                <form th:action="@{/editor/url-template/delete}" method="post" class="thumb-delete">
+                    <th:block th:replace="~{fragments/csrf :: field}"></th:block>
+                    <input type="hidden" name="id" th:value="${template.id}"/>
+                    <input type="hidden" name="returnGroup" th:if="${returnGroup}" th:value="${returnGroup}"/>
+                    <button type="submit" class="thumb-action-btn thumb-delete-btn" title="Delete"
+                            onclick="return confirm('Delete this URL template?')">×</button>
+                </form>
+                <button type="button" class="thumb-action-btn thumb-info-btn" title="Details"
+                        aria-label="Details">i</button>
+            </div>
+            <a class="item-thumb-link" th:href="@{/editor/url-template/edit(id=${template.id})}">
+                <img class="item-thumb" draggable="false"
+                     th:if="${template.urlTemplateData?.urlImage}"
+                     th:src="${template.urlTemplateData.urlImage}" alt=""/>
+                <div class="app-logo-fallback" th:unless="${template.urlTemplateData?.urlImage}"
+                     th:text="${template.urlTemplateId}">youtube</div>
+            </a>
+            <div class="thumb-tags">
+                <span class="thumb-tag thumb-tag-type">URL</span>
+            </div>
+        </div>
+        <div class="resource-tip">
+            <a class="item-title" th:href="@{/editor/url-template/edit(id=${template.id})}"
+               th:text="${template.urlTemplateId}">youtube</a>
+            <dl class="prop-grid">
+                <dt>Pattern</dt>
+                <dd th:text="${template.urlTemplateData?.urlPattern} ?: '—'">https://youtube.com/%s</dd>
+                <dt>Default text</dt>
+                <dd th:text="${template.urlTemplateData?.urlDefaultText} ?: '—'">Find more</dd>
+                <dt>Embed</dt>
+                <dd><code th:text="'&lt;cse-url templateId=&quot;' + ${template.urlTemplateId} + '&quot; id=&quot;&quot;&gt;&lt;/cse-url&gt;'">tag</code></dd>
             </dl>
         </div>
     </li>

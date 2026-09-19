@@ -46,6 +46,26 @@ class IndexControllerSetupRedirectTest {
     }
 
     @Test
+    void unconfiguredErrorPageStillRedirectsToInstaller() throws IOException {
+        Settings settings = mock(Settings.class);
+        SiteReady siteReady = mock(SiteReady.class);
+        when(siteReady.isConfigured()).thenReturn(false);
+        IndexController controller = new IndexController(mock(PublicIndexModel.class));
+        controller.setSettings(settings);
+        controller.setSiteReady(siteReady);
+
+        MockHttpServletRequest request = new MockHttpServletRequest();
+        request.setContextPath("/rhz-we");
+        MockHttpServletResponse response = new MockHttpServletResponse();
+
+        String view = controller.getPage(new ExtendedModelMap(), request, response,
+                null, null, null, null, "403");
+
+        assertNull(view);
+        assertEquals("/rhz-we/apps/setup/", response.getRedirectedUrl());
+    }
+
+    @Test
     void jsShellSkipsThymeleafPageFill() throws IOException {
         Settings settings = mock(Settings.class);
         SiteReady siteReady = mock(SiteReady.class);

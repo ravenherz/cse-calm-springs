@@ -16,6 +16,7 @@ import com.ravenherz.cse.dal.dao.PlaylistService;
 import com.ravenherz.cse.dal.dao.ResourceGroupService;
 import com.ravenherz.cse.dal.dao.ResourceService;
 import com.ravenherz.cse.dal.dao.ThemeService;
+import com.ravenherz.cse.dal.dao.UrlTemplateService;
 import com.ravenherz.cse.dal.dto.AccountEntity;
 import com.ravenherz.cse.dal.dto.AppEntity;
 import com.ravenherz.cse.dal.dto.CategoryEntity;
@@ -74,6 +75,7 @@ class CseSiteExporterTest {
         PlaylistService playlists = mock(PlaylistService.class);
         AppService apps = mock(AppService.class);
         ThemeService themes = mock(ThemeService.class);
+        UrlTemplateService urlTemplates = mock(UrlTemplateService.class);
         when(services.getAccountService()).thenReturn(accounts);
         when(services.getCategoryService()).thenReturn(categories);
         when(services.getResourceGroupService()).thenReturn(groups);
@@ -82,6 +84,7 @@ class CseSiteExporterTest {
         when(services.getPlaylistService()).thenReturn(playlists);
         when(services.getAppService()).thenReturn(apps);
         when(services.getThemeService()).thenReturn(themes);
+        when(services.getUrlTemplateService()).thenReturn(urlTemplates);
         when(accounts.getAll()).thenReturn(List.of());
         when(categories.getAll()).thenReturn(List.of());
         when(groups.getAll()).thenReturn(List.of());
@@ -92,6 +95,7 @@ class CseSiteExporterTest {
         when(playlists.getAll()).thenReturn(List.of());
         when(apps.getAll()).thenReturn(List.of());
         when(themes.getAll()).thenReturn(List.of());
+        when(urlTemplates.getAll()).thenReturn(List.of());
     }
 
     @Test

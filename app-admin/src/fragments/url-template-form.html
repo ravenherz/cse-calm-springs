@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<body>
+<th:block th:fragment="fields">
+  <div class="form-group">
+    <label for="urlTemplateId">Template id</label>
+    <input type="text" id="urlTemplateId" name="urlTemplateId" required
+           placeholder="youtube"
+           th:value="${template?.urlTemplateId}"/>
+    <p class="field-hint">Lowercase letters, numbers, and hyphens. Embed with
+      <code>&lt;cse-url templateId="your-id" id="…"&gt;&lt;/cse-url&gt;</code>.</p>
+  </div>
+  <div class="form-group">
+    <label for="urlPattern">URL pattern</label>
+    <input type="text" id="urlPattern" name="urlPattern" required
+           placeholder="https://youtube.com/%s"
+           th:value="${template?.urlTemplateData?.urlPattern}"/>
+    <p class="field-hint"><code>%s</code> is replaced by the tag’s <code>id</code>. The tag may set <code>overrideUrl</code> to a full album or track address instead.</p>
+  </div>
+  <div class="form-group">
+    <label for="urlDefaultText">Default text</label>
+    <input type="text" id="urlDefaultText" name="urlDefaultText"
+           placeholder="Find more videos on my YouTube channel: %s"
+           th:value="${template?.urlTemplateData?.urlDefaultText}"/>
+    <p class="field-hint">Shown unless the tag sets <code>textOverride</code>. <code>%s</code> is replaced by the tag’s <code>id</code>.</p>
+  </div>
+  <div class="form-group">
+    <label for="urlImageFile">Image</label>
+    <div class="url-template-image-row">
+      <img class="url-template-preview" id="urlImagePreview"
+           th:if="${template?.urlTemplateData?.urlImage}"
+           th:src="${template.urlTemplateData.urlImage}"
+           width="64" height="64" alt=""/>
+      <span class="url-template-preview url-template-preview-empty" id="urlImagePlaceholder"
+            th:unless="${template?.urlTemplateData?.urlImage}" aria-hidden="true"></span>
+      <input type="file" id="urlImageFile" name="image"
+             accept="image/jpeg,image/png,image/webp,image/gif,.jpg,.jpeg,.png,.webp,.gif"/>
+    </div>
+    <input type="hidden" name="urlImage" id="urlImage"
+           th:value="${template?.urlTemplateData?.urlImage}"/>
+    <p class="field-hint">PNG keeps transparency. 256×256 px max. Larger images are scaled down.</p>
+  </div>
+</th:block>
+
+<th:block th:fragment="scripts">
+  <script>
+    (function () {
+      var input = document.getElementById('urlImageFile');
+      var preview = document.getElementById('urlImagePreview');
+      var placeholder = document.getElementById('urlImagePlaceholder');
+      if (!input) {
+        return;
+      }
+      input.addEventListener('change', function () {
+        var file = this.files && this.files[0];
+        if (!file) {
+          return;
+        }
+        var url = URL.createObjectURL(file);
+        if (preview) {
+          preview.src = url;
+          return;
+        }
+        var img = document.createElement('img');
+        img.id = 'urlImagePreview';
+        img.className = 'url-template-preview';
+        img.width = 64;
+        img.height = 64;
+        img.alt = '';
+        img.src = url;
+        if (placeholder) {
+          placeholder.replaceWith(img);
+        } else {
+          input.parentNode.insertBefore(img, input);
+        }
+      });
+    })();
+  </script>
+</th:block>
+</body>
+</html>

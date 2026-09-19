@@ -54,6 +54,9 @@ public final class EditorSurfaceInterceptor implements HandlerInterceptor {
         if (path.startsWith("/editor/logs")) {
             return CapabilityIds.EDITOR_LOGS;
         }
+        if (path.startsWith("/editor/instance")) {
+            return CapabilityIds.EDITOR_INSTANCE;
+        }
         if (path.startsWith("/editor/apps")) {
             return CapabilityIds.EDITOR_APPS;
         }
@@ -63,13 +66,18 @@ public final class EditorSurfaceInterceptor implements HandlerInterceptor {
         if (path.startsWith("/editor/playlist")) {
             return CapabilityIds.EDITOR_PLAYLISTS;
         }
+        if (path.startsWith("/editor/url-template")) {
+            return CapabilityIds.EDITOR_URL_TEMPLATES;
+        }
         if (path.startsWith("/editor/category") || path.startsWith("/editor/categories")) {
             return CapabilityIds.EDITOR_CATEGORIES;
         }
         if (path.startsWith("/editor/resources/") || path.startsWith("/editor/catalog")) {
             return CapabilityIds.EDITOR_FILES;
         }
-        if (path.equals("/editor/resources") || path.equals("/editor") || path.equals("/editor/")
+        if (path.startsWith("/editor/video") || path.startsWith("/editor/transcode")
+                || path.equals("/editor/resources")
+                || path.equals("/editor") || path.equals("/editor/")
                 || path.startsWith("/editor/content")) {
             return null;
         }

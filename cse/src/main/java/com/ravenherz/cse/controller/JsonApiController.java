@@ -104,6 +104,21 @@ public class JsonApiController extends AbstractController {
         this.publicSiteApi = publicSiteApi;
     }
 
+    private HttpErrorDescription errorDescription(String code) {
+        return httpErrorHelper.getHttpErrorDescByCode(parseErrorCode(code));
+    }
+
+    private static int parseErrorCode(String code) {
+        if (code == null || code.isBlank()) {
+            return 666;
+        }
+        try {
+            return Integer.parseInt(code.trim());
+        } catch (NumberFormatException e) {
+            return 666;
+        }
+    }
+
     private Map<String, String> getMapOfJsonBody(String jsonBody) {
         Map<String, String> jsonMap = new HashMap<>();
         try {
@@ -142,10 +157,15 @@ public class JsonApiController extends AbstractController {
         return new RestResponse(200, html, null);
     }
 
+    @RequestMapping(value = "/rest/error", method = RequestMethod.GET)
+    public @ResponseBody HttpErrorDescription getErrorData(
+            @RequestParam(value = "error", required = false) String error) {
+        return errorDescription(error);
+    }
+
     @RequestMapping(value = "/rest/error", method = RequestMethod.POST)
-    public @ResponseBody HttpErrorDescription getErrorData(@RequestBody String body) {
-        String code = getMapOfJsonBody(body).getOrDefault("error", "666");
-        return httpErrorHelper.getHttpErrorDescByCode(Integer.parseInt(code));
+    public @ResponseBody HttpErrorDescription getErrorDataPost(@RequestBody String body) {
+        return errorDescription(getMapOfJsonBody(body).getOrDefault("error", "666"));
     }
 
     @RequestMapping(value = "/account/logout", method = RequestMethod.POST)

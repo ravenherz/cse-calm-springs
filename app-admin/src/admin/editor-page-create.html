@@ -63,11 +63,13 @@
               <textarea id="description" name="description" rows="20" class="editor-textarea cse-embed-drop"></textarea>
               <p class="field-hint">Embed with
                 <code>&lt;cse-playlist id="…"&gt;</code>,
+                <code>&lt;cse-url templateId="…" id="…"&gt;</code>,
                 <code>&lt;cse-image id="…"&gt;</code>,
+                <code>&lt;cse-video id="…"&gt;</code>,
                 <code>&lt;cse-page id="…"&gt;</code>,
                 <code>&lt;cse-category id="…"&gt;</code>,
                 or <code>&lt;cse-app id="…"&gt;</code>.
-                Drag a page, category, app, playlist, or image from the Catalog tree.</p>
+                Drag a page, category, app, playlist, URL template, image, or video from the Catalog tree.</p>
             </div>
 
             <th:block th:replace="~{fragments/access :: panel(read=${accessRead}, edit=${accessEdit}, delete=${accessDelete}, canEdit=${accessCanEdit})}"></th:block>

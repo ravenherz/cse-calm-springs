@@ -4,22 +4,40 @@
 <body>
   <div class="editor-layout">
     <aside class="editor-sidebar" th:replace="~{fragments/shared :: shared-editor-sidebar}"></aside>
-    <main class="editor-main">
-      <p class="field-hint">Values are stored in MongoDB and override the JSON shipped in the WAR after a redeploy.</p>
-      <div th:if="${saved}" class="success-message">Settings saved.</div>
-      <div th:if="${error}" class="error-message" th:text="${error}">Error</div>
-
-      <form th:action="@{/editor/settings/save}" method="post" class="form-panel">
+    <main class="editor-main settings-page">
+      <form th:action="@{/editor/settings/save}" method="post">
         <th:block th:replace="~{fragments/csrf :: field}"></th:block>
-        <section class="settings-context" th:each="ctx : ${settingContexts}">
-          <h2 class="settings-context-title" th:text="${ctx.key}">config-view</h2>
+        <header class="page-header">
+          <h1 class="page-title">Settings</h1>
+          <div class="page-header-actions">
+            <button type="submit" class="btn btn-primary">Save</button>
+          </div>
+        </header>
+        <p class="field-hint">Values are stored in MongoDB and override the JSON shipped in the WAR after a redeploy.</p>
+        <div th:if="${saved}" class="success-message">Settings saved.</div>
+        <div th:if="${error}" class="error-message" th:text="${error}">Error</div>
+
+        <nav class="settings-tabs" role="tablist" aria-label="Setting configs"
+             th:if="${settingContexts != null and !settingContexts.isEmpty()}">
+          <button type="button"
+                  role="tab"
+                  th:each="ctx, iter : ${settingContexts}"
+                  th:id="${'settings-tab-' + ctx.key}"
+                  th:classappend="${iter.first} ? 'is-active'"
+                  th:attr="aria-controls=${'settings-panel-' + ctx.key}, aria-selected=${iter.first}, tabindex=${iter.first} ? 0 : -1, data-config=${ctx.key}"
+                  th:title="${ctx.key}"
+                  th:text="${#strings.startsWith(ctx.key, 'config-')} ? ${#strings.substring(ctx.key, 7)} : ${ctx.key}">
+            view
+          </button>
+        </nav>
+        <div class="settings-tab-panel"
+             role="tabpanel"
+             th:each="ctx, iter : ${settingContexts}"
+             th:id="${'settings-panel-' + ctx.key}"
+             th:classappend="${iter.first} ? 'is-active'"
+             th:hidden="${!iter.first}"
+             th:attr="aria-labelledby=${'settings-tab-' + ctx.key}">
           <table class="settings-table">
-            <thead>
-              <tr>
-                <th scope="col">Key</th>
-                <th scope="col">Value</th>
-              </tr>
-            </thead>
             <tbody>
               <tr th:each="entry : ${ctx.value}">
                 <th scope="row">
@@ -58,9 +76,9 @@
               </tr>
             </tbody>
           </table>
-        </section>
+        </div>
         <div class="editor-actions">
-          <button type="submit" class="btn btn-primary">Save settings</button>
+          <button type="submit" class="btn btn-primary">Save</button>
         </div>
       </form>
     </main>
@@ -103,6 +121,100 @@
           document.querySelector('select[name$="::styles-theme"]'),
           document.querySelector('select[name$="::styles-schema"]'),
           null);
+    })();
+    (function () {
+      var nav = document.querySelector('.settings-tabs');
+      if (!nav) {
+        return;
+      }
+      var tabs = nav.querySelectorAll('[role="tab"]');
+      var panels = document.querySelectorAll('.settings-tab-panel');
+      var byId = {};
+      var STORAGE = 'cse-settings-tab';
+      for (var i = 0; i < panels.length; i++) {
+        byId[panels[i].id] = panels[i];
+      }
+      function panelId(config) {
+        return config ? 'settings-panel-' + config : '';
+      }
+      function show(id) {
+        if (!byId[id] && panels.length) {
+          id = panels[0].id;
+        }
+        if (!byId[id]) {
+          return;
+        }
+        for (var p = 0; p < panels.length; p++) {
+          var on = panels[p].id === id;
+          panels[p].classList.toggle('is-active', on);
+          panels[p].hidden = !on;
+        }
+        var config = '';
+        for (var t = 0; t < tabs.length; t++) {
+          var selected = tabs[t].getAttribute('aria-controls') === id;
+          tabs[t].classList.toggle('is-active', selected);
+          tabs[t].setAttribute('aria-selected', selected ? 'true' : 'false');
+          tabs[t].tabIndex = selected ? 0 : -1;
+          if (selected) {
+            config = tabs[t].getAttribute('data-config') || '';
+          }
+        }
+        if (config) {
+          try {
+            localStorage.setItem(STORAGE, config);
+          } catch (e) {}
+          if (history.replaceState) {
+            history.replaceState(null, '', '#' + encodeURIComponent(config));
+          }
+        }
+      }
+      function initial() {
+        var hash = window.location.hash ? decodeURIComponent(window.location.hash.slice(1)) : '';
+        var stored = '';
+        try {
+          stored = localStorage.getItem(STORAGE) || '';
+        } catch (e) {}
+        if (byId[panelId(hash)]) {
+          return panelId(hash);
+        }
+        if (byId[panelId(stored)]) {
+          return panelId(stored);
+        }
+        return panels.length ? panels[0].id : '';
+      }
+      nav.addEventListener('click', function (event) {
+        var tab = event.target.closest('[role="tab"]');
+        if (!tab || !nav.contains(tab)) {
+          return;
+        }
+        event.preventDefault();
+        show(tab.getAttribute('aria-controls'));
+        tab.focus();
+      });
+      nav.addEventListener('keydown', function (event) {
+        var list = Array.prototype.slice.call(tabs);
+        var index = list.indexOf(document.activeElement);
+        if (index < 0) {
+          return;
+        }
+        var next = -1;
+        if (event.key === 'ArrowRight' || event.key === 'ArrowDown') {
+          next = (index + 1) % list.length;
+        } else if (event.key === 'ArrowLeft' || event.key === 'ArrowUp') {
+          next = (index - 1 + list.length) % list.length;
+        } else if (event.key === 'Home') {
+          next = 0;
+        } else if (event.key === 'End') {
+          next = list.length - 1;
+        }
+        if (next < 0) {
+          return;
+        }
+        event.preventDefault();
+        list[next].focus();
+        show(list[next].getAttribute('aria-controls'));
+      });
+      show(initial());
     })();
   </script>
 </body>

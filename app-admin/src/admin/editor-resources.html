@@ -11,7 +11,8 @@
 
     <div class="resource-browser">
       <th:block th:replace="~{fragments/shared :: shared-editor-tree}"></th:block>
-      <section class="resource-pane" th:if="${selectedGroup != null}">
+      <section class="resource-pane" th:if="${selectedGroup != null}"
+               th:attr="data-video-progress-url=@{/editor/video/progress}">
         <div class="resource-pane-header">
           <th:block th:replace="~{fragments/shared :: folder-access-lock(group=${selectedGroup})}"></th:block>
           <div class="resource-pane-title">
@@ -20,6 +21,10 @@
               <span th:text="${selectedGroup.descendantFileCount}">0</span> files,
               <span th:text="${selectedGroup.descendantTotalSizeLabel}">0 bytes</span>
             </span>
+          </div>
+          <div class="resource-pane-tools">
+            <button type="button" class="btn btn-secondary" id="resourceMultiSelect"
+                    aria-pressed="false">Multi-select</button>
           </div>
           <form th:if="${selectedGroup.canEditAccess() and accessRoles != null}"
                 th:action="@{/editor/resources/group/access}" method="post" class="access-form">
@@ -92,6 +97,22 @@
           </ul>
         </div>
 
+        <div th:if="${paneUrlTemplates != null}" class="tile-grid-wrap">
+          <ul class="item-list tile-grid">
+            <li class="resource-plus-tile">
+              <a class="resource-plus-form" th:href="@{/editor/url-template/create}">
+                <span class="resource-plus-drop">
+                  <span class="group-toggle resource-plus-mark" aria-hidden="true"></span>
+                  <span class="visually-hidden">New URL template</span>
+                </span>
+              </a>
+            </li>
+            <th:block th:each="template : ${paneUrlTemplates}">
+              <li th:replace="~{fragments/shared :: url-template-row(template=${template}, returnGroup=${selectedGroup.id})}"></li>
+            </th:block>
+          </ul>
+        </div>
+
         <div th:if="${paneCategories != null}" class="tile-grid-wrap">
           <ul class="item-list tile-grid">
             <li class="resource-plus-tile">
@@ -125,7 +146,7 @@
           </ul>
         </div>
 
-        <ul class="item-list" th:if="${paneApps == null and paneThemes == null and panePlaylists == null and paneCategories == null and panePages == null}">
+        <ul class="item-list" th:if="${paneApps == null and paneThemes == null and panePlaylists == null and paneUrlTemplates == null and paneCategories == null and panePages == null}">
           <li class="resource-plus-tile" th:if="${selectedGroup.canAcceptFiles()}">
             <form th:action="@{/editor/resources/upload}" method="post" enctype="multipart/form-data"
                   class="resource-plus-form" id="resourceUploadForm">
@@ -139,7 +160,7 @@
                 <span class="group-toggle resource-plus-mark" aria-hidden="true"></span>
                 <span class="visually-hidden">Upload resources</span>
                 <input type="file" id="file" name="file"
-                       accept=".jpg,.jpeg,.png,.heic,.heif,.mp3,image/heic,image/heif"
+                       accept=".jpg,.jpeg,.png,.heic,.heif,.mp3,.mp4,.mov,.m4v,.webm,.mkv,image/heic,image/heif,video/mp4,video/quicktime,video/webm"
                        multiple required/>
               </div>
               <div class="upload-progress" id="uploadProgress" hidden>
@@ -256,7 +277,7 @@
               return;
           }
           var pane = form.closest('.resource-pane');
-          var allowedExt = ['jpg', 'jpeg', 'png', 'heic', 'heif', 'mp3'];
+          var allowedExt = ['jpg', 'jpeg', 'png', 'heic', 'heif', 'mp3', 'mp4', 'mov', 'm4v', 'webm', 'mkv'];
           var queue = [];
           var usedIds = {};
           var total = 0;
@@ -392,7 +413,7 @@
               }
               if (!accepted.length) {
                   if (rejected && !uploading) {
-                      showError('Invalid file type. Supported: jpg, png, heic, mp3');
+                      showError('Invalid file type. Supported: jpg, png, heic, mp3, mp4, mov, webm, mkv');
                   }
                   return;
               }
@@ -462,6 +483,25 @@
                   });
                   audio.addEventListener('error', doneMeta);
                   audio.src = fileUrl;
+                  return;
+              }
+              if (['mp4', 'mov', 'm4v', 'webm', 'mkv'].indexOf(ext) !== -1) {
+                  var video = document.createElement('video');
+                  var timedOut = setTimeout(doneMeta, 3000);
+                  video.addEventListener('loadedmetadata', function () {
+                      clearTimeout(timedOut);
+                      metadata.width = this.videoWidth;
+                      metadata.height = this.videoHeight;
+                      if (isFinite(this.duration)) {
+                          metadata.duration = Math.round(this.duration);
+                      }
+                      doneMeta();
+                  });
+                  video.addEventListener('error', function () {
+                      clearTimeout(timedOut);
+                      doneMeta();
+                  });
+                  video.src = fileUrl;
                   return;
               }
               doneMeta();
@@ -678,6 +718,199 @@
       })();
 
       (function () {
+          var pane = document.querySelector('.resource-pane');
+          var url = pane && pane.getAttribute('data-video-progress-url');
+          if (!pane || !url) {
+              return;
+          }
+          var timer = null;
+
+          function processingRows() {
+              return pane.querySelectorAll('.tile-row[data-video-status="processing"]');
+          }
+
+          function stop() {
+              if (timer) {
+                  clearTimeout(timer);
+                  timer = null;
+              }
+          }
+
+          function schedule(ms) {
+              stop();
+              timer = setTimeout(load, ms);
+          }
+
+          function setBar(row, percent, unknown) {
+              var bar = row.querySelector('.thumb-progress');
+              var fill = row.querySelector('.thumb-progress-fill');
+              var label = row.querySelector('[data-video-percent]');
+              if (label) {
+                  label.textContent = unknown ? '…' : (percent + '%');
+              }
+              if (!bar || !fill) {
+                  return;
+              }
+              if (unknown) {
+                  bar.classList.add('is-unknown');
+                  fill.style.width = '';
+              } else {
+                  bar.classList.remove('is-unknown');
+                  fill.style.width = Math.max(0, Math.min(100, percent)) + '%';
+              }
+          }
+
+          function setPoster(row, preview) {
+              if (!preview) {
+                  return;
+              }
+              var img = row.querySelector('.item-thumb-wrap > img.item-thumb');
+              if (img) {
+                  img.src = preview;
+                  return;
+              }
+              var placeholder = row.querySelector('.item-thumb-audio');
+              if (!placeholder) {
+                  return;
+              }
+              var created = document.createElement('img');
+              created.className = 'item-thumb';
+              created.draggable = false;
+              created.src = preview;
+              placeholder.replaceWith(created);
+          }
+
+          function markFailed(row, video) {
+              row.setAttribute('data-video-status', 'failed');
+              var processing = row.querySelector('.thumb-tag-processing');
+              if (processing) {
+                  processing.remove();
+              }
+              var bar = row.querySelector('.thumb-progress');
+              if (bar) {
+                  bar.remove();
+              }
+              var tags = row.querySelector('.thumb-tags');
+              if (tags && !row.querySelector('.thumb-tag-failed')) {
+                  var tag = document.createElement('span');
+                  tag.className = 'thumb-tag thumb-tag-failed';
+                  tag.textContent = 'Failed';
+                  var size = tags.querySelector('.thumb-tag-size');
+                  if (size) {
+                      tags.insertBefore(tag, size);
+                  } else {
+                      tags.appendChild(tag);
+                  }
+              }
+              var transcode = row.querySelector('[data-video-transcode]');
+              if (transcode) {
+                  transcode.textContent = 'failed';
+              }
+              if (video && video.sizeLabel) {
+                  var sizeTag = row.querySelector('.thumb-tag-size');
+                  if (sizeTag) {
+                      sizeTag.textContent = video.sizeLabel;
+                  }
+              }
+          }
+
+          function markReady(row, video) {
+              row.setAttribute('data-video-status', 'ready');
+              var processing = row.querySelector('.thumb-tag-processing');
+              if (processing) {
+                  processing.remove();
+              }
+              var bar = row.querySelector('.thumb-progress');
+              if (bar) {
+                  bar.remove();
+              }
+              setPoster(row, video.preview);
+              if (video.sizeLabel) {
+                  var sizeTag = row.querySelector('.thumb-tag-size');
+                  if (sizeTag) {
+                      sizeTag.textContent = video.sizeLabel;
+                  }
+              }
+              var transcode = row.querySelector('[data-video-transcode]');
+              if (transcode) {
+                  transcode.textContent = 'ready';
+              }
+          }
+
+          function applyVideo(video) {
+              if (!video || !video.id) {
+                  return;
+              }
+              var row = pane.querySelector('.tile-row[data-id="' + video.id + '"]');
+              if (!row) {
+                  return;
+              }
+              if (video.status === 'ready') {
+                  markReady(row, video);
+                  return;
+              }
+              if (video.status === 'failed') {
+                  markFailed(row, video);
+                  return;
+              }
+              var percent = typeof video.percent === 'number' ? video.percent : 0;
+              setBar(row, percent, video.status === 'queued' && percent <= 0);
+          }
+
+          function load() {
+              var rows = processingRows();
+              if (!rows.length) {
+                  stop();
+                  return;
+              }
+              if (document.hidden) {
+                  schedule(1500);
+                  return;
+              }
+              var ids = [];
+              for (var i = 0; i < rows.length; i++) {
+                  ids.push(rows[i].getAttribute('data-id'));
+              }
+              fetch(url + (url.indexOf('?') === -1 ? '?' : '&') + 'ids=' + encodeURIComponent(ids.join(',')), {
+                  credentials: 'same-origin',
+                  headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' }
+              }).then(function (res) {
+                  if (res.status === 401 || res.status === 403) {
+                      stop();
+                      return null;
+                  }
+                  if (!res.ok) {
+                      throw new Error('progress');
+                  }
+                  return res.json();
+              }).then(function (data) {
+                  if (!data || !data.videos) {
+                      return;
+                  }
+                  for (var i = 0; i < data.videos.length; i++) {
+                      applyVideo(data.videos[i]);
+                  }
+              }).catch(function () {
+              }).then(function () {
+                  if (processingRows().length) {
+                      schedule(1000);
+                  } else {
+                      stop();
+                  }
+              });
+          }
+
+          if (processingRows().length) {
+              load();
+          }
+          document.addEventListener('visibilitychange', function () {
+              if (!document.hidden && processingRows().length) {
+                  load();
+              }
+          });
+      })();
+
+      (function () {
           var form = document.getElementById('packUploadForm');
           var dropZone = document.getElementById('packDropZone');
           var fileInput = document.getElementById('packFile');
@@ -766,20 +999,110 @@
           existing.hidden = false;
       }
 
+      function resetResourceTip(row) {
+          var tip = row.querySelector('.resource-tip');
+          if (!tip) {
+              return;
+          }
+          tip.style.position = '';
+          tip.style.left = '';
+          tip.style.right = '';
+          tip.style.top = '';
+          tip.style.bottom = '';
+          tip.style.maxHeight = '';
+          tip.style.maxWidth = '';
+          tip.style.minWidth = '';
+          tip.style.overflowY = '';
+          tip.style.visibility = '';
+      }
+
+      function closeResourceTip(row) {
+          row.classList.remove('tip-open');
+          resetResourceTip(row);
+      }
+
+      function placeResourceTip(row) {
+          var tip = row.querySelector('.resource-tip');
+          if (!tip || !row.classList.contains('tip-open')) {
+              return;
+          }
+          var tile = row.getBoundingClientRect();
+          var pane = document.querySelector('.resource-pane') || document.querySelector('.editor-main');
+          var pad = 8;
+          var gap = 12;
+          var area = pane ? pane.getBoundingClientRect() : { left: 0, right: window.innerWidth, top: 0, bottom: window.innerHeight };
+          var leftBound = Math.max(pad, area.left + pad);
+          var rightBound = Math.min(window.innerWidth - pad, area.right - pad);
+          var topBound = Math.max(pad, area.top + pad);
+          var bottomBound = Math.min(window.innerHeight - pad, area.bottom - pad);
+          var avail = Math.max(160, rightBound - leftBound);
+          tip.style.visibility = 'hidden';
+          tip.style.position = 'fixed';
+          tip.style.right = 'auto';
+          tip.style.bottom = 'auto';
+          tip.style.minWidth = '0';
+          tip.style.maxWidth = Math.min(448, avail) + 'px';
+          tip.style.maxHeight = '';
+          tip.style.overflowY = '';
+          tip.style.left = '0px';
+          tip.style.top = '0px';
+          var width = tip.offsetWidth;
+          var height = tip.offsetHeight;
+          var left = tile.right + gap;
+          if (left + width > rightBound && tile.left - gap - width >= leftBound) {
+              left = tile.left - gap - width;
+          }
+          if (left + width > rightBound) {
+              left = rightBound - width;
+          }
+          if (left < leftBound) {
+              left = leftBound;
+          }
+          var maxH = bottomBound - topBound;
+          if (height > maxH) {
+              tip.style.maxHeight = maxH + 'px';
+              tip.style.overflowY = 'auto';
+              height = maxH;
+          }
+          var top = tile.top;
+          if (top + height > bottomBound) {
+              top = bottomBound - height;
+          }
+          if (top < topBound) {
+              top = topBound;
+          }
+          tip.style.left = Math.round(left) + 'px';
+          tip.style.top = Math.round(top) + 'px';
+          tip.style.visibility = '';
+      }
+
       document.addEventListener('click', function (e) {
           var infoBtn = e.target.closest('.thumb-info-btn');
           var row = infoBtn ? infoBtn.closest('.tile-row') : null;
           var keepTip = e.target.closest('.resource-tip');
           document.querySelectorAll('.tile-row.tip-open').forEach(function (open) {
               if (open !== row && !(keepTip && open.contains(keepTip))) {
-                  open.classList.remove('tip-open');
+                  closeResourceTip(open);
               }
           });
-          if (infoBtn) {
+          if (infoBtn && row) {
               e.preventDefault();
-              row.classList.toggle('tip-open');
+              if (row.classList.contains('tip-open')) {
+                  closeResourceTip(row);
+              } else {
+                  row.classList.add('tip-open');
+                  requestAnimationFrame(function () {
+                      placeResourceTip(row);
+                  });
+              }
           }
       });
+      window.addEventListener('resize', function () {
+          document.querySelectorAll('.tile-row.tip-open').forEach(placeResourceTip);
+      });
+      document.addEventListener('scroll', function () {
+          document.querySelectorAll('.tile-row.tip-open').forEach(placeResourceTip);
+      }, true);
 
       (function () {
           var grid = document.getElementById('themeGrid');

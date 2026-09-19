@@ -27,10 +27,10 @@ class AccessRuleTest {
     }
 
     @Test
-    void guideThresholdStartsAtGuide() {
-        AccessRule rule = AccessRule.fromLegacy(SecurityLevel.GUIDE);
-        assertEquals(RoleSeeds.slugsAtOrAbove(SecurityLevel.GUIDE), rule.getRoleIds());
+    void operatorThresholdStartsAtOperator() {
+        AccessRule rule = AccessRule.fromLegacy(SecurityLevel.OPERATOR);
+        assertEquals(RoleSeeds.slugsAtOrAbove(SecurityLevel.OPERATOR), rule.getRoleIds());
         assertFalse(rule.getRoleIds().contains(RoleSeeds.MEMBER));
-        assertTrue(rule.getRoleIds().contains(RoleSeeds.GUIDE));
+        assertTrue(rule.getRoleIds().contains(RoleSeeds.OPERATOR));
     }
 }

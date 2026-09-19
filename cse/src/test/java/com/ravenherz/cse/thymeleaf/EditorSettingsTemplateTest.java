@@ -40,8 +40,11 @@ class EditorSettingsTemplateTest {
         Map<String, String> view = new LinkedHashMap<>();
         view.put("styles-theme", "modern");
         view.put("styles-schema", "linen");
+        Map<String, String> personal = new LinkedHashMap<>();
+        personal.put("company-title", "Calm Springs");
         Map<String, Map<String, String>> contexts = new LinkedHashMap<>();
         contexts.put("config-view", view);
+        contexts.put("config-personal", personal);
         context.setVariable("settingContexts", contexts);
         context.setVariable("publicThemes", List.of(modern, paper, client));
         context.setVariable("activeThemeSchemas", schemas);
@@ -66,6 +69,14 @@ class EditorSettingsTemplateTest {
         String html = engine.process("admin/editor-settings", context);
 
         assertFalse(html.contains("${"), html);
+        assertTrue(html.contains(">Settings</h1>"), html);
+        assertTrue(html.contains("role=\"tablist\""), html);
+        assertTrue(html.contains("settings-tab-config-view"), html);
+        assertTrue(html.contains("settings-panel-config-personal"), html);
+        assertTrue(html.contains(">view<"), html);
+        assertTrue(html.contains(">personal<"), html);
+        assertFalse(html.contains("form-panel"), html);
+        assertFalse(html.contains("scope=\"col\""), html);
         assertFalse(html.contains("id=\"my-styles-theme\""), html);
         assertFalse(html.contains("id=\"my-styles-schema\""), html);
         assertFalse(html.contains("Save your theme"), html);

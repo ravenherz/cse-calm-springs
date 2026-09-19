@@ -1,6 +1,7 @@
 package com.ravenherz.cse.dal.dto;
 
 import com.ravenherz.cse.constants.MongoCollections;
+import com.ravenherz.cse.dal.EntityVersions;
 import com.ravenherz.cse.dal.role.RoleSeeds;
 import org.bson.types.ObjectId;
 import org.springframework.data.annotation.Id;
@@ -14,7 +15,7 @@ public final class RoleEntity {
 
     @Id
     private ObjectId id;
-    private String entityVersion = "0.1.0";
+    private String entityVersion = EntityVersions.current();
     @Indexed(unique = true)
     private String slug;
     private String name;

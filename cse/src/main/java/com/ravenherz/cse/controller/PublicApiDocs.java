@@ -161,16 +161,16 @@ public final class PublicApiDocs {
                                 """
                                 { "status": 200, "restObject": "<div id='form-id'>...</div>" }"""),
                         new Endpoint("POST", "/rest/markdown/render", "Public", true,
-                                "Markdown to HTML, then expand <cse-playlist id=\"...\"/> embeds.",
+                                "Markdown to HTML, then expand <cse-playlist/> and <cse-url/> embeds.",
                                 """
                                 { "markdown": "# Hello" }""",
                                 """
                                 { "status": 200, "restObject": "<h1>Hello</h1>" }"""),
-                        new Endpoint("POST", "/rest/error", "Public", true,
-                                "Copy for /?error= codes (cse-error.js). Body is not a RestResponse envelope. "
-                                        + "Unknown codes fall back to 500.",
-                                """
-                                { "error": "401" }""",
+                        new Endpoint("GET", "/rest/error", "Public", false,
+                                "Copy for /?error= codes (cse-error.js). Query error is the HTTP code. "
+                                        + "POST {\"error\":\"401\"} is still accepted and is not CSRF-gated. "
+                                        + "Body is not a RestResponse envelope. Unknown codes fall back to 500.",
+                                "?error=401",
                                 """
                                 {
                                   "code": 401,

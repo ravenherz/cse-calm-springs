@@ -1,6 +1,7 @@
 package com.ravenherz.cse;
 
 import com.ravenherz.cse.filters.ContentPrivateFilter;
+import com.ravenherz.cse.util.ResourceUploadLimits;
 import com.ravenherz.cse.util.themes.DiskThemeTemplateResolver;
 import jakarta.servlet.*;
 import jakarta.servlet.annotation.ServletSecurity;
@@ -166,8 +167,11 @@ public class CalmSpringsEngineApplication extends SpringBootServletInitializer {
 			);
 			factory.addErrorPages(new ErrorPage(defaultError));
 			factory.addConnectorCustomizers(connector -> {
+				int uploadBytes = ResourceUploadLimits.servletCeilingBytes();
+				connector.setMaxPostSize(uploadBytes);
 				ProtocolHandler protocolHandler = connector.getProtocolHandler();
 				if (protocolHandler instanceof AbstractHttp11Protocol<?> httpHandler) {
+					httpHandler.setMaxSwallowSize(uploadBytes);
 					Arrays
 							.stream(httpHandler.findSslHostConfigs())
 							.forEach(sslHostConfig -> sslHostConfig.setHonorCipherOrder(true));

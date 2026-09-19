@@ -71,14 +71,14 @@ class EntityAccessTest {
     }
 
     @Test
-    void guideReadRequiresGuideWhenSettingsSaySo() {
+    void operatorReadRequiresOperatorWhenSettingsSaySo() {
         AccountEntity owner = account(SecurityLevel.ADMIN);
         ItemEntity page = ownedPage(owner);
-        page.setSecurityData(new SecurityData(EntityAccessConstants.GUIDE));
+        page.setSecurityData(new SecurityData(EntityAccessConstants.forLevel(SecurityLevel.OPERATOR)));
 
         assertFalse(EntityAccess.isAccessible(page, AccessType.ACCESS_READ, null));
         assertFalse(EntityAccess.isAccessible(page, AccessType.ACCESS_READ, account(SecurityLevel.ACTIVE_USER)));
-        assertTrue(EntityAccess.isAccessible(page, AccessType.ACCESS_READ, account(SecurityLevel.GUIDE)));
+        assertTrue(EntityAccess.isAccessible(page, AccessType.ACCESS_READ, account(SecurityLevel.OPERATOR)));
     }
 
     private static AccountEntity account(SecurityLevel level) {

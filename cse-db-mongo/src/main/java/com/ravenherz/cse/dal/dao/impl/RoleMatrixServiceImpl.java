@@ -7,6 +7,7 @@ import com.ravenherz.cse.dal.dto.RoleEntity;
 import com.ravenherz.cse.dal.dto.RoleMatrixDocument;
 import com.ravenherz.cse.dal.dto.basic.AppAccountGrant;
 import com.ravenherz.cse.dal.dto.basic.RoleGrant;
+import com.ravenherz.cse.dal.role.CapabilityIds;
 import com.ravenherz.cse.dal.role.RoleSeeds;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -106,8 +107,12 @@ public class RoleMatrixServiceImpl implements RoleMatrixService {
         }
         RoleMatrixDocument existing = mongo().findById(RoleMatrixDocument.SINGLETON_ID, RoleMatrixDocument.class);
         if (existing != null && existing.getGrants() != null && !existing.getGrants().isEmpty()) {
-            cached = existing;
-            return;
+            dropUnknownRoleGrants(roles, existing);
+            backfillInstanceGrant(existing);
+            if (existing.getGrants() != null && !existing.getGrants().isEmpty()) {
+                cached = existing;
+                return;
+            }
         }
         List<RoleGrant> grants = new ArrayList<>();
         Map<String, List<String>> bySlug = RoleSeeds.seedGrantsBySlug();
@@ -134,6 +139,68 @@ public class RoleMatrixServiceImpl implements RoleMatrixService {
         mongo().save(doc);
         cached = doc;
         LOGGER.info("Seeded role matrix with {} grants", grants.size());
+    }
+
+    private void backfillInstanceGrant(RoleMatrixDocument doc) {
+        if (doc == null || doc.getGrants() == null) {
+            return;
+        }
+        Set<String> have = new HashSet<>();
+        Set<String> candidates = new HashSet<>();
+        for (RoleGrant grant : doc.getGrants()) {
+            if (grant == null || grant.getRoleId() == null || grant.getCapabilityId() == null) {
+                continue;
+            }
+            if (CapabilityIds.EDITOR_INSTANCE.equals(grant.getCapabilityId())) {
+                have.add(grant.getRoleId());
+            }
+            if (CapabilityIds.EDITOR_ACCESS.equals(grant.getCapabilityId())
+                    || CapabilityIds.EDITOR_LOGS.equals(grant.getCapabilityId())
+                    || CapabilityIds.EDITOR_SETTINGS.equals(grant.getCapabilityId())) {
+                candidates.add(grant.getRoleId());
+            }
+        }
+        List<RoleGrant> next = new ArrayList<>(doc.getGrants());
+        int added = 0;
+        for (String roleId : candidates) {
+            if (have.add(roleId)) {
+                next.add(new RoleGrant(CapabilityIds.EDITOR_INSTANCE, roleId));
+                added++;
+            }
+        }
+        if (added > 0) {
+            doc.setGrants(next);
+            mongo().save(doc);
+            LOGGER.info("Granted Instance to {} existing editor role(s)", added);
+        }
+    }
+
+    private void dropUnknownRoleGrants(RoleService roles, RoleMatrixDocument doc) {
+        Set<String> known = new HashSet<>();
+        if (roles != null) {
+            for (RoleEntity role : roles.getAll()) {
+                if (role != null && role.idHex() != null) {
+                    known.add(role.idHex());
+                }
+            }
+        }
+        List<RoleGrant> next = new ArrayList<>();
+        boolean changed = false;
+        for (RoleGrant grant : doc.getGrants()) {
+            if (grant != null && grant.getRoleId() != null && !known.isEmpty()
+                    && !known.contains(grant.getRoleId())) {
+                changed = true;
+                continue;
+            }
+            if (grant != null) {
+                next.add(grant);
+            }
+        }
+        if (changed) {
+            doc.setGrants(next);
+            mongo().save(doc);
+            LOGGER.info("Dropped grants for retired roles");
+        }
     }
 
     @Override

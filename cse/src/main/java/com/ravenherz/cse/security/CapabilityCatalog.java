@@ -55,6 +55,8 @@ public class CapabilityCatalog {
                     "Manage files and folders in Catalog."),
             CapabilityRecord.engine(CapabilityIds.EDITOR_PLAYLISTS, "editor", "Playlists", false,
                     "Create and edit playlists."),
+            CapabilityRecord.engine(CapabilityIds.EDITOR_URL_TEMPLATES, "editor", "URL Templates", false,
+                    "Create and edit URL templates for cse-url embeds."),
             CapabilityRecord.engine(CapabilityIds.EDITOR_APPS, "editor", "Install apps", false,
                     "Install and manage apps."),
             CapabilityRecord.engine(CapabilityIds.EDITOR_THEMES, "editor", "Install themes", false,
@@ -68,7 +70,9 @@ public class CapabilityCatalog {
             CapabilityRecord.engine(CapabilityIds.EDITOR_SITE_DATA, "editor", "Site data", false,
                     "Import and export site data."),
             CapabilityRecord.engine(CapabilityIds.EDITOR_LOGS, "editor", "Logs", false,
-                    "Open Logs."));
+                    "Open Logs."),
+            CapabilityRecord.engine(CapabilityIds.EDITOR_INSTANCE, "editor", "Instance", false,
+                    "Open Instance and view host CPU, GPU, memory, and disks."));
 
     private final AppService appService;
     private volatile List<CapabilityRecord> all = List.of();

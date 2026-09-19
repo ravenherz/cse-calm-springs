@@ -12,6 +12,7 @@ import com.ravenherz.cse.dal.dto.ResourceGroupEntity;
 import com.ravenherz.cse.dal.dto.RoleEntity;
 import com.ravenherz.cse.dal.dto.RoleMatrixDocument;
 import com.ravenherz.cse.dal.dto.ThemeEntity;
+import com.ravenherz.cse.dal.dto.UrlTemplateEntity;
 import com.ravenherz.cse.dal.dto.basic.AccessRule;
 import com.ravenherz.cse.dal.dto.basic.AccountData;
 import com.ravenherz.cse.dal.dto.basic.AlbumData;
@@ -28,6 +29,7 @@ import com.ravenherz.cse.dal.dto.basic.ResourceGroupData;
 import com.ravenherz.cse.dal.dto.basic.RoleGrant;
 import com.ravenherz.cse.dal.dto.basic.SecurityData;
 import com.ravenherz.cse.dal.dto.basic.ThemeData;
+import com.ravenherz.cse.dal.dto.basic.UrlTemplateData;
 import com.ravenherz.cse.dal.dto.basic.enums.AccessType;
 import org.bson.Document;
 import org.bson.types.Binary;
@@ -146,6 +148,20 @@ final class CseSiteDocuments {
             }
             playlistData.put("tracks", tracks);
             doc.put("playlistData", playlistData);
+        }
+        return doc;
+    }
+
+    static Map<String, Object> urlTemplate(UrlTemplateEntity entity) {
+        Map<String, Object> doc = basic(entity);
+        put(doc, "urlTemplateId", entity.getUrlTemplateId());
+        UrlTemplateData data = entity.getUrlTemplateData();
+        if (data != null) {
+            Map<String, Object> templateData = new LinkedHashMap<>();
+            put(templateData, "urlImage", data.getUrlImage());
+            put(templateData, "urlDefaultText", data.getUrlDefaultText());
+            put(templateData, "urlPattern", data.getUrlPattern());
+            doc.put("urlTemplateData", templateData);
         }
         return doc;
     }

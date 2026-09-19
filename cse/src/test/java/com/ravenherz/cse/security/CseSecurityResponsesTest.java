@@ -32,6 +32,28 @@ class CseSecurityResponsesTest {
     }
 
     @Test
+    void jsonInstanceSnapshotIsStatusNotRedirect() throws IOException {
+        MockHttpServletRequest request = new MockHttpServletRequest();
+        request.setRequestURI("/rhz-we/editor/instance/snapshot");
+        MockHttpServletResponse response = new MockHttpServletResponse();
+        CseSecurityResponses.unauthorized(request, response);
+        assertEquals(401, response.getStatus());
+        assertTrue(response.getRedirectedUrl() == null || response.getRedirectedUrl().isEmpty());
+        assertTrue(response.getContentAsString().contains("Sign in required"));
+    }
+
+    @Test
+    void jsonTranscodeQueueIsStatusNotRedirect() throws IOException {
+        MockHttpServletRequest request = new MockHttpServletRequest();
+        request.setRequestURI("/rhz-we/editor/transcode/queue");
+        MockHttpServletResponse response = new MockHttpServletResponse();
+        CseSecurityResponses.unauthorized(request, response);
+        assertEquals(401, response.getStatus());
+        assertTrue(response.getRedirectedUrl() == null || response.getRedirectedUrl().isEmpty());
+        assertTrue(response.getContentAsString().contains("Sign in required"));
+    }
+
+    @Test
     void jsonForbiddenHasABody() throws IOException {
         MockHttpServletRequest request = new MockHttpServletRequest();
         request.addHeader("Accept", "application/json");

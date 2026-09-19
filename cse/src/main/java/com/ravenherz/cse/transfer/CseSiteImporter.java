@@ -15,6 +15,7 @@ import com.ravenherz.cse.dal.dto.RoleEntity;
 import com.ravenherz.cse.dal.dto.RoleMatrixDocument;
 import com.ravenherz.cse.dal.dto.SettingContextEntity;
 import com.ravenherz.cse.dal.dto.ThemeEntity;
+import com.ravenherz.cse.dal.dto.UrlTemplateEntity;
 import com.ravenherz.cse.dal.dao.RoleMatrixService;
 import com.ravenherz.cse.dal.dao.RoleService;
 import com.ravenherz.cse.dal.dao.impl.AppStoreServiceImpl;
@@ -87,6 +88,8 @@ public class CseSiteImporter {
                 replace(mongo, ItemEntity.class, parsed.items));
         counts.put(MongoCollections.DATABASE_PLAYLISTS,
                 replace(mongo, PlaylistEntity.class, parsed.playlists));
+        counts.put(MongoCollections.DATABASE_URL_TEMPLATES,
+                replace(mongo, UrlTemplateEntity.class, parsed.urlTemplates));
         counts.put(MongoCollections.DATABASE_APPS,
                 replace(mongo, AppEntity.class, parsed.apps));
         counts.put(MongoCollections.DATABASE_THEMES,
@@ -115,6 +118,8 @@ public class CseSiteImporter {
         parsed.resources = readAll(archive.collection(MongoCollections.DATABASE_RESOURCES), CseSiteReaders::resource);
         parsed.items = readAll(archive.collection(MongoCollections.DATABASE_ITEMS), CseSiteReaders::item);
         parsed.playlists = readAll(archive.collection(MongoCollections.DATABASE_PLAYLISTS), CseSiteReaders::playlist);
+        parsed.urlTemplates = readAll(archive.collection(MongoCollections.DATABASE_URL_TEMPLATES),
+                CseSiteReaders::urlTemplate);
         parsed.apps = readAll(archive.collection(MongoCollections.DATABASE_APPS), CseSiteReaders::app);
         parsed.themes = readAll(archive.collection(MongoCollections.DATABASE_THEMES), CseSiteReaders::theme);
         parsed.roles = readAll(archive.collection(MongoCollections.DATABASE_ROLES), CseSiteReaders::role);
@@ -222,6 +227,9 @@ public class CseSiteImporter {
         }
         if (roleMatrixService != null) {
             roleMatrixService.invalidateCache();
+            if (roleService != null) {
+                roleMatrixService.ensureSeeded(roleService);
+            }
         }
     }
 
@@ -357,6 +365,7 @@ public class CseSiteImporter {
         private List<ResourceEntity> resources = List.of();
         private List<ItemEntity> items = List.of();
         private List<PlaylistEntity> playlists = List.of();
+        private List<UrlTemplateEntity> urlTemplates = List.of();
         private List<AppEntity> apps = List.of();
         private List<ThemeEntity> themes = List.of();
         private List<RoleEntity> roles = List.of();

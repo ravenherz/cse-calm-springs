@@ -14,7 +14,7 @@ import java.util.Map;
 
 public final class ResourceData {
 
-    private static final int CHUNK_SIZE = 7000000;
+    public static final int CHUNK_SIZE = 7000000;
 
     private ResourceType type;
     private long sizeInBytes;

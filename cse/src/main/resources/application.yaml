@@ -4,8 +4,8 @@ spring:
   servlet:
     multipart:
       enabled: true
-      max-file-size: 50MB
-      max-request-size: 50MB
+      max-file-size: -1
+      max-request-size: -1
       file-size-threshold: 256KB
 
 logging:
@@ -21,8 +21,8 @@ logging:
 server:
   forward-headers-strategy: framework
   tomcat:
-    max-http-form-post-size: 50MB
-    max-swallow-size: 50MB
+    max-http-form-post-size: -1
+    max-swallow-size: -1
   error:
     path: "/error"
     whitelabel:

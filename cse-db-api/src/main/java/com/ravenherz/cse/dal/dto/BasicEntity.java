@@ -1,5 +1,6 @@
 package com.ravenherz.cse.dal.dto;
 
+import com.ravenherz.cse.dal.EntityVersions;
 import com.ravenherz.cse.dal.dto.basic.AccessRule;
 import com.ravenherz.cse.dal.dto.basic.Event;
 import com.ravenherz.cse.dal.dto.basic.HistoryData;
@@ -30,16 +31,11 @@ public abstract class BasicEntity implements Serializable {
     public BasicEntity() {
     }
 
-    public BasicEntity(String entityVersion) {
-        this(entityVersion, null, null);
-    }
-
-    public BasicEntity(String entityVersion, @Nullable Map<AccessType, AccessRule> accessSettings,
-            @Nullable AccountEntity creator) {
+    public BasicEntity(@Nullable Map<AccessType, AccessRule> accessSettings, @Nullable AccountEntity creator) {
         this.securityData = accessSettings == null ? getDefaultSecurityData()
                 : new SecurityData(accessSettings);
         this.historyData = creator == null ? new HistoryData() : new HistoryData(creator);
-        this.entityVersion = entityVersion;
+        this.entityVersion = EntityVersions.current();
     }
 
     private HistoryData getDefaultCommonData() {

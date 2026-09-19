@@ -10,8 +10,6 @@ import org.slf4j.LoggerFactory;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.index.Index;
-import org.springframework.data.mongodb.core.query.Criteria;
-import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.stereotype.Repository;
 
 import java.util.ArrayList;
@@ -62,6 +60,9 @@ public class RoleServiceImpl implements RoleService {
             return getBySlug(idHex);
         }
         RoleEntity found = mongo().findById(new ObjectId(idHex), RoleEntity.class);
+        if (dropRetiredGuide(found)) {
+            return null;
+        }
         remember(found);
         return found;
     }
@@ -87,7 +88,7 @@ public class RoleServiceImpl implements RoleService {
 
     @Override
     public RoleEntity insert(RoleEntity role) {
-        if (role == null) {
+        if (role == null || RoleSeeds.isRetiredSlug(role.getSlug())) {
             return null;
         }
         mongo().save(role);
@@ -97,7 +98,7 @@ public class RoleServiceImpl implements RoleService {
 
     @Override
     public boolean replace(RoleEntity role) {
-        if (role == null) {
+        if (role == null || RoleSeeds.isRetiredSlug(role.getSlug())) {
             return false;
         }
         mongo().save(role);
@@ -111,12 +112,7 @@ public class RoleServiceImpl implements RoleService {
             return false;
         }
         mongo().remove(role);
-        if (role.getId() != null) {
-            byId.remove(role.getId().toHexString());
-        }
-        if (role.getSlug() != null) {
-            bySlug.remove(role.getSlug());
-        }
+        forget(role);
         return true;
     }
 
@@ -128,6 +124,9 @@ public class RoleServiceImpl implements RoleService {
         ensureIndexes();
         List<RoleEntity> existing = mongo().findAll(RoleEntity.class);
         for (RoleEntity role : existing) {
+            if (dropRetiredGuide(role)) {
+                continue;
+            }
             remember(role);
         }
         for (RoleSeeds.SeedRole seed : RoleSeeds.roles()) {
@@ -176,10 +175,23 @@ public class RoleServiceImpl implements RoleService {
                 return;
             }
             for (RoleEntity role : mongo().findAll(RoleEntity.class)) {
+                if (dropRetiredGuide(role)) {
+                    continue;
+                }
                 remember(role);
             }
             cacheLoaded = true;
         }
+    }
+
+    private boolean dropRetiredGuide(RoleEntity role) {
+        if (role == null || !RoleSeeds.isRetiredSlug(role.getSlug())) {
+            return false;
+        }
+        LOGGER.info("Removing retired Guide role");
+        mongo().remove(role);
+        forget(role);
+        return true;
     }
 
     private void remember(RoleEntity role) {
@@ -191,6 +203,18 @@ public class RoleServiceImpl implements RoleService {
         }
         if (role.getSlug() != null) {
             bySlug.put(role.getSlug().toLowerCase(Locale.ROOT), role);
+        }
+    }
+
+    private void forget(RoleEntity role) {
+        if (role == null) {
+            return;
+        }
+        if (role.getId() != null) {
+            byId.remove(role.getId().toHexString());
+        }
+        if (role.getSlug() != null) {
+            bySlug.remove(role.getSlug().toLowerCase(Locale.ROOT));
         }
     }
 }

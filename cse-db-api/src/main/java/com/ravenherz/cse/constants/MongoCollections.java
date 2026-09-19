@@ -7,6 +7,7 @@ public final class MongoCollections {
     public static final String DATABASE_RESOURCE_GROUPS = "cse-resource-groups";
     public static final String DATABASE_ITEMS = "cse-items";
     public static final String DATABASE_PLAYLISTS = "cse-playlists";
+    public static final String DATABASE_URL_TEMPLATES = "cse-url-templates";
     public static final String DATABASE_ACCOUNTS = "cse-accounts";
     public static final String DATABASE_ROLES = "cse-roles";
     public static final String DATABASE_ROLE_MATRIX = "cse-role-matrix";

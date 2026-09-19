@@ -29,6 +29,7 @@ public final class CseSiteFormat {
             MongoCollections.DATABASE_RESOURCES,
             MongoCollections.DATABASE_ITEMS,
             MongoCollections.DATABASE_PLAYLISTS,
+            MongoCollections.DATABASE_URL_TEMPLATES,
             MongoCollections.DATABASE_APPS,
             MongoCollections.DATABASE_THEMES,
             MongoCollections.DATABASE_SETTINGS);
@@ -45,6 +46,7 @@ public final class CseSiteFormat {
             MongoCollections.DATABASE_RESOURCE_GROUPS,
             MongoCollections.DATABASE_ITEMS,
             MongoCollections.DATABASE_PLAYLISTS,
+            MongoCollections.DATABASE_URL_TEMPLATES,
             MongoCollections.DATABASE_SETTINGS,
             MongoCollections.DATABASE_APPS,
             MongoCollections.DATABASE_THEMES,

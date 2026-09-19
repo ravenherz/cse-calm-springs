@@ -21,7 +21,7 @@ public final class ResourceGroupEntity extends BasicEntity {
     }
 
     public ResourceGroupEntity(ResourceGroupData resourceGroupData, AccountEntity creator) {
-        super("0.1.0", null, creator);
+        super(null, creator);
         this.resourceGroupData = resourceGroupData;
     }
 

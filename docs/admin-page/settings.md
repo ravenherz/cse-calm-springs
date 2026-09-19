@@ -24,6 +24,8 @@ Under **config-view**:
 
 **config-personal** holds builder link, company name, address, email, social handles, copyright lines, and welcome title. These strings show on the public site in the places the active theme uses them.
 
+**company-social** is still the old `templateId:handle` string (`vk:ravenherz youtube:ravenherz`). The footer turns each pair into a small [`cse-url`](url-templates.md) inside `<cse-urls sizeOverride="s">`. `twitter:` is treated as the `x` template. Unknown ids are skipped.
+
 **config-build-info** is version labels (branch, product, version). Treat them as display, not as a release switch.
 
 **is-configured** under **config-setup** is the first-boot flag. Do not clear it on a running site.

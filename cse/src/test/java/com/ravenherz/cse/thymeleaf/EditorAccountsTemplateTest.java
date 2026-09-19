@@ -41,8 +41,8 @@ class EditorAccountsTemplateTest {
         other.setCanEdit(true);
         other.setOwner(false);
         other.setRoleId("role-1");
-        other.setRoleName("Guide");
-        other.setAssignableRoles(List.of(new RoleOptionDTO("role-1", "Guide", true)));
+        other.setRoleName("Member");
+        other.setAssignableRoles(List.of(new RoleOptionDTO("role-1", "Member", true)));
 
         SpringTemplateEngine engine = engine();
         MockServletContext servletContext = new MockServletContext();

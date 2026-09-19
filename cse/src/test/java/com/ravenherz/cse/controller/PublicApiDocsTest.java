@@ -59,5 +59,12 @@ class PublicApiDocsTest {
                 .orElseThrow()
                 .csrf();
         assertFalse(siteCsrf);
+        boolean errorCsrf = PublicApiDocs.sections().stream()
+                .flatMap(section -> section.endpoints().stream())
+                .filter(endpoint -> "/rest/error".equals(endpoint.path()))
+                .findFirst()
+                .orElseThrow()
+                .csrf();
+        assertFalse(errorCsrf);
     }
 }

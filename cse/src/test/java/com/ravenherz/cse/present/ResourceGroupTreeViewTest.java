@@ -7,6 +7,7 @@ import com.ravenherz.cse.dal.dto.basic.ResourceData;
 import com.ravenherz.cse.dal.dto.basic.ResourceGroupData;
 import com.ravenherz.cse.dal.dto.basic.ResourceSizeHint;
 import com.ravenherz.cse.dal.dto.basic.SecurityData;
+import com.ravenherz.cse.dal.dto.basic.enums.SecurityLevel;
 import org.bson.types.ObjectId;
 import org.junit.jupiter.api.Test;
 
@@ -178,7 +179,7 @@ class ResourceGroupTreeViewTest {
     void guestDeniedFollowsReadAclNotSystemLock() {
         ResourceGroupEntity defaults = group("Default");
         ResourceGroupEntity travel = group("Travel");
-        travel.setSecurityData(new SecurityData(EntityAccessConstants.GUIDE));
+        travel.setSecurityData(new SecurityData(EntityAccessConstants.forLevel(SecurityLevel.OPERATOR)));
         ResourceGroupTreeView.Assembled tree = ResourceGroupTreeView.assembleStats(
                 List.of(defaults, travel), List.of());
         ResourceGroupDisplayDTO defaultDto = byName(tree.roots(), "Unsorted");

@@ -58,18 +58,24 @@ public final class HeicJpegConverter {
     }
 
     public static JpegImages.Encoded toJpeg(byte[] heicBytes, float quality) throws IOException {
+        return toJpeg(heicBytes, quality, null, null);
+    }
+
+    public static JpegImages.Encoded toJpeg(byte[] heicBytes, float quality, String uploader, String publicPath)
+            throws IOException {
         if (heicBytes == null || heicBytes.length == 0) {
             throw new IOException("HEIC file is empty");
         }
+        DecodeLog log = new DecodeLog(uploader, publicPath);
         synchronized (DECODE_LOCK) {
             Path tmp = Files.createTempFile("cse-heic-", ".heic");
             try {
                 Files.write(tmp, heicBytes);
                 try {
-                    return decodeToJpeg(tmp, quality, maxDecodablePixels());
+                    return decodeToJpeg(tmp, quality, maxDecodablePixels(), log);
                 } catch (OutOfMemoryError e) {
                     LOGGER.warn("HEIC primary frame ran out of memory, trying thumbnail");
-                    return decodeToJpeg(tmp, quality, 1_200_000L);
+                    return decodeToJpeg(tmp, quality, 1_200_000L, log);
                 }
             } catch (OutOfMemoryError e) {
                 throw new IOException("Could not decode HEIC image (not enough memory)", e);
@@ -137,7 +143,7 @@ public final class HeicJpegConverter {
         return dest;
     }
 
-    private static JpegImages.Encoded decodeToJpeg(Path heicFile, float quality, long maxPixels)
+    private static JpegImages.Encoded decodeToJpeg(Path heicFile, float quality, long maxPixels, DecodeLog log)
             throws IOException {
         try (IOFileStream stream = new IOFileStream(heicFile.toFile(), IOMode.READ)) {
             HeicImage image = HeicImage.load(stream);
@@ -146,7 +152,7 @@ public final class HeicJpegConverter {
                 throw new IOException("HEIC image has no pixel data");
             }
             try {
-                return encodeFrame(image, frame, quality);
+                return encodeFrame(image, frame, quality, log);
             } catch (OutOfMemoryError | IOException e) {
                 HeicImageFrame thumbnail = findThumbnail(image, Math.min(maxPixels, 1_200_000L));
                 if (thumbnail == null || thumbnail.getID() == frame.getID()) {
@@ -156,15 +162,15 @@ public final class HeicJpegConverter {
                         e.getMessage() != null ? e.getMessage() : e.getClass().getSimpleName(),
                         thumbnail.getWidth(),
                         thumbnail.getHeight());
-                return encodeFrame(image, thumbnail, quality);
+                return encodeFrame(image, thumbnail, quality, log);
             }
         }
     }
 
-    private static JpegImages.Encoded encodeFrame(HeicImage image, HeicImageFrame frame, float quality)
+    private static JpegImages.Encoded encodeFrame(HeicImage image, HeicImageFrame frame, float quality, DecodeLog log)
             throws IOException {
         Orientation orientation = stealOrientation(frame);
-        BufferedImage rgb = isGrid(frame) ? stitchGrid(image, frame) : rasterToImage(frame);
+        BufferedImage rgb = isGrid(frame) ? stitchGrid(image, frame, log) : rasterToImage(frame);
         rgb = applyHeifOrientation(rgb, orientation.angle, orientation.mirror);
         return new JpegImages.Encoded(JpegImages.encode(rgb, quality), rgb.getWidth(), rgb.getHeight());
     }
@@ -186,7 +192,7 @@ public final class HeicJpegConverter {
         return rgb;
     }
 
-    private static BufferedImage stitchGrid(HeicImage image, HeicImageFrame grid) throws IOException {
+    private static BufferedImage stitchGrid(HeicImage image, HeicImageFrame grid, DecodeLog log) throws IOException {
         long[] tileIds = derivedIds(image, grid.getID());
         if (tileIds.length == 0) {
             throw new IOException("HEIC grid has no tiles");
@@ -210,7 +216,8 @@ public final class HeicJpegConverter {
         if (tileIds.length < needed) {
             throw new IOException("HEIC grid tile count does not match image size");
         }
-        LOGGER.info("HEIC stitching grid {}x{} from {} tiles ({}x{})", outW, outH, needed, columns, rows);
+        LOGGER.info("HEIC stitching grid {}x{} from {} tiles ({}x{}) uploader={} path={}",
+                outW, outH, needed, columns, rows, log.uploader(), log.publicPath());
         BufferedImage dest = new BufferedImage(outW, outH, BufferedImage.TYPE_INT_RGB);
         for (int row = 0; row < rows; row++) {
             for (int col = 0; col < columns; col++) {
@@ -372,5 +379,16 @@ public final class HeicJpegConverter {
     }
 
     private record Orientation(int angle, int mirror) {
+    }
+
+    private record DecodeLog(String uploader, String publicPath) {
+        DecodeLog {
+            uploader = blankToDash(uploader);
+            publicPath = blankToDash(publicPath);
+        }
+
+        private static String blankToDash(String value) {
+            return value == null || value.isBlank() ? "-" : value.trim();
+        }
     }
 }

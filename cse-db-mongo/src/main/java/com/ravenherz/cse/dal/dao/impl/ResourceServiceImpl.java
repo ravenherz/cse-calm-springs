@@ -21,10 +21,15 @@ import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.stereotype.Repository;
 
+import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Base64;
 import java.util.HashSet;
 import java.util.List;
@@ -37,6 +42,7 @@ import java.util.stream.Stream;
 public class ResourceServiceImpl extends BasicService implements ResourceService {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(ResourceServiceImpl.class);
+    private static final int BINARY_CHUNK_SIZE = (ResourceData.CHUNK_SIZE / 4) * 3;
 
     private final MediaCache mediaCache;
 
@@ -116,17 +122,92 @@ public class ResourceServiceImpl extends BasicService implements ResourceService
         if (chunkIds == null || chunkIds.isEmpty()) {
             return null;
         }
-        StringBuilder sb = new StringBuilder();
-        for (ObjectId id : chunkIds) {
-            DataChunkEntity chunk = mongo().findById(id, DataChunkEntity.class);
-            if (chunk != null && chunk.getData() != null) {
-                sb.append(chunk.getData());
-            }
-        }
-        if (sb.length() == 0) {
+        ByteArrayOutputStream out = new ByteArrayOutputStream();
+        try {
+            writeChunks(chunkIds, out);
+        } catch (IOException e) {
+            LOGGER.warn("Could not assemble resource chunks: {}", e.getMessage());
             return null;
         }
-        return Base64.getDecoder().decode(sb.toString());
+        byte[] bytes = out.toByteArray();
+        return bytes.length == 0 ? null : bytes;
+    }
+
+    @Override
+    public void fillFromFile(ResourceData data, Path file) throws IOException {
+        if (data == null || file == null || !Files.isRegularFile(file)) {
+            throw new IOException("Resource file is missing");
+        }
+        long size = Files.size(file);
+        data.setSizeInBytes(size);
+        data.setContentRaw(null);
+        data.setLargeFile(false);
+        data.setDataChunkIds(null);
+        long encodedGuess = ((size + 2) / 3) * 4;
+        if (encodedGuess <= ResourceData.CHUNK_SIZE) {
+            byte[] bytes = Files.readAllBytes(file);
+            data.setContentRaw(Base64.getEncoder().encodeToString(bytes));
+            return;
+        }
+        data.setLargeFile(true);
+        data.setDataChunkIds(new ArrayList<>());
+        try (InputStream in = Files.newInputStream(file)) {
+            byte[] buf = new byte[BINARY_CHUNK_SIZE];
+            int n;
+            while ((n = in.read(buf)) > 0) {
+                byte[] slice = n == buf.length ? buf : Arrays.copyOf(buf, n);
+                DataChunkEntity chunk = new DataChunkEntity(Base64.getEncoder().encodeToString(slice));
+                saveDataChunk(chunk);
+                data.addDataChunkId(chunk.getId());
+            }
+        }
+    }
+
+    @Override
+    public void writeToFile(ResourceData data, Path dest) throws IOException {
+        if (data == null || dest == null) {
+            throw new IOException("Resource data is missing");
+        }
+        if (dest.getParent() != null) {
+            Files.createDirectories(dest.getParent());
+        }
+        if (!data.isLargeFile() && data.getContentRaw() != null && !data.getContentRaw().isEmpty()) {
+            Files.write(dest, Base64.getDecoder().decode(data.getContentRaw()));
+            return;
+        }
+        if (data.getDataChunkIds() == null || data.getDataChunkIds().isEmpty()) {
+            throw new IOException("Resource has no stored bytes");
+        }
+        try (OutputStream out = Files.newOutputStream(dest)) {
+            writeChunks(data.getDataChunkIds(), out);
+        }
+    }
+
+    @Override
+    public void deleteStoredContent(ResourceData data) {
+        deleteChunks(data);
+        if (data == null) {
+            return;
+        }
+        data.setContentRaw(null);
+        data.setLargeFile(false);
+        data.setDataChunkIds(null);
+        data.setSizeInBytes(0);
+    }
+
+    @Override
+    public List<ObjectId> listProcessingVideoIds() {
+        Query query = Query.query(Criteria.where("resourceData.type").is(ResourceType.VIDEO)
+                .and("resourceData.metadata.transcode").is("processing"));
+        query.fields().include("_id");
+        List<ObjectId> ids = new ArrayList<>();
+        for (Document doc : mongo().find(query, Document.class, MongoCollections.DATABASE_RESOURCES)) {
+            ObjectId id = objectId(doc == null ? null : doc.get("_id"));
+            if (id != null) {
+                ids.add(id);
+            }
+        }
+        return ids;
     }
 
     @Override
@@ -324,6 +405,16 @@ public class ResourceServiceImpl extends BasicService implements ResourceService
         }
         Object size = payload.get("sizeInBytes");
         return size instanceof Number number ? number.longValue() : 0L;
+    }
+
+    private void writeChunks(List<ObjectId> chunkIds, OutputStream out) throws IOException {
+        for (ObjectId id : chunkIds) {
+            DataChunkEntity chunk = mongo().findById(id, DataChunkEntity.class);
+            if (chunk == null || chunk.getData() == null || chunk.getData().isEmpty()) {
+                continue;
+            }
+            out.write(Base64.getDecoder().decode(chunk.getData()));
+        }
     }
 
     private void deleteChunks(ResourceData data) {

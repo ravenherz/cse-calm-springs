@@ -4,10 +4,13 @@ import com.ravenherz.cse.dal.dto.BasicEntity;
 import com.ravenherz.cse.dal.dto.DataChunkEntity;
 import com.ravenherz.cse.dal.dto.ResourceEntity;
 import com.ravenherz.cse.dal.dto.ResourceGroupEntity;
+import com.ravenherz.cse.dal.dto.basic.ResourceData;
 import com.ravenherz.cse.dal.dto.basic.ResourcePreviewSource;
 import com.ravenherz.cse.dal.dto.basic.ResourceSizeHint;
 import org.bson.types.ObjectId;
 
+import java.io.IOException;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Consumer;
@@ -20,6 +23,10 @@ public interface ResourceService extends Service {
     List<DataChunkEntity> getDataChunks(List<ObjectId> chunkIds);
     byte[] getRawBytesFromChunks(List<ObjectId> chunkIds);
     void saveDataChunk(DataChunkEntity chunk);
+    void fillFromFile(ResourceData data, Path file) throws IOException;
+    void writeToFile(ResourceData data, Path dest) throws IOException;
+    void deleteStoredContent(ResourceData data);
+    List<ObjectId> listProcessingVideoIds();
     List<ResourceEntity> getImagesByGroup(ResourceGroupEntity group);
 
     /**

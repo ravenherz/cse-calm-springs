@@ -120,6 +120,8 @@ public abstract class AbstractController {
         model.addAttribute("showNavSiteData", allows(accessor, CapabilityIds.EDITOR_SITE_DATA));
         model.addAttribute("showNavApi", editor);
         model.addAttribute("showNavLogs", allows(accessor, CapabilityIds.EDITOR_LOGS));
+        model.addAttribute("showNavTranscode", editor);
+        model.addAttribute("showNavInstance", allows(accessor, CapabilityIds.EDITOR_INSTANCE));
         model.addAttribute("canEditMatrix", com.ravenherz.cse.security.AccountRoles.isOwner(accessor,
                 serviceProvider == null ? null : serviceProvider.getRoleService()));
     }

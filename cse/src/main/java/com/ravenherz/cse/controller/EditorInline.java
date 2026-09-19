@@ -4,6 +4,7 @@ import com.ravenherz.cse.dal.ResourceGroupTree;
 import com.ravenherz.cse.dal.dto.CategoryEntity;
 import com.ravenherz.cse.dal.dto.ItemEntity;
 import com.ravenherz.cse.dal.dto.PlaylistEntity;
+import com.ravenherz.cse.dal.dto.UrlTemplateEntity;
 import com.ravenherz.cse.present.EditorTree;
 import com.ravenherz.cse.present.ResourceGroupDisplayDTO;
 import com.ravenherz.cse.present.ResourceGroupIndex;
@@ -45,6 +46,14 @@ final class EditorInline {
 
     static void putTreeForPlaylist(Model model, ResourceGroupIndex index, PlaylistEntity playlist) {
         putTree(model, index, EditorTree.PLAYLISTS_ID, EditorTree.playlistLeafId(playlist));
+    }
+
+    static void putTreeForUrlTemplateCreate(Model model, ResourceGroupIndex index) {
+        putTree(model, index, EditorTree.URL_TEMPLATES_ID, null);
+    }
+
+    static void putTreeForUrlTemplate(Model model, ResourceGroupIndex index, UrlTemplateEntity template) {
+        putTree(model, index, EditorTree.URL_TEMPLATES_ID, EditorTree.urlTemplateLeafId(template));
     }
 
     static void putTreeForCreate(Model model, ResourceGroupIndex index, String categoryId) {

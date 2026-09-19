@@ -10,6 +10,7 @@ import java.time.LocalDateTime;
 import java.time.Month;
 import java.time.ZoneOffset;
 import java.util.Date;
+import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -41,11 +42,22 @@ class MongoTimeConversionsTest {
         assertTrue(owner.getRoleIds().isEmpty());
         AccessRule unknown = new MongoTimeConversions.StringToAccessRuleConverter().convert("NOPE");
         assertTrue(unknown.isInherit());
+        AccessRule retiredGuide = new MongoTimeConversions.StringToAccessRuleConverter().convert("GUIDE");
+        assertFalse(retiredGuide.isInherit());
+        assertTrue(retiredGuide.getRoleIds().contains(RoleSeeds.OPERATOR));
+        assertEquals(SecurityLevel.INACTIVE_USER,
+                new MongoTimeConversions.StringToSecurityLevelConverter().convert("GUIDE"));
+        AccessRule withRetiredSlug = new MongoTimeConversions.DocumentToAccessRuleConverter().convert(
+                new Document("inherit", false)
+                        .append("roleIds", List.of(RoleSeeds.MEMBER, "guide", RoleSeeds.ADMIN))
+                        .append("legacyThreshold", "GUIDE"));
+        assertEquals(List.of(RoleSeeds.MEMBER, RoleSeeds.ADMIN), withRetiredSlug.getRoleIds());
+        assertEquals("OPERATOR", withRetiredSlug.getLegacyThreshold());
     }
 
     @Test
     void documentAccessSettingsRoundTrip() {
-        AccessRule source = AccessRule.fromLegacy(SecurityLevel.GUIDE);
+        AccessRule source = AccessRule.fromLegacy(SecurityLevel.OPERATOR);
         Document document = new MongoTimeConversions.AccessRuleToDocumentConverter().convert(source);
         AccessRule read = new MongoTimeConversions.DocumentToAccessRuleConverter().convert(document);
         assertFalse(read.isInherit());

@@ -40,6 +40,7 @@ Catalog is the home. The first open lands on **Unsorted** when that is the defau
 - [Pages](pages.md) — stories with a stable address
 - [Albums](albums.md) — galleries from a folder of pictures
 - [Playlists](playlists.md) — site-owned listening lists
+- [URL Templates](url-templates.md) — reusable link patterns for pages
 - [Apps](apps.md) — bundled WARs and `.cseapp` packs
 - [Themes](themes.md) — skins, Activate, `.csetheme` packs
 - [Accounts](accounts.md) — people as circles; search, role, and transfer

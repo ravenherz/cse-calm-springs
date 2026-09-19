@@ -3,6 +3,7 @@ package com.ravenherz.cse.present;
 import com.ravenherz.cse.dal.dto.CategoryEntity;
 import com.ravenherz.cse.dal.dto.ItemEntity;
 import com.ravenherz.cse.dal.dto.PlaylistEntity;
+import com.ravenherz.cse.dal.dto.UrlTemplateEntity;
 import com.ravenherz.cse.dal.dto.ResourceGroupEntity;
 import com.ravenherz.cse.dal.dto.basic.AlbumData;
 import com.ravenherz.cse.dal.dto.basic.CategoryData;
@@ -40,7 +41,7 @@ class EditorTreeTest {
         assertTrue(content.isLocked());
         assertFalse(content.canCreateChild());
         assertEquals(EditorTree.CONTENT_HREF, content.getHref());
-        assertEquals(List.of("Apps", "Categories", "Playlists", "Themes"),
+        assertEquals(List.of("Apps", "Categories", "Playlists", "Themes", "URL Templates"),
                 content.getChildren().stream().map(ResourceGroupDisplayDTO::getHumanReadableId).toList());
         for (ResourceGroupDisplayDTO child : content.getChildren()) {
             assertTrue(child.isVirtual());
@@ -111,6 +112,7 @@ class EditorTreeTest {
         assertEquals("/editor/resources?group=content-apps", content.getChildren().get(0).getHref());
         assertEquals("/editor/resources?group=content-playlists", content.getChildren().get(2).getHref());
         assertEquals("/editor/resources?group=content-themes", content.getChildren().get(3).getHref());
+        assertEquals("/editor/resources?group=content-url-templates", content.getChildren().get(4).getHref());
     }
 
     @Test
@@ -142,6 +144,12 @@ class EditorTreeTest {
                 EditorTree.selectionId("/editor/playlist/create", null, null, null, null, null));
         assertEquals(EditorTree.PLAYLISTS_ID,
                 EditorTree.selectionId("/editor/playlist/edit", null, null, null, null, null));
+        assertEquals(EditorTree.URL_TEMPLATES_ID,
+                EditorTree.selectionId("/editor/url-templates", null, null, null, null, null));
+        assertEquals(EditorTree.URL_TEMPLATES_ID,
+                EditorTree.selectionId("/editor/url-template/create", null, null, null, null, null));
+        assertEquals(EditorTree.URL_TEMPLATES_ID,
+                EditorTree.selectionId("/editor/url-template/edit", null, null, null, null, null));
         assertEquals(EditorTree.CATEGORIES_ID,
                 EditorTree.selectionId("/editor/categories", null, null, null, null, null));
         assertEquals(EditorTree.CATEGORIES_ID,
@@ -175,11 +183,18 @@ class EditorTreeTest {
         playlist.setId(new ObjectId());
         assertEquals(EditorTree.PLAYLIST_PREFIX + playlist.getId(), EditorTree.playlistLeafId(playlist));
         assertNull(EditorTree.playlistLeafId(null));
+        UrlTemplateEntity urlTemplate = new UrlTemplateEntity();
+        urlTemplate.setId(new ObjectId());
+        assertEquals(EditorTree.URL_TEMPLATE_PREFIX + urlTemplate.getId(),
+                EditorTree.urlTemplateLeafId(urlTemplate));
+        assertNull(EditorTree.urlTemplateLeafId(null));
         assertEquals("/editor/resources?group=category-abc", EditorTree.hrefOf("category-abc"));
         assertEquals("/editor/resources?group=content", EditorTree.hrefOf(EditorTree.CONTENT_ID));
         assertEquals("/editor/resources?group=content-categories", EditorTree.hrefOf(EditorTree.CATEGORIES_ID));
         assertEquals("/editor/resources?group=content-apps", EditorTree.hrefOf(EditorTree.APPS_ID));
         assertEquals("/editor/resources?group=content-playlists", EditorTree.hrefOf(EditorTree.PLAYLISTS_ID));
+        assertEquals("/editor/resources?group=content-url-templates",
+                EditorTree.hrefOf(EditorTree.URL_TEMPLATES_ID));
         assertEquals("/editor/resources?group=content-themes", EditorTree.hrefOf(EditorTree.THEMES_ID));
         assertEquals("/editor/resources?group=content-apps",
                 EditorTree.packUploadReturnHref(EditorTree.APPS_ID));
@@ -206,6 +221,7 @@ class EditorTreeTest {
         assertTrue(EditorTree.browseInResources("category-abc"));
         assertTrue(EditorTree.browseInResources(EditorTree.APPS_ID));
         assertTrue(EditorTree.browseInResources(EditorTree.PLAYLISTS_ID));
+        assertTrue(EditorTree.browseInResources(EditorTree.URL_TEMPLATES_ID));
         assertTrue(EditorTree.browseInResources(EditorTree.THEMES_ID));
     }
 

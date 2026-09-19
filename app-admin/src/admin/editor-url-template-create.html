@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="en">
+<head th:replace="~{fragments/shared :: shared-head}"></head>
+<body>
+  <div class="editor-layout">
+    <aside class="editor-sidebar" th:replace="~{fragments/shared :: shared-editor-sidebar}"></aside>
+    <main class="editor-main resource-page">
+      <div th:if="${error}" class="error-message" th:text="${error}">Error</div>
+      <div class="resource-browser">
+        <th:block th:replace="~{fragments/shared :: shared-editor-tree}"></th:block>
+        <section class="resource-pane">
+          <div class="resource-pane-header">
+            <div class="resource-pane-title">
+              <h2>New URL template</h2>
+            </div>
+            <th:block th:replace="~{fragments/shared :: editor-inline-back}"></th:block>
+          </div>
+
+          <form th:action="@{/editor/url-template/create}" method="post" class="form-panel"
+                enctype="multipart/form-data">
+            <th:block th:replace="~{fragments/csrf :: field}"></th:block>
+            <th:block th:replace="~{fragments/url-template-form :: fields}"></th:block>
+            <th:block th:replace="~{fragments/access :: panel(read=${accessRead}, edit=${accessEdit}, delete=${accessDelete}, canEdit=${accessCanEdit})}"></th:block>
+            <div class="editor-actions">
+              <button type="submit" class="btn btn-primary">Create URL template</button>
+            </div>
+          </form>
+        </section>
+      </div>
+    </main>
+  </div>
+  <th:block th:replace="~{fragments/url-template-form :: scripts}"></th:block>
+</body>
+</html>

@@ -8,7 +8,7 @@ public record ResourceTreeFile(String id, String name, String href, Mark mark, b
         String key, boolean canDelete, boolean canActivate, String embedKey) {
 
     public enum Mark {
-        NONE, PAGE, ALBUM, PLAYLIST, APP, THEME
+        NONE, PAGE, ALBUM, PLAYLIST, APP, THEME, URL_TEMPLATE
     }
 
     public ResourceTreeFile(String id, String name, String href, Mark mark, boolean preview) {
@@ -74,12 +74,20 @@ public record ResourceTreeFile(String id, String name, String href, Mark mark, b
         return mark == Mark.THEME;
     }
 
+    public boolean isUrlTemplate() {
+        return mark == Mark.URL_TEMPLATE;
+    }
+
     public boolean isResourceFile() {
         return mark == Mark.NONE && (href == null || href.isBlank());
     }
 
     public boolean isImageFile() {
         return isResourceFile() && name != null && ResourceType.getByFileName(name) == ResourceType.IMAGE;
+    }
+
+    public boolean isVideoFile() {
+        return isResourceFile() && name != null && ResourceType.getByFileName(name) == ResourceType.VIDEO;
     }
 
     public String kind() {
@@ -98,6 +106,9 @@ public record ResourceTreeFile(String id, String name, String href, Mark mark, b
         if (isTheme()) {
             return "theme";
         }
+        if (isUrlTemplate()) {
+            return "url-template";
+        }
         return "resource";
     }
 
@@ -108,11 +119,17 @@ public record ResourceTreeFile(String id, String name, String href, Mark mark, b
         if (isPlaylist()) {
             return "cse-playlist";
         }
+        if (isUrlTemplate()) {
+            return "cse-url";
+        }
         if (isApp()) {
             return "cse-app";
         }
         if (isImageFile()) {
             return "cse-image";
+        }
+        if (isVideoFile()) {
+            return "cse-video";
         }
         return "";
     }
@@ -124,7 +141,7 @@ public record ResourceTreeFile(String id, String name, String href, Mark mark, b
         if (isContentPage() || isAlbum() || isApp()) {
             return key == null ? "" : key.trim();
         }
-        if (isImageFile()) {
+        if (isImageFile() || isVideoFile()) {
             return id == null ? "" : id.trim();
         }
         return "";
@@ -137,11 +154,11 @@ public record ResourceTreeFile(String id, String name, String href, Mark mark, b
     }
 
     public boolean canEdit() {
-        return mark == Mark.PAGE || mark == Mark.ALBUM || mark == Mark.PLAYLIST;
+        return mark == Mark.PAGE || mark == Mark.ALBUM || mark == Mark.PLAYLIST || mark == Mark.URL_TEMPLATE;
     }
 
     public boolean canRename() {
-        return isResourceFile() || isContentPage() || isAlbum() || isPlaylist();
+        return isResourceFile() || isContentPage() || isAlbum() || isPlaylist() || isUrlTemplate();
     }
 
     public boolean canDownload() {
@@ -156,7 +173,7 @@ public record ResourceTreeFile(String id, String name, String href, Mark mark, b
         if (mark == Mark.APP || mark == Mark.THEME) {
             return false;
         }
-        if (mark == Mark.PAGE || mark == Mark.ALBUM || mark == Mark.PLAYLIST) {
+        if (mark == Mark.PAGE || mark == Mark.ALBUM || mark == Mark.PLAYLIST || mark == Mark.URL_TEMPLATE) {
             return true;
         }
         return href == null || href.isBlank();

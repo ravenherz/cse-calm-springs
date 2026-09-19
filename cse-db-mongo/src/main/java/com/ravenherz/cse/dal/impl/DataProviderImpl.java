@@ -7,6 +7,7 @@ import com.mongodb.client.MongoClients;
 import com.ravenherz.cse.constants.SettingKeys;
 import com.ravenherz.cse.dal.ConfigSource;
 import com.ravenherz.cse.dal.DataProvider;
+import com.ravenherz.cse.dal.EntityVersions;
 import com.ravenherz.cse.dal.MongoTimeConversions;
 import com.ravenherz.cse.dal.ReferenceHydrator;
 import com.ravenherz.cse.dal.SettingsDocuments;
@@ -55,6 +56,7 @@ public class DataProviderImpl implements DataProvider {
     public DataProviderImpl(ConfigSource config, SettingsDocuments settingsDocuments) {
         this.config = config;
         this.settingsDocuments = settingsDocuments;
+        EntityVersions.bind(config);
     }
 
     @Override

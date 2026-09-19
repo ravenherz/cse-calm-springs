@@ -17,7 +17,6 @@ class RoleSeedsTest {
         assertEquals(RoleSeeds.INACTIVE, RoleSeeds.slugFor(SecurityLevel.INACTIVE_USER));
         assertEquals(RoleSeeds.MEMBER, RoleSeeds.slugFor(SecurityLevel.ACTIVE_USER));
         assertEquals(RoleSeeds.PRIVILEGED, RoleSeeds.slugFor(SecurityLevel.PRIVILEGIED_USER));
-        assertEquals(RoleSeeds.GUIDE, RoleSeeds.slugFor(SecurityLevel.GUIDE));
         assertEquals(RoleSeeds.OPERATOR, RoleSeeds.slugFor(SecurityLevel.OPERATOR));
         assertEquals(RoleSeeds.MODERATOR, RoleSeeds.slugFor(SecurityLevel.MODERATOR));
         assertEquals(RoleSeeds.ADMIN, RoleSeeds.slugFor(SecurityLevel.ADMIN));
@@ -32,17 +31,24 @@ class RoleSeedsTest {
         assertFalse(guest.contains(RoleSeeds.OWNER));
         assertEquals(List.of(RoleSeeds.ADMIN), RoleSeeds.slugsAtOrAbove(SecurityLevel.ADMIN));
         assertEquals(List.of(), RoleSeeds.slugsAtOrAbove(SecurityLevel.OWNER));
-        assertEquals(List.of(RoleSeeds.GUIDE, RoleSeeds.OPERATOR, RoleSeeds.MODERATOR, RoleSeeds.ADMIN),
-                RoleSeeds.slugsAtOrAbove(SecurityLevel.GUIDE));
+        assertEquals(List.of(RoleSeeds.OPERATOR, RoleSeeds.MODERATOR, RoleSeeds.ADMIN),
+                RoleSeeds.slugsAtOrAbove(SecurityLevel.OPERATOR));
     }
 
     @Test
     void loginableMatchesSeedFlags() {
         assertFalse(RoleSeeds.loginableFor(SecurityLevel.GUEST));
         assertFalse(RoleSeeds.loginableFor(SecurityLevel.INACTIVE_USER));
-        assertFalse(RoleSeeds.loginableFor(SecurityLevel.GUIDE));
         assertTrue(RoleSeeds.loginableFor(SecurityLevel.ACTIVE_USER));
         assertTrue(RoleSeeds.loginableFor(SecurityLevel.ADMIN));
         assertTrue(RoleSeeds.loginableFor(SecurityLevel.OWNER));
+    }
+
+    @Test
+    void seedsDoNotIncludeGuide() {
+        assertTrue(RoleSeeds.roles().stream().noneMatch(role -> "guide".equals(role.slug())));
+        assertFalse(RoleSeeds.slugsAtOrAbove(SecurityLevel.GUEST).contains("guide"));
+        assertTrue(RoleSeeds.isRetiredSlug("guide"));
+        assertTrue(RoleSeeds.isRetiredSlug("GUIDE"));
     }
 }

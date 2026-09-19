@@ -5,6 +5,7 @@ import com.ravenherz.cse.dal.dto.basic.enums.SecurityLevel;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 
@@ -15,7 +16,6 @@ public final class RoleSeeds {
     public static final String INACTIVE = "inactive";
     public static final String MEMBER = "member";
     public static final String PRIVILEGED = "privileged";
-    public static final String GUIDE = "guide";
     public static final String OPERATOR = "operator";
     public static final String MODERATOR = "moderator";
     public static final String ADMIN = "admin";
@@ -24,13 +24,13 @@ public final class RoleSeeds {
     public static final String SYSTEM_OWNER = "owner";
 
     public static final Set<String> SYSTEM_SLUGS = Set.of(GUEST, OWNER);
+    public static final Set<String> RETIRED_SLUGS = Set.of("guide");
 
     private static final List<SeedRole> ROLES = List.of(
             new SeedRole(GUEST, "Guest", SYSTEM_GUEST, false, 0),
             new SeedRole(INACTIVE, "Inactive", null, false, 10),
             new SeedRole(MEMBER, "Member", null, true, 20),
             new SeedRole(PRIVILEGED, "Privileged", null, true, 30),
-            new SeedRole(GUIDE, "Guide", null, false, 40),
             new SeedRole(OPERATOR, "Operator", null, true, 50),
             new SeedRole(MODERATOR, "Moderator", null, true, 60),
             new SeedRole(ADMIN, "Admin", null, true, 70),
@@ -41,7 +41,6 @@ public final class RoleSeeds {
             Map.entry(SecurityLevel.INACTIVE_USER, INACTIVE),
             Map.entry(SecurityLevel.ACTIVE_USER, MEMBER),
             Map.entry(SecurityLevel.PRIVILEGIED_USER, PRIVILEGED),
-            Map.entry(SecurityLevel.GUIDE, GUIDE),
             Map.entry(SecurityLevel.OPERATOR, OPERATOR),
             Map.entry(SecurityLevel.MODERATOR, MODERATOR),
             Map.entry(SecurityLevel.ADMIN, ADMIN),
@@ -50,13 +49,20 @@ public final class RoleSeeds {
     private static final Map<String, SecurityLevel> LEVEL_BY_SLUG = inverse(SLUG_BY_LEVEL);
 
     private static final List<String> LADDER = List.of(
-            GUEST, INACTIVE, MEMBER, PRIVILEGED, GUIDE, OPERATOR, MODERATOR, ADMIN, OWNER);
+            GUEST, INACTIVE, MEMBER, PRIVILEGED, OPERATOR, MODERATOR, ADMIN, OWNER);
 
     private RoleSeeds() {
     }
 
     public static List<SeedRole> roles() {
         return ROLES;
+    }
+
+    public static boolean isRetiredSlug(String slug) {
+        if (slug == null || slug.isBlank()) {
+            return false;
+        }
+        return RETIRED_SLUGS.contains(slug.trim().toLowerCase(Locale.ROOT));
     }
 
     public static String slugFor(SecurityLevel level) {

@@ -29,7 +29,7 @@ Rows on a tab are **A–Z** by the label you see. A circled **?** next to a name
 
 Guest is people who are not signed in. Guest cells exist only on rows marked guest-safe. Owner’s column is locked on.
 
-Roles other than Guest and Owner are yours to create, rename, archive, or delete. **Can sign in** is a flag on the role. Inactive and Guide stay non-loginable unless you change them.
+Roles other than Guest and Owner are yours to create, rename, archive, or delete. **Can sign in** is a flag on the role. Inactive stays non-loginable unless you change it.
 
 Do **not** delete Guest or Owner (the server refuses). Do **not** delete the seeded ladder (Member, Admin, …) expecting them to stay gone: `ensureSeeded()` recreates missing seed slugs with a new id. Archive hides a role from this grid and from Access pickers. Delete does not rewrite `roleIds` on pages, files, or folders; leftover ids just match nobody.
 

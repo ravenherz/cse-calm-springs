@@ -48,7 +48,8 @@ public class SecurityConfig {
         http
                 .csrf(csrf -> csrf
                         .csrfTokenRepository(new CseCookieCsrfTokenRepository())
-                        .csrfTokenRequestHandler(new CseCsrfTokenRequestHandler()))
+                        .csrfTokenRequestHandler(new CseCsrfTokenRequestHandler())
+                        .ignoringRequestMatchers("/rest/error"))
                 .httpBasic(AbstractHttpConfigurer::disable)
                 .formLogin(AbstractHttpConfigurer::disable)
                 .logout(AbstractHttpConfigurer::disable)

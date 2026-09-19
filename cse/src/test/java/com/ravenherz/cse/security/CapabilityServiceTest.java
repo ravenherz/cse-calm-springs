@@ -8,6 +8,8 @@ import com.ravenherz.cse.dal.dto.basic.AccountData;
 import com.ravenherz.cse.dal.dto.basic.enums.SecurityLevel;
 import com.ravenherz.cse.dal.role.CapabilityIds;
 import com.ravenherz.cse.dal.role.RoleSeeds;
+import com.ravenherz.cse.install.SiteReady;
+import com.ravenherz.cse.util.staticapps.StaticAppDeployer;
 import org.bson.types.ObjectId;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -23,6 +25,7 @@ class CapabilityServiceTest {
     private CapabilityCatalog catalog;
     private RoleService roles;
     private RoleMatrixService matrix;
+    private SiteReady siteReady;
     private CapabilityService service;
     private RoleEntity guest;
     private RoleEntity member;
@@ -32,6 +35,8 @@ class CapabilityServiceTest {
         catalog = mock(CapabilityCatalog.class);
         roles = mock(RoleService.class);
         matrix = mock(RoleMatrixService.class);
+        siteReady = mock(SiteReady.class);
+        when(siteReady.isConfigured()).thenReturn(true);
         guest = role(RoleSeeds.GUEST, true);
         member = role(RoleSeeds.MEMBER, false);
         when(roles.guest()).thenReturn(guest);
@@ -43,7 +48,7 @@ class CapabilityServiceTest {
                 .thenReturn(CapabilityRecord.engine(CapabilityIds.SITE_READ, "site", "Public site", true));
         when(catalog.find(CapabilityIds.EDITOR_ACCESS))
                 .thenReturn(CapabilityRecord.engine(CapabilityIds.EDITOR_ACCESS, "editor", "Open Catalog", false));
-        service = new CapabilityService(catalog, roles, matrix);
+        service = new CapabilityService(catalog, roles, matrix, siteReady);
     }
 
     @AfterEach
@@ -72,6 +77,17 @@ class CapabilityServiceTest {
         when(matrix.allows(member.idHex(), CapabilityIds.EDITOR_ACCESS)).thenReturn(false);
         assertTrue(service.allows(account, CapabilityIds.SITE_READ));
         assertFalse(service.canOpenEditor(account));
+    }
+
+    @Test
+    void unconfiguredInstanceAllowsSetupWithoutGuestRole() {
+        when(siteReady.isConfigured()).thenReturn(false);
+        when(roles.guest()).thenReturn(null);
+        assertTrue(service.allows(null, CapabilityIds.SITE_READ));
+        assertTrue(service.allows(null, CapabilityIds.INSTALL));
+        assertTrue(service.allowsApp(null, StaticAppDeployer.INSTALLER_SLUG));
+        assertFalse(service.allows(null, CapabilityIds.EDITOR_ACCESS));
+        assertFalse(service.allowsApp(null, "projects"));
     }
 
     private static RoleEntity role(String slug, boolean system) {

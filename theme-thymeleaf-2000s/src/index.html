@@ -9,31 +9,19 @@
 <!--        http-equiv="refresh"-->
 <!--        content="15;URL='./"/>-->
   <title th:text="${htmlTitle}">Title</title>
-  <!--/* dist scripts and stylesheets */-->
-  <script id="script-cse-dist-quill"
-          th:src="@{/content-public/themes/__${stylesShell}__/js/quill.min.js}"
-          src="js/quill.min.js" type="text/javascript"></script>
-  <link rel="stylesheet" type="text/css"
-        th:href="@{/content-public/themes/__${stylesShell}__/css/quill.snow.css}"
-        href="css/quill.snow.css">
-  <script id="script-cse-dist-jquery" type="text/javascript"
-          th:src="@{/content-public/themes/__${stylesShell}__/js/jquery.min.js}"
-          src="js/jquery.min.js"></script>
   <meta name="cse-context" th:content="${cseContextPath}">
   <meta name="csrf-token" th:if="${_csrf != null}" th:content="${_csrf.token}">
-  <script id="script-cse-csrf" type="text/javascript"
-          th:src="@{/content-public/themes/__${stylesShell}__/js/cse-csrf.js(v=7)}"
-          src="js/cse-csrf.js?v=7"></script>
-  <script id="script-cse-dist-bootstrap" type="text/javascript"
-          th:src="@{/content-public/themes/__${stylesShell}__/js/bootstrap.min.js}"
-          src="js/bootstrap.min.js"></script>
+  <link rel="icon"
+        th:href="@{/content-public/cse-core/images/favicon.ico}"
+        href="/content-public/cse-core/images/favicon.ico"
+        type="image/x-icon"/>
+  <!--/* Styles first so the page paints before scripts */-->
   <link rel="stylesheet" type="text/css"
         th:href="@{/content-public/themes/__${stylesShell}__/css/bootstrap.min.css}"
         href="css/bootstrap.min.css"/>
   <link id="styles-fonts" rel="stylesheet" type="text/css"
         th:href="@{/content-public/themes/__${stylesShell}__/css/fonts.css}"
         href="css/fonts.css"/>
-  <!--/* Styles */-->
   <link id="styles-system" rel="stylesheet" type="text/css"
         th:href="@{/content-public/cse-core/css/system.css}"
         href="../../../static/content-public/cse-core/css/system.css"/>
@@ -46,11 +34,16 @@
   <link id="styles-cse-player" rel="stylesheet" type="text/css"
         th:href="@{/content-public/themes/__${stylesTheme}__/css/cse-player.css}"
         href="../../../static/content-public/themes/2000s/css/cse-player.css"/>
-  <link rel="icon"
-        th:href="@{/content-public/cse-core/images/favicon.ico}"
-        href="/content-public/cse-core/images/favicon.ico"
-        type="image/x-icon"/>
   <!--/* cse scripts */-->
+  <script id="script-cse-dist-jquery" type="text/javascript"
+          th:src="@{/content-public/themes/__${stylesShell}__/js/jquery.min.js}"
+          src="js/jquery.min.js"></script>
+  <script id="script-cse-csrf" type="text/javascript"
+          th:src="@{/content-public/themes/__${stylesShell}__/js/cse-csrf.js(v=7)}"
+          src="js/cse-csrf.js?v=7"></script>
+  <script id="script-cse-dist-bootstrap" type="text/javascript"
+          th:src="@{/content-public/themes/__${stylesShell}__/js/bootstrap.min.js}"
+          src="js/bootstrap.min.js"></script>
   <script id="script-cse-error" type="text/javascript"
           th:unless="${isNotError}"
           th:src="@{/content-public/themes/__${stylesShell}__/js/cse-error.js}"
@@ -412,12 +405,8 @@
             <b>E-mail:</b> <a id="company-email" href="mailto://some@some.com">click</a>
           </div>
           <div name="highlightable" style="display:inline-block" id="company-social-container"
-               class="div-wide-100">
-            <a style="display:inline-block" id="company-social-vk-1261026071-container"
-               href="https://vk.com/ravenherz" class="company-social" target="_blank">
-              <img border="0" src="./rhz-we __ setup_files/vk.png" alt="vk" width="24"
-                   title="Follow me at VK: ravenherz" height="24">
-            </a>
+               class="div-wide-100 company-social">
+            <div class="cse-urls cse-urls-s"></div>
           </div>
         </div>
       </div>
@@ -470,6 +459,9 @@
 <script id="script-cse-player" type="text/javascript"
         th:src="@{/content-public/themes/__${stylesShell}__/js/cse-player.js}"
         src="js/cse-player.js"></script>
+<script id="script-cse-video-player" type="text/javascript"
+        th:src="@{/content-public/themes/__${stylesShell}__/js/cse-video-player.js}"
+        src="js/cse-video-player.js"></script>
 </body>
 
 </html>

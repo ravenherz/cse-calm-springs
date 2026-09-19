@@ -118,6 +118,12 @@ class ResourceGroupTreeTest {
                 ResourceGroupTree.errorMessage("name_taken"));
         assertEquals("Could not update that item.",
                 ResourceGroupTree.errorMessage("invalid_item"));
+        assertEquals("You cannot delete that item.",
+                ResourceGroupTree.errorMessage("forbidden"));
+        assertEquals("Cannot delete a bundled app or theme.",
+                ResourceGroupTree.errorMessage("bundled"));
+        assertEquals("Cannot delete the active theme. Switch styles-theme first.",
+                ResourceGroupTree.errorMessage("theme_active"));
         assertNull(ResourceGroupTree.errorMessage("nope"));
     }
 

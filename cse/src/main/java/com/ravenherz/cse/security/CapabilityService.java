@@ -5,7 +5,8 @@ import com.ravenherz.cse.dal.dao.RoleService;
 import com.ravenherz.cse.dal.dto.AccountEntity;
 import com.ravenherz.cse.dal.dto.RoleEntity;
 import com.ravenherz.cse.dal.role.CapabilityIds;
-import com.ravenherz.cse.dal.role.RoleSeeds;
+import com.ravenherz.cse.install.SiteReady;
+import com.ravenherz.cse.util.staticapps.StaticAppDeployer;
 import org.springframework.stereotype.Service;
 
 @Service
@@ -14,17 +15,23 @@ public class CapabilityService {
     private final CapabilityCatalog catalog;
     private final RoleService roles;
     private final RoleMatrixService matrix;
+    private final SiteReady siteReady;
 
-    public CapabilityService(CapabilityCatalog catalog, RoleService roles, RoleMatrixService matrix) {
+    public CapabilityService(CapabilityCatalog catalog, RoleService roles, RoleMatrixService matrix,
+            SiteReady siteReady) {
         this.catalog = catalog;
         this.roles = roles;
         this.matrix = matrix;
+        this.siteReady = siteReady;
         AccessRuntime.bind(this);
     }
 
     public boolean allows(AccountEntity accountOrNull, String capabilityId) {
         if (capabilityId == null || capabilityId.isBlank()) {
             return false;
+        }
+        if (firstBootCapability(capabilityId)) {
+            return true;
         }
         if (accountOrNull != null && AccountRoles.isOwner(accountOrNull, roles)) {
             return true;
@@ -67,5 +74,18 @@ public class CapabilityService {
 
     public CapabilityCatalog catalog() {
         return catalog;
+    }
+
+    /**
+     * Fresh instances have no Mongo yet, so Guest and the role matrix do not exist.
+     * Setup still has to load {@code /}, {@code /apps/setup/}, and install endpoints.
+     */
+    private boolean firstBootCapability(String capabilityId) {
+        if (siteReady == null || siteReady.isConfigured()) {
+            return false;
+        }
+        return CapabilityIds.SITE_READ.equals(capabilityId)
+                || CapabilityIds.INSTALL.equals(capabilityId)
+                || CapabilityIds.app(StaticAppDeployer.INSTALLER_SLUG).equals(capabilityId);
     }
 }

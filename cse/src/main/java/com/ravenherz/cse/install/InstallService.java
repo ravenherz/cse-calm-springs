@@ -37,11 +37,12 @@ public class InstallService {
     private final PasswordHashes passwordHashes;
     private final StaticAppDeployer staticAppDeployer;
     private final SiteReady siteReady;
+    private final UrlTemplateSeeds urlTemplateSeeds;
     private volatile Boolean existingSite;
 
     public InstallService(Settings settings, DataProvider dataProvider, ServiceProvider serviceProvider,
             AuthSupport authSupport, PasswordHashes passwordHashes, StaticAppDeployer staticAppDeployer,
-            SiteReady siteReady) {
+            SiteReady siteReady, UrlTemplateSeeds urlTemplateSeeds) {
         this.settings = settings;
         this.dataProvider = dataProvider;
         this.serviceProvider = serviceProvider;
@@ -49,6 +50,7 @@ public class InstallService {
         this.passwordHashes = passwordHashes;
         this.staticAppDeployer = staticAppDeployer;
         this.siteReady = siteReady;
+        this.urlTemplateSeeds = urlTemplateSeeds;
     }
 
     public Map<String, Object> status() {
@@ -165,6 +167,7 @@ public class InstallService {
             applyPersonal(body, companyTitle);
             seedCategory(companyTitle);
         }
+        urlTemplateSeeds.ensureSeeded();
         siteReady.markFinished();
         try {
             staticAppDeployer.undeployEngineApp(StaticAppDeployer.INSTALLER_SLUG);

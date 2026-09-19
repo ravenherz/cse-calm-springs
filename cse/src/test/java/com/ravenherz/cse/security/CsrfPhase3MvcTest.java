@@ -16,6 +16,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.ResponseBody;
 
+import static org.hamcrest.Matchers.containsString;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
@@ -54,6 +55,22 @@ class CsrfPhase3MvcTest {
                 .andExpect(cookie().exists("XSRF-TOKEN"))
                 .andExpect(cookie().httpOnly("XSRF-TOKEN", false))
                 .andExpect(header().exists("X-XSRF-TOKEN"));
+    }
+
+    @Test
+    void restErrorPostIsNotCsrfGated() throws Exception {
+        mockMvc.perform(post("/rest/error")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"error\":\"403\"}"))
+                .andExpect(status().isOk())
+                .andExpect(content().string(containsString("Forbidden")));
+        mockMvc.perform(post("/rest/error")
+                        .cookie(new Cookie("XSRF-TOKEN", "cookie-token"))
+                        .header("X-XSRF-TOKEN", "other-token")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"error\":\"403\"}"))
+                .andExpect(status().isOk())
+                .andExpect(content().string(containsString("403")));
     }
 
     @Test

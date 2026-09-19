@@ -808,6 +808,7 @@
   });
 
   window.CsePlayer = {
-    refresh: refresh
+    refresh: refresh,
+    pause: pauseLocal
   };
 })();

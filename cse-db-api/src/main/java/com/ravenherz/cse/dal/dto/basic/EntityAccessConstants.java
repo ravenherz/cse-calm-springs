@@ -12,17 +12,14 @@ public class EntityAccessConstants {
 
     public static final Map<AccessType, AccessRule> DEFAULT = SecurityData.defaultSettings();
 
-    public static final Map<AccessType, AccessRule> GUIDE = guideSettings();
-
     private EntityAccessConstants() {
     }
 
-    private static Map<AccessType, AccessRule> guideSettings() {
+    public static Map<AccessType, AccessRule> forLevel(SecurityLevel threshold) {
         Map<AccessType, AccessRule> settings = new EnumMap<>(AccessType.class);
-        AccessRule guide = AccessRule.fromLegacy(SecurityLevel.GUIDE);
-        settings.put(AccessType.ACCESS_READ, guide);
-        settings.put(AccessType.ACCESS_EDIT, AccessRule.fromLegacy(SecurityLevel.GUIDE));
-        settings.put(AccessType.ACCESS_DELETE, AccessRule.fromLegacy(SecurityLevel.GUIDE));
+        settings.put(AccessType.ACCESS_READ, AccessRule.fromLegacy(threshold));
+        settings.put(AccessType.ACCESS_EDIT, AccessRule.fromLegacy(threshold));
+        settings.put(AccessType.ACCESS_DELETE, AccessRule.fromLegacy(threshold));
         return settings;
     }
 

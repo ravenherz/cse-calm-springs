@@ -50,6 +50,43 @@ class CseEmbedProcessorTest {
     }
 
     @Test
+    void videoExpandsWhenReadyAndShowsProcessingPlaceholder() {
+        ObjectId id = new ObjectId();
+        ResourceEntity video = image(id, "/user/res/video/clip.mp4", ResourceType.VIDEO);
+        video.getResourceData().addMetadata("transcode", "ready");
+        CseEmbedProcessor processor = processor(video);
+        String byId = processor.expandHtml("<cse-video id=\"" + id + "\"></cse-video>");
+        assertTrue(byId.contains("class=\"cse-video\""));
+        assertTrue(byId.contains("src=\"./content-protected/user/res/video/clip.mp4\""));
+        assertTrue(byId.contains("<video"));
+        assertFalse(byId.contains("<cse-video"));
+        String byPath = processor.expandHtml("<cse-video id=\"/user/res/video/clip.mp4\" />");
+        assertTrue(byPath.contains("src=\"./content-protected/user/res/video/clip.mp4\""));
+
+        video.getResourceData().addMetadata("transcode", "processing");
+        String processing = processor.expandHtml("<cse-video id=\"" + id + "\"></cse-video>");
+        assertTrue(processing.contains("cse-video-processing"));
+        assertTrue(processing.contains("Video is processing"));
+        assertFalse(processing.contains("<video"));
+
+        video.getResourceData().addMetadata("transcode", "failed");
+        String failed = processor.expandHtml("<cse-video id=\"" + id + "\"></cse-video>");
+        assertTrue(failed.contains("Video not found"));
+        assertFalse(failed.contains("<video"));
+    }
+
+    @Test
+    void imageResourceDoesNotExpandAsVideo() {
+        ObjectId id = new ObjectId();
+        ResourceEntity image = image(id, "/user/res/images/cover.jpg", ResourceType.IMAGE);
+        CseEmbedProcessor processor = processor(image);
+        String html = processor.expandHtml("<cse-video id=\"" + id + "\"></cse-video>");
+        assertTrue(html.contains("cse-embed-missing"));
+        assertTrue(html.contains("Video not found"));
+        assertFalse(html.contains("<video"));
+    }
+
+    @Test
     void unknownImageKeepsSurroundingHtml() {
         CseEmbedProcessor processor = processor(null);
         String html = processor.expandHtml("before <cse-image id=\"missing\"></cse-image> after");

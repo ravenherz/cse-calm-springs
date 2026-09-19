@@ -29,13 +29,14 @@ The body can leave custom tags. They stay as tags in Mongo and expand when the p
 
 ```html
 <cse-playlist id="your-playlist-id"></cse-playlist>
+<cse-url templateId="youtube" id="channel-id"></cse-url>
 <cse-image id="resource-object-id"></cse-image>
 <cse-page id="page-or-album-url-name"></cse-page>
 <cse-category id="category-name"></cse-category>
 <cse-app id="app-slug"></cse-app>
 ```
 
-`cse-image` is a full-width picture (`id` is the resource ObjectId, or the public path). The other three cards share one layout: preview on the left, title and details on the right. Albums use `cse-page` and link to `/?album=`. See [Playlists](playlists.md), [Categories](categories.md), and [Apps](apps.md).
+`cse-image` is a full-width picture (`id` is the resource ObjectId, or the public path). The other three cards share one layout: preview on the left, title and details on the right. Albums use `cse-page` and link to `/?album=`. See [Playlists](playlists.md), [URL Templates](url-templates.md), [Categories](categories.md), and [Apps](apps.md).
 
 ## Edit
 

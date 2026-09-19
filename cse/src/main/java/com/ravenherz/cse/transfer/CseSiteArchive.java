@@ -155,6 +155,7 @@ final class CseSiteArchive {
 
     private static boolean optionalRolesCollection(String name) {
         return MongoCollections.DATABASE_ROLES.equals(name)
-                || MongoCollections.DATABASE_ROLE_MATRIX.equals(name);
+                || MongoCollections.DATABASE_ROLE_MATRIX.equals(name)
+                || MongoCollections.DATABASE_URL_TEMPLATES.equals(name);
     }
 }

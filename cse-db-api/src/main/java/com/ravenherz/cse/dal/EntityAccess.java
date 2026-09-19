@@ -5,6 +5,7 @@ import com.ravenherz.cse.dal.dto.BasicEntity;
 import com.ravenherz.cse.dal.dto.CategoryEntity;
 import com.ravenherz.cse.dal.dto.ItemEntity;
 import com.ravenherz.cse.dal.dto.PlaylistEntity;
+import com.ravenherz.cse.dal.dto.UrlTemplateEntity;
 import com.ravenherz.cse.dal.dto.ResourceEntity;
 import com.ravenherz.cse.dal.dto.ResourceGroupEntity;
 import com.ravenherz.cse.dal.dto.basic.AccessRule;
@@ -124,7 +125,8 @@ public final class EntityAccess {
         if (entity instanceof ResourceGroupEntity group) {
             return group.getRefParentGroup();
         }
-        if (entity instanceof CategoryEntity || entity instanceof PlaylistEntity) {
+        if (entity instanceof CategoryEntity || entity instanceof PlaylistEntity
+                || entity instanceof UrlTemplateEntity) {
             return null;
         }
         return null;

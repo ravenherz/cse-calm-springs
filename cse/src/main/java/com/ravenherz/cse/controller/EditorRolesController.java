@@ -150,7 +150,8 @@ public class EditorRolesController extends AbstractController {
         String normalizedName = name == null ? "" : name.trim();
         String normalizedSlug = slug == null ? "" : slug.trim().toLowerCase(Locale.ROOT);
         if (normalizedName.isEmpty() || normalizedName.length() > 40 || !SLUG.matcher(normalizedSlug).matches()
-                || RoleSeeds.SYSTEM_SLUGS.contains(normalizedSlug) || roles().getBySlug(normalizedSlug) != null) {
+                || RoleSeeds.SYSTEM_SLUGS.contains(normalizedSlug) || RoleSeeds.isRetiredSlug(normalizedSlug)
+                || roles().getBySlug(normalizedSlug) != null) {
             response.sendRedirect(rolesUrl + "?error=unknown-level");
             return null;
         }

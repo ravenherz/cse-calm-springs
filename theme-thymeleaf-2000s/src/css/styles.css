@@ -767,7 +767,10 @@ h6 {
     padding-left: 3px;
 }
 
-.footer .company-social a {
+.footer .company-social img {
+    width: 24px;
+    height: 24px;
+    vertical-align: middle;
 }
 
 dd .price-normal {

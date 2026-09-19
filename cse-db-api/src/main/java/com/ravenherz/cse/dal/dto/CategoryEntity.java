@@ -17,7 +17,7 @@ public final class CategoryEntity extends BasicEntity implements Serializable {
     }
 
     public CategoryEntity(CategoryData categoryData, AccountEntity creator) {
-        super("0.1.0", null, creator);
+        super(null, creator);
         this.categoryData = categoryData;
     }
 

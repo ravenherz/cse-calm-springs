@@ -25,6 +25,7 @@ import com.ravenherz.cse.dal.dto.RoleEntity;
 import com.ravenherz.cse.dal.dto.RoleMatrixDocument;
 import com.ravenherz.cse.dal.dto.SettingContextEntity;
 import com.ravenherz.cse.dal.dto.ThemeEntity;
+import com.ravenherz.cse.dal.dto.UrlTemplateEntity;
 import com.ravenherz.cse.dal.dao.impl.AppStoreServiceImpl;
 import com.ravenherz.cse.store.AppStoreNames;
 import org.bson.Document;
@@ -96,6 +97,7 @@ public class CseSiteExporter {
                 ? List.of() : services.getResourceService().listWithContent();
         List<ItemEntity> items = typed(services.getItemService(), ItemEntity.class);
         List<PlaylistEntity> playlists = typed(services.getPlaylistService(), PlaylistEntity.class);
+        List<UrlTemplateEntity> urlTemplates = typed(services.getUrlTemplateService(), UrlTemplateEntity.class);
         List<AppEntity> apps = typed(services.getAppService(), AppEntity.class);
         List<ThemeEntity> themes = typed(services.getThemeService(), ThemeEntity.class);
 
@@ -117,6 +119,7 @@ public class CseSiteExporter {
         collections.put(MongoCollections.DATABASE_RESOURCES, mapAll(resources, CseSiteDocuments::resource));
         collections.put(MongoCollections.DATABASE_ITEMS, mapAll(items, CseSiteDocuments::item));
         collections.put(MongoCollections.DATABASE_PLAYLISTS, mapAll(playlists, CseSiteDocuments::playlist));
+        collections.put(MongoCollections.DATABASE_URL_TEMPLATES, mapAll(urlTemplates, CseSiteDocuments::urlTemplate));
         collections.put(MongoCollections.DATABASE_APPS, mapAll(apps, CseSiteDocuments::app));
         collections.put(MongoCollections.DATABASE_THEMES, mapAll(themes, CseSiteDocuments::theme));
         collections.put(MongoCollections.DATABASE_SETTINGS, settings(settingsOverlay));
@@ -142,6 +145,8 @@ public class CseSiteExporter {
                         mongo.findAll(ItemEntity.class), CseSiteDocuments::item);
                 case MongoCollections.DATABASE_PLAYLISTS -> writeMapped(zip, name,
                         mongo.findAll(PlaylistEntity.class), CseSiteDocuments::playlist);
+                case MongoCollections.DATABASE_URL_TEMPLATES -> writeMapped(zip, name,
+                        mongo.findAll(UrlTemplateEntity.class), CseSiteDocuments::urlTemplate);
                 case MongoCollections.DATABASE_SETTINGS -> writeSettings(zip, mongo, settingsOverlay);
                 case MongoCollections.DATABASE_APPS -> writeMapped(zip, name,
                         mongo.findAll(AppEntity.class), CseSiteDocuments::app);

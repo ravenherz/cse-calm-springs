@@ -1,6 +1,7 @@
 package com.ravenherz.cse.transfer;
 
 import com.ravenherz.cse.dal.dto.CategoryEntity;
+import com.ravenherz.cse.dal.dto.RoleEntity;
 import com.ravenherz.cse.dal.dto.basic.AccessRule;
 import com.ravenherz.cse.dal.dto.basic.enums.AccessType;
 import com.ravenherz.cse.dal.role.RoleSeeds;
@@ -12,6 +13,8 @@ import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class CseSiteReadersTest {
@@ -35,5 +38,22 @@ class CseSiteReadersTest {
         AccessRule edit = category.getSecurityData().rule(AccessType.ACCESS_EDIT);
         assertFalse(edit.isInherit());
         assertEquals(List.of("admin"), edit.getRoleIds());
+    }
+
+    @Test
+    void roleImportDropsRetiredGuide() {
+        Map<String, Object> guide = new LinkedHashMap<>();
+        guide.put("id", "68b0000000000000000000aa");
+        guide.put("slug", "guide");
+        guide.put("name", "Guide");
+        assertNull(CseSiteReaders.role(guide));
+
+        Map<String, Object> member = new LinkedHashMap<>();
+        member.put("id", "68b0000000000000000000bb");
+        member.put("slug", "member");
+        member.put("name", "Member");
+        RoleEntity read = CseSiteReaders.role(member);
+        assertNotNull(read);
+        assertEquals(RoleSeeds.MEMBER, read.getSlug());
     }
 }

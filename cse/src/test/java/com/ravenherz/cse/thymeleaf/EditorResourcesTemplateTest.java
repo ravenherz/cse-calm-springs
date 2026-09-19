@@ -5,17 +5,21 @@ import com.ravenherz.cse.dal.dto.ItemEntity;
 import com.ravenherz.cse.dal.dto.PlaylistEntity;
 import com.ravenherz.cse.dal.dto.ResourceEntity;
 import com.ravenherz.cse.dal.dto.RoleEntity;
+import com.ravenherz.cse.dal.dto.UrlTemplateEntity;
 import com.ravenherz.cse.dal.dto.basic.CategoryData;
 import com.ravenherz.cse.dal.dto.basic.EntityAccessConstants;
 import com.ravenherz.cse.dal.dto.basic.PageData;
 import com.ravenherz.cse.dal.dto.basic.PlaylistData;
 import com.ravenherz.cse.dal.dto.basic.ResourceData;
 import com.ravenherz.cse.dal.dto.basic.SecurityData;
+import com.ravenherz.cse.dal.dto.basic.UrlTemplateData;
 import com.ravenherz.cse.dal.dto.basic.enums.ResourceType;
+import com.ravenherz.cse.dal.dto.basic.enums.SecurityLevel;
 import com.ravenherz.cse.present.AppDisplayDTO;
 import com.ravenherz.cse.present.ResourceGroupDisplayDTO;
 import com.ravenherz.cse.present.ResourceTreeFile;
 import com.ravenherz.cse.present.ThemeDisplayDTO;
+import com.ravenherz.cse.util.video.VideoStatus;
 import org.bson.types.ObjectId;
 import org.junit.jupiter.api.Test;
 import org.springframework.mock.web.MockHttpServletRequest;
@@ -148,8 +152,13 @@ class EditorResourcesTemplateTest {
         assertTrue(html.contains("/rhz-we/editor/resources?group=content-categories"), html);
         assertTrue(html.contains("/rhz-we/editor/resources?group=category-music"), html);
         assertTrue(html.contains("resource-plus-tile"), html);
+        assertTrue(html.contains("placeResourceTip"), html);
         assertTrue(html.contains("id=\"file\""), html);
         assertTrue(html.contains("multiple"), html);
+        assertTrue(html.contains(".mp4"), html);
+        assertTrue(html.contains("/rhz-we/editor/video/progress"), html);
+        assertTrue(html.contains("data-video-progress-url"), html);
+        assertFalse(html.contains("thumb-tag-processing'))"), html);
         assertTrue(html.contains("id=\"group-travel\""), html);
         assertTrue(html.contains("id=\"group-y2024\""), html);
         assertFalse(html.contains("id=\"group-ungrouped\""), html);
@@ -186,6 +195,10 @@ class EditorResourcesTemplateTest {
         assertTrue(html.contains("data-action=\"open\""), html);
         assertTrue(html.contains("data-action=\"activate\""), html);
         assertTrue(html.contains("id=\"catalog-delete-form\""), html);
+        assertTrue(html.contains("id=\"catalog-batch-delete-form\""), html);
+        assertTrue(html.contains("/editor/batch-delete"), html);
+        assertTrue(html.contains("id=\"resourceMultiSelect\""), html);
+        assertTrue(html.contains(">Multi-select</button>"), html);
         assertTrue(html.contains("id=\"catalog-activate-form\""), html);
         assertTrue(html.contains("id=\"resource-category-delete-form\""), html);
         assertTrue(html.contains("/editor/category/delete"), html);
@@ -376,6 +389,28 @@ class EditorResourcesTemplateTest {
         assertTrue(playlistsHtml.contains(">PLAYLIST<"), playlistsHtml);
         assertTrue(playlistsHtml.contains("thumb-delete-btn"), playlistsHtml);
         assertFalse(playlistsHtml.contains("entry-list"), playlistsHtml);
+
+        UrlTemplateData templateData = new UrlTemplateData();
+        templateData.setUrlPattern("https://youtube.com/%s");
+        templateData.setUrlDefaultText("Find more videos on my YouTube channel: %s");
+        UrlTemplateEntity template = new UrlTemplateEntity("youtube", templateData, null);
+        template.setId(new ObjectId());
+        context.setVariable("selectedGroup", group("content-url-templates", "URL Templates",
+                "Content / URL Templates", 2));
+        context.setVariable("panePlaylists", null);
+        context.setVariable("paneUrlTemplates", List.of(template));
+        String templatesHtml = engine.process("admin/editor-resources", context);
+        assertTrue(templatesHtml.contains("url-template-row"), templatesHtml);
+        assertTrue(templatesHtml.contains("data-kind=\"url-template\""), templatesHtml);
+        assertTrue(templatesHtml.contains("data-can-rename=\"true\""), templatesHtml);
+        assertTrue(templatesHtml.contains("resource-plus-tile"), templatesHtml);
+        assertTrue(templatesHtml.contains("/editor/url-template/create"), templatesHtml);
+        assertTrue(templatesHtml.contains(">New URL template<"), templatesHtml);
+        assertTrue(templatesHtml.contains(">youtube<"), templatesHtml);
+        assertTrue(templatesHtml.contains("cse-url"), templatesHtml);
+        assertTrue(templatesHtml.contains(">URL<"), templatesHtml);
+        assertTrue(templatesHtml.contains("thumb-delete-btn"), templatesHtml);
+        assertFalse(templatesHtml.contains("entry-list"), templatesHtml);
     }
 
     @Test
@@ -567,6 +602,46 @@ class EditorResourcesTemplateTest {
         assertFalse(playlistEditHtml.contains("page-header"), playlistEditHtml);
         assertTrue(playlistEditHtml.contains("resource-tree-file is-selected")
                 || playlistEditHtml.contains("resource-tree-file is-selected\""), playlistEditHtml);
+
+        ResourceGroupDisplayDTO urlTemplates = group("content-url-templates", "URL Templates",
+                "Content / URL Templates", 2);
+        urlTemplates.setVirtual(true);
+        urlTemplates.setHref("/editor/resources?group=content-url-templates");
+        UrlTemplateData youtubeData = new UrlTemplateData();
+        youtubeData.setUrlPattern("https://youtube.com/%s");
+        youtubeData.setUrlDefaultText("Find more videos on my YouTube channel: %s");
+        UrlTemplateEntity youtube = new UrlTemplateEntity("youtube", youtubeData, null);
+        youtube.setId(new ObjectId());
+        urlTemplates.setTreeFiles(List.of(new ResourceTreeFile(
+                "url-template-" + youtube.getId(), "youtube",
+                "/editor/url-template/edit?id=" + youtube.getId(),
+                ResourceTreeFile.Mark.URL_TEMPLATE).withKey(youtube.getId().toString())
+                        .withEmbedId("youtube")));
+        context.setVariable("selectedGroup", urlTemplates);
+        context.setVariable("resourceGroupTree", List.of(urlTemplates));
+        context.setVariable("template", null);
+        context.setVariable("selectedLeafId", null);
+        String urlCreateHtml = engine.process("admin/editor-url-template-create", context);
+        assertFalse(urlCreateHtml.contains("${"), urlCreateHtml);
+        assertTrue(urlCreateHtml.contains("resource-tree"), urlCreateHtml);
+        assertTrue(urlCreateHtml.contains("resource-pane"), urlCreateHtml);
+        assertTrue(urlCreateHtml.contains(">New URL template<"), urlCreateHtml);
+        assertTrue(urlCreateHtml.contains("Create URL template"), urlCreateHtml);
+        assertTrue(urlCreateHtml.contains("href=\"/rhz-we/editor/resources?group=content-url-templates\""),
+                urlCreateHtml);
+        assertTrue(urlCreateHtml.contains("data-embed-tag=\"cse-url\""), urlCreateHtml);
+        assertTrue(urlCreateHtml.contains("data-embed-id=\"youtube\""), urlCreateHtml);
+
+        context.setVariable("template", youtube);
+        context.setVariable("selectedLeafId", "url-template-" + youtube.getId());
+        String urlEditHtml = engine.process("admin/editor-url-template-edit", context);
+        assertFalse(urlEditHtml.contains("${"), urlEditHtml);
+        assertTrue(urlEditHtml.contains("resource-tree"), urlEditHtml);
+        assertTrue(urlEditHtml.contains("resource-pane"), urlEditHtml);
+        assertTrue(urlEditHtml.contains(">youtube<"), urlEditHtml);
+        assertTrue(urlEditHtml.contains("name=\"id\""), urlEditHtml);
+        assertTrue(urlEditHtml.contains("resource-tree-file is-selected")
+                || urlEditHtml.contains("resource-tree-file is-selected\""), urlEditHtml);
     }
 
     @Test
@@ -596,7 +671,7 @@ class EditorResourcesTemplateTest {
         data.setType(ResourceType.IMAGE);
         ResourceEntity file = new ResourceEntity(data, null);
         file.setId(new ObjectId());
-        file.setSecurityData(new SecurityData(EntityAccessConstants.GUIDE));
+        file.setSecurityData(new SecurityData(EntityAccessConstants.forLevel(SecurityLevel.OPERATOR)));
         y2024.setResources(List.of(file));
 
         SpringTemplateEngine engine = engine();
@@ -642,6 +717,46 @@ class EditorResourcesTemplateTest {
         assertFalse(contentHtml.contains("name=\"accessPosted\""), contentHtml);
         assertFalse(contentHtml.contains("/editor/resources/group/access"), contentHtml);
         assertFalse(contentHtml.contains("tip-access-form"), contentHtml);
+    }
+
+    @Test
+    void processingVideoShowsPercentBarWithoutReload() {
+        ResourceGroupDisplayDTO unsorted = group("default-id", "Unsorted", "Unsorted", 1);
+        unsorted.setDefaultGroup(true);
+        unsorted.setHref("/editor/resources?group=default-id");
+        ResourceData data = new ResourceData();
+        data.setType(ResourceType.VIDEO);
+        data.setPathPublic("/u/res/video/clip.mp4");
+        data.setSizeInBytes(123000000);
+        VideoStatus.set(data, VideoStatus.PROCESSING);
+        ResourceEntity video = new ResourceEntity(data, null);
+        video.setId(new ObjectId());
+        unsorted.setResources(List.of(video));
+
+        SpringTemplateEngine engine = engine();
+        MockServletContext servletContext = new MockServletContext();
+        JakartaServletWebApplication application = JakartaServletWebApplication.buildApplication(servletContext);
+        MockHttpServletRequest request = new MockHttpServletRequest(servletContext);
+        request.setContextPath("/rhz-we");
+        request.setRequestURI("/rhz-we/editor/resources");
+        MockHttpServletResponse response = new MockHttpServletResponse();
+        WebContext context = new WebContext(application.buildExchange(request, response));
+        context.setVariable("resourceGroupTree", List.of(unsorted));
+        context.setVariable("assignableGroups", List.of(unsorted));
+        context.setVariable("selectedGroup", unsorted);
+        context.setVariable("defaultGroupId", "default-id");
+        context.setVariable("cseContextPath", "/rhz-we");
+        context.setVariable("username", "owner");
+        context.setVariable("navResources", true);
+
+        String html = engine.process("admin/editor-resources", context);
+        assertTrue(html.contains("data-video-status=\"processing\""), html);
+        assertTrue(html.contains("thumb-progress"), html);
+        assertTrue(html.contains("data-video-percent"), html);
+        assertTrue(html.contains(">0%<"), html);
+        assertTrue(html.contains("/rhz-we/editor/video/progress"), html);
+        assertFalse(html.contains(">Processing<"), html);
+        assertFalse(html.contains("if (document.querySelector('.thumb-tag-processing'))"), html);
     }
 
     private static ResourceGroupDisplayDTO group(String id, String name, String path, int depth) {

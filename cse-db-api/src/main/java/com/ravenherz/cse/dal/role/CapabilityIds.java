@@ -18,6 +18,7 @@ public final class CapabilityIds {
     public static final String EDITOR_CATEGORIES = "editor.categories";
     public static final String EDITOR_FILES = "editor.files";
     public static final String EDITOR_PLAYLISTS = "editor.playlists";
+    public static final String EDITOR_URL_TEMPLATES = "editor.url-templates";
     public static final String EDITOR_APPS = "editor.apps";
     public static final String EDITOR_THEMES = "editor.themes";
     public static final String EDITOR_ACCOUNTS = "editor.accounts";
@@ -25,6 +26,7 @@ public final class CapabilityIds {
     public static final String EDITOR_SETTINGS = "editor.settings";
     public static final String EDITOR_SITE_DATA = "editor.site-data";
     public static final String EDITOR_LOGS = "editor.logs";
+    public static final String EDITOR_INSTANCE = "editor.instance";
 
     public static final String INSTALL = "install";
 
@@ -40,13 +42,15 @@ public final class CapabilityIds {
             EDITOR_CATEGORIES,
             EDITOR_FILES,
             EDITOR_PLAYLISTS,
+            EDITOR_URL_TEMPLATES,
             EDITOR_APPS,
             EDITOR_THEMES,
             EDITOR_ACCOUNTS,
             EDITOR_ROLES,
             EDITOR_SETTINGS,
             EDITOR_SITE_DATA,
-            EDITOR_LOGS);
+            EDITOR_LOGS,
+            EDITOR_INSTANCE);
 
     public static final List<String> ENGINE_ALL = List.of(
             ACCOUNT_AUTH,
@@ -65,13 +69,15 @@ public final class CapabilityIds {
             EDITOR_CATEGORIES,
             EDITOR_FILES,
             EDITOR_PLAYLISTS,
+            EDITOR_URL_TEMPLATES,
             EDITOR_APPS,
             EDITOR_THEMES,
             EDITOR_ACCOUNTS,
             EDITOR_ROLES,
             EDITOR_SETTINGS,
             EDITOR_SITE_DATA,
-            EDITOR_LOGS);
+            EDITOR_LOGS,
+            EDITOR_INSTANCE);
 
     private CapabilityIds() {
     }

@@ -11,6 +11,8 @@ public final class SettingKeys {
     public static final String CONTEXT_DATASOURCE_SETUP = "config-setup";
     public static final String CONTEXT_DATASOURCE_CORE = "config-core";
     public static final String CONTEXT_DATASOURCE_IMAGE_UPLOAD = "image-upload";
+    public static final String CONTEXT_DATASOURCE_VIDEO_UPLOAD = "video-upload";
+    public static final String CONTEXT_DATASOURCE_UPLOAD_LIMITS = "upload-limits";
 
     public static final String KEY_TAG_WELCOME_TITLE = "welcome-title";
     public static final String KEY_TAG_WELCOME_MESSAGE = "welcome-message";
@@ -42,6 +44,13 @@ public final class SettingKeys {
     public static final String KEY_DEFAULT_PAGE = "default-page";
     public static final String KEY_PREVIEW_MAX_WIDTH = "preview-max-width";
     public static final String KEY_QUALITY_FACTOR = "quality-factor";
+    public static final String KEY_MAX_WIDTH = "max-width";
+    public static final String KEY_MAX_HEIGHT = "max-height";
+    public static final String KEY_AUDIO_BITRATE = "audio-bitrate";
+    public static final String KEY_IMAGE_UPLOAD_MAX_MB = "image-upload-max-mb";
+    public static final String KEY_VIDEO_UPLOAD_MAX_MB = "video-upload-max-mb";
+    public static final String KEY_AUDIO_UPLOAD_MAX_MB = "audio-upload-max-mb";
+    public static final String KEY_BINARY_UPLOAD_MAX_MB = "binary-upload-max-mb";
 
     /**
      * Public {@code config-personal} keys the greenfield installer may set.

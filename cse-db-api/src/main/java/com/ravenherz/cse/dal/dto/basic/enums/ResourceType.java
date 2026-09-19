@@ -6,6 +6,7 @@ import java.util.List;
 public enum ResourceType {
     IMAGE("images", List.of("jpg", "jpeg", "png", "heic", "heif")),
     AUDIO("audio", List.of("mp3")),
+    VIDEO("video", List.of("mp4", "mov", "m4v", "webm", "mkv")),
     INVALID;
 
     private final List<String> extensions;

@@ -20,7 +20,9 @@ public class EditorChromeAdvice {
                 || uri.contains("/editor/settings")
                 || uri.contains("/editor/site-data")
                 || uri.contains("/editor/api")
-                || uri.contains("/editor/logs");
+                || uri.contains("/editor/logs")
+                || uri.contains("/editor/transcode")
+                || uri.contains("/editor/instance");
         model.addAttribute("navResources", uri.contains("/editor") && !adminTool);
         model.addAttribute("navAccounts", uri.contains("/editor/account"));
         model.addAttribute("navRoles", uri.contains("/editor/roles"));
@@ -28,5 +30,7 @@ public class EditorChromeAdvice {
         model.addAttribute("navSiteData", uri.contains("/editor/site-data"));
         model.addAttribute("navApi", uri.contains("/editor/api"));
         model.addAttribute("navLogs", uri.contains("/editor/logs"));
+        model.addAttribute("navTranscode", uri.contains("/editor/transcode"));
+        model.addAttribute("navInstance", uri.contains("/editor/instance"));
     }
 }

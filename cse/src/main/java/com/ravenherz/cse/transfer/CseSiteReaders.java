@@ -11,6 +11,7 @@ import com.ravenherz.cse.dal.dto.ResourceEntity;
 import com.ravenherz.cse.dal.dto.ResourceGroupEntity;
 import com.ravenherz.cse.dal.dto.SettingContextEntity;
 import com.ravenherz.cse.dal.dto.ThemeEntity;
+import com.ravenherz.cse.dal.dto.UrlTemplateEntity;
 import com.ravenherz.cse.store.AppStoreTableSpec;
 import com.ravenherz.cse.dal.dto.basic.AccountData;
 import com.ravenherz.cse.dal.dto.basic.AlbumData;
@@ -31,6 +32,7 @@ import com.ravenherz.cse.dal.dto.basic.AppAccountGrant;
 import com.ravenherz.cse.dal.dto.basic.RoleGrant;
 import com.ravenherz.cse.dal.dto.basic.SecurityData;
 import com.ravenherz.cse.dal.dto.basic.ThemeData;
+import com.ravenherz.cse.dal.dto.basic.UrlTemplateData;
 import com.ravenherz.cse.dal.dto.basic.enums.AccessType;
 import com.ravenherz.cse.dal.dto.basic.enums.EventType;
 import com.ravenherz.cse.dal.dto.basic.enums.ResourceType;
@@ -106,6 +108,9 @@ final class CseSiteReaders {
             return null;
         }
         entity.setSlug(slug.trim().toLowerCase(java.util.Locale.ROOT));
+        if (RoleSeeds.isRetiredSlug(entity.getSlug())) {
+            return null;
+        }
         entity.setName(text(doc.get("name")));
         entity.setSystem(text(doc.get("system")));
         entity.setLoginable(bool(doc.get("loginable"), false));
@@ -260,6 +265,23 @@ final class CseSiteReaders {
             }
             playlistData.setTracks(tracks);
             entity.setPlaylistData(playlistData);
+        }
+        return entity;
+    }
+
+    static UrlTemplateEntity urlTemplate(Map<String, Object> doc) {
+        UrlTemplateEntity entity = new UrlTemplateEntity();
+        if (!applyBasic(entity, doc)) {
+            return null;
+        }
+        entity.setUrlTemplateId(text(doc.get("urlTemplateId")));
+        Map<String, Object> data = map(doc.get("urlTemplateData"));
+        if (data != null) {
+            UrlTemplateData templateData = new UrlTemplateData();
+            templateData.setUrlImage(text(data.get("urlImage")));
+            templateData.setUrlDefaultText(text(data.get("urlDefaultText")));
+            templateData.setUrlPattern(text(data.get("urlPattern")));
+            entity.setUrlTemplateData(templateData);
         }
         return entity;
     }

@@ -20,6 +20,7 @@ import com.ravenherz.cse.present.AppDisplayDTO;
 import com.ravenherz.cse.present.CategorySectionDTO;
 import com.ravenherz.cse.present.EditorContentCatalog;
 import com.ravenherz.cse.util.staticapps.StaticAppDeployer;
+import com.ravenherz.cse.util.video.VideoStatus;
 import jakarta.annotation.PostConstruct;
 import jakarta.annotation.PreDestroy;
 import org.bson.types.ObjectId;
@@ -63,6 +64,7 @@ public class CseEmbedProcessor {
     private static final Pattern ID_ATTR = Pattern.compile(
             "(?i)\\bid\\s*=\\s*[\"']([^\"']+)[\"']");
     private static final Pattern IMAGE_TAG = tagPattern("cse-image");
+    private static final Pattern VIDEO_TAG = tagPattern("cse-video");
     private static final Pattern CATEGORY_TAG = tagPattern("cse-category");
     private static final Pattern PAGE_TAG = tagPattern("cse-page");
     private static final Pattern APP_TAG = tagPattern("cse-app");
@@ -143,11 +145,12 @@ public class CseEmbedProcessor {
 
     public static String expand(String html) {
         String withPlaylists = PlaylistEmbedProcessor.expand(html);
+        String withUrls = UrlEmbedProcessor.expand(withPlaylists);
         CseEmbedProcessor processor = instance;
         if (processor == null) {
-            return withPlaylists;
+            return withUrls;
         }
-        return processor.expandHtml(withPlaylists);
+        return processor.expandHtml(withUrls);
     }
 
     public String expandHtml(String html) {
@@ -155,6 +158,7 @@ public class CseEmbedProcessor {
             return html == null ? "" : html;
         }
         String out = expandTag(html, IMAGE_TAG, this::renderImage);
+        out = expandTag(out, VIDEO_TAG, this::renderVideo);
         out = expandTag(out, CATEGORY_TAG, this::renderCategory);
         out = expandTag(out, PAGE_TAG, this::renderPage);
         return expandTag(out, APP_TAG, this::renderApp);
@@ -192,6 +196,36 @@ public class CseEmbedProcessor {
         }
         return "<figure class=\"cse-image\"><img src=\"" + escape(src)
                 + "\" alt=\"" + escape(alt) + "\"/></figure>";
+    }
+
+    private String renderVideo(String id) {
+        ResourceEntity resource = images.find(id);
+        if (!isPublicVideo(resource)) {
+            return missing("video", "Video not found");
+        }
+        ResourceData data = resource.getResourceData();
+        if (VideoStatus.processing(data)) {
+            return "<figure class=\"cse-video cse-video-processing\">Video is processing</figure>";
+        }
+        if (VideoStatus.failed(data) || !VideoStatus.ready(data)) {
+            return missing("video", "Video not found");
+        }
+        String src = publicSrc(data.getPathPublic());
+        if (src.isBlank()) {
+            return missing("video", "Video not found");
+        }
+        String poster = "";
+        if (resource.getPreviewData() != null) {
+            poster = publicSrc(resource.getPreviewData().getPathPublic());
+        }
+        StringBuilder html = new StringBuilder();
+        html.append("<figure class=\"cse-video\"><div class=\"cse-video-frame\">");
+        html.append("<video src=\"").append(escape(src)).append("\"");
+        if (!poster.isBlank()) {
+            html.append(" poster=\"").append(escape(poster)).append("\"");
+        }
+        html.append(" playsinline preload=\"metadata\"></video></div></figure>");
+        return html.toString();
     }
 
     private String renderCategory(String id) {
@@ -307,6 +341,18 @@ public class CseEmbedProcessor {
         }
         String path = data.getPathPublic();
         return path != null && ResourceType.getByFileName(path) == ResourceType.IMAGE;
+    }
+
+    private static boolean isPublicVideo(ResourceEntity resource) {
+        if (resource == null || resource.getResourceData() == null || !publiclyReadable(resource)) {
+            return false;
+        }
+        ResourceData data = resource.getResourceData();
+        if (data.getType() == ResourceType.VIDEO) {
+            return true;
+        }
+        String path = data.getPathPublic();
+        return path != null && ResourceType.getByFileName(path) == ResourceType.VIDEO;
     }
 
     private static boolean publiclyReadable(BasicEntity entity) {

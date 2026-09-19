@@ -4,6 +4,7 @@ import com.ravenherz.cse.constants.SettingKeys;
 import com.ravenherz.cse.constants.Strings;
 import com.ravenherz.cse.controller.objects.FormDescription;
 import com.ravenherz.cse.dal.ConfigSource;
+import com.ravenherz.cse.dal.EntityVersions;
 import com.ravenherz.cse.dal.SettingsDocuments;
 import com.ravenherz.cse.dal.dto.SettingContextEntity;
 import com.ravenherz.cse.util.io.ServletFile;
@@ -66,6 +67,7 @@ public class Settings implements Serializable, ConfigSource, SettingsDocuments {
         loadFormDescriptions();
         loadConfigurationJson();
         loadSecretsFromDisk();
+        EntityVersions.bind(this);
     }
 
     private void loadFormDescriptions() {

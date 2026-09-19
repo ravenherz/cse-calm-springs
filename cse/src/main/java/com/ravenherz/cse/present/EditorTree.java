@@ -3,6 +3,7 @@ package com.ravenherz.cse.present;
 import com.ravenherz.cse.dal.dto.CategoryEntity;
 import com.ravenherz.cse.dal.dto.ItemEntity;
 import com.ravenherz.cse.dal.dto.PlaylistEntity;
+import com.ravenherz.cse.dal.dto.UrlTemplateEntity;
 import com.ravenherz.cse.dal.dto.basic.CategoryData;
 import com.ravenherz.cse.dal.dto.basic.ItemData;
 
@@ -23,15 +24,18 @@ public final class EditorTree {
     public static final String APPS_ID = "content-apps";
     public static final String CATEGORIES_ID = "content-categories";
     public static final String PLAYLISTS_ID = "content-playlists";
+    public static final String URL_TEMPLATES_ID = "content-url-templates";
     public static final String THEMES_ID = "content-themes";
     public static final String CATEGORY_PREFIX = "category-";
     public static final String PAGE_PREFIX = "page-";
     public static final String PLAYLIST_PREFIX = "playlist-";
+    public static final String URL_TEMPLATE_PREFIX = "url-template-";
 
     public static final String CONTENT_HREF = "/editor/resources?group=content";
     public static final String APPS_HREF = "/editor/resources?group=" + APPS_ID;
     public static final String CATEGORIES_HREF = "/editor/resources?group=" + CATEGORIES_ID;
     public static final String PLAYLISTS_HREF = "/editor/resources?group=" + PLAYLISTS_ID;
+    public static final String URL_TEMPLATES_HREF = "/editor/resources?group=" + URL_TEMPLATES_ID;
     public static final String THEMES_HREF = "/editor/resources?group=" + THEMES_ID;
 
     private EditorTree() {
@@ -46,6 +50,7 @@ public final class EditorTree {
                 || APPS_ID.equals(trimmed)
                 || CATEGORIES_ID.equals(trimmed)
                 || PLAYLISTS_ID.equals(trimmed)
+                || URL_TEMPLATES_ID.equals(trimmed)
                 || THEMES_ID.equals(trimmed)
                 || trimmed.startsWith(CATEGORY_PREFIX)
                 || trimmed.startsWith(PAGE_PREFIX);
@@ -60,6 +65,7 @@ public final class EditorTree {
                 || APPS_ID.equals(trimmed)
                 || CATEGORIES_ID.equals(trimmed)
                 || PLAYLISTS_ID.equals(trimmed)
+                || URL_TEMPLATES_ID.equals(trimmed)
                 || THEMES_ID.equals(trimmed)
                 || trimmed.startsWith(CATEGORY_PREFIX);
     }
@@ -126,6 +132,7 @@ public final class EditorTree {
             case APPS_ID -> APPS_HREF;
             case CATEGORIES_ID -> CATEGORIES_HREF;
             case PLAYLISTS_ID -> PLAYLISTS_HREF;
+            case URL_TEMPLATES_ID -> URL_TEMPLATES_HREF;
             case THEMES_ID -> THEMES_HREF;
             default -> {
                 if (trimmed.startsWith(CATEGORY_PREFIX)) {
@@ -165,7 +172,13 @@ public final class EditorTree {
     public static ResourceGroupDisplayDTO contentBranch(List<CategoryEntity> categories,
             List<ItemEntity> items, List<ResourceTreeFile> apps, List<ResourceTreeFile> playlists,
             List<ResourceTreeFile> themes) {
-        return buildContent(categories, items, apps, playlists, themes);
+        return contentBranch(categories, items, apps, playlists, themes, List.of());
+    }
+
+    public static ResourceGroupDisplayDTO contentBranch(List<CategoryEntity> categories,
+            List<ItemEntity> items, List<ResourceTreeFile> apps, List<ResourceTreeFile> playlists,
+            List<ResourceTreeFile> themes, List<ResourceTreeFile> urlTemplates) {
+        return buildContent(categories, items, apps, playlists, themes, urlTemplates);
     }
 
     public static ResourceGroupDisplayDTO find(List<ResourceGroupDisplayDTO> roots, String id) {
@@ -198,6 +211,9 @@ public final class EditorTree {
         }
         if (uri.contains("/editor/playlist")) {
             return PLAYLISTS_ID;
+        }
+        if (uri.contains("/editor/url-template")) {
+            return URL_TEMPLATES_ID;
         }
         if (uri.contains("/editor/category/edit")) {
             return categoryNodeId(categoryEditId) != null
@@ -233,20 +249,25 @@ public final class EditorTree {
 
     private static ResourceGroupDisplayDTO buildContent(List<CategoryEntity> categories,
             List<ItemEntity> items, List<ResourceTreeFile> appFiles,
-            List<ResourceTreeFile> playlistFiles, List<ResourceTreeFile> themeFiles) {
+            List<ResourceTreeFile> playlistFiles, List<ResourceTreeFile> themeFiles,
+            List<ResourceTreeFile> urlTemplateFiles) {
         ResourceGroupDisplayDTO content = virtual(CONTENT_ID, "Content", CONTENT_HREF, null, 1);
         ResourceGroupDisplayDTO apps = virtual(APPS_ID, "Apps", APPS_HREF, CONTENT_ID, 2);
         ResourceGroupDisplayDTO cats = virtual(CATEGORIES_ID, "Categories", CATEGORIES_HREF, CONTENT_ID, 2);
         ResourceGroupDisplayDTO playlists = virtual(PLAYLISTS_ID, "Playlists", PLAYLISTS_HREF, CONTENT_ID, 2);
         ResourceGroupDisplayDTO themes = virtual(THEMES_ID, "Themes", THEMES_HREF, CONTENT_ID, 2);
+        ResourceGroupDisplayDTO urlTemplates = virtual(URL_TEMPLATES_ID, "URL Templates",
+                URL_TEMPLATES_HREF, CONTENT_ID, 2);
         apps.setTreeFiles(sortedLeaves(appFiles));
         playlists.setTreeFiles(sortedLeaves(playlistFiles));
         themes.setTreeFiles(sortedLeaves(themeFiles));
+        urlTemplates.setTreeFiles(sortedLeaves(urlTemplateFiles));
         attachCategories(cats, categories, items);
         content.getChildren().add(apps);
         content.getChildren().add(cats);
         content.getChildren().add(playlists);
         content.getChildren().add(themes);
+        content.getChildren().add(urlTemplates);
         content.setSubtreeHeight(content.getChildren().stream().anyMatch(ResourceGroupDisplayDTO::hasExpandableChildren)
                 ? 2 : 1);
         content.setPathLabel("Content");
@@ -352,6 +373,13 @@ public final class EditorTree {
             return null;
         }
         return PLAYLIST_PREFIX + playlist.getId();
+    }
+
+    public static String urlTemplateLeafId(UrlTemplateEntity template) {
+        if (template == null || template.getId() == null) {
+            return null;
+        }
+        return URL_TEMPLATE_PREFIX + template.getId();
     }
 
     private static ResourceGroupDisplayDTO virtual(String id, String name, String href,
