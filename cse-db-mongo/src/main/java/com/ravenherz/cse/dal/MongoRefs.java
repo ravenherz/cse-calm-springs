@@ -60,7 +60,11 @@ public final class MongoRefs {
     }
 
     private static void syncPlaylist(PlaylistData playlist) {
-        if (playlist == null || playlist.getTracks() == null) {
+        if (playlist == null) {
+            return;
+        }
+        playlist.setRefImage(playlist.getRefImage());
+        if (playlist.getTracks() == null) {
             return;
         }
         for (PlaylistTrack track : playlist.getTracks()) {

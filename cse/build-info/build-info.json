@@ -1,10 +1,10 @@
 {
     "artifact": {
         "latest": {
-            "name": "cse-0.7.0.3466.master.war"
+            "name": "cse-0.7.0.3483.master.war"
         }
     },
     "build": {
-        "number": 3466
+        "number": 3483
     }
 }

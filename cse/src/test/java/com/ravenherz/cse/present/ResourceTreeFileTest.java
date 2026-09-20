@@ -40,6 +40,15 @@ class ResourceTreeFileTest {
     }
 
     @Test
+    void audioFilesAreTypedForPlaylistDrop() {
+        ResourceTreeFile audio = ResourceTreeFile.from(resource(ResourceType.AUDIO,
+                "/u/res/audio/tide.mp3"));
+        assertTrue(audio.isAudioFile());
+        assertEquals("AUDIO", audio.resourceType());
+        assertEquals("", audio.embedTag());
+    }
+
+    @Test
     void urlTemplatesEmbedAsCseUrlWithTemplateId() {
         ResourceTreeFile template = new ResourceTreeFile(
                 "url-template-1", "youtube", "/editor/url-template/edit?id=1",

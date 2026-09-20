@@ -2,6 +2,7 @@ package com.ravenherz.cse.util;
 
 import com.ravenherz.cse.dal.dao.PlaylistService;
 import com.ravenherz.cse.dal.dto.PlaylistEntity;
+import com.ravenherz.cse.dal.dto.ResourceEntity;
 import com.ravenherz.cse.dal.dto.basic.PlaylistData;
 import com.ravenherz.cse.dal.dto.basic.PlaylistTrack;
 import jakarta.annotation.PostConstruct;
@@ -25,6 +26,10 @@ public class PlaylistEmbedProcessor {
             "(?is)<cse-playlist\\b([^>]*)(?:\\s*/>|>\\s*</cse-playlist>)");
     private static final Pattern ID_ATTR = Pattern.compile(
             "(?i)\\bid\\s*=\\s*[\"']([^\"']+)[\"']");
+    private static final Pattern WITH_IMAGE_ATTR = Pattern.compile(
+            "(?i)\\bwithImage\\s*=\\s*[\"']([^\"']*)[\"']");
+    private static final Pattern WITH_IMAGE_BARE = Pattern.compile(
+            "(?i)(?:^|\\s)withImage(?=\\s|/|>|$)");
 
     private static volatile PlaylistEmbedProcessor instance;
 
@@ -77,13 +82,13 @@ public class PlaylistEmbedProcessor {
             String attrs = matcher.group(1) == null ? "" : matcher.group(1);
             Matcher idMatcher = ID_ATTR.matcher(attrs);
             String playlistId = idMatcher.find() ? PlaylistIds.normalize(idMatcher.group(1)) : "";
-            matcher.appendReplacement(out, Matcher.quoteReplacement(render(playlistId)));
+            matcher.appendReplacement(out, Matcher.quoteReplacement(render(playlistId, attrs)));
         }
         matcher.appendTail(out);
         return out.toString();
     }
 
-    private String render(String playlistId) {
+    private String render(String playlistId, String attrs) {
         if (!PlaylistIds.isValid(playlistId)) {
             return missing(playlistId);
         }
@@ -95,9 +100,22 @@ public class PlaylistEmbedProcessor {
         String title = data == null || data.getTitle() == null || data.getTitle().isBlank()
                 ? playlistId : data.getTitle();
         List<PlaylistTrack> tracks = data == null ? List.of() : data.getTracks();
+        String cover = withImage(attrs) ? coverSrc(data) : "";
+        boolean showCover = !cover.isBlank();
         StringBuilder html = new StringBuilder();
-        html.append("<div class=\"cse-playlist\" data-playlist-id=\"")
+        html.append("<div class=\"cse-playlist");
+        if (showCover) {
+            html.append(" cse-playlist-with-image");
+        }
+        html.append("\" data-playlist-id=\"")
                 .append(escape(playlistId)).append("\">");
+        if (showCover) {
+            html.append("<div class=\"cse-playlist-cover\">");
+            html.append("<img src=\"").append(escape(cover)).append("\" alt=\"")
+                    .append(escape(title)).append("\">");
+            html.append("</div>");
+            html.append("<div class=\"cse-playlist-body\">");
+        }
         html.append("<div class=\"cse-playlist-heading\">");
         html.append("<span class=\"cse-playlist-title\">").append(escape(title)).append("</span>");
         html.append("<button type=\"button\" class=\"cse-enqueue-all\"")
@@ -141,8 +159,56 @@ public class PlaylistEmbedProcessor {
                     .append(" aria-label=\"Add to queue\" title=\"Add to queue\"></button>");
             html.append("</li>");
         }
-        html.append("</ol></div>");
+        html.append("</ol>");
+        if (showCover) {
+            html.append("</div>");
+        }
+        html.append("</div>");
         return html.toString();
+    }
+
+    private static boolean withImage(String attrs) {
+        if (attrs == null || attrs.isBlank()) {
+            return false;
+        }
+        Matcher quoted = WITH_IMAGE_ATTR.matcher(attrs);
+        if (quoted.find()) {
+            String value = quoted.group(1) == null ? "" : quoted.group(1).trim().toLowerCase();
+            return value.isEmpty() || value.equals("true") || value.equals("yes")
+                    || value.equals("1") || value.equals("on");
+        }
+        return WITH_IMAGE_BARE.matcher(attrs).find();
+    }
+
+    private static String coverSrc(PlaylistData data) {
+        if (data == null) {
+            return "";
+        }
+        String fromImage = imageSrc(data.getRefImage());
+        if (!fromImage.isBlank()) {
+            return fromImage;
+        }
+        for (PlaylistTrack track : data.getTracks()) {
+            if (track == null || track.getRefResource() == null) {
+                continue;
+            }
+            ResourceEntity resource = track.getRefResource();
+            if (resource.getPreviewData() == null) {
+                continue;
+            }
+            String src = CseEmbedProcessor.publicSrc(resource.getPreviewData().getPathPublic());
+            if (src != null && !src.isBlank()) {
+                return src;
+            }
+        }
+        return "";
+    }
+
+    private static String imageSrc(ResourceEntity resource) {
+        if (resource == null || resource.getResourceData() == null) {
+            return "";
+        }
+        return CseEmbedProcessor.publicSrc(resource.getResourceData().getPathPublic());
     }
 
     private static String missing(String playlistId) {

@@ -245,6 +245,13 @@ final class CseSiteReaders {
             PlaylistData playlistData = new PlaylistData();
             playlistData.setTitle(text(data.get("title")));
             playlistData.setDescription(text(data.get("description")));
+            ObjectId coverId = objectId(data.get("refImageId"));
+            if (coverId != null) {
+                ResourceEntity stub = new ResourceEntity();
+                stub.setId(coverId);
+                playlistData.setRefImage(stub);
+                playlistData.attachRefImage(null);
+            }
             List<PlaylistTrack> tracks = new ArrayList<>();
             for (Object row : list(data.get("tracks"))) {
                 Map<String, Object> trackDoc = map(row);

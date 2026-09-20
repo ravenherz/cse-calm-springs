@@ -24,6 +24,7 @@
               <label>Embed tag</label>
               <p class="field-hint">Paste this into any page’s Markdown/HTML:</p>
               <code class="embed-hint" th:text="'&lt;cse-playlist id=&quot;' + ${playlist.playlistId} + '&quot;&gt;&lt;/cse-playlist&gt;'">tag</code>
+              <p class="field-hint">Add <code>withImage="true"</code> to show the playlist cover.</p>
             </div>
             <th:block th:replace="~{fragments/access :: panel(read=${accessRead}, edit=${accessEdit}, delete=${accessDelete}, canEdit=${accessCanEdit})}"></th:block>
             <div class="editor-actions">

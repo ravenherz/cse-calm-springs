@@ -72,7 +72,11 @@ public final class ReferenceHydrator {
     }
 
     private void hydratePlaylist(PlaylistData playlist) {
-        if (playlist == null || playlist.getTracks() == null) {
+        if (playlist == null) {
+            return;
+        }
+        playlist.attachRefImage(load(playlist.getRefImageId(), ResourceEntity.class));
+        if (playlist.getTracks() == null) {
             return;
         }
         for (PlaylistTrack track : playlist.getTracks()) {

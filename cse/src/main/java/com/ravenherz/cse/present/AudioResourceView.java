@@ -8,6 +8,7 @@ public class AudioResourceView {
     private String artist;
     private String durationLabel;
     private String trackNumber;
+    private String previewPath;
     private String titleOverride;
     private String artistOverride;
 
@@ -57,6 +58,14 @@ public class AudioResourceView {
 
     public void setTrackNumber(String trackNumber) {
         this.trackNumber = trackNumber;
+    }
+
+    public String getPreviewPath() {
+        return previewPath;
+    }
+
+    public void setPreviewPath(String previewPath) {
+        this.previewPath = previewPath;
     }
 
     public String getTitleOverride() {

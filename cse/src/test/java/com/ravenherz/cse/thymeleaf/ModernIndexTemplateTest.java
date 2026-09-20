@@ -79,6 +79,7 @@ class ModernIndexTemplateTest {
         assertFalse(html.contains("cse-lp.js"), html);
         assertTrue(html.contains("/content-public/themes/modern/js/jquery.min.js"), html);
         assertTrue(html.contains("cse-video-player.js"), html);
+        assertTrue(html.contains("class=\"close-btn\""), html);
         assertTrue(html.contains("/content-public/cse-core/css/system.css"), html);
         assertFalse(html.contains("quill.min.js"), html);
         assertFalse(html.contains("quill.snow.css"), html);

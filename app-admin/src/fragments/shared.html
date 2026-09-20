@@ -26,8 +26,8 @@
             th:src="@{/content-public/js/cse-editor.js(v=4)}"
             src="../../../static/content-public/js/cse-editor.js?v=4"></script>
     <script id="script-cse-editor-tree" type="text/javascript"
-            th:src="@{/content-public/js/cse-editor-tree.js(v=12)}"
-            src="../../../static/content-public/js/cse-editor-tree.js?v=12"></script>
+            th:src="@{/content-public/js/cse-editor-tree.js(v=14)}"
+            src="../../../static/content-public/js/cse-editor-tree.js?v=14"></script>
 </head>
 <body>
     <div class="editor-layout">
@@ -543,6 +543,7 @@
              data-can-delete=${file.canDelete()},
              data-return-group=${groupId},
              data-download-href=@{/editor/resources/download(pathPublic=${file.key})},
+             data-resource-type=${file.resourceType()},
              data-embed-tag=${file.embedTag()},
              data-embed-id=${file.embedId()}"
              draggable="true">
@@ -556,7 +557,7 @@
                     <path d="M13.5 3.75V10H19.5"/>
                 </svg>
             </span>
-            <a class="resource-tree-link" draggable="true"
+            <a class="resource-tree-link" draggable="false"
                th:href="@{/editor/resources(group=${groupId})}"
                th:text="${file.name}">file.jpg</a>
         </div>

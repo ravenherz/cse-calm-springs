@@ -135,6 +135,7 @@ final class CseSiteDocuments {
             Map<String, Object> playlistData = new LinkedHashMap<>();
             put(playlistData, "title", data.getTitle());
             put(playlistData, "description", data.getDescription());
+            put(playlistData, "refImageId", hex(data.getRefImageId()));
             List<Map<String, Object>> tracks = new ArrayList<>();
             for (PlaylistTrack track : data.getTracks()) {
                 if (track == null) {

@@ -174,6 +174,14 @@
         return !!(el && el.closest && el.closest('textarea.cse-embed-drop, #description.cse-embed-drop'));
     }
 
+    function isPlaylistDropTarget(el) {
+        return !!(el && el.closest && el.closest('.cse-playlist-drop'));
+    }
+
+    function isExternalDropTarget(el) {
+        return isEmbedDropTarget(el) || isPlaylistDropTarget(el);
+    }
+
     function clearDrag() {
         document.body.classList.remove('is-resource-drag');
         document.body.classList.remove('is-group-drag');
@@ -337,7 +345,7 @@
         e.dataTransfer.setData('application/x-cse-resource', ids[0]);
         e.dataTransfer.setData('application/x-cse-resource-ids', ids.join(','));
         e.dataTransfer.setData('text/plain', ids.join(','));
-        e.dataTransfer.effectAllowed = 'move';
+        e.dataTransfer.effectAllowed = 'copyMove';
         document.body.classList.add('is-resource-drag');
         markDragGhost(e, ids.length);
         return true;
@@ -374,7 +382,7 @@
         e.dataTransfer.setData('application/x-cse-group', ids[0]);
         e.dataTransfer.setData('application/x-cse-group-ids', ids.join(','));
         e.dataTransfer.setData('text/plain', ids.join(','));
-        e.dataTransfer.effectAllowed = 'move';
+        e.dataTransfer.effectAllowed = 'copyMove';
         document.body.classList.add('is-group-drag');
         markDragGhost(e, ids.length);
         return true;
@@ -415,7 +423,7 @@
                 }
                 e.dataTransfer.setData('application/x-cse-group', folderId);
                 e.dataTransfer.setData('text/plain', folderId);
-                e.dataTransfer.effectAllowed = 'move';
+                e.dataTransfer.effectAllowed = 'copyMove';
                 startGroupDrag(folder, folderId);
                 return;
             }
@@ -446,14 +454,14 @@
         var snippet = embedSnippet(row);
         if (resourceId) {
             e.dataTransfer.setData('application/x-cse-resource', resourceId);
+            e.dataTransfer.setData('application/x-cse-resource-ids', resourceId);
             if (snippet) {
                 e.dataTransfer.setData('application/x-cse-embed', snippet);
                 e.dataTransfer.setData('text/plain', snippet);
-                e.dataTransfer.effectAllowed = 'copyMove';
             } else {
                 e.dataTransfer.setData('text/plain', resourceId);
-                e.dataTransfer.effectAllowed = 'move';
             }
+            e.dataTransfer.effectAllowed = 'copyMove';
             row.classList.add('is-dragging');
             document.body.classList.add('is-resource-drag');
             return;
@@ -477,7 +485,7 @@
         }
         e.dataTransfer.setData('application/x-cse-group', id);
         e.dataTransfer.setData('text/plain', id);
-        e.dataTransfer.effectAllowed = 'move';
+        e.dataTransfer.effectAllowed = 'copyMove';
         startGroupDrag(row, id);
     });
 
@@ -500,7 +508,7 @@
     }, true);
 
     scope.addEventListener('dragover', function (e) {
-        if (isEmbedDropTarget(e.target)) {
+        if (isExternalDropTarget(e.target)) {
             return;
         }
         if (!isResourceDrag() && !isGroupDrag()) {
@@ -523,7 +531,7 @@
     });
 
     scope.addEventListener('drop', function (e) {
-        if (isEmbedDropTarget(e.target)) {
+        if (isExternalDropTarget(e.target)) {
             return;
         }
         if (!isResourceDrag() && !isGroupDrag()) {

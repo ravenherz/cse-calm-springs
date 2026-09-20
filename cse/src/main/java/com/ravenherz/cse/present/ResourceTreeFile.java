@@ -94,6 +94,18 @@ public record ResourceTreeFile(String id, String name, String href, Mark mark, b
         return isResourceFile() && name != null && ResourceType.getByFileName(name) == ResourceType.BINARY;
     }
 
+    public boolean isAudioFile() {
+        return isResourceFile() && name != null && ResourceType.getByFileName(name) == ResourceType.AUDIO;
+    }
+
+    public String resourceType() {
+        if (!isResourceFile() || name == null || name.isBlank()) {
+            return "";
+        }
+        ResourceType type = ResourceType.getByFileName(name);
+        return type == null || type == ResourceType.INVALID ? "" : type.name();
+    }
+
     public String kind() {
         if (isAlbum()) {
             return "album";

@@ -147,6 +147,18 @@ public class CatalogBatchDelete {
                 }
             }
         }
+        List<PlaylistEntity> playlistsWithCover = serviceProvider.getPlaylistService().getAllByRefImage(existing);
+        if (playlistsWithCover != null) {
+            for (PlaylistEntity playlist : playlistsWithCover) {
+                if (playlist.getPlaylistData() != null) {
+                    playlist.getPlaylistData().setRefImage(null);
+                    serviceProvider.getPlaylistService().replace(playlist);
+                }
+            }
+            if (!playlistsWithCover.isEmpty()) {
+                resourceGroupIndex.contentChanged();
+            }
+        }
         serviceProvider.getResourceService().deleteByPublicPath(pathPublic);
         contentCacheController.invalidateCacheForResource(pathPublic);
         if (existing.getPreviewData() != null && existing.getPreviewData().getPathPublic() != null) {

@@ -672,7 +672,16 @@ public class ResourceGroupIndex {
 
     private static byte[] playlistThumb(PlaylistEntity playlist, Map<String, byte[]> thumbs) {
         PlaylistData data = playlist.getPlaylistData();
-        if (data == null || data.getTracks() == null) {
+        if (data == null) {
+            return null;
+        }
+        if (data.getRefImageId() != null) {
+            byte[] cover = thumbs.get(data.getRefImageId().toString());
+            if (cover != null) {
+                return cover;
+            }
+        }
+        if (data.getTracks() == null) {
             return null;
         }
         for (PlaylistTrack track : data.getTracks()) {

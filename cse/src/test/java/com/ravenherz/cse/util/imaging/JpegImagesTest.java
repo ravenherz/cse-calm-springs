@@ -42,7 +42,7 @@ class JpegImagesTest {
     }
 
     @Test
-    void squareThumbSubsampleStillFills64() throws IOException {
+    void squareThumbFromLargerImageFillsSize() throws IOException {
         BufferedImage src = new BufferedImage(320, 240, BufferedImage.TYPE_INT_RGB);
         Graphics2D graphics = src.createGraphics();
         graphics.setColor(Color.ORANGE);
@@ -52,5 +52,25 @@ class JpegImagesTest {
         assertEquals(64, thumb.width());
         assertEquals(64, thumb.height());
         assertTrue(thumb.bytes().length > 0);
+    }
+
+    @Test
+    void squareThumbBicubicMixesNeighboringStripes() throws IOException {
+        int width = 512;
+        int height = 512;
+        int stripe = 4;
+        BufferedImage src = new BufferedImage(width, height, BufferedImage.TYPE_INT_RGB);
+        Graphics2D graphics = src.createGraphics();
+        for (int x = 0; x < width; x += stripe) {
+            graphics.setColor((x / stripe) % 2 == 0 ? Color.ORANGE : Color.BLUE);
+            graphics.fillRect(x, 0, stripe, height);
+        }
+        graphics.dispose();
+        JpegImages.Encoded thumb = JpegImages.squareThumb(JpegImages.encode(src, 0.95f), 64, 0.95f);
+        BufferedImage out = ImageIO.read(new ByteArrayInputStream(thumb.bytes()));
+        assertNotNull(out);
+        Color sample = new Color(out.getRGB(32, 32));
+        assertTrue(sample.getRed() > 40, sample.toString());
+        assertTrue(sample.getBlue() > 40, sample.toString());
     }
 }

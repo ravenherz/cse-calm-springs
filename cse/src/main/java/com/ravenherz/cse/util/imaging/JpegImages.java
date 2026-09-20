@@ -2,7 +2,6 @@ package com.ravenherz.cse.util.imaging;
 
 import javax.imageio.IIOImage;
 import javax.imageio.ImageIO;
-import javax.imageio.ImageReadParam;
 import javax.imageio.ImageReader;
 import javax.imageio.ImageWriteParam;
 import javax.imageio.ImageWriter;
@@ -82,10 +81,6 @@ public final class JpegImages {
     }
 
     /**
-     * Always returns a JPEG, scaled down when wider than {@code maxWidth}.
-     * Used for MP3 covers, which have no original image resource to fall back to.
-     */
-    /**
      * Center-crops to a square and scales to {@code size}×{@code size} JPEG.
      */
     public static Encoded squareThumb(byte[] imageBytes, int size, float quality) throws IOException {
@@ -95,7 +90,7 @@ public final class JpegImages {
         if (size <= 0) {
             throw new IOException("Thumb size must be positive");
         }
-        BufferedImage src = readForThumb(imageBytes, size);
+        BufferedImage src = read(imageBytes);
         if (src == null) {
             throw new IOException("Could not read image");
         }
@@ -105,13 +100,14 @@ public final class JpegImages {
         }
         int x = (src.getWidth() - side) / 2;
         int y = (src.getHeight() - side) / 2;
+        BufferedImage cropped = src.getSubimage(x, y, side, side);
         BufferedImage dest = new BufferedImage(size, size, BufferedImage.TYPE_INT_RGB);
         Graphics2D graphics = dest.createGraphics();
         graphics.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BICUBIC);
         graphics.setRenderingHint(RenderingHints.KEY_RENDERING, RenderingHints.VALUE_RENDER_QUALITY);
         graphics.setColor(Color.WHITE);
         graphics.fillRect(0, 0, size, size);
-        graphics.drawImage(src, 0, 0, size, size, x, y, x + side, y + side, null);
+        graphics.drawImage(cropped, 0, 0, size, size, null);
         graphics.dispose();
         return new Encoded(encode(dest, quality), size, size);
     }
@@ -175,14 +171,6 @@ public final class JpegImages {
     }
 
     static BufferedImage read(byte[] imageBytes) throws IOException {
-        return read(imageBytes, 0);
-    }
-
-    static BufferedImage readForThumb(byte[] imageBytes, int targetSize) throws IOException {
-        return read(imageBytes, targetSize);
-    }
-
-    private static BufferedImage read(byte[] imageBytes, int targetSize) throws IOException {
         ByteArrayInputStream bytes = new ByteArrayInputStream(imageBytes);
         try (ImageInputStream in = ImageIO.createImageInputStream(bytes)) {
             if (in == null) {
@@ -195,17 +183,7 @@ public final class JpegImages {
             ImageReader reader = readers.next();
             try {
                 reader.setInput(in, true, true);
-                ImageReadParam param = reader.getDefaultReadParam();
-                if (targetSize > 0) {
-                    int width = reader.getWidth(0);
-                    int height = reader.getHeight(0);
-                    int min = Math.min(width, height);
-                    int subsample = Math.max(1, min / Math.max(1, targetSize * 2));
-                    if (subsample > 1) {
-                        param.setSourceSubsampling(subsample, subsample, 0, 0);
-                    }
-                }
-                return reader.read(0, param);
+                return reader.read(0);
             } finally {
                 reader.dispose();
             }

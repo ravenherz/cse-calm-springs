@@ -1,7 +1,6 @@
 package com.ravenherz.cse.controller;
 
 import com.ravenherz.cse.dal.dto.AccountEntity;
-import com.ravenherz.cse.dal.dto.BasicEntity;
 import com.ravenherz.cse.dal.dto.PlaylistEntity;
 import com.ravenherz.cse.dal.dto.ResourceEntity;
 import com.ravenherz.cse.dal.dto.basic.Event;
@@ -31,9 +30,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import java.io.IOException;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
-import java.util.LinkedHashSet;
 import java.util.List;
-import java.util.Set;
 
 @Controller
 @RequestMapping("/editor")
@@ -73,6 +70,7 @@ public class EditorPlaylistsController extends AbstractController {
             @RequestParam(value = "resourceId", required = false) List<String> resourceIds,
             @RequestParam(value = "titleOverride", required = false) List<String> titleOverrides,
             @RequestParam(value = "artistOverride", required = false) List<String> artistOverrides,
+            @RequestParam(value = "coverResourceId", required = false) String coverResourceId,
             Model model, HttpServletRequest request, HttpServletResponse response) throws IOException {
         AccountEntity accessor = getAccessor(request, response);
         if (accessor == null) {
@@ -80,7 +78,8 @@ public class EditorPlaylistsController extends AbstractController {
         }
         String normalizedId = PlaylistIds.normalize(playlistId);
         List<PlaylistTrack> tracks = buildTracks(resourceIds, titleOverrides, artistOverrides);
-        PlaylistEntity draft = formPlaylist(normalizedId, title, description, tracks);
+        ResourceEntity cover = loadImage(coverResourceId);
+        PlaylistEntity draft = formPlaylist(normalizedId, title, description, tracks, cover);
         if (!PlaylistIds.isValid(normalizedId)) {
             model.addAttribute("error", "Playlist id must be lowercase letters, numbers, and hyphens.");
             addPlaylistForm(model, accessor, draft, tracks);
@@ -100,6 +99,7 @@ public class EditorPlaylistsController extends AbstractController {
         data.setTitle(title.trim());
         data.setDescription(blankToNull(description));
         data.setTracks(tracks);
+        data.setRefImage(cover);
         PlaylistEntity playlist = new PlaylistEntity(normalizedId, data, accessor);
         applyAccess(request, playlist);
         try {
@@ -139,6 +139,7 @@ public class EditorPlaylistsController extends AbstractController {
             @RequestParam(value = "resourceId", required = false) List<String> resourceIds,
             @RequestParam(value = "titleOverride", required = false) List<String> titleOverrides,
             @RequestParam(value = "artistOverride", required = false) List<String> artistOverrides,
+            @RequestParam(value = "coverResourceId", required = false) String coverResourceId,
             Model model, HttpServletRequest request, HttpServletResponse response) throws IOException {
         AccountEntity accessor = getAccessor(request, response);
         if (accessor == null) {
@@ -151,6 +152,7 @@ public class EditorPlaylistsController extends AbstractController {
         }
         String normalizedId = PlaylistIds.normalize(playlistId);
         List<PlaylistTrack> tracks = buildTracks(resourceIds, titleOverrides, artistOverrides);
+        ResourceEntity cover = loadImage(coverResourceId);
         playlist.setPlaylistId(normalizedId);
         if (playlist.getPlaylistData() == null) {
             playlist.setPlaylistData(new PlaylistData());
@@ -158,6 +160,7 @@ public class EditorPlaylistsController extends AbstractController {
         playlist.getPlaylistData().setTitle(title);
         playlist.getPlaylistData().setDescription(description);
         playlist.getPlaylistData().setTracks(tracks);
+        playlist.getPlaylistData().setRefImage(cover);
         if (!PlaylistIds.isValid(normalizedId)) {
             model.addAttribute("error", "Playlist id must be lowercase letters, numbers, and hyphens.");
             addPlaylistForm(model, accessor, playlist, tracks);
@@ -229,17 +232,8 @@ public class EditorPlaylistsController extends AbstractController {
 
     private void addPlaylistForm(Model model, AccountEntity accessor, PlaylistEntity playlist,
             List<PlaylistTrack> tracks) {
-        List<AudioResourceView> selected = toViews(tracks);
-        Set<String> selectedIds = new LinkedHashSet<>();
-        for (AudioResourceView view : selected) {
-            if (view.getId() != null && !view.getId().isBlank()) {
-                selectedIds.add(view.getId());
-            }
-        }
         model.addAttribute("playlist", playlist);
-        model.addAttribute("audioLibrary", audioLibrary());
-        model.addAttribute("selectedTracks", selected);
-        model.addAttribute("selectedIds", selectedIds);
+        model.addAttribute("selectedTracks", toViews(tracks));
         addEditorChrome(model, accessor);
         if (playlist != null && playlist.getId() != null) {
             EditorInline.putTreeForPlaylist(model, resourceGroupIndex, playlist);
@@ -247,22 +241,6 @@ public class EditorPlaylistsController extends AbstractController {
             EditorInline.putTreeForPlaylistCreate(model, resourceGroupIndex);
         }
         addAccessPanel(model, playlist, accessor);
-    }
-
-    private List<AudioResourceView> audioLibrary() {
-        List<AudioResourceView> views = new ArrayList<>();
-        List<BasicEntity> all = serviceProvider.getResourceService().getAll();
-        if (all == null) {
-            return views;
-        }
-        for (BasicEntity entity : all) {
-            if (entity instanceof ResourceEntity resource
-                    && resource.getResourceData() != null
-                    && resource.getResourceData().getType() == ResourceType.AUDIO) {
-                views.add(toView(resource, null, null, 0));
-            }
-        }
-        return views;
     }
 
     private List<PlaylistTrack> playlistTracks(PlaylistEntity playlist) {
@@ -319,7 +297,28 @@ public class EditorPlaylistsController extends AbstractController {
         view.setTrackNumber(PlaylistTracks.trackNumber(probe, index));
         view.setTitleOverride(titleOverride);
         view.setArtistOverride(artistOverride);
+        if (resource.getPreviewData() != null && resource.getPreviewData().getPathPublic() != null
+                && !resource.getPreviewData().getPathPublic().isBlank()) {
+            view.setPreviewPath(resource.getPreviewData().getPathPublic());
+        }
         return view;
+    }
+
+    private ResourceEntity loadImage(String resourceId) {
+        if (resourceId == null || resourceId.isBlank()) {
+            return null;
+        }
+        try {
+            ResourceEntity resource = (ResourceEntity) serviceProvider.getResourceService()
+                    .getById(ResourceEntity.class, new ObjectId(resourceId.trim()));
+            if (resource == null || resource.getResourceData() == null
+                    || resource.getResourceData().getType() != ResourceType.IMAGE) {
+                return null;
+            }
+            return resource;
+        } catch (Exception e) {
+            return null;
+        }
     }
 
     private List<PlaylistTrack> buildTracks(List<String> resourceIds, List<String> titleOverrides,
@@ -354,11 +353,12 @@ public class EditorPlaylistsController extends AbstractController {
     }
 
     private PlaylistEntity formPlaylist(String playlistId, String title, String description,
-            List<PlaylistTrack> tracks) {
+            List<PlaylistTrack> tracks, ResourceEntity cover) {
         PlaylistData data = new PlaylistData();
         data.setTitle(title);
         data.setDescription(description);
         data.setTracks(tracks);
+        data.setRefImage(cover);
         PlaylistEntity playlist = new PlaylistEntity();
         playlist.setPlaylistId(playlistId);
         playlist.setPlaylistData(data);

@@ -386,6 +386,19 @@ public class EditorResourcesController extends AbstractController {
                 serviceProvider.getItemService().replace(item);
                 LOGGER.info("Cleared refImage on item: " + item.getUniqueUriName());
             }
+            List<PlaylistEntity> playlistsWithCover = serviceProvider.getPlaylistService()
+                    .getAllByRefImage(existing);
+            if (playlistsWithCover != null) {
+                for (PlaylistEntity playlist : playlistsWithCover) {
+                    if (playlist.getPlaylistData() != null) {
+                        playlist.getPlaylistData().setRefImage(null);
+                        serviceProvider.getPlaylistService().replace(playlist);
+                    }
+                }
+                if (!playlistsWithCover.isEmpty()) {
+                    resourceGroupIndex.contentChanged();
+                }
+            }
 
             serviceProvider.getResourceService().deleteByPublicPath(pathPublic);
             contentCacheController.invalidateCacheForResource(pathPublic);

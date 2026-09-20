@@ -29,6 +29,7 @@ The body can leave custom tags. They stay as tags in Mongo and expand when the p
 
 ```html
 <cse-playlist id="your-playlist-id"></cse-playlist>
+<cse-playlist id="your-playlist-id" withImage="true"></cse-playlist>
 <cse-url templateId="youtube" id="channel-id"></cse-url>
 <cse-image id="resource-object-id"></cse-image>
 <cse-binary id="resource-object-id" width="400px" height="300px" textOverride="CV"></cse-binary>

@@ -89,6 +89,48 @@
     }
   }
 
+  function hidePlayer() {
+    const el = $('.cse-player');
+    if (el) {
+      el.classList.remove('visible');
+    }
+    const panel = $('.cse-queue');
+    if (panel) {
+      panel.classList.remove('open');
+    }
+  }
+
+  function applyClose() {
+    switchingTrack = true;
+    stopLocalAudio();
+    isLeader = false;
+    playing = false;
+    current = null;
+    currentSource = 'playlist';
+    playlist = [];
+    queue.length = 0;
+    lastTime = 0;
+    lastDuration = 0;
+    switchingTrack = false;
+    hidePlayer();
+    updateUi();
+    const titleEl = $('.cse-player .title');
+    const artistEl = $('.cse-player .artist');
+    if (titleEl) {
+      titleEl.textContent = '';
+    }
+    if (artistEl) {
+      artistEl.textContent = '';
+    }
+    paintProgress(0, 0);
+  }
+
+  function closePlayer() {
+    applyClose();
+    persist();
+    post('close');
+  }
+
   function formatTime(seconds) {
     if (!isFinite(seconds) || seconds < 0) {
       return '0:00';
@@ -176,6 +218,10 @@
 
   function applyRemote(msg, opts) {
     if (!msg || msg.from === tabId) {
+      return;
+    }
+    if (msg.type === 'close' || (!msg.current && !(msg.queue && msg.queue.length))) {
+      applyClose();
       return;
     }
     opts = opts || {};
@@ -634,9 +680,15 @@
       if (msg.action === 'pause') {
         pauseLocal();
         publish('state');
+      } else if (msg.action === 'close') {
+        closePlayer();
       } else if (msg.action === 'seek' && typeof msg.currentTime === 'number') {
         seekTo(msg.currentTime, false);
       }
+      return;
+    }
+    if (msg.type === 'close') {
+      applyClose();
       return;
     }
     if (msg.type === 'takeover') {
@@ -652,6 +704,10 @@
   }
 
   function bindChrome() {
+    const closeBtn = $('.cse-player .close-btn');
+    if (closeBtn) {
+      closeBtn.addEventListener('click', closePlayer);
+    }
     const playBtn = $('.cse-player .play-btn');
     if (playBtn) {
       playBtn.addEventListener('click', togglePlay);
@@ -809,6 +865,7 @@
 
   window.CsePlayer = {
     refresh: refresh,
-    pause: pauseLocal
+    pause: pauseLocal,
+    close: closePlayer
   };
 })();

@@ -39,6 +39,6 @@ Right-click a file in the tree for **Download**, **Rename**, and **Delete** when
 
 - **Albums** show every image in a chosen resource group. See [Albums](albums.md).
 - **Pages** can pick a featured image from uploaded pictures, and embed a PDF with `<cse-binary>`. See [Pages](pages.md).
-- **Playlists** add tracks from uploaded MP3s. See [Playlists](playlists.md).
+- **Playlists** take MP3s dragged from the Catalog tree. See [Playlists](playlists.md).
 
 Upload into the folder you will actually use. Unsorted works, but a named folder keeps the tree honest.

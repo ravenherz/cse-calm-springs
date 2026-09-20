@@ -8,7 +8,8 @@
            placeholder="ocean-blue"
            th:value="${playlist?.playlistId}"/>
     <p class="field-hint">Lowercase letters, numbers, and hyphens. Embed with
-      <code>&lt;cse-playlist id="your-id"&gt;&lt;/cse-playlist&gt;</code>.</p>
+      <code>&lt;cse-playlist id="your-id"&gt;&lt;/cse-playlist&gt;</code>
+      or <code>withImage="true"</code> for a cover.</p>
   </div>
   <div class="form-group">
     <label for="title">Title</label>
@@ -21,135 +22,496 @@
               th:text="${playlist?.playlistData?.description}"></textarea>
   </div>
 
-  <div class="playlist-editor">
-    <section class="playlist-selected">
-      <h2>Playlist tracks</h2>
-      <p class="field-hint">Order is playback order. Title and artist overrides apply only in this playlist.</p>
-      <p class="field-hint" th:if="${selectedTracks == null or selectedTracks.empty}">No tracks yet. Add from the audio library.</p>
-      <ol id="selected-tracks" class="playlist-track-list">
-        <li th:each="track : ${selectedTracks}" class="playlist-track-row">
-          <input type="hidden" name="resourceId" th:value="${track.id}"/>
-          <div class="playlist-track-main">
-            <span class="playlist-track-label"
-                  th:text="${track.title + (track.artist != null and !track.artist.isEmpty() ? ' — ' + track.artist : '')}">Track</span>
-            <span class="playlist-track-duration" th:text="${track.durationLabel}">0:00</span>
-          </div>
-          <div class="playlist-track-overrides">
-            <input type="text" name="titleOverride" placeholder="Title override"
-                   th:value="${track.titleOverride}"/>
-            <input type="text" name="artistOverride" placeholder="Artist override"
-                   th:value="${track.artistOverride}"/>
-          </div>
-          <div class="playlist-track-actions">
-            <button type="button" class="btn btn-secondary move-up">Up</button>
-            <button type="button" class="btn btn-secondary move-down">Down</button>
-            <button type="button" class="delete-btn remove-track">Remove</button>
-          </div>
-        </li>
-      </ol>
-    </section>
-    <section class="playlist-library">
-      <h2>Audio library</h2>
-      <p class="field-hint" th:if="${audioLibrary.empty}">Upload MP3s in Catalog first.</p>
-      <p class="field-hint" id="library-exhausted" hidden>All uploaded audio is already in this playlist.</p>
-      <ul class="item-list">
-        <li th:each="track : ${audioLibrary}" class="library-row"
-            th:classappend="${selectedIds != null and selectedIds.contains(track.id)} ? ' is-in-playlist'"
-            th:attr="data-id=${track.id},data-title=${track.title},data-artist=${track.artist},data-duration=${track.durationLabel},data-number=${track.trackNumber},data-file=${track.fileName}">
-          <div class="item-info">
-            <div class="item-title" th:text="${track.title}">Title</div>
-            <div class="item-meta">
-              <span th:text="${track.artist}">artist</span>
-              <span th:text="${track.durationLabel}">0:00</span>
-              <span th:text="${track.fileName}">file.mp3</span>
-            </div>
-          </div>
-          <button type="button" class="btn btn-secondary add-track-btn">Add</button>
-        </li>
-      </ul>
-    </section>
-  </div>
+  <section class="playlist-cover cse-playlist-drop" id="playlist-cover"
+           th:classappend="${playlist?.playlistData?.refImage == null} ? ' is-empty'">
+    <h2 class="settings-context-title">Cover</h2>
+    <p class="field-hint">Drag an image from the tree. Used when the embed has <code>withImage="true"</code>.</p>
+    <div class="playlist-cover-row">
+      <span class="playlist-cover-preview-host" aria-hidden="true">
+        <img id="playlist-cover-img" class="playlist-cover-preview" alt=""
+             th:if="${playlist?.playlistData?.refImage != null}"
+             th:src="@{/content-protected{path}(path=${playlist.playlistData.refImage.displayPublicPath()})}"/>
+        <img id="playlist-cover-img" class="playlist-cover-preview" alt="" hidden
+             th:if="${playlist?.playlistData?.refImage == null}"/>
+      </span>
+      <input type="hidden" name="coverResourceId" id="coverResourceId"
+             th:value="${playlist?.playlistData?.refImageId}"/>
+      <button type="button" class="delete-btn" id="playlist-cover-remove">Remove</button>
+    </div>
+  </section>
+
+  <section class="playlist-selected cse-playlist-drop" id="playlist-drop">
+    <h2 class="settings-context-title">Tracks</h2>
+    <p class="field-hint">Drag MP3s or a folder from the tree. Drag tracks to reorder. Title and artist overrides apply only here.</p>
+    <ol id="selected-tracks" class="playlist-track-list"
+        th:classappend="${selectedTracks == null or selectedTracks.empty} ? ' is-empty'">
+      <li th:each="track : ${selectedTracks}" class="playlist-track-row" draggable="true">
+        <input type="hidden" name="resourceId" th:value="${track.id}"/>
+        <div class="playlist-track-main">
+          <img class="playlist-track-preview" alt=""
+               th:if="${!#strings.isEmpty(track.previewPath)}"
+               th:src="@{/content-protected{path}(path=${track.previewPath})}"/>
+          <span class="playlist-track-label"
+                th:text="${track.title + (track.artist != null and !track.artist.isEmpty() ? ' — ' + track.artist : '')}">Track</span>
+          <span class="playlist-track-duration" th:text="${track.durationLabel}">0:00</span>
+        </div>
+        <input type="text" name="titleOverride" placeholder="Title override"
+               th:value="${track.titleOverride}"/>
+        <input type="text" name="artistOverride" placeholder="Artist override"
+               th:value="${track.artistOverride}"/>
+        <button type="button" class="delete-btn remove-track">Remove</button>
+      </li>
+    </ol>
+  </section>
 </th:block>
 
 <th:block th:fragment="scripts">
   <script>
     (function () {
+      var zone = document.getElementById('playlist-drop');
       var list = document.getElementById('selected-tracks');
-      if (!list) return;
+      var coverZone = document.getElementById('playlist-cover');
+      var coverInput = document.getElementById('coverResourceId');
+      var coverImg = document.getElementById('playlist-cover-img');
+      var coverRemove = document.getElementById('playlist-cover-remove');
+      if (!zone || !list) return;
 
-      function rowFromLibrary(item) {
-        var li = document.createElement('li');
-        li.className = 'playlist-track-row';
-        li.innerHTML =
-          '<input type="hidden" name="resourceId" value="">' +
-          '<div class="playlist-track-main">' +
-          '<span class="playlist-track-label"></span>' +
-          '<span class="playlist-track-duration"></span>' +
-          '</div>' +
-          '<div class="playlist-track-overrides">' +
-          '<input type="text" name="titleOverride" placeholder="Title override">' +
-          '<input type="text" name="artistOverride" placeholder="Artist override">' +
-          '</div>' +
-          '<div class="playlist-track-actions">' +
-          '<button type="button" class="btn btn-secondary move-up">Up</button>' +
-          '<button type="button" class="btn btn-secondary move-down">Down</button>' +
-          '<button type="button" class="delete-btn remove-track">Remove</button>' +
-          '</div>';
-        li.querySelector('input[name="resourceId"]').value = item.dataset.id || '';
-        var label = item.dataset.title || item.dataset.file || 'Track';
-        if (item.dataset.artist) {
-          label += ' — ' + item.dataset.artist;
-        }
-        li.querySelector('.playlist-track-label').textContent = label;
-        li.querySelector('.playlist-track-duration').textContent = item.dataset.duration || '';
-        return li;
+      var dragged = null;
+
+      function cssEscape(id) {
+        return (window.CSS && CSS.escape) ? CSS.escape(id) : String(id);
       }
 
-      function syncLibrary() {
+      function contextPath() {
+        var meta = document.querySelector('meta[name="cse-context"]');
+        var path = meta ? (meta.getAttribute('content') || '') : '';
+        return path === '/' ? '' : path;
+      }
+
+      function protectedSrc(pathPublic) {
+        if (!pathPublic) {
+          return '';
+        }
+        var path = pathPublic.charAt(0) === '/' ? pathPublic : '/' + pathPublic;
+        return contextPath() + '/content-protected' + path;
+      }
+
+      function parseIdList(raw) {
+        if (!raw) {
+          return [];
+        }
+        return raw.split(',').map(function (part) {
+          return part.trim();
+        }).filter(Boolean);
+      }
+
+      function hasType(e, type) {
+        var types = e.dataTransfer && e.dataTransfer.types;
+        if (!types) {
+          return false;
+        }
+        var want = String(type).toLowerCase();
+        for (var i = 0; i < types.length; i++) {
+          if (String(types[i]).toLowerCase() === want) {
+            return true;
+          }
+        }
+        return false;
+      }
+
+      function setCopyDropEffect(e) {
+        var allowed = String((e.dataTransfer && e.dataTransfer.effectAllowed) || 'all').toLowerCase();
+        e.dataTransfer.dropEffect = (allowed === 'move' || allowed === 'linkmove') ? 'move' : 'copy';
+      }
+
+      function draggingResourceType() {
+        var row = document.querySelector('.resource-tree-row.is-dragging, .resource-row.is-dragging');
+        return row ? (row.getAttribute('data-resource-type') || '') : '';
+      }
+
+      function isReorderDrag() {
+        return document.body.classList.contains('is-playlist-track-drag');
+      }
+
+      function isTreeAudioDrag(e) {
+        if (isReorderDrag()) {
+          return false;
+        }
+        if (document.body.classList.contains('is-group-drag')
+            || hasType(e, 'application/x-cse-group')
+            || hasType(e, 'application/x-cse-group-ids')) {
+          return true;
+        }
+        if (document.body.classList.contains('is-resource-drag')
+            || hasType(e, 'application/x-cse-resource')
+            || hasType(e, 'application/x-cse-resource-ids')) {
+          var type = draggingResourceType();
+          return !type || type === 'AUDIO';
+        }
+        return false;
+      }
+
+      function isTreeImageDrag(e) {
+        if (isReorderDrag() || document.body.classList.contains('is-group-drag')) {
+          return false;
+        }
+        if (!(document.body.classList.contains('is-resource-drag')
+            || hasType(e, 'application/x-cse-resource')
+            || hasType(e, 'application/x-cse-resource-ids'))) {
+          return false;
+        }
+        return draggingResourceType() === 'IMAGE';
+      }
+
+      function usedIds() {
         var used = {};
         list.querySelectorAll('input[name="resourceId"]').forEach(function (input) {
           if (input.value) {
             used[input.value] = true;
           }
         });
-        var visible = 0;
-        document.querySelectorAll('.library-row').forEach(function (row) {
-          var usedNow = !!used[row.dataset.id];
-          row.classList.toggle('is-in-playlist', usedNow);
-          if (!usedNow) {
-            visible += 1;
-          }
+        return used;
+      }
+
+      function syncEmpty() {
+        list.classList.toggle('is-empty', !list.querySelector('.playlist-track-row'));
+      }
+
+      function previewSrcFromTree(row) {
+        if (!row) {
+          return '';
+        }
+        var node = row.closest('.resource-tree-file') || row;
+        var img = node.querySelector('.resource-tree-file-preview');
+        if (img && img.getAttribute('src')) {
+          return img.getAttribute('src');
+        }
+        if (row.getAttribute('data-resource-type') === 'IMAGE') {
+          return protectedSrc(row.getAttribute('data-key'));
+        }
+        return '';
+      }
+
+      function rowFromTrack(track) {
+        var li = document.createElement('li');
+        li.className = 'playlist-track-row';
+        li.draggable = true;
+        li.innerHTML =
+          '<input type="hidden" name="resourceId" value="">' +
+          '<div class="playlist-track-main">' +
+          '<span class="playlist-track-label"></span>' +
+          '<span class="playlist-track-duration"></span>' +
+          '</div>' +
+          '<input type="text" name="titleOverride" placeholder="Title override">' +
+          '<input type="text" name="artistOverride" placeholder="Artist override">' +
+          '<button type="button" class="delete-btn remove-track">Remove</button>';
+        li.querySelector('input[name="resourceId"]').value = track.id || '';
+        li.querySelector('.playlist-track-label').textContent = track.name || 'Track';
+        if (track.previewSrc) {
+          var img = document.createElement('img');
+          img.className = 'playlist-track-preview';
+          img.alt = '';
+          img.src = track.previewSrc;
+          var main = li.querySelector('.playlist-track-main');
+          main.insertBefore(img, main.firstChild);
+        }
+        return li;
+      }
+
+      function treeRow(resourceId) {
+        if (!resourceId) {
+          return null;
+        }
+        return document.querySelector(
+            '.resource-tree-row[data-resource-id="' + cssEscape(resourceId) + '"]');
+      }
+
+      function isAudioRow(row) {
+        if (!row) {
+          return false;
+        }
+        var type = (row.getAttribute('data-resource-type') || '').toUpperCase();
+        if (type === 'AUDIO') {
+          return true;
+        }
+        if (type) {
+          return false;
+        }
+        return /\.(mp3|m4a|aac|ogg|wav|flac)$/i.test(row.getAttribute('data-name') || '');
+      }
+
+      function addFromRow(row, tracks, seen) {
+        if (!isAudioRow(row)) {
+          return;
+        }
+        var id = row.getAttribute('data-resource-id') || '';
+        if (!id || seen[id]) {
+          return;
+        }
+        seen[id] = true;
+        tracks.push({
+          id: id,
+          name: row.getAttribute('data-name') || 'Track',
+          previewSrc: previewSrcFromTree(row)
         });
-        var exhausted = document.getElementById('library-exhausted');
-        if (exhausted) {
-          exhausted.hidden = visible > 0 || document.querySelectorAll('.library-row').length === 0;
+      }
+
+      function audioTracksFromDrop(e) {
+        var tracks = [];
+        var seen = {};
+        var ids = parseIdList(e.dataTransfer.getData('application/x-cse-resource-ids'));
+        var one = (e.dataTransfer.getData('application/x-cse-resource') || '').trim();
+        if (!ids.length && one) {
+          ids = [one];
+        }
+        if (!ids.length) {
+          ids = parseIdList(e.dataTransfer.getData('text/plain'));
+        }
+        var dragging = document.querySelectorAll(
+            '.resource-tree-row.is-dragging[data-resource-id], .resource-row.is-dragging[data-resource-id]');
+        for (var d = 0; d < dragging.length; d++) {
+          addFromRow(dragging[d], tracks, seen);
+        }
+        for (var i = 0; i < ids.length; i++) {
+          addFromRow(treeRow(ids[i]), tracks, seen);
+        }
+        var groupIds = parseIdList(e.dataTransfer.getData('application/x-cse-group-ids'));
+        var groupId = (e.dataTransfer.getData('application/x-cse-group') || '').trim();
+        if (!groupIds.length && groupId) {
+          groupIds = [groupId];
+        }
+        for (var g = 0; g < groupIds.length; g++) {
+          var node = document.getElementById('group-' + groupIds[g]);
+          if (!node) {
+            continue;
+          }
+          var rows = node.querySelectorAll('.resource-tree-row[data-resource-id]');
+          for (var r = 0; r < rows.length; r++) {
+            addFromRow(rows[r], tracks, seen);
+          }
+        }
+        return tracks;
+      }
+
+      function imageFromDrop(e) {
+        var ids = parseIdList(e.dataTransfer.getData('application/x-cse-resource-ids'));
+        var one = (e.dataTransfer.getData('application/x-cse-resource') || '').trim();
+        if (!ids.length && one) {
+          ids = [one];
+        }
+        for (var i = 0; i < ids.length; i++) {
+          var row = treeRow(ids[i]);
+          if (row && row.getAttribute('data-resource-type') === 'IMAGE') {
+            return { id: ids[i], src: previewSrcFromTree(row) };
+          }
+        }
+        return null;
+      }
+
+      function setCover(id, src) {
+        if (coverInput) {
+          coverInput.value = id || '';
+        }
+        if (coverImg) {
+          if (src) {
+            coverImg.src = src;
+            coverImg.hidden = false;
+          } else {
+            coverImg.removeAttribute('src');
+            coverImg.hidden = true;
+          }
+        }
+        if (coverZone) {
+          coverZone.classList.toggle('is-empty', !src);
         }
       }
 
-      document.querySelectorAll('.add-track-btn').forEach(function (btn) {
-        btn.addEventListener('click', function () {
-          var item = btn.closest('.library-row');
-          if (item && !item.classList.contains('is-in-playlist')) {
-            list.appendChild(rowFromLibrary(item));
-            syncLibrary();
+      function insertBeforeRow(clientY, skip) {
+        var rows = list.querySelectorAll('.playlist-track-row');
+        for (var i = 0; i < rows.length; i++) {
+          if (rows[i] === skip) {
+            continue;
+          }
+          var rect = rows[i].getBoundingClientRect();
+          if (clientY < rect.top + rect.height / 2) {
+            return rows[i];
+          }
+        }
+        return null;
+      }
+
+      function clearInsertMarks() {
+        list.classList.remove('is-drop-append');
+        var marked = list.querySelectorAll('.is-drop-before');
+        for (var i = 0; i < marked.length; i++) {
+          marked[i].classList.remove('is-drop-before');
+        }
+      }
+
+      function markInsertPoint(clientY, skip) {
+        clearInsertMarks();
+        var before = insertBeforeRow(clientY, skip);
+        if (before) {
+          before.classList.add('is-drop-before');
+        } else if (list.querySelector('.playlist-track-row')) {
+          list.classList.add('is-drop-append');
+        }
+        return before;
+      }
+
+      function clearDropState() {
+        zone.classList.remove('is-drop-target');
+        if (coverZone) {
+          coverZone.classList.remove('is-drop-target');
+        }
+        clearInsertMarks();
+      }
+
+      list.addEventListener('mousedown', function (e) {
+        var row = e.target.closest('.playlist-track-row');
+        if (!row) {
+          return;
+        }
+        row.draggable = !e.target.closest('input, button, textarea, select, a');
+      });
+
+      list.addEventListener('dragstart', function (e) {
+        var row = e.target.closest('.playlist-track-row');
+        if (!row || e.target.closest('input, button, textarea, select, a')) {
+          e.preventDefault();
+          return;
+        }
+        dragged = row;
+        row.classList.add('is-dragging');
+        document.body.classList.add('is-playlist-track-drag');
+        e.dataTransfer.effectAllowed = 'move';
+        e.dataTransfer.setData('application/x-cse-playlist-track',
+            (row.querySelector('input[name="resourceId"]') || {}).value || '1');
+        e.stopPropagation();
+      });
+
+      document.addEventListener('dragend', function () {
+        if (dragged) {
+          dragged.classList.remove('is-dragging');
+        }
+        dragged = null;
+        document.body.classList.remove('is-playlist-track-drag');
+        list.querySelectorAll('.playlist-track-row').forEach(function (row) {
+          row.draggable = true;
+        });
+        clearDropState();
+      });
+
+      function acceptTrackDrag(e) {
+        if (!isReorderDrag() && !isTreeAudioDrag(e)) {
+          return false;
+        }
+        e.preventDefault();
+        e.stopPropagation();
+        if (isReorderDrag()) {
+          e.dataTransfer.dropEffect = 'move';
+        } else {
+          setCopyDropEffect(e);
+        }
+        zone.classList.add('is-drop-target');
+        markInsertPoint(e.clientY, dragged);
+        return true;
+      }
+
+      zone.addEventListener('dragenter', acceptTrackDrag);
+      zone.addEventListener('dragover', acceptTrackDrag);
+
+      zone.addEventListener('dragleave', function (e) {
+        if (!e.relatedTarget || !zone.contains(e.relatedTarget)) {
+          zone.classList.remove('is-drop-target');
+          clearInsertMarks();
+        }
+      });
+
+      zone.addEventListener('drop', function (e) {
+        var reorder = isReorderDrag();
+        var fromTree = isTreeAudioDrag(e);
+        if (!reorder && !fromTree) {
+          return;
+        }
+        e.preventDefault();
+        e.stopPropagation();
+        var before = insertBeforeRow(e.clientY, dragged);
+        if (reorder && dragged) {
+          if (before) {
+            list.insertBefore(dragged, before);
+          } else {
+            list.appendChild(dragged);
+          }
+          clearDropState();
+          return;
+        }
+        var used = usedIds();
+        var tracks = audioTracksFromDrop(e);
+        for (var i = 0; i < tracks.length; i++) {
+          if (used[tracks[i].id]) {
+            continue;
+          }
+          used[tracks[i].id] = true;
+          var li = rowFromTrack(tracks[i]);
+          if (before) {
+            list.insertBefore(li, before);
+          } else {
+            list.appendChild(li);
+          }
+        }
+        syncEmpty();
+        clearDropState();
+      });
+
+      if (coverZone) {
+        function acceptCoverDrag(e) {
+          if (!isTreeImageDrag(e)) {
+            return false;
+          }
+          e.preventDefault();
+          e.stopPropagation();
+          setCopyDropEffect(e);
+          coverZone.classList.add('is-drop-target');
+          return true;
+        }
+        coverZone.addEventListener('dragenter', acceptCoverDrag);
+        coverZone.addEventListener('dragover', acceptCoverDrag);
+        coverZone.addEventListener('dragleave', function (e) {
+          if (!e.relatedTarget || !coverZone.contains(e.relatedTarget)) {
+            coverZone.classList.remove('is-drop-target');
           }
         });
-      });
+        coverZone.addEventListener('drop', function (e) {
+          if (!isTreeImageDrag(e)) {
+            return;
+          }
+          e.preventDefault();
+          e.stopPropagation();
+          var image = imageFromDrop(e);
+          if (image) {
+            setCover(image.id, image.src);
+          }
+          clearDropState();
+        });
+      }
+
+      if (coverRemove) {
+        coverRemove.addEventListener('click', function () {
+          setCover('', '');
+        });
+      }
 
       list.addEventListener('click', function (e) {
         var row = e.target.closest('.playlist-track-row');
         if (!row) return;
         if (e.target.classList.contains('remove-track')) {
           row.remove();
-          syncLibrary();
-        } else if (e.target.classList.contains('move-up') && row.previousElementSibling) {
-          row.parentNode.insertBefore(row, row.previousElementSibling);
-        } else if (e.target.classList.contains('move-down') && row.nextElementSibling) {
-          row.parentNode.insertBefore(row.nextElementSibling, row);
+          syncEmpty();
         }
       });
 
-      syncLibrary();
+      syncEmpty();
     })();
   </script>
 </th:block>

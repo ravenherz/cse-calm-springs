@@ -77,8 +77,10 @@ class EditorResourcesTemplateTest {
         travel.setDescendantTotalSize(100);
         y2024.setDescendantFileCount(1);
         y2024.setDescendantTotalSize(40);
-        y2024.setTreeFiles(List.of(new ResourceTreeFile("file1", "aurora.jpg", null,
-                ResourceTreeFile.Mark.NONE, true).withKey("/u/res/image/aurora.jpg")));
+        y2024.setTreeFiles(List.of(
+                new ResourceTreeFile("file1", "aurora.jpg", null,
+                        ResourceTreeFile.Mark.NONE, true).withKey("/u/res/image/aurora.jpg"),
+                new ResourceTreeFile("file2", "tide.mp3", null)));
         travel.setSubtreeHeight(1);
 
         SpringTemplateEngine engine = engine();
@@ -144,6 +146,9 @@ class EditorResourcesTemplateTest {
         assertTrue(html.contains(">Page<"), html);
         assertTrue(html.contains(">Album<"), html);
         assertTrue(html.contains("aurora.jpg"), html);
+        assertTrue(html.contains("data-resource-type=\"IMAGE\""), html);
+        assertTrue(html.contains("data-resource-type=\"AUDIO\""), html);
+        assertTrue(html.contains("tide.mp3"), html);
         assertTrue(html.contains("resource-tree-file-preview"), html);
         assertTrue(html.contains("/rhz-we/editor/resources/tree-preview/file1"), html);
         assertTrue(html.contains("id=\"group-content\""), html);
@@ -576,9 +581,7 @@ class EditorResourcesTemplateTest {
                         .withEmbedId("ocean-blue")));
         context.setVariable("selectedGroup", playlists);
         context.setVariable("resourceGroupTree", List.of(playlists));
-        context.setVariable("audioLibrary", List.of());
         context.setVariable("selectedTracks", List.of());
-        context.setVariable("selectedIds", List.of());
         context.setVariable("playlist", null);
         String playlistCreateHtml = engine.process("admin/editor-playlist-create", context);
         assertFalse(playlistCreateHtml.contains("${"), playlistCreateHtml);
@@ -586,6 +589,13 @@ class EditorResourcesTemplateTest {
         assertTrue(playlistCreateHtml.contains("resource-pane"), playlistCreateHtml);
         assertTrue(playlistCreateHtml.contains(">New playlist<"), playlistCreateHtml);
         assertTrue(playlistCreateHtml.contains("Create playlist"), playlistCreateHtml);
+        assertTrue(playlistCreateHtml.contains("cse-playlist-drop"), playlistCreateHtml);
+        assertTrue(playlistCreateHtml.contains("acceptTrackDrag"), playlistCreateHtml);
+        assertTrue(playlistCreateHtml.contains("playlist-cover"), playlistCreateHtml);
+        assertTrue(playlistCreateHtml.contains("coverResourceId"), playlistCreateHtml);
+        assertTrue(playlistCreateHtml.contains("Drag MP3s"), playlistCreateHtml);
+        assertFalse(playlistCreateHtml.contains("Audio library"), playlistCreateHtml);
+        assertFalse(playlistCreateHtml.contains("move-up"), playlistCreateHtml);
         assertFalse(playlistCreateHtml.contains("page-header"), playlistCreateHtml);
         assertTrue(playlistCreateHtml.contains("href=\"/rhz-we/editor/resources?group=content-playlists\""),
                 playlistCreateHtml);

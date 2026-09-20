@@ -8,11 +8,11 @@ A playlist is music that belongs on the site. Build it once. Embed it in any pag
 
 **Content → Playlists**. Tiles are tagged **PLAYLIST**. **+** opens **New playlist**.
 
-Upload MP3s in [Files](files.md) before you expect tracks in the audio library.
+Upload MP3s in [Files](files.md) first. Then drag them from the Catalog tree onto the track list.
 
 ## New playlist
 
-![New playlist: tracks on the left, audio library on the right](playlists-md-image-2.jpg)
+![New playlist editor](playlists-md-image-2.jpg)
 
 | Field | What it does |
 | --- | --- |
@@ -20,11 +20,11 @@ Upload MP3s in [Files](files.md) before you expect tracks in the audio library.
 | **Title** | Name on the public site. |
 | **Description** | Optional copy. |
 
-**Playlist tracks** is playback order. Add from **Audio library** on the right. **Up** / **Down** reorder. **Remove** drops a track from this list only — the MP3 stays in Catalog.
+**Tracks** is playback order. Drag MP3s from the tree onto the list. Drop a folder to add every MP3 in it. Drag tracks in the list to reorder. **Remove** drops a track from this list only — the MP3 stays in Catalog. Track rows show the recording’s cover when one was extracted.
+
+**Cover** is the playlist image. Drag a picture from the tree onto that square.
 
 **Title override** and **Artist override** apply only in this playlist. File tags remain on the recording.
-
-If the library is empty, the hint says to upload MP3s in Catalog first. If every uploaded track is already on the list, the library says so.
 
 **Create playlist** saves the list.
 
@@ -34,7 +34,10 @@ In a [page](pages.md) body:
 
 ```html
 <cse-playlist id="your-id"></cse-playlist>
+<cse-playlist id="your-id" withImage="true"></cse-playlist>
 ```
+
+`withImage` defaults to false. Set it true to show the playlist cover beside the track list.
 
 Use the same id you entered on the form. You can also drag the playlist from the Catalog tree into the page textarea.
 

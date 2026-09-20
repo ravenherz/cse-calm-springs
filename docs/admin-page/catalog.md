@@ -57,7 +57,7 @@ Delete asks for confirmation. It is permanent. Do not delete live sections unles
 
 ## Drag and drop
 
-Drag a file or a movable folder onto another folder in the tree or onto the pane. Drop targets that cannot accept the item ignore the drop.
+Drag a file or a movable folder onto another folder in the tree or onto the pane. Drop targets that cannot accept the item ignore the drop. On a playlist form, drop MP3s (or a folder of them) onto the track list.
 
 Locked groups (Unsorted) and the Content headings do not move. Themes that shipped in the engine are not dragged; installed packs can be reordered on the Themes pane.
 
