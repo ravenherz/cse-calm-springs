@@ -2161,7 +2161,16 @@ textarea.editor-textarea {
   align-self: flex-start;
 }
 
-.checkbox-group { display: flex; align-items: center; }
+.checkbox-group {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 16px;
+}
+
+.form-group > .checkbox-group {
+  margin-top: 8px;
+}
 
 .checkbox-group label {
   display: flex;

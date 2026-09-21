@@ -13,7 +13,11 @@ Product pitch lives in [docs/pitch.md](docs/pitch.md).
 #### Admin-wise rework
 - Login panel .cseapp (app-login subproject)
 - Small issue tracker .cseapp (app-projects subproject)
-- Admin console tree (huge admin UI rework)
+- Admin console tree (huge admin UI rework), create/edit pages rework
+- Instance information tab
+- Video upload and transcode (parametrized)
+- Image metadata extraction
+- Page content PDF export (useful for CV pages)
 
 ### 0.6.X
 #### Extensibility update
@@ -37,7 +41,7 @@ Product pitch lives in [docs/pitch.md](docs/pitch.md).
 - HTML, MD rendering for page contents
 - Audio-player (and playlists)
 
-### 0.4.X (mostly 2025)
+### 0.3.X (mostly 2025)
 #### Tomcat 10 migration, spring boot
 Technical migration to actualize codebase
 - Spring Boot 3.5

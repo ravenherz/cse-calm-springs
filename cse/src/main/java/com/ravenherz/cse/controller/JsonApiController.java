@@ -2,6 +2,7 @@ package com.ravenherz.cse.controller;
 
 import com.ravenherz.cse.controller.objects.RestResponse;
 import com.ravenherz.cse.controller.publicsite.PublicSiteApi;
+import com.ravenherz.cse.pdf.PagePdfExport;
 import com.ravenherz.cse.util.AccountProfile;
 import com.ravenherz.cse.util.AuthRateLimiter;
 import com.ravenherz.cse.util.Json;
@@ -83,6 +84,7 @@ public class JsonApiController extends AbstractController {
     private PasswordHashes passwordHashes;
     private AuthRateLimiter authRateLimiter;
     private PublicSiteApi publicSiteApi;
+    private PagePdfExport pagePdfExport;
 
     @Autowired @Lazy
     public void setHttpErrorHelper(HttpErrorHelper httpErrorHelper) {
@@ -102,6 +104,11 @@ public class JsonApiController extends AbstractController {
     @Autowired
     public void setPublicSiteApi(PublicSiteApi publicSiteApi) {
         this.publicSiteApi = publicSiteApi;
+    }
+
+    @Autowired
+    public void setPagePdfExport(PagePdfExport pagePdfExport) {
+        this.pagePdfExport = pagePdfExport;
     }
 
     private HttpErrorDescription errorDescription(String code) {
@@ -140,6 +147,12 @@ public class JsonApiController extends AbstractController {
             @RequestParam(value = "category", required = false) String category,
             @RequestParam(value = "error", required = false) String error) throws IOException {
         return publicSiteApi.get(request, response, page, album, tag, category, error);
+    }
+
+    @RequestMapping(value = "/rest/pages/pdf", method = RequestMethod.GET)
+    public void pagePdf(HttpServletRequest request, HttpServletResponse response,
+            @RequestParam(value = "page", required = false) String page) throws IOException {
+        pagePdfExport.write(request, response, page);
     }
 
     @RequestMapping(value = "/rest/forms/render", method = RequestMethod.POST)

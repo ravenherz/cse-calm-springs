@@ -64,4 +64,19 @@ class SiteCapabilityFilterTest {
         new SiteCapabilityFilter(auth, capabilities).doFilter(request, response, new MockFilterChain());
         assertEquals("/?error=403", response.getRedirectedUrl());
     }
+
+    @Test
+    void guestDeniedPagePdfUsesErrorPageNotLogin() throws Exception {
+        AuthSupport auth = mock(AuthSupport.class);
+        CapabilityService capabilities = mock(CapabilityService.class);
+        when(auth.getAccessor(any(), any())).thenReturn(null);
+        when(capabilities.allows(any(), eq(CapabilityIds.SITE_READ))).thenReturn(false);
+        MockHttpServletRequest request = new MockHttpServletRequest("GET", "/rest/pages/pdf");
+        request.setContextPath("/rhz-we");
+        request.setRequestURI("/rhz-we/rest/pages/pdf");
+        request.setParameter("page", "cv");
+        MockHttpServletResponse response = new MockHttpServletResponse();
+        new SiteCapabilityFilter(auth, capabilities).doFilter(request, response, new MockFilterChain());
+        assertEquals("/rhz-we/?error=403", response.getRedirectedUrl());
+    }
 }

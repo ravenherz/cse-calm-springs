@@ -72,6 +72,8 @@ public class PageData extends ItemData implements Serializable {
     private String description;
     private List<String> tags;
     private List<Comment> comments;
+    private boolean noTopDisplayImage;
+    private boolean exportPdf;
 
     public PageData() {
         super();
@@ -159,6 +161,22 @@ public class PageData extends ItemData implements Serializable {
         this.comments = comments;
     }
 
+    public boolean isNoTopDisplayImage() {
+        return noTopDisplayImage;
+    }
+
+    public void setNoTopDisplayImage(boolean noTopDisplayImage) {
+        this.noTopDisplayImage = noTopDisplayImage;
+    }
+
+    public boolean isExportPdf() {
+        return exportPdf;
+    }
+
+    public void setExportPdf(boolean exportPdf) {
+        this.exportPdf = exportPdf;
+    }
+
     @Override public boolean equals(Object o) {
         if (this == o) {
             return true;
@@ -167,7 +185,9 @@ public class PageData extends ItemData implements Serializable {
             return false;
         }
         PageData pageData = (PageData) o;
-        return Objects.equals(refImage, pageData.refImage) &&
+        return noTopDisplayImage == pageData.noTopDisplayImage &&
+                exportPdf == pageData.exportPdf &&
+                Objects.equals(refImage, pageData.refImage) &&
                 Objects.equals(title, pageData.title) &&
                 Objects.equals(header, pageData.header) &&
                 Objects.equals(subHeader, pageData.subHeader) &&
@@ -177,7 +197,8 @@ public class PageData extends ItemData implements Serializable {
 
     @Override public int hashCode() {
 
-        return Objects.hash(refImage, title, header, subHeader, description, tags);
+        return Objects.hash(refImage, title, header, subHeader, description, tags, noTopDisplayImage,
+                exportPdf);
     }
 
     @Override public String toString() {
@@ -188,6 +209,8 @@ public class PageData extends ItemData implements Serializable {
                 ", subHeader='" + subHeader + '\'' +
                 ", description='" + description + '\'' +
                 ", tags=" + tags +
+                ", noTopDisplayImage=" + noTopDisplayImage +
+                ", exportPdf=" + exportPdf +
                 '}';
     }
 }

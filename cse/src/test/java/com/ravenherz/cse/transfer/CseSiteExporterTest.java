@@ -199,6 +199,8 @@ class CseSiteExporterTest {
         assertEquals("Hello", exportedPage.get("title"));
         assertEquals("Body", exportedPage.get("description"));
         assertEquals(imageId.toHexString(), exportedPage.get("refImageId"));
+        assertEquals(false, exportedPage.get("noTopDisplayImage"));
+        assertEquals(false, exportedPage.get("exportPdf"));
         @SuppressWarnings("unchecked")
         List<Map<String, Object>> events = (List<Map<String, Object>>) ((Map<String, Object>) items.get(0)
                 .get("historyData")).get("events");

@@ -1,6 +1,7 @@
 package com.ravenherz.cse.transfer;
 
 import com.ravenherz.cse.dal.dto.CategoryEntity;
+import com.ravenherz.cse.dal.dto.ItemEntity;
 import com.ravenherz.cse.dal.dto.RoleEntity;
 import com.ravenherz.cse.dal.dto.basic.AccessRule;
 import com.ravenherz.cse.dal.dto.basic.enums.AccessType;
@@ -55,5 +56,63 @@ class CseSiteReadersTest {
         RoleEntity read = CseSiteReaders.role(member);
         assertNotNull(read);
         assertEquals(RoleSeeds.MEMBER, read.getSlug());
+    }
+
+    @Test
+    void pageDataReadsNoTopDisplayImage() {
+        Map<String, Object> doc = new LinkedHashMap<>();
+        doc.put("id", "68b000000000000000000005");
+        doc.put("itemType", "PAGE");
+        doc.put("uniqueUriName", "hello");
+        Map<String, Object> pageData = new LinkedHashMap<>();
+        pageData.put("title", "Hello");
+        pageData.put("noTopDisplayImage", true);
+        doc.put("pageData", pageData);
+
+        ItemEntity item = CseSiteReaders.item(doc);
+        assertNotNull(item);
+        assertTrue(item.getPageData().isNoTopDisplayImage());
+    }
+
+    @Test
+    void pageDataDefaultsNoTopDisplayImage() {
+        Map<String, Object> doc = new LinkedHashMap<>();
+        doc.put("id", "68b000000000000000000006");
+        doc.put("itemType", "PAGE");
+        doc.put("uniqueUriName", "hello");
+        doc.put("pageData", Map.of("title", "Hello"));
+
+        ItemEntity item = CseSiteReaders.item(doc);
+        assertNotNull(item);
+        assertFalse(item.getPageData().isNoTopDisplayImage());
+    }
+
+    @Test
+    void pageDataReadsExportPdf() {
+        Map<String, Object> doc = new LinkedHashMap<>();
+        doc.put("id", "68b000000000000000000007");
+        doc.put("itemType", "PAGE");
+        doc.put("uniqueUriName", "hello");
+        Map<String, Object> pageData = new LinkedHashMap<>();
+        pageData.put("title", "Hello");
+        pageData.put("exportPdf", true);
+        doc.put("pageData", pageData);
+
+        ItemEntity item = CseSiteReaders.item(doc);
+        assertNotNull(item);
+        assertTrue(item.getPageData().isExportPdf());
+    }
+
+    @Test
+    void pageDataDefaultsExportPdf() {
+        Map<String, Object> doc = new LinkedHashMap<>();
+        doc.put("id", "68b000000000000000000008");
+        doc.put("itemType", "PAGE");
+        doc.put("uniqueUriName", "hello");
+        doc.put("pageData", Map.of("title", "Hello"));
+
+        ItemEntity item = CseSiteReaders.item(doc);
+        assertNotNull(item);
+        assertFalse(item.getPageData().isExportPdf());
     }
 }

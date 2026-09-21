@@ -538,6 +538,8 @@ final class CseSiteReaders {
         data.setHeader(text(doc.get("header")));
         data.setDescription(text(doc.get("description")));
         data.setTags(stringList(doc.get("tags")));
+        data.setNoTopDisplayImage(bool(doc.get("noTopDisplayImage"), false));
+        data.setExportPdf(bool(doc.get("exportPdf"), false));
         ObjectId imageId = objectId(doc.get("refImageId"));
         if (imageId != null) {
             ResourceEntity stub = new ResourceEntity();

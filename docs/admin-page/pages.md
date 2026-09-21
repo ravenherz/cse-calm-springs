@@ -21,6 +21,8 @@ In the tree, expand **Content → Categories** and click the category. The pane 
 | **Title** | Main title. |
 | **Header** / **Sub Header** | Lines the theme may show above or beside the body. |
 | **Tags** | Comma-separated. |
+| **No top display image** | Hide the cover on the public reading view. |
+| **Export PDF** | Show a PDF download on the public page. The engine renders the reading article (header, subheader, optional cover, body). |
 | **Content (Markdown/HTML)** | The body. Markdown for speed; HTML when you need control. |
 
 **Create page** writes the page and returns to Catalog.
@@ -38,7 +40,10 @@ The body can leave custom tags. They stay as tags in Mongo and expand when the p
 <cse-page id="page-or-album-url-name" size="m"></cse-page>
 <cse-category id="category-name"></cse-category>
 <cse-app id="app-slug"></cse-app>
-<cv-card imageId="resource-object-id" imageRectangle="256px" company="Zvuk" role="Senior Big Data Engineer" interval="2022-05-01;2025-03-31" location="Moscow"></cv-card>
+<cv-img-card imageId="resource-object-id" imageRectangle="256px" company="Zvuk" role="Senior Big Data Engineer" interval="2022-05-01;2025-03-31" location="Moscow"></cv-img-card>
+<cv-card company="Zvuk" role="Senior Big Data Engineer" interval="2022-05-01;2025-03-31" location="Moscow"></cv-card>
+<cse-interval interval="2025-09-01;Now"></cse-interval>
+<cse-interval interval="2025-09-01;2025-10-01"></cse-interval>
 <cse-md paddingLeft="250px">
 Worked on streaming pipelines and warehouse jobs.
 </cse-md>
@@ -46,7 +51,11 @@ Worked on streaming pipelines and warehouse jobs.
 
 `cse-image` is a full-width picture (`id` is the resource ObjectId, or the public path). `<cse-binary>` uses the same card as `cse-page`: first-page preview on the left, optional `textOverride` on the right, and a link that opens the PDF. The preview keeps the page aspect ratio. `width` / `height` are max sizes (`400px`; height may be omitted). `<cse-binary size="m">` is a compact row: preview fitted in 32×32 and a title (`textOverride`, or the filename). The other cards share that left-preview layout. Albums use `cse-page` and link to `/?album=`. `<cse-page size="m">` is a compact row: 32×32 image and title only. Default `size` is `l`.
 
-`<cv-card>` is a résumé row: square logo (`imageId`, `imageRectangle` such as `256px`), company as an `h3` (same as Markdown `###`), role in bold, then the employment line. `interval` is `yyyy-MM-dd;Now` for current work (`September 2025 – Present (1 year 1 month)`) or `yyyy-MM-dd;yyyy-MM-dd` for a finished role (`September 2025 – October (1 month)`). `location` is optional.
+`<cv-img-card>` is a résumé row: square logo (`imageId`, `imageRectangle` such as `256px`), company as an `h3` (same as Markdown `###`), role in bold, then the employment line. `interval` is `yyyy-MM-dd;Now` for current work (`September 2025 – Present (1 year 1 month)`) or `yyyy-MM-dd;yyyy-MM-dd` for a finished role (`September 2025 – October (1 month)`). `location` is optional.
+
+`<cv-card>` is the same text (company, role, interval, location) with no logo and no left indent.
+
+`<cse-interval>` is the same date line on its own: `yyyy-MM-dd;Now` → `September 2025 – Present (1 year 1 month)`, `yyyy-MM-dd;yyyy-MM-dd` → `September 2025 – October (1 month)`.
 
 `<cse-md>` renders its inner text as Markdown (same as the page body). `paddingLeft` is optional, default `0px` — use `250px` to line a block up under a 256px CV logo.
 
@@ -58,7 +67,7 @@ Click the tile, or right-click → **Edit**. The URL name does not change on thi
 
 ![Edit page](pages-md-image-3.jpg)
 
-Editing adds **Featured Image**: pick an uploaded picture, or none. The rest of the fields match create. **Save** updates the live page.
+Editing adds **Featured Image**: pick an uploaded picture, or none. The rest of the fields match create, including **No top display image** and **Export PDF**. **Save** updates the live page.
 
 ## Delete
 

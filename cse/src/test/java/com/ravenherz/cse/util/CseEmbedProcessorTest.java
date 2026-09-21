@@ -345,22 +345,42 @@ class CseEmbedProcessorTest {
     }
 
     @Test
-    void cvCardExpandsCompanyRoleIntervalAndImage() {
+    void cvImgCardExpandsCompanyRoleIntervalAndImage() {
         ObjectId id = new ObjectId();
         ResourceEntity image = image(id, "/user/res/images/zvuk.png", ResourceType.IMAGE);
         CseEmbedProcessor processor = processor(image);
         String html = processor.expandHtml(
-                "<cv-card imageId=\"" + id + "\" imageRectangle=\"256px\""
+                "<cv-img-card imageId=\"" + id + "\" imageRectangle=\"256px\""
                         + " company=\"Zvuk\" role=\"Senior Big Data Engineer\""
-                        + " interval=\"2025-09-01;2025-10-01\" location=\"Moscow\"></cv-card>");
-        assertTrue(html.contains("class=\"cv-card\""));
+                        + " interval=\"2025-09-01;2025-10-01\" location=\"Moscow\"></cv-img-card>");
+        assertTrue(html.contains("class=\"cv-img-card\""));
+        assertTrue(html.contains("class=\"cv-img-card-media\""));
         assertTrue(html.contains("width:256px;height:256px"));
         assertTrue(html.contains("src=\"./content-protected/user/res/images/zvuk.png\""));
         assertTrue(html.contains("<h3>Zvuk</h3>"));
         assertTrue(html.contains("class=\"cv-card-role\">Senior Big Data Engineer</strong>"));
         assertTrue(html.contains("September 2025 – October (1 month)"));
         assertTrue(html.contains("class=\"cv-card-location\">Moscow</span>"));
-        assertFalse(html.contains("<cv-card"));
+        assertFalse(html.contains("<cv-img-card"));
+    }
+
+    @Test
+    void cseIntervalExpandsOngoingAndFinished() {
+        CseEmbedProcessor processor = processor(null);
+        String ongoing = processor.expandHtml(
+                "<cse-interval interval=\"2025-09-01;Now\"></cse-interval>");
+        assertTrue(ongoing.contains("class=\"cse-interval\""));
+        assertTrue(ongoing.contains("September 2025 – Present"));
+        assertFalse(ongoing.contains("<cse-interval"));
+
+        String finished = processor.expandHtml(
+                "<cse-interval interval=\"2025-09-01;2025-10-01\" />");
+        assertEquals("<span class=\"cse-interval\">September 2025 – October (1 month)</span>",
+                finished);
+
+        String invalid = processor.expandHtml(
+                "before <cse-interval interval=\"never\"></cse-interval> after");
+        assertEquals("before  after", invalid);
     }
 
     @Test
@@ -374,14 +394,32 @@ class CseEmbedProcessorTest {
     }
 
     @Test
-    void cvCardWithoutImageKeepsTextAndDefaultSize() {
+    void cvImgCardWithoutImageKeepsTextAndDefaultSize() {
         CseEmbedProcessor processor = processor(null);
         String html = processor.expandHtml(
-                "<cv-card company=\"Zvuk\" role=\"Engineer\" interval=\"2025-09-01;2025-10-01\"></cv-card>");
-        assertTrue(html.contains("cv-card-placeholder"));
+                "<cv-img-card company=\"Zvuk\" role=\"Engineer\" interval=\"2025-09-01;2025-10-01\"></cv-img-card>");
+        assertTrue(html.contains("cv-img-card-placeholder"));
         assertTrue(html.contains("width:64px;height:64px"));
         assertTrue(html.contains("<h3>Zvuk</h3>"));
         assertFalse(html.contains("<img"));
+    }
+
+    @Test
+    void cvCardOmitsImageAndKeepsText() {
+        CseEmbedProcessor processor = processor(null);
+        String html = processor.expandHtml(
+                "<cv-card company=\"Zvuk\" role=\"Senior Big Data Engineer\""
+                        + " interval=\"2022-05-01;2025-03-31\" location=\"Moscow\"></cv-card>");
+        assertTrue(html.contains("class=\"cv-card\""));
+        assertTrue(html.contains("<h3>Zvuk</h3>"));
+        assertTrue(html.contains("class=\"cv-card-role\">Senior Big Data Engineer</strong>"));
+        assertTrue(html.contains("May 2022 – March 2025"));
+        assertTrue(html.contains("class=\"cv-card-location\">Moscow</span>"));
+        assertFalse(html.contains("cv-img-card"));
+        assertFalse(html.contains("cv-img-card-media"));
+        assertFalse(html.contains("placeholder"));
+        assertFalse(html.contains("<img"));
+        assertFalse(html.contains("<cv-card"));
     }
 
     private static CseEmbedProcessor processor(ResourceEntity image) {

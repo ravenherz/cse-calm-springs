@@ -408,6 +408,8 @@ final class CseSiteDocuments {
         put(doc, "description", data.getDescription());
         put(doc, "tags", data.getTags());
         put(doc, "refImageId", hex(data.getRefImageId()));
+        doc.put("noTopDisplayImage", data.isNoTopDisplayImage());
+        doc.put("exportPdf", data.isExportPdf());
         if (data.getComments() != null) {
             List<Map<String, Object>> comments = new ArrayList<>();
             for (PageData.Comment comment : data.getComments()) {

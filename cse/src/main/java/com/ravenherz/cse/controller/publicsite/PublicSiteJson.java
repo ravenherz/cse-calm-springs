@@ -98,6 +98,8 @@ public final class PublicSiteJson {
         map.put("image", event.getImageLinkFull());
         map.put("href", event.getPageLink());
         map.put("album", event.isAlbum());
+        map.put("noTopDisplayImage", event.isNoTopDisplayImage());
+        map.put("exportPdf", event.isExportPdf());
         map.put("tags", event.getTags() == null ? List.of() : event.getTags());
         map.put("created", event.getCreated());
         map.put("comments", comments(event.getPageComments()));

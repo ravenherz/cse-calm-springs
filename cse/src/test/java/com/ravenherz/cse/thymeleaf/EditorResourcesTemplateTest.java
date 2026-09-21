@@ -521,6 +521,8 @@ class EditorResourcesTemplateTest {
         assertTrue(pageHtml.contains("resource-tree"), pageHtml);
         assertTrue(pageHtml.contains("resource-pane"), pageHtml);
         assertTrue(pageHtml.contains("name=\"title\""), pageHtml);
+        assertTrue(pageHtml.contains("name=\"noTopDisplayImage\""), pageHtml);
+        assertTrue(pageHtml.contains("name=\"exportPdf\""), pageHtml);
         assertTrue(pageHtml.contains("resource-tree-file is-selected")
                 || pageHtml.contains("resource-tree-file is-selected\""), pageHtml);
         assertTrue(pageHtml.contains("href=\"/rhz-we/editor/resources?group=category-music\""), pageHtml);
@@ -545,6 +547,8 @@ class EditorResourcesTemplateTest {
         assertTrue(createHtml.contains("name=\"name\""), createHtml);
         assertTrue(createHtml.contains(">New page<"), createHtml);
         assertTrue(createHtml.contains("Create page"), createHtml);
+        assertTrue(createHtml.contains("name=\"noTopDisplayImage\""), createHtml);
+        assertTrue(createHtml.contains("name=\"exportPdf\""), createHtml);
         assertTrue(createHtml.contains("cse-embed-drop"), createHtml);
 
         context.setVariable("resourceGroups", List.of());

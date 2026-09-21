@@ -71,6 +71,8 @@ public class CseEmbedProcessor {
     private static final Pattern CATEGORY_TAG = tagPattern("cse-category");
     private static final Pattern PAGE_TAG = tagPattern("cse-page");
     private static final Pattern APP_TAG = tagPattern("cse-app");
+    private static final Pattern INTERVAL_TAG = tagPattern("cse-interval");
+    private static final Pattern CV_IMG_CARD_TAG = tagPattern("cv-img-card");
     private static final Pattern CV_CARD_TAG = tagPattern("cv-card");
     private static final int EXCERPT_LEN = 160;
     private static final int DEFAULT_CV_IMAGE_PX = 64;
@@ -171,21 +173,20 @@ public class CseEmbedProcessor {
         out = expandTag(out, CATEGORY_TAG, this::renderCategory);
         out = expandAttrs(out, PAGE_TAG, this::renderPage);
         out = expandTag(out, APP_TAG, this::renderApp);
-        return expandCvCards(out);
+        out = expandAttrs(out, INTERVAL_TAG, this::renderInterval);
+        out = expandAttrs(out, CV_IMG_CARD_TAG, this::renderCvImgCard);
+        return expandAttrs(out, CV_CARD_TAG, this::renderCvCard);
     }
 
-    private String expandCvCards(String html) {
-        Matcher matcher = CV_CARD_TAG.matcher(html);
-        StringBuffer out = new StringBuffer();
-        while (matcher.find()) {
-            String attrs = matcher.group(1) == null ? "" : matcher.group(1);
-            matcher.appendReplacement(out, Matcher.quoteReplacement(renderCvCard(attrs)));
+    private String renderInterval(String attrs) {
+        String formatted = CvEmploymentInterval.format(attr(attrs, "interval"));
+        if (formatted.isBlank()) {
+            return "";
         }
-        matcher.appendTail(out);
-        return out.toString();
+        return "<span class=\"cse-interval\">" + escape(formatted) + "</span>";
     }
 
-    private String renderCvCard(String attrs) {
+    private String renderCvImgCard(String attrs) {
         String company = attr(attrs, "company").trim();
         String role = attr(attrs, "role").trim();
         String interval = CvEmploymentInterval.format(attr(attrs, "interval"));
@@ -205,16 +206,36 @@ public class CseEmbedProcessor {
             }
         }
         StringBuilder html = new StringBuilder();
-        html.append("<div class=\"cv-card\">");
-        html.append("<div class=\"cv-card-media\" style=\"width:").append(size)
+        html.append("<div class=\"cv-img-card\">");
+        html.append("<div class=\"cv-img-card-media\" style=\"width:").append(size)
                 .append("px;height:").append(size).append("px\">");
         if (!src.isBlank()) {
             html.append("<img src=\"").append(escape(src)).append("\" alt=\"")
                     .append(escape(alt)).append("\"/>");
         } else {
-            html.append("<span class=\"cv-card-placeholder\" aria-hidden=\"true\"></span>");
+            html.append("<span class=\"cv-img-card-placeholder\" aria-hidden=\"true\"></span>");
         }
-        html.append("</div><div class=\"cv-card-body\">");
+        html.append("</div>");
+        appendCvCardBody(html, company, role, interval, location);
+        html.append("</div>");
+        return html.toString();
+    }
+
+    private String renderCvCard(String attrs) {
+        StringBuilder html = new StringBuilder();
+        html.append("<div class=\"cv-card\">");
+        appendCvCardBody(html,
+                attr(attrs, "company").trim(),
+                attr(attrs, "role").trim(),
+                CvEmploymentInterval.format(attr(attrs, "interval")),
+                attr(attrs, "location").trim());
+        html.append("</div>");
+        return html.toString();
+    }
+
+    private static void appendCvCardBody(StringBuilder html, String company, String role,
+            String interval, String location) {
+        html.append("<div class=\"cv-card-body\">");
         if (!company.isBlank()) {
             html.append("<h3>").append(escape(company)).append("</h3>");
         }
@@ -227,8 +248,7 @@ public class CseEmbedProcessor {
         if (!location.isBlank()) {
             html.append("<span class=\"cv-card-location\">").append(escape(location)).append("</span>");
         }
-        html.append("</div></div>");
-        return html.toString();
+        html.append("</div>");
     }
 
     static int cvImageSizePx(String raw) {

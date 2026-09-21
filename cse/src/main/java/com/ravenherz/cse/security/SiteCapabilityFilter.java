@@ -53,6 +53,9 @@ final class SiteCapabilityFilter extends OncePerRequestFilter {
         if (HttpMethod.GET.matches(method) && "/rest/site".equals(path)) {
             return CapabilityIds.SITE_READ;
         }
+        if (HttpMethod.GET.matches(method) && "/rest/pages/pdf".equals(path)) {
+            return CapabilityIds.SITE_READ;
+        }
         if (HttpMethod.POST.matches(method) && "/account/auth".equals(path)) {
             return CapabilityIds.ACCOUNT_AUTH;
         }

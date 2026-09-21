@@ -342,7 +342,7 @@
                 <div class="item-container">
                   <div class="item-picture">
                     <div th:if="${page.imageLinkFull != null}" th:unless="${readingAlbum and page.album}" class="picture">
-                      <a th:href="${page.pageLink}"><img th:src="${page.imageLinkFull}" alt="img" src=""></a>
+                      <a th:unless="${readingPage and page.noTopDisplayImage}" th:href="${page.pageLink}"><img th:src="${page.imageLinkFull}" alt="img" src=""></a>
                       <div th:if="${page.tags} != null" class="item-tags">
                         <a th:each="tag : ${page.tags}" th:href="@{./?tag=__${tag}__}">
                         <span class="item-tag"
@@ -354,6 +354,11 @@
                   </div>
                   <div class="item-description">
                     <div class="item-header">
+                      <a th:if="${readingPage and page.exportPdf}" class="export-pdf"
+                         th:href="@{/rest/pages/pdf(page=${page.uniqueUriName})}"
+                         title="PDF">
+                        <img th:src="@{/content-public/cse-core/images/pdf.png}" src="./content-public/cse-core/images/pdf.png" alt="PDF" width="40" height="40"/>
+                      </a>
                       <h4><b><span th:utext="${page.header}"> </span></b>
                       </h4>
                       <h6><span th:utext="${page.subHeader}"> </span></h6>

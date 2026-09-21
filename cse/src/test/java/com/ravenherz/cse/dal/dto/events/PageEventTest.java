@@ -14,6 +14,7 @@ import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class PageEventTest {
 
@@ -40,5 +41,57 @@ class PageEventTest {
         assertEquals("Unknown", event.getPageComments().get(2).getAuthor());
         assertEquals("orphan", event.getPageComments().get(1).getMessage());
         assertFalse(event.getPageComments().get(1).getDate().isBlank());
+    }
+
+    @Test
+    void copiesNoTopDisplayImageFromPageData() {
+        AccountEntity author = new AccountEntity(new AccountData("ada", "hash", "ada@example.com",
+                SecurityLevel.ACTIVE_USER));
+        PageData pageData = new PageData("Hello", "H", "S", "Body", List.of());
+        pageData.setNoTopDisplayImage(true);
+        ItemEntity item = new ItemEntity("hello", pageData, author);
+        item.setId(new ObjectId());
+
+        PageEvent event = PageEvent.PageEventConverter.toEvent(item);
+
+        assertTrue(event.isNoTopDisplayImage());
+    }
+
+    @Test
+    void noTopDisplayImageDefaultsFalse() {
+        AccountEntity author = new AccountEntity(new AccountData("ada", "hash", "ada@example.com",
+                SecurityLevel.ACTIVE_USER));
+        PageData pageData = new PageData("Hello", "H", "S", "Body", List.of());
+        ItemEntity item = new ItemEntity("hello", pageData, author);
+        item.setId(new ObjectId());
+
+        assertFalse(pageData.isNoTopDisplayImage());
+        assertFalse(PageEvent.PageEventConverter.toEvent(item).isNoTopDisplayImage());
+    }
+
+    @Test
+    void copiesExportPdfFromPageData() {
+        AccountEntity author = new AccountEntity(new AccountData("ada", "hash", "ada@example.com",
+                SecurityLevel.ACTIVE_USER));
+        PageData pageData = new PageData("Hello", "H", "S", "Body", List.of());
+        pageData.setExportPdf(true);
+        ItemEntity item = new ItemEntity("hello", pageData, author);
+        item.setId(new ObjectId());
+
+        PageEvent event = PageEvent.PageEventConverter.toEvent(item);
+
+        assertTrue(event.isExportPdf());
+    }
+
+    @Test
+    void exportPdfDefaultsFalse() {
+        AccountEntity author = new AccountEntity(new AccountData("ada", "hash", "ada@example.com",
+                SecurityLevel.ACTIVE_USER));
+        PageData pageData = new PageData("Hello", "H", "S", "Body", List.of());
+        ItemEntity item = new ItemEntity("hello", pageData, author);
+        item.setId(new ObjectId());
+
+        assertFalse(pageData.isExportPdf());
+        assertFalse(PageEvent.PageEventConverter.toEvent(item).isExportPdf());
     }
 }

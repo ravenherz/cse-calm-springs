@@ -121,6 +121,8 @@ public class PageEvent extends PageData {
                 pageData.getSubHeader(),
                 CseEmbedProcessor.expand(MarkdownRenderer.render(pageData.getDescription())),
                 pageData.getTags());
+        setNoTopDisplayImage(pageData.isNoTopDisplayImage());
+        setExportPdf(pageData.isExportPdf());
         this.uniqueUriName = uniqueUriName;
         this.pageLink = "./?page=" + uniqueUriName;
         if (pageData.getRefImage() != null && pageData.getRefImage().getResourceData() != null) {

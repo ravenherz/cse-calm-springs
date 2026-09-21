@@ -127,6 +127,32 @@ class ModernIndexTemplateTest {
         assertTrue(css >= 0 && jquery > css, html);
     }
 
+    @Test
+    void readingPageOmitsTopImageWhenFlagged() throws Exception {
+        String modern = Files.readString(modernSrc().resolve("index.html"));
+        assertTrue(modern.contains("!page.noTopDisplayImage"), modern);
+        String js = Files.readString(clientSrc().resolve("js").resolve("theme.js"));
+        assertTrue(js.contains("!page.noTopDisplayImage"), js);
+        String classic = Files.readString(theme2000sSrc().resolve("index.html"));
+        assertTrue(classic.contains("page.noTopDisplayImage"), classic);
+    }
+
+    @Test
+    void readingPageOffersPdfWhenFlagged() throws Exception {
+        String modern = Files.readString(modernSrc().resolve("index.html"));
+        assertTrue(modern.contains("page.exportPdf"), modern);
+        assertTrue(modern.contains("/rest/pages/pdf"), modern);
+        assertTrue(modern.contains("cse-core/images/pdf.png"), modern);
+        String js = Files.readString(clientSrc().resolve("js").resolve("theme.js"));
+        assertTrue(js.contains("page.exportPdf"), js);
+        assertTrue(js.contains("rest/pages/pdf"), js);
+        assertTrue(js.contains("cse-core/images/pdf.png"), js);
+        String classic = Files.readString(theme2000sSrc().resolve("index.html"));
+        assertTrue(classic.contains("page.exportPdf"), classic);
+        assertTrue(classic.contains("/rest/pages/pdf"), classic);
+        assertTrue(classic.contains("cse-core/images/pdf.png"), classic);
+    }
+
     private static SpringTemplateEngine engine() {
         Path src = modernSrc();
         FileTemplateResolver pages = new FileTemplateResolver();

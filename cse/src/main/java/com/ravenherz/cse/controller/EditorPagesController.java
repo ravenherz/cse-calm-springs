@@ -134,6 +134,8 @@ public class EditorPagesController extends AbstractController {
                                    @RequestParam(value = "description", required = false) String description,
                                    @RequestParam(value = "tags", required = false) String tags,
                                    @RequestParam(value = "categoryId", required = false) String categoryId,
+                                   @RequestParam(value = "noTopDisplayImage", defaultValue = "false") boolean noTopDisplayImage,
+                                   @RequestParam(value = "exportPdf", defaultValue = "false") boolean exportPdf,
                                    Model model, HttpServletRequest request, HttpServletResponse response) throws IOException {
         AccountEntity accessor = getAccessor(request, response);
         if (accessor == null) {
@@ -156,6 +158,8 @@ public class EditorPagesController extends AbstractController {
         pageData.setHeader(header != null ? header : "");
         pageData.setSubHeader(subHeader != null ? subHeader : "");
         pageData.setDescription(description != null ? description : "");
+        pageData.setNoTopDisplayImage(noTopDisplayImage);
+        pageData.setExportPdf(exportPdf);
         if (tags != null && !tags.trim().isEmpty()) {
             List<String> tagList = Arrays.stream(tags.split(","))
                     .map(String::trim)
@@ -264,6 +268,8 @@ public class EditorPagesController extends AbstractController {
                            @RequestParam(value = "categoryId", required = false) String categoryId,
                            @RequestParam(value = "imageId", required = false) String imageId,
                            @RequestParam(value = "resourceGroupId", required = false) String resourceGroupId,
+                           @RequestParam(value = "noTopDisplayImage", defaultValue = "false") boolean noTopDisplayImage,
+                           @RequestParam(value = "exportPdf", defaultValue = "false") boolean exportPdf,
                            Model model, HttpServletRequest request, HttpServletResponse response) throws IOException {
         AccountEntity accessor = getAccessor(request, response);
         if (accessor == null) {
@@ -301,6 +307,8 @@ public class EditorPagesController extends AbstractController {
         if (header != null) pageData.setHeader(header);
         if (subHeader != null) pageData.setSubHeader(subHeader);
         if (description != null) pageData.setDescription(description);
+        pageData.setNoTopDisplayImage(noTopDisplayImage);
+        pageData.setExportPdf(exportPdf);
         if (tags != null) {
             List<String> tagList = Arrays.stream(tags.split(","))
                     .map(String::trim)
