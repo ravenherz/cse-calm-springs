@@ -267,11 +267,20 @@
       <a href="./">Index</a>
       <span th:if="${section.title}" th:text="' / ' + ${section.title}"></span>
     </p>
-    <h1>
-      <span th:utext="${page.header}">Title</span>
-    </h1>
-    <p class="reading-sub" th:utext="${page.subHeader}"></p>
-    <figure th:if="${page.imageLinkFull != null and !page.album}" class="reading-media">
+    <div class="reading-head">
+      <div class="reading-titles">
+        <h1>
+          <span th:utext="${page.header}">Title</span>
+        </h1>
+        <p class="reading-sub" th:utext="${page.subHeader}"></p>
+      </div>
+      <a class="export-pdf" th:if="${page.exportPdf}"
+         th:href="@{/rest/pages/pdf(page=${page.uniqueUriName})}"
+         title="PDF">
+        <img th:src="@{/content-public/cse-core/images/pdf.png}" src="./content-public/cse-core/images/pdf.png" alt="PDF" width="40" height="40"/>
+      </a>
+    </div>
+    <figure th:if="${page.imageLinkFull != null and !page.album and !page.noTopDisplayImage}" class="reading-media">
       <img th:src="${page.imageLinkFull}" alt="">
     </figure>
     <div th:replace="~{fragments/shared :: album-grid(page=${page})}"></div>

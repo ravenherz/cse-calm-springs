@@ -1,7 +1,7 @@
 package com.ravenherz.cse.controller;
 
 import com.ravenherz.cse.install.SiteReady;
-import com.ravenherz.cse.util.Settings;
+import com.ravenherz.cse.engine.util.Settings;
 import com.ravenherz.cse.util.staticapps.StaticAppDeployer;
 import org.junit.jupiter.api.Test;
 import org.springframework.mock.web.MockHttpServletRequest;

@@ -347,6 +347,18 @@ body {
 
 }
 
+.item-header .export-pdf {
+    float: right;
+    margin-top: 4px;
+    line-height: 0;
+}
+
+.item-header .export-pdf img {
+    display: block;
+    width: 40px;
+    height: auto;
+}
+
 .left-column .item-header {
     padding: 5px 15px 5px 20px;
 }

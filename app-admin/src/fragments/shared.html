@@ -26,8 +26,8 @@
             th:src="@{/content-public/js/cse-editor.js(v=4)}"
             src="../../../static/content-public/js/cse-editor.js?v=4"></script>
     <script id="script-cse-editor-tree" type="text/javascript"
-            th:src="@{/content-public/js/cse-editor-tree.js(v=14)}"
-            src="../../../static/content-public/js/cse-editor-tree.js?v=14"></script>
+            th:src="@{/content-public/js/cse-editor-tree.js(v=17)}"
+            src="../../../static/content-public/js/cse-editor-tree.js?v=17"></script>
 </head>
 <body>
     <div class="editor-layout">
@@ -199,6 +199,14 @@
                 <input type="hidden" name="returnGroup"
                        th:value="${selectedGroup != null and not selectedGroup.ungrouped and not selectedGroup.virtual and not selectedGroup.categoryNode ? selectedGroup.id : defaultGroupId}"/>
             </form>
+            <form id="item-category-form" hidden
+                  th:action="@{/editor/item/category}" method="post">
+                <th:block th:replace="~{fragments/csrf :: field}"></th:block>
+                <input type="hidden" name="name" id="itemCategoryName"/>
+                <input type="hidden" name="categoryId" id="itemCategoryId"/>
+                <input type="hidden" name="returnGroup"
+                       th:value="${selectedGroup != null ? selectedGroup.id : 'content-categories'}"/>
+            </form>
         </div>
         <main class="editor-main">
             <header class="page-header" th:fragment="editor-page-header (title)">
@@ -213,7 +221,7 @@
         th:fragment="resource-row (resource, returnGroup)"
         th:with="guestDenied=${T(com.ravenherz.cse.security.AccessForms).guestDenied(resource)},
                  fileCanEdit=${T(com.ravenherz.cse.security.AccessForms).canEdit(resource, accessor)},
-                 videoProcessing=${T(com.ravenherz.cse.util.video.VideoStatus).processing(resource.resourceData)}"
+                 videoProcessing=${T(com.ravenherz.cse.engine.video.VideoStatus).processing(resource.resourceData)}"
         th:classappend="${guestDenied} ? 'is-locked'"
         th:attr="data-kind='resource',
                  data-id=${resource.id},
@@ -275,7 +283,7 @@
                       th:if="${videoProcessing}"
                       data-video-percent>0%</span>
                 <span class="thumb-tag thumb-tag-failed"
-                      th:if="${T(com.ravenherz.cse.util.video.VideoStatus).failed(resource.resourceData)}">Failed</span>
+                      th:if="${T(com.ravenherz.cse.engine.video.VideoStatus).failed(resource.resourceData)}">Failed</span>
                 <span class="thumb-tag thumb-tag-size" th:text="${resource.resourceData.sizeLabel}">0 bytes</span>
             </div>
             <div class="thumb-progress"
@@ -444,7 +452,8 @@
              data-can-delete-category=${group.canDeleteCategory()},
              data-category-id=${group.canDeleteCategory() ? group.categoryObjectId() : ''},
              data-can-drag=${group.canMove()}, data-accept-files=${group.canAcceptFiles()},
-             data-virtual=${group.virtual}, draggable=${group.canMove() or group.embeddable},
+             data-path=${group.pathLabel},
+             data-virtual=${group.virtual}, draggable=${group.canMove() or group.embeddable or group.canAcceptFiles()},
              data-embed-tag=${group.embedTag()}, data-embed-id=${group.embedId()},
              data-create-href=${group.canCreateCategory() ? ((cseContextPath == '/' ? '' : (cseContextPath != null ? cseContextPath : '')) + '/editor/category/create') : ''},
              data-create-page-href=${group.canCreatePage() ? ((cseContextPath == '/' ? '' : (cseContextPath != null ? cseContextPath : '')) + group.pageCreatePath()) : ''},
@@ -474,12 +483,12 @@
             </span>
             <a class="resource-tree-link"
                th:if="${group.href != null}"
-               th:attr="draggable=${group.canMove() or group.embeddable} ? 'true' : 'false'"
+               th:attr="draggable=${(group.canMove() or group.embeddable or group.canAcceptFiles()) ? 'true' : 'false'}"
                th:href="${(cseContextPath == '/' ? '' : (cseContextPath != null ? cseContextPath : '')) + group.href}"
                th:text="${group.humanReadableId}">Group</a>
             <a class="resource-tree-link"
                th:unless="${group.href != null}"
-               th:attr="draggable=${group.canMove() or group.embeddable} ? 'true' : 'false'"
+               th:attr="draggable=${(group.canMove() or group.embeddable or group.canAcceptFiles()) ? 'true' : 'false'}"
                th:href="@{/editor/resources(group=${group.id})}"
                th:text="${group.humanReadableId}">Group</a>
         </div>
@@ -666,10 +675,12 @@
             </form>
         </div>
     </li>
-    <li class="page-row tile-row" th:fragment="page-row (item, returnGroup)"
+    <li class="page-row tile-row" draggable="true" th:fragment="page-row (item, returnGroup)"
         th:attr="data-kind=${item.album ? 'album' : 'page'},
                  data-id=${item.uniqueUriName},
-                 data-name=${item.album ? item.albumData?.title : item.pageData?.title},
+                 data-key=${item.uniqueUriName},
+                 data-name=${item.pageData?.header ?: item.albumData?.header ?: item.uniqueUriName},
+                 data-group-id=${returnGroup},
                  data-can-rename='true',
                  data-can-delete='true',
                  data-return-group=${returnGroup},
@@ -701,7 +712,7 @@
         </div>
         <div class="resource-tip" th:with="events=${item.historyData?.events}">
             <a class="item-title" th:href="@{/editor/edit(name=${item.uniqueUriName})}"
-               th:text="${item.album} ? ${item.albumData?.title} : ${item.pageData?.title}">Page Title</a>
+               th:text="${item.pageData?.header ?: item.albumData?.header ?: item.uniqueUriName}">Page</a>
             <dl class="prop-grid">
                 <dt>URI</dt>
                 <dd th:text="${item.uniqueUriName}">uri-name</dd>
@@ -973,6 +984,96 @@
             </dl>
         </div>
     </li>
+    <div th:fragment="album-resource-group" class="form-group">
+        <label>Resource group</label>
+        <div class="album-group cse-album-group-drop" id="album-resource-group"
+             th:with="groupId=${item != null ? item.albumData?.refResourceGroup?.id : null}"
+             th:classappend="${groupId == null} ? 'is-empty'">
+            <div class="album-group-row">
+                <span id="album-resource-group-path" class="album-group-path"
+                      th:text="${albumGroupPath != null and !#strings.isEmpty(albumGroupPath) ? albumGroupPath : 'Drop a resource group'}">Drop a resource group</span>
+                <input type="hidden" name="resourceGroupId" id="resourceGroupId" th:value="${groupId}"/>
+            </div>
+            <p class="field-hint">Drag a resource group from the catalog.</p>
+        </div>
+        <script>
+            (function () {
+                var zone = document.getElementById('album-resource-group');
+                var input = document.getElementById('resourceGroupId');
+                var pathEl = document.getElementById('album-resource-group-path');
+                if (!zone || !input || !pathEl) {
+                    return;
+                }
+
+                function hasType(e, type) {
+                    var types = e.dataTransfer && e.dataTransfer.types;
+                    if (!types) {
+                        return false;
+                    }
+                    var want = String(type).toLowerCase();
+                    for (var i = 0; i < types.length; i++) {
+                        if (String(types[i]).toLowerCase() === want) {
+                            return true;
+                        }
+                    }
+                    return false;
+                }
+
+                function draggingGroup() {
+                    return document.querySelector(
+                        '.resource-tree-row.is-dragging[data-kind="group"][data-accept-files="true"], .resource-folder-tile.is-dragging[data-kind="group"][data-accept-files="true"]');
+                }
+
+                function isGroupPick(e) {
+                    if (document.body.classList.contains('is-resource-drag')
+                            || document.body.classList.contains('is-item-drag')
+                            || document.body.classList.contains('is-embed-drag')) {
+                        return false;
+                    }
+                    var picking = document.body.classList.contains('is-group-drag')
+                            || document.body.classList.contains('is-group-pick')
+                            || hasType(e, 'application/x-cse-group');
+                    return picking && !!draggingGroup();
+                }
+
+                function accept(e) {
+                    if (!isGroupPick(e)) {
+                        return false;
+                    }
+                    e.preventDefault();
+                    e.stopPropagation();
+                    var allowed = String((e.dataTransfer && e.dataTransfer.effectAllowed) || 'all').toLowerCase();
+                    e.dataTransfer.dropEffect = allowed === 'move' ? 'move' : 'copy';
+                    zone.classList.add('is-drop-target');
+                    return true;
+                }
+
+                zone.addEventListener('dragenter', accept);
+                zone.addEventListener('dragover', accept);
+                zone.addEventListener('dragleave', function (e) {
+                    if (!e.relatedTarget || !zone.contains(e.relatedTarget)) {
+                        zone.classList.remove('is-drop-target');
+                    }
+                });
+                zone.addEventListener('drop', function (e) {
+                    if (!isGroupPick(e)) {
+                        return;
+                    }
+                    e.preventDefault();
+                    e.stopPropagation();
+                    var row = draggingGroup();
+                    if (row) {
+                        var id = row.getAttribute('data-group-id') || '';
+                        var label = row.getAttribute('data-path') || row.getAttribute('data-name') || '';
+                        input.value = id;
+                        pathEl.textContent = label || 'Drop a resource group';
+                        zone.classList.toggle('is-empty', !id);
+                    }
+                    zone.classList.remove('is-drop-target');
+                });
+            })();
+        </script>
+    </div>
     <div th:fragment="album-grid (page)" th:if="${page.album}" class="album-grid">
         <figure th:each="img : ${page.albumImages}">
             <a th:href="${img.full}" target="_blank" rel="noopener">

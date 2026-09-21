@@ -2,8 +2,9 @@ package com.ravenherz.cse.controller;
 
 import com.ravenherz.cse.dal.ServiceProvider;
 import com.ravenherz.cse.dal.dto.AccountEntity;
+import com.ravenherz.cse.security.AccountAccessor;
 import com.ravenherz.cse.dal.dto.basic.AccountData.AccountSession;
-import com.ravenherz.cse.util.StringUtils;
+import com.ravenherz.cse.engine.util.StringUtils;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -16,7 +17,7 @@ import java.util.Objects;
 import java.util.logging.Logger;
 
 @Component
-public class AuthSupport {
+public class AuthSupport implements AccountAccessor {
 
     private static final Logger LOGGER = Logger.getLogger(AuthSupport.class.getName());
     private static final int AUTH_COOKIE_MAX_AGE_SECONDS = 60 * 60 * 24 * 30;

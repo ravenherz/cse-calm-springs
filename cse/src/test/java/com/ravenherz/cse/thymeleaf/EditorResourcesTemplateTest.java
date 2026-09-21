@@ -19,7 +19,7 @@ import com.ravenherz.cse.present.AppDisplayDTO;
 import com.ravenherz.cse.present.ResourceGroupDisplayDTO;
 import com.ravenherz.cse.present.ResourceTreeFile;
 import com.ravenherz.cse.present.ThemeDisplayDTO;
-import com.ravenherz.cse.util.video.VideoStatus;
+import com.ravenherz.cse.engine.video.VideoStatus;
 import org.bson.types.ObjectId;
 import org.junit.jupiter.api.Test;
 import org.springframework.mock.web.MockHttpServletRequest;
@@ -156,6 +156,7 @@ class EditorResourcesTemplateTest {
         assertTrue(html.contains("/rhz-we/editor/resources?group=content-apps"), html);
         assertTrue(html.contains("/rhz-we/editor/resources?group=content-categories"), html);
         assertTrue(html.contains("/rhz-we/editor/resources?group=category-music"), html);
+        assertTrue(html.contains("data-path=\"Travel / 2024\""), html);
         assertTrue(html.contains("resource-plus-tile"), html);
         assertTrue(html.contains("placeResourceTip"), html);
         assertTrue(html.contains("id=\"file\""), html);
@@ -230,6 +231,8 @@ class EditorResourcesTemplateTest {
         assertTrue(html.contains("data-can-rename=\"true\""), html);
         assertTrue(html.contains("id=\"resource-assign-form\""), html);
         assertTrue(html.contains("/editor/resources/group/assign"), html);
+        assertTrue(html.contains("id=\"item-category-form\""), html);
+        assertTrue(html.contains("/editor/item/category"), html);
         assertFalse(html.contains("thumb-group"), html);
         assertTrue(html.contains("id=\"resource-group-move-form\""), html);
         assertTrue(html.contains("data-can-drag=\"true\""), html);
@@ -262,7 +265,7 @@ class EditorResourcesTemplateTest {
         context.setVariable("cseContextPath", "/rhz-we");
         context.setVariable("selectedGroup", music);
         PageData hostData = new PageData();
-        hostData.setTitle("Host (2015)");
+        hostData.setHeader("Host (2015)");
         ItemEntity host = new ItemEntity("host", hostData, null);
         host.setId(new ObjectId());
         context.setVariable("panePages", List.of(host));
@@ -460,7 +463,10 @@ class EditorResourcesTemplateTest {
         assertTrue(html.contains("resource-tree"), html);
         assertTrue(html.contains("resource-pane"), html);
         assertTrue(html.contains(">New album<"), html);
-        assertTrue(html.contains(">Travel / 2024<"), html);
+        assertTrue(html.contains("cse-album-group-drop"), html);
+        assertTrue(html.contains("Drop a resource group"), html);
+        assertTrue(html.contains("name=\"resourceGroupId\""), html);
+        assertFalse(html.contains("<select id=\"resourceGroupId\""), html);
         assertTrue(html.contains("href=\"/rhz-we/editor/resources?group=content-categories\""), html);
         assertFalse(html.contains("/editor/pages"), html);
         assertFalse(html.contains("page-header"), html);
@@ -480,7 +486,7 @@ class EditorResourcesTemplateTest {
         categories.getChildren().add(music);
 
         PageData hostData = new PageData();
-        hostData.setTitle("Host (2015)");
+        hostData.setHeader("Host (2015)");
         ItemEntity host = new ItemEntity("host", hostData, null);
         CategoryData catData = new CategoryData("music", "music", "everything related to music", true, true);
         CategoryEntity category = new CategoryEntity(catData, null);
@@ -520,13 +526,35 @@ class EditorResourcesTemplateTest {
         assertFalse(pageHtml.contains("${"), pageHtml);
         assertTrue(pageHtml.contains("resource-tree"), pageHtml);
         assertTrue(pageHtml.contains("resource-pane"), pageHtml);
-        assertTrue(pageHtml.contains("name=\"title\""), pageHtml);
+        assertTrue(pageHtml.contains("name=\"name\""), pageHtml);
+        assertTrue(pageHtml.contains("name=\"originalName\""), pageHtml);
+        assertFalse(pageHtml.contains("name=\"title\""), pageHtml);
+        assertTrue(pageHtml.contains("name=\"noTopDisplayImage\""), pageHtml);
+        assertTrue(pageHtml.contains("name=\"exportPdf\""), pageHtml);
         assertTrue(pageHtml.contains("resource-tree-file is-selected")
                 || pageHtml.contains("resource-tree-file is-selected\""), pageHtml);
         assertTrue(pageHtml.contains("href=\"/rhz-we/editor/resources?group=category-music\""), pageHtml);
         assertFalse(pageHtml.contains("page-header"), pageHtml);
         assertTrue(pageHtml.contains("cse-embed-drop"), pageHtml);
         assertTrue(pageHtml.contains("cse-page"), pageHtml);
+        assertTrue(pageHtml.contains("cse-featured-drop"), pageHtml);
+        assertTrue(pageHtml.contains("name=\"imageId\""), pageHtml);
+        assertTrue(pageHtml.contains("Drop an image"), pageHtml);
+        assertTrue(pageHtml.contains("cse-featured-drop is-empty"), pageHtml);
+        assertFalse(pageHtml.contains("<select id=\"imageId\""), pageHtml);
+        assertFalse(pageHtml.contains("<select id=\"categoryId\""), pageHtml);
+
+        ResourceEntity cover = new ResourceEntity();
+        cover.setId(new ObjectId());
+        ResourceData coverData = new ResourceData();
+        coverData.setPathPublic("/ravenherz/res/images/logo.png");
+        cover.setResourceData(coverData);
+        host.getPageData().setRefImage(cover);
+        String coveredHtml = engine.process("admin/editor-page-edit", context);
+        assertFalse(coveredHtml.contains("${"), coveredHtml);
+        assertTrue(coveredHtml.contains("/ravenherz/res/images/logo.png"), coveredHtml);
+        assertTrue(coveredHtml.contains("value=\"" + cover.getId() + "\""), coveredHtml);
+        assertFalse(coveredHtml.contains("cse-featured-drop is-empty"), coveredHtml);
 
         context.setVariable("selectedLeafId", null);
         context.setVariable("category", category);
@@ -543,8 +571,13 @@ class EditorResourcesTemplateTest {
         assertTrue(createHtml.contains("resource-tree"), createHtml);
         assertTrue(createHtml.contains("resource-pane"), createHtml);
         assertTrue(createHtml.contains("name=\"name\""), createHtml);
+        assertTrue(createHtml.contains("name=\"categoryId\""), createHtml);
+        assertTrue(createHtml.contains("value=\"" + category.getId() + "\""), createHtml);
+        assertFalse(createHtml.contains("<select id=\"categoryId\""), createHtml);
         assertTrue(createHtml.contains(">New page<"), createHtml);
         assertTrue(createHtml.contains("Create page"), createHtml);
+        assertTrue(createHtml.contains("name=\"noTopDisplayImage\""), createHtml);
+        assertTrue(createHtml.contains("name=\"exportPdf\""), createHtml);
         assertTrue(createHtml.contains("cse-embed-drop"), createHtml);
 
         context.setVariable("resourceGroups", List.of());
@@ -554,7 +587,9 @@ class EditorResourcesTemplateTest {
         assertTrue(albumHtml.contains("resource-pane"), albumHtml);
         assertTrue(albumHtml.contains(">New album<"), albumHtml);
         assertTrue(albumHtml.contains("Create album"), albumHtml);
+        assertTrue(albumHtml.contains("cse-album-group-drop"), albumHtml);
         assertTrue(albumHtml.contains("name=\"resourceGroupId\""), albumHtml);
+        assertFalse(albumHtml.contains("<select id=\"resourceGroupId\""), albumHtml);
 
         context.setVariable("selectedGroup", categories);
         String categoryCreateHtml = engine.process("admin/editor-category-create", context);

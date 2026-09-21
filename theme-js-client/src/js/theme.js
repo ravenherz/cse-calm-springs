@@ -182,14 +182,22 @@
     var html = '<article class="reading">';
     html += '<p class="kicker"><a href="./">Index</a>';
     if (page.category) {
-      html += ' / ' + escapeHtml(page.category);
+      html += '<span> / ' + escapeHtml(page.category) + '</span>';
     }
     html += '</p>';
+    html += '<div class="reading-head"><div class="reading-titles">';
     html += '<h1>' + escapeHtml(pageTitle(page)) + '</h1>';
     if (page.subHeader) {
       html += '<p class="reading-sub">' + escapeHtml(page.subHeader) + '</p>';
     }
-    if (page.image && !page.album) {
+    html += '</div>';
+    if (page.exportPdf && page.uri) {
+      html += '<a class="export-pdf" href="./rest/pages/pdf?page='
+        + encodeURIComponent(page.uri) + '" title="PDF">'
+        + '<img src="./content-public/cse-core/images/pdf.png" alt="PDF" width="40" height="40"></a>';
+    }
+    html += '</div>';
+    if (page.image && !page.album && !page.noTopDisplayImage) {
       html += '<figure class="reading-media"><img src="'
         + escapeHtml(page.image) + '" alt=""></figure>';
     }

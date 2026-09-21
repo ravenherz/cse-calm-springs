@@ -59,9 +59,16 @@ dependencies {
 
     // HTMLHelper
     implementation 'com.j2html:j2html:1.5.0'
-    // Markdown
-    implementation 'org.commonmark:commonmark:0.22.0'
-    implementation 'org.apache.pdfbox:pdfbox:3.0.5'
+    implementation project(':cse-content')
+    implementation project(':cse-themes')
+    implementation project(':cse-apps')
+    implementation project(':cse-transfer')
+    implementation project(':cse-install')
+    implementation project(':cse-core')
+    implementation project(':cse-pdf')
+    implementation project(':cse-media')
+    implementation project(':cse-image')
+    implementation project(':cse-audio')
     // Mongo adapter (entities/ports come from cse-db-api). Postgres is not on this WAR.
     implementation project(':cse-db-mongo')
     implementation 'org.springframework.boot:spring-boot-starter-security'
@@ -70,19 +77,8 @@ dependencies {
     implementation group: 'commons-io', name: 'commons-io', version: '2.14.0'
     implementation group: 'commons-fileupload', name: 'commons-fileupload', version: '1.6.0'
 
-    implementation 'com.github.openize-com:openize-heic-java:v26.5.1'
-    implementation 'com.drewnoakes:metadata-extractor:2.21.0'
-    implementation 'net.jthink:jaudiotagger:3.0.1'
-    implementation 'javazoom:jlayer:1.0.1'
-    implementation 'org.bytedeco:javacpp:1.5.12'
-    implementation 'org.bytedeco:javacpp:1.5.12:windows-x86_64'
-    implementation 'org.bytedeco:javacpp:1.5.12:linux-x86_64'
-    implementation 'org.bytedeco:ffmpeg:7.1.1-1.5.12'
-    implementation 'org.bytedeco:ffmpeg:7.1.1-1.5.12:windows-x86_64'
-    implementation 'org.bytedeco:ffmpeg:7.1.1-1.5.12:linux-x86_64'
-
-    implementation 'org.springframework.security:spring-security-crypto'
-    implementation 'org.bouncycastle:bcprov-jdk18on:1.84'
+    implementation project(':cse-video')
+    implementation project(':cse-security')
 
     implementation group: 'com.fasterxml.jackson.core', name: 'jackson-databind', version: '2.19.2'
     //implementation group: 'org.apache.tomcat', name: 'tomcat-jsp-api', version:'10.1.43'
@@ -95,12 +91,15 @@ tasks.named('test') {
     useJUnitPlatform()
 }
 
+// FFmpeg and JavaCPP jars come from :cse-video. Boot still nests them in this WAR.
+// Keep requiresUnpack while FfmpegBinaries reads classpath*:org/bytedeco/ffmpeg/.
+// Do not drop it when cleaning dependencies.
 tasks.withType(org.springframework.boot.gradle.tasks.bundling.BootWar).configureEach {
     requiresUnpack '**/ffmpeg-*.jar'
     requiresUnpack '**/javacpp-*.jar'
 }
 
-def currentVersion = '0.7.0'
+def currentVersion = '0.8.0'
 
 tasks.register('buildPreparations') {
     doFirst {

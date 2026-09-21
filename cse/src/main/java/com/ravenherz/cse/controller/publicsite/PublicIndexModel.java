@@ -12,7 +12,7 @@ import com.ravenherz.cse.dal.dto.basic.enums.AccessType;
 import com.ravenherz.cse.dal.dto.events.PageEvent;
 import com.ravenherz.cse.dal.dto.events.PageEvent.PageEventConverter;
 import com.ravenherz.cse.present.CategorySectionDTO;
-import com.ravenherz.cse.util.Settings;
+import com.ravenherz.cse.engine.util.Settings;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.bson.types.ObjectId;
@@ -118,9 +118,10 @@ public class PublicIndexModel {
                         sectionTitle, Collections.singletonList(pageEvent)));
                 model.addAttribute("readingPage", true);
                 model.addAttribute("readingAlbum", itemEntity.isAlbum());
-                String itemTitle = itemEntity.isAlbum()
-                        ? (itemEntity.getAlbumData() != null ? itemEntity.getAlbumData().getTitle() : requestedName)
-                        : (itemEntity.getPageData() != null ? itemEntity.getPageData().getTitle() : requestedName);
+                String header = itemEntity.isAlbum()
+                        ? (itemEntity.getAlbumData() == null ? null : itemEntity.getAlbumData().getHeader())
+                        : (itemEntity.getPageData() == null ? null : itemEntity.getPageData().getHeader());
+                String itemTitle = header != null && !header.isBlank() ? header : requestedName;
                 model.addAttribute("htmlTitle", String.format("%s%s%s",
                         settings.getValue(SettingKeys.CONTEXT_DATASOURCE_PERSONAL,
                                 SettingKeys.KEY_TAG_COMPANY_TITLE),

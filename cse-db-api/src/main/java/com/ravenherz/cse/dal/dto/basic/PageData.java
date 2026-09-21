@@ -72,35 +72,26 @@ public class PageData extends ItemData implements Serializable {
     private String description;
     private List<String> tags;
     private List<Comment> comments;
+    private boolean noTopDisplayImage;
+    private boolean exportPdf;
 
     public PageData() {
         super();
     }
 
     /**
-     * Public constructor
-     *
-     * @param title title of the page
      * @param header the header of the item
      * @param subHeader the subHeader of the item
      * @param description the description of the item
      * @param tags the array of html
      */
-    public PageData(String title, String header, String subHeader,
+    public PageData(String header, String subHeader,
             String description, List<String> tags) {
-        super(title, subHeader);
+        super(subHeader);
         this.header = header;
         this.description = description;
         this.tags = tags;
     }
-//
-//    public String getTitle() {
-//        return title;
-//    }
-//
-//    public void setTitle(String title) {
-//        this.title = title;
-//    }
 
     public String getHeader() {
         return header;
@@ -159,6 +150,22 @@ public class PageData extends ItemData implements Serializable {
         this.comments = comments;
     }
 
+    public boolean isNoTopDisplayImage() {
+        return noTopDisplayImage;
+    }
+
+    public void setNoTopDisplayImage(boolean noTopDisplayImage) {
+        this.noTopDisplayImage = noTopDisplayImage;
+    }
+
+    public boolean isExportPdf() {
+        return exportPdf;
+    }
+
+    public void setExportPdf(boolean exportPdf) {
+        this.exportPdf = exportPdf;
+    }
+
     @Override public boolean equals(Object o) {
         if (this == o) {
             return true;
@@ -167,8 +174,9 @@ public class PageData extends ItemData implements Serializable {
             return false;
         }
         PageData pageData = (PageData) o;
-        return Objects.equals(refImage, pageData.refImage) &&
-                Objects.equals(title, pageData.title) &&
+        return noTopDisplayImage == pageData.noTopDisplayImage &&
+                exportPdf == pageData.exportPdf &&
+                Objects.equals(refImage, pageData.refImage) &&
                 Objects.equals(header, pageData.header) &&
                 Objects.equals(subHeader, pageData.subHeader) &&
                 Objects.equals(description, pageData.description) &&
@@ -177,17 +185,19 @@ public class PageData extends ItemData implements Serializable {
 
     @Override public int hashCode() {
 
-        return Objects.hash(refImage, title, header, subHeader, description, tags);
+        return Objects.hash(refImage, header, subHeader, description, tags, noTopDisplayImage,
+                exportPdf);
     }
 
     @Override public String toString() {
         return "PageData{" +
                 "refImage=" + refImage +
-                ", title='" + title + '\'' +
                 ", header='" + header + '\'' +
                 ", subHeader='" + subHeader + '\'' +
                 ", description='" + description + '\'' +
                 ", tags=" + tags +
+                ", noTopDisplayImage=" + noTopDisplayImage +
+                ", exportPdf=" + exportPdf +
                 '}';
     }
 }

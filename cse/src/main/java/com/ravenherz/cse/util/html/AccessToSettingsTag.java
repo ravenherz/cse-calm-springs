@@ -1,7 +1,7 @@
 package com.ravenherz.cse.util.html;
 
 import com.ravenherz.cse.constants.SettingKeys;
-import com.ravenherz.cse.util.Settings;
+import com.ravenherz.cse.engine.util.Settings;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.DependsOn;
 

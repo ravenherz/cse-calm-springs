@@ -128,12 +128,13 @@ public class EditorPagesController extends AbstractController {
 
     @PostMapping("/create")
     public String createPageSubmit(@RequestParam(value = "name", required = false) String name,
-                                   @RequestParam(value = "title", required = false) String title,
                                    @RequestParam(value = "header", required = false) String header,
                                    @RequestParam(value = "subHeader", required = false) String subHeader,
                                    @RequestParam(value = "description", required = false) String description,
                                    @RequestParam(value = "tags", required = false) String tags,
                                    @RequestParam(value = "categoryId", required = false) String categoryId,
+                                   @RequestParam(value = "noTopDisplayImage", defaultValue = "false") boolean noTopDisplayImage,
+                                   @RequestParam(value = "exportPdf", defaultValue = "false") boolean exportPdf,
                                    Model model, HttpServletRequest request, HttpServletResponse response) throws IOException {
         AccountEntity accessor = getAccessor(request, response);
         if (accessor == null) {
@@ -152,10 +153,11 @@ public class EditorPagesController extends AbstractController {
         }
 
         PageData pageData = new PageData();
-        pageData.setTitle(title != null ? title : "");
         pageData.setHeader(header != null ? header : "");
         pageData.setSubHeader(subHeader != null ? subHeader : "");
         pageData.setDescription(description != null ? description : "");
+        pageData.setNoTopDisplayImage(noTopDisplayImage);
+        pageData.setExportPdf(exportPdf);
         if (tags != null && !tags.trim().isEmpty()) {
             List<String> tagList = Arrays.stream(tags.split(","))
                     .map(String::trim)
@@ -229,14 +231,6 @@ public class EditorPagesController extends AbstractController {
 
         model.addAttribute("item", item);
 
-        List<BasicEntity> allResources = serviceProvider.getResourceService().getAll();
-        List<ResourceEntity> images = allResources.stream()
-                .filter(r -> r instanceof ResourceEntity)
-                .map(r -> (ResourceEntity) r)
-                .filter(r -> r.getResourceData().getType() == IMAGE)
-                .collect(Collectors.toList());
-        model.addAttribute("images", images);
-
         if (item.isAlbum()) {
             editorAlbumsController.fillAlbumFormLookups(model, accessor);
             addEditorChrome(model, accessor);
@@ -246,9 +240,6 @@ public class EditorPagesController extends AbstractController {
 
         addEditorChrome(model, accessor);
         EditorInline.putTreeForItem(model, resourceGroupIndex, item);
-
-        List<CategoryEntity> categories = serviceProvider.getCategoryService().getAllCategories();
-        model.addAttribute("categories", categories);
         addAccessPanel(model, item, accessor);
 
         return "/admin/editor-page-edit";
@@ -256,26 +247,30 @@ public class EditorPagesController extends AbstractController {
 
     @PostMapping("/save")
     public String savePage(@RequestParam(value = "name", required = false) String name,
-                           @RequestParam(value = "title", required = false) String title,
+                           @RequestParam(value = "originalName", required = false) String originalName,
                            @RequestParam(value = "header", required = false) String header,
                            @RequestParam(value = "subHeader", required = false) String subHeader,
                            @RequestParam(value = "description", required = false) String description,
                            @RequestParam(value = "tags", required = false) String tags,
-                           @RequestParam(value = "categoryId", required = false) String categoryId,
                            @RequestParam(value = "imageId", required = false) String imageId,
                            @RequestParam(value = "resourceGroupId", required = false) String resourceGroupId,
+                           @RequestParam(value = "noTopDisplayImage", defaultValue = "false") boolean noTopDisplayImage,
+                           @RequestParam(value = "exportPdf", defaultValue = "false") boolean exportPdf,
                            Model model, HttpServletRequest request, HttpServletResponse response) throws IOException {
         AccountEntity accessor = getAccessor(request, response);
         if (accessor == null) {
             return null;
         }
 
-        if (name == null || name.trim().isEmpty()) {
+        String persistedName = originalName != null && !originalName.isBlank()
+                ? originalName.trim()
+                : (name == null ? "" : name.trim());
+        if (persistedName.isEmpty()) {
             response.sendRedirect(request.getContextPath() + "/editor");
             return null;
         }
 
-        ItemEntity item = serviceProvider.getItemService().getByName(name);
+        ItemEntity item = serviceProvider.getItemService().getByName(persistedName);
         if (item == null) {
             error(404, request, response);
             return null;
@@ -286,8 +281,24 @@ public class EditorPagesController extends AbstractController {
             return null;
         }
 
+        String idError = assignItemId(serviceProvider.getItemService(), item, name);
+        if (idError != null) {
+            model.addAttribute("error", idError);
+            model.addAttribute("item", item);
+            model.addAttribute("originalName", persistedName);
+            model.addAttribute("postedName", name);
+            if (item.isAlbum()) {
+                editorAlbumsController.fillAlbumFormLookups(model, accessor);
+                return "/admin/editor-album-edit";
+            }
+            addEditorChrome(model, accessor);
+            EditorInline.putTreeForItem(model, resourceGroupIndex, item);
+            addAccessPanel(model, item, accessor);
+            return "/admin/editor-page-edit";
+        }
+
         if (item.isAlbum()) {
-            return editorAlbumsController.saveAlbum(item, title, header, subHeader, description, tags, categoryId,
+            return editorAlbumsController.saveAlbum(item, header, subHeader, description, tags,
                     resourceGroupId, accessor, model, request, response);
         }
 
@@ -297,28 +308,17 @@ public class EditorPagesController extends AbstractController {
 
         PageData pageData = item.getPageData();
 
-        if (title != null) pageData.setTitle(title);
         if (header != null) pageData.setHeader(header);
         if (subHeader != null) pageData.setSubHeader(subHeader);
         if (description != null) pageData.setDescription(description);
+        pageData.setNoTopDisplayImage(noTopDisplayImage);
+        pageData.setExportPdf(exportPdf);
         if (tags != null) {
             List<String> tagList = Arrays.stream(tags.split(","))
                     .map(String::trim)
                     .filter(s -> !s.isEmpty())
                     .collect(Collectors.toList());
             pageData.setTags(tagList);
-        }
-
-        if (categoryId != null && !categoryId.trim().isEmpty()) {
-            try {
-                org.bson.types.ObjectId catObjId = new org.bson.types.ObjectId(categoryId.trim());
-                CategoryEntity category = (CategoryEntity) serviceProvider.getCategoryService().getById(CategoryEntity.class, catObjId);
-                item.setRefCategory(category);
-            } catch (Exception e) {
-                LOGGER.warn("Invalid category ID: " + categoryId);
-            }
-        } else {
-            item.setRefCategory(null);
         }
 
         if (imageId != null && !imageId.trim().isEmpty()) {
@@ -348,8 +348,84 @@ public class EditorPagesController extends AbstractController {
         serviceProvider.getItemService().replace(item);
         resourceGroupIndex.contentChanged();
 
-        response.sendRedirect(request.getContextPath() + "/editor/edit?name=" + name);
+        response.sendRedirect(request.getContextPath() + "/editor/edit?name=" + item.getUniqueUriName());
         return null;
+    }
+
+    static String assignItemId(com.ravenherz.cse.dal.dao.ItemService items, ItemEntity item, String nextName) {
+        if (nextName == null || nextName.isBlank()) {
+            return "Item ID is required";
+        }
+        String next = nextName.trim();
+        String current = item.getUniqueUriName() == null ? "" : item.getUniqueUriName().trim();
+        if (next.equals(current)) {
+            return null;
+        }
+        ItemEntity clash = items.getByName(next);
+        if (clash != null && (item.getId() == null || !item.getId().equals(clash.getId()))) {
+            return "An item with this ID already exists";
+        }
+        item.setUniqueUriName(next);
+        return null;
+    }
+
+    @PostMapping("/item/category")
+    public String moveItemCategory(@RequestParam(value = "name", required = false) List<String> names,
+                                   @RequestParam(value = "categoryId", required = false) String categoryId,
+                                   @RequestParam(value = "returnGroup", required = false) String returnGroup,
+                                   HttpServletRequest request, HttpServletResponse response) throws IOException {
+        AccountEntity accessor = getAccessor(request, response);
+        if (accessor == null) {
+            return null;
+        }
+
+        CategoryEntity category = null;
+        String rawCategory = categoryId == null ? "" : categoryId.trim();
+        if (!rawCategory.isEmpty() && !EditorTree.CATEGORIES_ID.equals(rawCategory)) {
+            try {
+                org.bson.types.ObjectId catObjId = new org.bson.types.ObjectId(rawCategory);
+                category = (CategoryEntity) serviceProvider.getCategoryService()
+                        .getById(CategoryEntity.class, catObjId);
+            } catch (Exception e) {
+                LOGGER.warn("Invalid category ID: " + rawCategory);
+            }
+            if (category == null) {
+                redirectCatalog(request, response, returnGroup);
+                return null;
+            }
+        }
+
+        boolean changed = false;
+        if (names != null) {
+            java.util.LinkedHashSet<String> unique = new java.util.LinkedHashSet<>();
+            for (String itemName : names) {
+                if (itemName != null && !itemName.trim().isEmpty()) {
+                    unique.add(itemName.trim());
+                }
+            }
+            for (String itemName : unique) {
+                ItemEntity item = serviceProvider.getItemService().getByName(itemName);
+                if (item == null || !EntityAccess.isAccessible(item, AccessType.ACCESS_EDIT, accessor)) {
+                    continue;
+                }
+                item.setRefCategory(category);
+                serviceProvider.getItemService().replace(item);
+                changed = true;
+            }
+        }
+        if (changed) {
+            resourceGroupIndex.contentChanged();
+        }
+        redirectCatalog(request, response, returnGroup);
+        return null;
+    }
+
+    private void redirectCatalog(HttpServletRequest request, HttpServletResponse response, String returnGroup)
+            throws IOException {
+        String group = returnGroup == null || returnGroup.isBlank()
+                ? EditorTree.CATEGORIES_ID : returnGroup.trim();
+        response.sendRedirect(request.getContextPath() + "/editor/resources?group="
+                + java.net.URLEncoder.encode(group, java.nio.charset.StandardCharsets.UTF_8));
     }
 
     @PostMapping("/delete")

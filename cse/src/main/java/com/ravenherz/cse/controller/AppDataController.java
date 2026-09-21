@@ -11,7 +11,7 @@ import com.ravenherz.cse.store.AppStoreDocument;
 import com.ravenherz.cse.store.AppStoreException;
 import com.ravenherz.cse.store.AppStoreRateLimiter;
 import com.ravenherz.cse.store.AppStoreTableSpec;
-import com.ravenherz.cse.util.Json;
+import com.ravenherz.cse.engine.util.Json;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.http.MediaType;

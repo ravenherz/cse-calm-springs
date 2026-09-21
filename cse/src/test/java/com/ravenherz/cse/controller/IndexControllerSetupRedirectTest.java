@@ -2,7 +2,7 @@ package com.ravenherz.cse.controller;
 
 import com.ravenherz.cse.controller.publicsite.PublicIndexModel;
 import com.ravenherz.cse.install.SiteReady;
-import com.ravenherz.cse.util.Settings;
+import com.ravenherz.cse.engine.util.Settings;
 import com.ravenherz.cse.util.themes.ThemeCatalog;
 import com.ravenherz.cse.util.themes.ThemeInfo;
 import com.ravenherz.cse.util.themes.ThemeSelection;

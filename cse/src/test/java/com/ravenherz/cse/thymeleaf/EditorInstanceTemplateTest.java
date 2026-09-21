@@ -1,11 +1,11 @@
 package com.ravenherz.cse.thymeleaf;
 
-import com.ravenherz.cse.util.io.InstanceProbe.Cpu;
-import com.ravenherz.cse.util.io.InstanceProbe.Disk;
-import com.ravenherz.cse.util.io.InstanceProbe.Gpu;
-import com.ravenherz.cse.util.io.InstanceProbe.Host;
-import com.ravenherz.cse.util.io.InstanceProbe.Memory;
-import com.ravenherz.cse.util.io.InstanceProbe.Snapshot;
+import com.ravenherz.cse.engine.io.InstanceProbe.Cpu;
+import com.ravenherz.cse.engine.io.InstanceProbe.Disk;
+import com.ravenherz.cse.engine.io.InstanceProbe.Gpu;
+import com.ravenherz.cse.engine.io.InstanceProbe.Host;
+import com.ravenherz.cse.engine.io.InstanceProbe.Memory;
+import com.ravenherz.cse.engine.io.InstanceProbe.Snapshot;
 import org.junit.jupiter.api.Test;
 import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.mock.web.MockHttpServletResponse;

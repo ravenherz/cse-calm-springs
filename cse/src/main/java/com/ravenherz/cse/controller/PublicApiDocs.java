@@ -120,7 +120,8 @@ public final class PublicApiDocs {
     private static Section rest() {
         return new Section("rest", "REST helpers",
                 "Theme and login-app scripts POST JSON here. Success uses the RestResponse envelope "
-                        + "(status, restObject, message) except /rest/error and GET /rest/site.",
+                        + "(status, restObject, message) except /rest/error, GET /rest/site, "
+                        + "and GET /rest/pages/pdf.",
                 List.of(
                         new Endpoint("GET", "/rest/site", "Public", false,
                                 "JSON snapshot for JS themes. Same query as GET / (page, album, tag, category, error). "
@@ -154,6 +155,12 @@ public final class PublicApiDocs {
                                   "page": null,
                                   "error": null
                                 }"""),
+                        new Endpoint("GET", "/rest/pages/pdf", "Public", false,
+                                "Download a PDF of the public article when pageData.exportPdf is true. "
+                                        + "Same ACL as GET /?page=. HTTP 404 if the page is missing or export is off; "
+                                        + "HTTP 403 if unreadable. Not a RestResponse envelope.",
+                                "?page={uri}",
+                                "application/pdf attachment"),
                         new Endpoint("POST", "/rest/forms/render", "Public", true,
                                 "Render a configured form id to HTML (cse-tiny.js). restObject is the markup.",
                                 """
@@ -161,7 +168,7 @@ public final class PublicApiDocs {
                                 """
                                 { "status": 200, "restObject": "<div id='form-id'>...</div>" }"""),
                         new Endpoint("POST", "/rest/markdown/render", "Public", true,
-                                "Markdown to HTML, then expand <cse-playlist/>, <cse-url/>, <cse-binary/>, <cv-card/>, and <cse-md/> embeds.",
+                                "Markdown to HTML, then expand <cse-playlist/>, <cse-url/>, <cse-binary/>, <cv-card/>, <cv-img-card/>, <cse-interval/>, and <cse-md/> embeds.",
                                 """
                                 { "markdown": "# Hello" }""",
                                 """

@@ -8,6 +8,7 @@ import com.ravenherz.cse.dal.dto.basic.AlbumData;
 import com.ravenherz.cse.dal.dto.basic.Event;
 import com.ravenherz.cse.dal.dto.basic.HistoryData;
 import com.ravenherz.cse.dal.dto.basic.enums.EventType;
+import com.ravenherz.cse.present.ResourceGroupDisplayDTO;
 import com.ravenherz.cse.present.ResourceGroupIndex;
 import org.springframework.beans.factory.annotation.Autowired;
 import jakarta.servlet.http.HttpServletRequest;
@@ -49,7 +50,6 @@ public class EditorAlbumsController extends AbstractController {
 
     @PostMapping("/album/create")
     public String createAlbumSubmit(@RequestParam(value = "name", required = false) String name,
-                                    @RequestParam(value = "title", required = false) String title,
                                     @RequestParam(value = "header", required = false) String header,
                                     @RequestParam(value = "subHeader", required = false) String subHeader,
                                     @RequestParam(value = "description", required = false) String description,
@@ -78,7 +78,6 @@ public class EditorAlbumsController extends AbstractController {
         }
 
         AlbumData albumData = new AlbumData();
-        albumData.setTitle(title != null ? title : "");
         albumData.setHeader(header != null ? header : "");
         albumData.setSubHeader(subHeader != null ? subHeader : "");
         albumData.setDescription(description != null ? description : "");
@@ -116,32 +115,18 @@ public class EditorAlbumsController extends AbstractController {
         return null;
     }
 
-    public String saveAlbum(ItemEntity item, String title, String header, String subHeader,
-            String description, String tags, String categoryId, String resourceGroupId,
+    public String saveAlbum(ItemEntity item, String header, String subHeader,
+            String description, String tags, String resourceGroupId,
             AccountEntity accessor, Model model, HttpServletRequest request,
             HttpServletResponse response) throws IOException {
         if (item.getAlbumData() == null) {
             item.setAlbumData(new AlbumData());
         }
         AlbumData albumData = item.getAlbumData();
-        if (title != null) albumData.setTitle(title);
         if (header != null) albumData.setHeader(header);
         if (subHeader != null) albumData.setSubHeader(subHeader);
         if (description != null) albumData.setDescription(description);
         if (tags != null) albumData.setTags(parseTags(tags));
-
-        if (categoryId != null && !categoryId.trim().isEmpty()) {
-            try {
-                org.bson.types.ObjectId catObjId = new org.bson.types.ObjectId(categoryId.trim());
-                CategoryEntity category = (CategoryEntity) serviceProvider.getCategoryService()
-                        .getById(CategoryEntity.class, catObjId);
-                item.setRefCategory(category);
-            } catch (Exception e) {
-                LOGGER.warn("Invalid category ID: " + categoryId);
-            }
-        } else {
-            item.setRefCategory(null);
-        }
 
         if (resourceGroupId == null || resourceGroupId.trim().isEmpty()) {
             model.addAttribute("error", "A resource group is required");
@@ -186,12 +171,34 @@ public class EditorAlbumsController extends AbstractController {
 
     public void fillAlbumFormLookups(Model model, AccountEntity accessor) {
         model.addAttribute("categories", serviceProvider.getCategoryService().getAllCategories());
-        model.addAttribute("resourceGroups", resourceGroupIndex.view().assignableGroups());
+        List<ResourceGroupDisplayDTO> groups = resourceGroupIndex.view().assignableGroups();
+        model.addAttribute("resourceGroups", groups);
         addEditorChrome(model, accessor);
         if (model.getAttribute("item") instanceof ItemEntity item) {
             EditorInline.putTreeForItem(model, resourceGroupIndex, item);
             addAccessPanel(model, item, accessor);
+            model.addAttribute("albumGroupPath", albumGroupPath(item, groups));
         }
+    }
+
+    private static String albumGroupPath(ItemEntity item, List<ResourceGroupDisplayDTO> groups) {
+        if (item.getAlbumData() == null || item.getAlbumData().getRefResourceGroupId() == null) {
+            return null;
+        }
+        String id = item.getAlbumData().getRefResourceGroupId().toString();
+        if (groups != null) {
+            for (ResourceGroupDisplayDTO group : groups) {
+                if (group != null && id.equals(group.getId()) && group.getPathLabel() != null
+                        && !group.getPathLabel().isBlank()) {
+                    return group.getPathLabel();
+                }
+            }
+        }
+        ResourceGroupEntity current = item.getAlbumData().getRefResourceGroup();
+        if (current != null && current.getResourceGroupData() != null) {
+            return current.getResourceGroupData().getHumanReadableId();
+        }
+        return null;
     }
 
     private ResourceGroupEntity loadResourceGroup(String resourceGroupId) {

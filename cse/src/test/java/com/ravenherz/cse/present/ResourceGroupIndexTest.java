@@ -181,7 +181,7 @@ class ResourceGroupIndexTest {
         shots.setId(new ObjectId());
         ItemEntity page = new ItemEntity("aurora", new PageData(), null);
         page.setId(new ObjectId());
-        page.getPageData().setTitle("Aurora");
+        page.getPageData().setHeader("Aurora");
         ResourceEntity featured = new ResourceEntity();
         featured.setId(fileId);
         page.getPageData().setRefImage(featured);
@@ -277,7 +277,7 @@ class ResourceGroupIndexTest {
         shots.setId(new ObjectId());
         ItemEntity page = new ItemEntity("aurora", new PageData(), null);
         page.setId(new ObjectId());
-        page.getPageData().setTitle("Aurora");
+        page.getPageData().setHeader("Aurora");
         CategoryEntity ref = new CategoryEntity();
         ref.setId(shots.getId());
         page.setRefCategory(ref);
@@ -299,7 +299,7 @@ class ResourceGroupIndexTest {
         assertEquals("Shots", cats.getChildren().get(0).getHumanReadableId());
         assertEquals(1, index.categories().size());
         assertEquals(1, index.itemsInCategory(shots.getId().toString()).size());
-        assertEquals("Aurora", index.itemsInCategory(shots.getId().toString()).get(0).getPageData().getTitle());
+        assertEquals("Aurora", index.itemsInCategory(shots.getId().toString()).get(0).getPageData().getHeader());
         index.editorRoots();
         verify(categories, times(1)).getAllCategories();
         verify(items, times(1)).getAll();

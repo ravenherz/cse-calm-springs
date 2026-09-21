@@ -55,6 +55,7 @@ class EditorApiTemplateTest {
         assertTrue(html.contains("/rhz-we/account/auth"), html);
         assertTrue(html.contains("/rhz-we/account/me"), html);
         assertTrue(html.contains("/rhz-we/rest/site"), html);
+        assertTrue(html.contains("/rhz-we/rest/pages/pdf"), html);
         assertTrue(html.contains("X-XSRF-TOKEN"), html);
         assertTrue(html.contains("id=\"install\""), html);
         assertTrue(html.contains("role=\"tablist\""), html);

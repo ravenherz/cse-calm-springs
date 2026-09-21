@@ -45,10 +45,16 @@ public class NavigationDealerImpl extends Dealer implements NavigationDealer {
                                 String title;
                                 String description;
                                 if (type == ItemEntity.ItemType.ALBUM) {
-                                    title = item.getAlbumData() != null ? item.getAlbumData().getTitle() : "<null>";
+                                    title = item.getAlbumData() != null && item.getAlbumData().getHeader() != null
+                                            && !item.getAlbumData().getHeader().isBlank()
+                                            ? item.getAlbumData().getHeader()
+                                            : item.getUniqueUriName();
                                     description = item.getAlbumData() != null ? item.getAlbumData().getSubHeader() : "<null>";
                                 } else {
-                                    title = item.getPageData() != null ? item.getPageData().getTitle() : "<null>";
+                                    title = item.getPageData() != null && item.getPageData().getHeader() != null
+                                            && !item.getPageData().getHeader().isBlank()
+                                            ? item.getPageData().getHeader()
+                                            : item.getUniqueUriName();
                                     description = item.getPageData() != null ? item.getPageData().getSubHeader() : "<null>";
                                 }
                                 return new NavigationUnit(

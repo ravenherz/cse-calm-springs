@@ -5,7 +5,7 @@ import com.ravenherz.cse.dal.dto.ItemEntity;
 import com.ravenherz.cse.dal.dto.PlaylistEntity;
 import com.ravenherz.cse.dal.dto.UrlTemplateEntity;
 import com.ravenherz.cse.dal.dto.basic.CategoryData;
-import com.ravenherz.cse.dal.dto.basic.ItemData;
+import com.ravenherz.cse.dal.dto.basic.PageData;
 
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
@@ -446,9 +446,14 @@ public final class EditorTree {
     }
 
     static String itemTitle(ItemEntity item) {
-        ItemData data = item.isAlbum() ? item.getAlbumData() : item.getPageData();
-        if (data != null && data.getTitle() != null && !data.getTitle().isBlank()) {
-            return data.getTitle().trim();
+        String header = null;
+        if (item.isAlbum() && item.getAlbumData() != null) {
+            header = item.getAlbumData().getHeader();
+        } else if (item.getPageData() != null) {
+            header = item.getPageData().getHeader();
+        }
+        if (header != null && !header.isBlank()) {
+            return header.trim();
         }
         return item.getUniqueUriName() == null ? "" : item.getUniqueUriName().trim();
     }

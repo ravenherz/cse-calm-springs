@@ -11,9 +11,13 @@ Product pitch lives in [docs/pitch.md](docs/pitch.md).
 
 ### 0.7.X
 #### Admin-wise rework
-- Login panel .cseapp (app-login subproject)
-- Small issue tracker .cseapp (app-projects subproject)
-- Admin console tree (huge admin UI rework)
+- Login panel .cseapp (built-in, app-login subproject)
+- Small issue tracker .cseapp (optional, app-projects subproject)
+- Admin console tree (huge admin UI rework), create/edit pages rework
+- Instance information tab
+- Video upload and transcode (parametrized)
+- Image metadata extraction on upload
+- Page content PDF export (useful for CV pages)
 
 ### 0.6.X
 #### Extensibility update
@@ -30,19 +34,19 @@ Product pitch lives in [docs/pitch.md](docs/pitch.md).
 - Engine rename in code/data: package `com.ravenherz.cse`
 - Spring Data replaces Morphia
 
-### 0.4.X (mostly 2025)
+### 0.4.X 
 #### New features scratch
 - Admin console, resource management via UI
 - In-place page edit modal (deprecated in 0.6.0)
 - HTML, MD rendering for page contents
 - Audio-player (and playlists)
 
-### 0.4.X (mostly 2025)
+### 0.3.X (mostly 2025)
 #### Tomcat 10 migration, spring boot
 Technical migration to actualize codebase
 - Spring Boot 3.5
 
-### 0.2.X (mostly 2018, put on hold until 2025)
+### 0.2.X (mostly 2018, put on hold in 2019 until 2025)
 #### Tomcat 8 web-app
 - MongoDB instead of RDBMS (Morphia ORM)
 - Spring Framework instead of Java EE

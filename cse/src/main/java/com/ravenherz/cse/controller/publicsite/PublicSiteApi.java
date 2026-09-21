@@ -3,7 +3,7 @@ package com.ravenherz.cse.controller.publicsite;
 import com.ravenherz.cse.controller.AuthSupport;
 import com.ravenherz.cse.dal.dto.AccountEntity;
 import com.ravenherz.cse.install.SiteReady;
-import com.ravenherz.cse.util.Settings;
+import com.ravenherz.cse.engine.util.Settings;
 import com.ravenherz.cse.util.helpers.HttpErrorHelper;
 import com.ravenherz.cse.util.html.CustomHtmlTag;
 import com.ravenherz.cse.util.themes.ThemeCatalog;

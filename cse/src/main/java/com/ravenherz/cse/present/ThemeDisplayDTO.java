@@ -1,6 +1,6 @@
 package com.ravenherz.cse.present;
 
-import com.ravenherz.cse.util.StringUtils;
+import com.ravenherz.cse.engine.util.StringUtils;
 import com.ravenherz.cse.util.themes.ThemeCatalog;
 
 import java.util.ArrayList;

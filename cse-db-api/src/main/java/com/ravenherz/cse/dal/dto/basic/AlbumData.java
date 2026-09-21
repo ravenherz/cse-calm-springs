@@ -21,8 +21,8 @@ public class AlbumData extends ItemData implements Serializable {
     public AlbumData() {
     }
 
-    public AlbumData(String title, String header, String subHeader, String description) {
-        super(title, subHeader);
+    public AlbumData(String header, String subHeader, String description) {
+        super(subHeader);
         this.header = header;
         this.description = description;
     }

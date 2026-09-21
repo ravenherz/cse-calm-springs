@@ -1,0 +1,18 @@
+plugins {
+    id 'java-library'
+}
+
+apply from: rootProject.file('gradle/cse-db.gradle')
+
+description = 'Instance disk, upload size limits, and the protected-file cache. Codecs stay out.'
+
+dependencies {
+    api project(':cse-db-api')
+    implementation 'org.slf4j:slf4j-api'
+    implementation 'org.springframework:spring-context'
+    implementation 'jakarta.servlet:jakarta.servlet-api'
+    implementation 'commons-io:commons-io:2.14.0'
+
+    testImplementation 'org.junit.jupiter:junit-jupiter'
+    testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+}

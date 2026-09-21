@@ -253,7 +253,7 @@ class EditorTreeTest {
 
     private static ItemEntity page(String uri, String title, ObjectId categoryId) {
         PageData data = new PageData();
-        data.setTitle(title);
+        data.setHeader(title);
         ItemEntity item = new ItemEntity(uri, data, null);
         item.setId(new ObjectId());
         if (categoryId != null) {
@@ -266,7 +266,7 @@ class EditorTreeTest {
 
     private static ItemEntity album(String uri, String title, ObjectId categoryId) {
         AlbumData data = new AlbumData();
-        data.setTitle(title);
+        data.setHeader(title);
         ItemEntity item = new ItemEntity(uri, data, null);
         item.setId(new ObjectId());
         if (categoryId != null) {

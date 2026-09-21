@@ -1,0 +1,19 @@
+plugins {
+    id 'java-library'
+}
+
+apply from: rootProject.file('gradle/cse-db.gradle')
+
+description = 'Authentication, CSRF, and capability checks. HTTP registration stays in the WAR.'
+
+dependencies {
+    api project(':cse-db-api')
+    implementation 'org.slf4j:slf4j-api'
+    implementation 'org.springframework.boot:spring-boot-starter-security'
+    implementation 'org.springframework:spring-webmvc'
+    implementation 'jakarta.servlet:jakarta.servlet-api'
+    implementation 'org.bouncycastle:bcprov-jdk18on:1.84'
+
+    testImplementation 'org.springframework.boot:spring-boot-starter-test'
+    testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+}

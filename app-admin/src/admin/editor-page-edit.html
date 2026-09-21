@@ -13,19 +13,20 @@
         <section class="resource-pane">
           <div class="resource-pane-header">
             <div class="resource-pane-title">
-              <h2 th:text="${item.pageData?.title} ?: 'Edit page'">Edit page</h2>
+              <h2 th:text="${item.pageData?.header ?: item.uniqueUriName} ?: 'Edit page'">Edit page</h2>
             </div>
             <th:block th:replace="~{fragments/shared :: editor-inline-back}"></th:block>
           </div>
 
           <form th:action="@{/editor/save}" method="post" class="form-panel">
             <th:block th:replace="~{fragments/csrf :: field}"></th:block>
-            <input type="hidden" name="name" th:value="${item.uniqueUriName}"/>
+            <input type="hidden" name="originalName" th:value="${originalName != null ? originalName : item.uniqueUriName}"/>
 
             <div class="form-row">
               <div class="form-group">
-                <label for="title">Title</label>
-                <input type="text" id="title" name="title" th:value="${item.pageData?.title}"/>
+                <label for="name">Page ID</label>
+                <input type="text" id="name" name="name" required
+                       th:value="${postedName != null ? postedName : item.uniqueUriName}"/>
               </div>
               <div class="form-group">
                 <label for="header">Header</label>
@@ -39,26 +40,41 @@
                 <input type="text" id="subHeader" name="subHeader" th:value="${item.pageData?.subHeader}"/>
               </div>
               <div class="form-group">
-                <label for="categoryId">Category</label>
-                <select id="categoryId" name="categoryId">
-                  <option value="">-- No Category --</option>
-                  <option th:each="cat : ${categories}" th:value="${cat.id}" th:text="${cat.categoryData?.itemName != null ? cat.categoryData.itemName : cat.id}" th:selected="${item.refCategory?.id?.toString() == cat.id?.toString()}">Category Name</option>
-                </select>
-              </div>
-            </div>
-
-            <div class="form-row">
-              <div class="form-group">
-                <label for="imageId">Featured Image</label>
-                <select id="imageId" name="imageId">
-                  <option value="">-- No Image --</option>
-                  <option th:each="img : ${images}" th:value="${img.id}" th:text="${img.resourceData?.pathPublic}" th:selected="${item.pageData?.refImage?.id?.toString() == img.id?.toString()}">/path</option>
-                </select>
-              </div>
-              <div class="form-group">
                 <label for="tags">Tags (comma separated)</label>
                 <input type="text" id="tags" name="tags" th:value="${#strings.listJoin(item.pageData?.tags, ', ')}"/>
               </div>
+            </div>
+
+            <div class="form-group">
+                <label>Featured Image</label>
+                <div class="featured-image cse-featured-drop" id="featured-image"
+                     th:classappend="${item.pageData?.refImage == null} ? 'is-empty'">
+                  <div class="featured-image-row">
+                    <img id="featured-image-img" class="featured-image-preview" alt=""
+                         th:if="${item.pageData?.refImage != null}"
+                         th:src="@{/content-protected{path}(path=${item.pageData.refImage.displayPublicPath()})}"/>
+                    <img id="featured-image-img" class="featured-image-preview" alt="" hidden
+                         th:if="${item.pageData?.refImage == null}"/>
+                    <span id="featured-image-path" class="featured-image-path"
+                          th:text="${item.pageData?.refImage?.resourceData?.pathPublic} ?: 'Drop an image'">Drop an image</span>
+                    <input type="hidden" name="imageId" id="imageId"
+                           th:value="${item.pageData?.refImageId}"/>
+                    <button type="button" class="delete-btn" id="featured-image-remove">Remove</button>
+                  </div>
+                  <p class="field-hint">Drag an image from the Catalog tree.</p>
+                </div>
+                <div class="checkbox-group">
+                  <label>
+                    <input type="checkbox" name="noTopDisplayImage" id="noTopDisplayImage" value="true"
+                           th:checked="${item.pageData?.noTopDisplayImage}"/>
+                    No top display image
+                  </label>
+                  <label>
+                    <input type="checkbox" name="exportPdf" id="exportPdf" value="true"
+                           th:checked="${item.pageData?.exportPdf}"/>
+                    Export PDF
+                  </label>
+                </div>
             </div>
 
             <div class="form-group">
@@ -74,6 +90,8 @@
                 <code>&lt;cse-category id="…"&gt;</code>,
                 <code>&lt;cse-app id="…"&gt;</code>,
                 <code>&lt;cv-card company="…" role="…" interval="yyyy-MM-dd;Now"&gt;</code>,
+                <code>&lt;cv-img-card imageId="…" company="…" role="…" interval="yyyy-MM-dd;Now"&gt;</code>,
+                <code>&lt;cse-interval interval="yyyy-MM-dd;Now"&gt;</code>,
                 or <code>&lt;cse-md paddingLeft="250px"&gt;</code>.
                 Drag a page, category, app, playlist, URL template, image, video, or PDF from the Catalog tree.</p>
             </div>
@@ -87,5 +105,185 @@
       </div>
     </main>
   </div>
+  <script>
+    (function () {
+      var zone = document.getElementById('featured-image');
+      var input = document.getElementById('imageId');
+      var img = document.getElementById('featured-image-img');
+      var pathEl = document.getElementById('featured-image-path');
+      var removeBtn = document.getElementById('featured-image-remove');
+      if (!zone || !input) {
+        return;
+      }
+
+      function cssEscape(id) {
+        return (window.CSS && CSS.escape) ? CSS.escape(id) : String(id);
+      }
+
+      function contextPath() {
+        var meta = document.querySelector('meta[name="cse-context"]');
+        var path = meta ? (meta.getAttribute('content') || '') : '';
+        return path === '/' ? '' : path;
+      }
+
+      function protectedSrc(pathPublic) {
+        if (!pathPublic) {
+          return '';
+        }
+        var path = pathPublic.charAt(0) === '/' ? pathPublic : '/' + pathPublic;
+        return contextPath() + '/content-protected' + path;
+      }
+
+      function hasType(e, type) {
+        var types = e.dataTransfer && e.dataTransfer.types;
+        if (!types) {
+          return false;
+        }
+        var want = String(type).toLowerCase();
+        for (var i = 0; i < types.length; i++) {
+          if (String(types[i]).toLowerCase() === want) {
+            return true;
+          }
+        }
+        return false;
+      }
+
+      function setCopyDropEffect(e) {
+        var allowed = String((e.dataTransfer && e.dataTransfer.effectAllowed) || 'all').toLowerCase();
+        e.dataTransfer.dropEffect = (allowed === 'move' || allowed === 'linkmove') ? 'move' : 'copy';
+      }
+
+      function draggingResourceType() {
+        var row = document.querySelector('.resource-tree-row.is-dragging, .resource-row.is-dragging');
+        return row ? (row.getAttribute('data-resource-type') || '') : '';
+      }
+
+      function isTreeImageDrag(e) {
+        if (document.body.classList.contains('is-group-drag')
+            || document.body.classList.contains('is-embed-drag')) {
+          return false;
+        }
+        if (!(document.body.classList.contains('is-resource-drag')
+            || hasType(e, 'application/x-cse-resource')
+            || hasType(e, 'application/x-cse-resource-ids'))) {
+          return false;
+        }
+        return draggingResourceType() === 'IMAGE';
+      }
+
+      function treeRow(resourceId) {
+        if (!resourceId) {
+          return null;
+        }
+        return document.querySelector(
+            '.resource-tree-row[data-resource-id="' + cssEscape(resourceId) + '"]');
+      }
+
+      function previewSrcFromTree(row) {
+        if (!row) {
+          return '';
+        }
+        var node = row.closest('.resource-tree-file') || row;
+        var preview = node.querySelector('.resource-tree-file-preview');
+        if (preview && preview.getAttribute('src')) {
+          return preview.getAttribute('src');
+        }
+        if (row.getAttribute('data-resource-type') === 'IMAGE') {
+          return protectedSrc(row.getAttribute('data-key'));
+        }
+        return '';
+      }
+
+      function parseIdList(raw) {
+        if (!raw) {
+          return [];
+        }
+        return raw.split(',').map(function (part) {
+          return part.trim();
+        }).filter(Boolean);
+      }
+
+      function imageFromDrop(e) {
+        var ids = parseIdList(e.dataTransfer.getData('application/x-cse-resource-ids'));
+        var one = (e.dataTransfer.getData('application/x-cse-resource') || '').trim();
+        if (!ids.length && one) {
+          ids = [one];
+        }
+        var dragging = document.querySelectorAll(
+            '.resource-tree-row.is-dragging[data-resource-id], .resource-row.is-dragging[data-resource-id]');
+        for (var d = 0; d < dragging.length; d++) {
+          var dragId = dragging[d].getAttribute('data-resource-id');
+          if (dragId && ids.indexOf(dragId) < 0) {
+            ids.push(dragId);
+          }
+        }
+        for (var i = 0; i < ids.length; i++) {
+          var row = treeRow(ids[i]);
+          if (row && row.getAttribute('data-resource-type') === 'IMAGE') {
+            return {
+              id: ids[i],
+              src: previewSrcFromTree(row),
+              path: row.getAttribute('data-key') || row.getAttribute('data-name') || ''
+            };
+          }
+        }
+        return null;
+      }
+
+      function setImage(id, src, path) {
+        input.value = id || '';
+        if (img) {
+          if (src) {
+            img.src = src;
+            img.hidden = false;
+          } else {
+            img.removeAttribute('src');
+            img.hidden = true;
+          }
+        }
+        if (pathEl) {
+          pathEl.textContent = path || 'Drop an image';
+        }
+        zone.classList.toggle('is-empty', !id);
+      }
+
+      function accept(e) {
+        if (!isTreeImageDrag(e)) {
+          return false;
+        }
+        e.preventDefault();
+        e.stopPropagation();
+        setCopyDropEffect(e);
+        zone.classList.add('is-drop-target');
+        return true;
+      }
+
+      zone.addEventListener('dragenter', accept);
+      zone.addEventListener('dragover', accept);
+      zone.addEventListener('dragleave', function (e) {
+        if (!e.relatedTarget || !zone.contains(e.relatedTarget)) {
+          zone.classList.remove('is-drop-target');
+        }
+      });
+      zone.addEventListener('drop', function (e) {
+        if (!isTreeImageDrag(e)) {
+          return;
+        }
+        e.preventDefault();
+        e.stopPropagation();
+        var image = imageFromDrop(e);
+        if (image) {
+          setImage(image.id, image.src, image.path);
+        }
+        zone.classList.remove('is-drop-target');
+      });
+
+      if (removeBtn) {
+        removeBtn.addEventListener('click', function () {
+          setImage('', '', '');
+        });
+      }
+    })();
+  </script>
 </body>
 </html>

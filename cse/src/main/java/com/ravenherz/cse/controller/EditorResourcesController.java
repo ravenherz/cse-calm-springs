@@ -16,13 +16,13 @@ import com.ravenherz.cse.util.imaging.ImageMetadata;
 import com.ravenherz.cse.util.imaging.ImageUploadOptions;
 import com.ravenherz.cse.util.imaging.JpegImages;
 import com.ravenherz.cse.util.imaging.PdfPreviews;
-import com.ravenherz.cse.util.Json;
+import com.ravenherz.cse.engine.util.Json;
 import com.ravenherz.cse.util.Mp3Metadata;
 import com.ravenherz.cse.util.Mp3Waveform;
 import com.ravenherz.cse.util.ResourceUploadLimits;
 import com.ravenherz.cse.util.UrlTemplateIds;
-import com.ravenherz.cse.util.video.VideoStatus;
-import com.ravenherz.cse.util.video.VideoTranscodeQueue;
+import com.ravenherz.cse.engine.video.VideoStatus;
+import com.ravenherz.cse.engine.video.VideoTranscodeQueue;
 import com.ravenherz.cse.util.video.VideoWork;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -116,10 +116,6 @@ public class EditorResourcesController extends AbstractController {
             model.addAttribute("error", "File is required");
             return loadResourcesWithError(model, accessor, request);
         }
-        if (file.getSize() > 50L * 1024 * 1024) {
-            model.addAttribute("error", "File is too large (50 MB max)");
-            return loadResourcesWithError(model, accessor, request);
-        }
 
         String originalFilename = file.getOriginalFilename();
         if (originalFilename == null || !originalFilename.contains(".")) {
@@ -153,7 +149,10 @@ public class EditorResourcesController extends AbstractController {
         Integer convertedWidth = null;
         Integer convertedHeight = null;
         String userId = accessor.getAccountData().getLogin();
-        if (HeicJpegConverter.isHeicExtension(extension)) {
+        if (HeicJpegConverter.isHeicExtension(extension) && JpegImages.looksLikeJpeg(content)) {
+            LOGGER.info("Upload named .{} is a JPEG; storing as JPEG", extension);
+            extension = "jpg";
+        } else if (HeicJpegConverter.isHeicExtension(extension)) {
             try {
                 String publicPath = String.format("/%s/res/%s/%s.jpg",
                         userId, resourceType.getPath(), resourceId.trim());
@@ -725,7 +724,7 @@ public class EditorResourcesController extends AbstractController {
         String refused = switch (type) {
             case "group" -> renameGroup(id, next);
             case "resource" -> renameResource(id, next);
-            case "page", "album" -> renamePageTitle(id, next);
+            case "page", "album" -> renameItemId(id, next);
             case "playlist" -> renamePlaylistTitle(id, next);
             case "url-template" -> renameUrlTemplateId(id, next);
             case "category" -> renameCategoryName(id, next);
@@ -790,25 +789,18 @@ public class EditorResourcesController extends AbstractController {
         return null;
     }
 
-    private String renamePageTitle(String uniqueUriName, String title) {
+    private String renameItemId(String uniqueUriName, String nextName) {
         ItemEntity item = serviceProvider.getItemService().getByName(uniqueUriName);
         if (item == null) {
             return "invalid_item";
         }
-        if (item.isAlbum()) {
-            if (item.getAlbumData() == null) {
-                item.setAlbumData(new AlbumData());
-            }
-            item.getAlbumData().setTitle(title);
-        } else {
-            if (item.getPageData() == null) {
-                item.setPageData(new PageData());
-            }
-            item.getPageData().setTitle(title);
+        String error = EditorPagesController.assignItemId(serviceProvider.getItemService(), item, nextName);
+        if (error == null) {
+            serviceProvider.getItemService().replace(item);
+            resourceGroupIndex.contentChanged();
+            return null;
         }
-        serviceProvider.getItemService().replace(item);
-        resourceGroupIndex.contentChanged();
-        return null;
+        return "An item with this ID already exists".equals(error) ? "name_taken" : "invalid_name";
     }
 
     private String renamePlaylistTitle(String playlistId, String title) {

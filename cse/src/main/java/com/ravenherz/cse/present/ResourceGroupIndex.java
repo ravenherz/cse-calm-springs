@@ -1,6 +1,7 @@
 package com.ravenherz.cse.present;
 
 import com.ravenherz.cse.dal.dao.AppService;
+import com.ravenherz.cse.transfer.ResourceGroupRebuild;
 import com.ravenherz.cse.dal.dao.CategoryService;
 import com.ravenherz.cse.dal.dao.ItemService;
 import com.ravenherz.cse.dal.dao.PlaylistService;
@@ -47,7 +48,7 @@ import java.util.concurrent.atomic.AtomicReference;
  * In-memory group tree + own/total file stats. Not persisted. One JVM.
  */
 @Component
-public class ResourceGroupIndex {
+public class ResourceGroupIndex implements ResourceGroupRebuild {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(ResourceGroupIndex.class);
     private static final String THEME_CLASSPATH_PREVIEW = "/static/content-public/themes/%s/preview.jpg";

@@ -181,8 +181,9 @@
                        data-can-rename=${child.canRename() or child.canEditCategory()},
                        data-can-delete=${child.canDelete() or child.canDeleteCategory()},
                        data-accept-files=${child.canAcceptFiles()},
+                       data-path=${child.pathLabel},
                        data-can-drag=${child.canMove()},
-                       draggable=${child.canMove()},
+                       draggable=${child.canMove() or child.canAcceptFiles()},
                        data-return-group=${selectedGroup.id},
                        data-create-href=${child.canCreateCategory() ? ((cseContextPath == '/' ? '' : (cseContextPath != null ? cseContextPath : '')) + '/editor/category/create') : ''},
                        data-create-page-href=${child.canCreatePage() ? ((cseContextPath == '/' ? '' : (cseContextPath != null ? cseContextPath : '')) + child.pageCreatePath()) : ''},
@@ -203,7 +204,7 @@
             </div>
             <a class="resource-folder-link"
                th:if="${child.href != null}"
-               th:attr="draggable=${child.canMove()} ? 'true' : 'false'"
+               th:attr="draggable=${(child.canMove() or child.canAcceptFiles()) ? 'true' : 'false'}"
                th:href="${(cseContextPath == '/' ? '' : (cseContextPath != null ? cseContextPath : '')) + child.href}">
               <span class="resource-folder-glyph" aria-hidden="true">
                 <svg class="resource-folder-mark" viewBox="0 0 24 24" focusable="false">
@@ -218,7 +219,7 @@
             </a>
             <a class="resource-folder-link"
                th:unless="${child.href != null}"
-               th:attr="draggable=${child.canMove()} ? 'true' : 'false'"
+               th:attr="draggable=${(child.canMove() or child.canAcceptFiles()) ? 'true' : 'false'}"
                th:href="@{/editor/resources(group=${child.id})}">
               <span class="resource-folder-glyph" aria-hidden="true">
                 <svg class="resource-folder-mark" viewBox="0 0 24 24" focusable="false">

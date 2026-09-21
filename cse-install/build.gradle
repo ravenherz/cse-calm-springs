@@ -1,0 +1,21 @@
+plugins {
+    id 'java-library'
+}
+
+apply from: rootProject.file('gradle/cse-db.gradle')
+
+description = 'First-run bootstrap. The install HTTP endpoints stay in the WAR.'
+
+dependencies {
+    api project(':cse-db-api')
+    implementation project(':cse-core')
+    implementation project(':cse-security')
+    implementation project(':cse-apps')
+    implementation 'org.slf4j:slf4j-api'
+    implementation 'org.springframework:spring-context'
+    implementation 'org.springframework.boot:spring-boot'
+    implementation 'com.fasterxml.jackson.core:jackson-databind'
+
+    testImplementation 'org.springframework.boot:spring-boot-starter-test'
+    testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+}

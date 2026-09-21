@@ -332,6 +332,18 @@ img {
     padding-top: calc(28px * var(--main-sp));
 }
 
+.reading-head {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 12px;
+}
+
+.reading-titles {
+    min-width: 0;
+    flex: 1 1 auto;
+}
+
 .reading h1 {
     margin: calc(8px * var(--main-sp)) 0 calc(10px * var(--main-sp));
     font-size: calc(2.3rem * var(--main-fs));
@@ -340,7 +352,23 @@ img {
     line-height: max(1, calc(1.1 * var(--main-sp)));
 }
 
+.reading .export-pdf {
+    flex: 0 0 auto;
+    margin-top: calc(8px * var(--main-sp));
+    line-height: 0;
+}
+
+.reading .export-pdf img {
+    display: block;
+    width: 40px;
+    height: auto;
+}
+
 .kicker {
+    display: flex;
+    align-items: baseline;
+    flex-wrap: wrap;
+    gap: 8px;
     margin: 0;
     color: var(--muted);
     font-size: calc(0.85rem * var(--main-fs));

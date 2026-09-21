@@ -1,0 +1,19 @@
+plugins {
+    id 'java-library'
+}
+
+apply from: rootProject.file('gradle/cse-db.gradle')
+
+description = 'Static app packs and the app-store access checks. app-* projects and HTTP stay outside this library.'
+
+dependencies {
+    api project(':cse-db-api')
+    api project(':cse-core')
+    implementation 'org.slf4j:slf4j-api'
+    implementation 'org.springframework:spring-context'
+    implementation 'org.springframework.boot:spring-boot'
+    implementation 'com.fasterxml.jackson.core:jackson-databind'
+
+    testImplementation 'org.springframework.boot:spring-boot-starter-test'
+    testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+}

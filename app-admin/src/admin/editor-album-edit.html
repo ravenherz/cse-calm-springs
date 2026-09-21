@@ -13,19 +13,20 @@
         <section class="resource-pane">
           <div class="resource-pane-header">
             <div class="resource-pane-title">
-              <h2 th:text="${item.albumData?.title} ?: 'Edit album'">Edit album</h2>
+              <h2 th:text="${item.albumData?.header ?: item.uniqueUriName} ?: 'Edit album'">Edit album</h2>
             </div>
             <th:block th:replace="~{fragments/shared :: editor-inline-back}"></th:block>
           </div>
 
           <form th:action="@{/editor/save}" method="post" class="form-panel">
             <th:block th:replace="~{fragments/csrf :: field}"></th:block>
-            <input type="hidden" name="name" th:value="${item.uniqueUriName}"/>
+            <input type="hidden" name="originalName" th:value="${originalName != null ? originalName : item.uniqueUriName}"/>
 
             <div class="form-row">
               <div class="form-group">
-                <label for="title">Title</label>
-                <input type="text" id="title" name="title" th:value="${item.albumData?.title}"/>
+                <label for="name">Album ID</label>
+                <input type="text" id="name" name="name" required
+                       th:value="${postedName != null ? postedName : item.uniqueUriName}"/>
               </div>
               <div class="form-group">
                 <label for="header">Header</label>
@@ -39,31 +40,12 @@
                 <input type="text" id="subHeader" name="subHeader" th:value="${item.albumData?.subHeader}"/>
               </div>
               <div class="form-group">
-                <label for="categoryId">Category</label>
-                <select id="categoryId" name="categoryId">
-                  <option value="">-- No Category --</option>
-                  <option th:each="cat : ${categories}" th:value="${cat.id}"
-                          th:text="${cat.categoryData?.itemName != null ? cat.categoryData.itemName : cat.id}"
-                          th:selected="${item.refCategory?.id?.toString() == cat.id?.toString()}">Category Name</option>
-                </select>
-              </div>
-            </div>
-
-            <div class="form-row">
-              <div class="form-group">
-                <label for="resourceGroupId">Resource group</label>
-                <select id="resourceGroupId" name="resourceGroupId" required>
-                  <option value="">-- Select a group --</option>
-                  <option th:each="group : ${resourceGroups}" th:value="${group.id}"
-                          th:text="${group.pathLabel}"
-                          th:selected="${item.albumData?.refResourceGroup?.id?.toString() == group.id}">Group</option>
-                </select>
-              </div>
-              <div class="form-group">
                 <label for="tags">Tags (comma separated)</label>
                 <input type="text" id="tags" name="tags" th:value="${#strings.listJoin(item.albumData?.tags, ', ')}"/>
               </div>
             </div>
+
+            <th:block th:replace="~{fragments/shared :: album-resource-group}"></th:block>
 
             <div class="form-group">
               <label>Caption (Markdown/HTML)</label>

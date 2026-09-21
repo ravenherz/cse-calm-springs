@@ -22,6 +22,7 @@ class PublicApiDocsTest {
         assertTrue(paths.contains("/rest/markdown/render"));
         assertTrue(paths.contains("/rest/error"));
         assertTrue(paths.contains("/rest/site"));
+        assertTrue(paths.contains("/rest/pages/pdf"));
         assertTrue(paths.contains("/"));
         assertTrue(paths.contains("/content-protected/**"));
         assertTrue(paths.contains("/apps/{slug}/**"));
@@ -66,5 +67,12 @@ class PublicApiDocsTest {
                 .orElseThrow()
                 .csrf();
         assertFalse(errorCsrf);
+        boolean pdfCsrf = PublicApiDocs.sections().stream()
+                .flatMap(section -> section.endpoints().stream())
+                .filter(endpoint -> "/rest/pages/pdf".equals(endpoint.path()))
+                .findFirst()
+                .orElseThrow()
+                .csrf();
+        assertFalse(pdfCsrf);
     }
 }

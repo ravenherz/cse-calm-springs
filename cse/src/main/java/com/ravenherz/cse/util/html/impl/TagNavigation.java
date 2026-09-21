@@ -7,7 +7,7 @@ import com.ravenherz.cse.dal.business.basic.Navigation;
 import com.ravenherz.cse.dal.business.basic.NavigationUnit;
 import com.ravenherz.cse.dal.business.basic.NavigationUnit.NavigationUnitType;
 import com.ravenherz.cse.dal.dto.AccountEntity;
-import com.ravenherz.cse.util.Settings;
+import com.ravenherz.cse.engine.util.Settings;
 import com.ravenherz.cse.util.html.AccessToDealerProviderTag;
 import com.ravenherz.cse.util.html.CustomAccessHtmlTag;
 import com.ravenherz.cse.util.html.HTMLElement;

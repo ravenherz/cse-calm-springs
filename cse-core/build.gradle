@@ -1,0 +1,7 @@
+plugins {
+    id 'java-library'
+}
+
+apply from: rootProject.file('gradle/cse-db.gradle')
+
+description = 'Types that more than one feature library would otherwise copy. No Spring, Mongo, or codecs.'
