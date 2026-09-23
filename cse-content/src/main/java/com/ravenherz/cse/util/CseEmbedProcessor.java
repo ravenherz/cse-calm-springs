@@ -1,6 +1,7 @@
 package com.ravenherz.cse.util;
 
 import com.ravenherz.cse.dal.EntityAccess;
+import com.ravenherz.cse.dal.EntityId;
 import com.ravenherz.cse.dal.dao.CategoryService;
 import com.ravenherz.cse.dal.dao.ItemService;
 import com.ravenherz.cse.dal.dao.ResourceService;
@@ -581,7 +582,7 @@ public class CseEmbedProcessor {
         }
         String raw = id.trim();
         if (ObjectId.isValid(raw)) {
-            BasicEntity found = resources.getById(ResourceEntity.class, new ObjectId(raw));
+            BasicEntity found = resources.getById(ResourceEntity.class, EntityId.of(raw));
             if (found instanceof ResourceEntity resource) {
                 return resource;
             }
@@ -620,8 +621,8 @@ public class CseEmbedProcessor {
             if (album == null) {
                 return null;
             }
-            ResourceGroupEntity group = album.getRefResourceGroup();
-            if (group == null && album.getRefResourceGroupId() != null) {
+            ResourceGroupEntity group = null;
+            if (album.getRefResourceGroupId() != null) {
                 group = new ResourceGroupEntity();
                 group.setId(album.getRefResourceGroupId());
             }
@@ -634,9 +635,6 @@ public class CseEmbedProcessor {
         PageData page = item.getPageData();
         if (page == null) {
             return null;
-        }
-        if (page.getRefImage() != null) {
-            return page.getRefImage();
         }
         if (resources == null || page.getRefImageId() == null) {
             return null;

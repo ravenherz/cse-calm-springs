@@ -1,5 +1,7 @@
 package com.ravenherz.cse.security;
 
+import com.ravenherz.cse.dal.EntityId;
+
 import com.ravenherz.cse.dal.dto.AccountEntity;
 import com.ravenherz.cse.dal.dto.basic.AccountData;
 import com.ravenherz.cse.dal.dto.basic.enums.SecurityLevel;
@@ -38,7 +40,7 @@ class CseCookieAuthenticationFilterTest {
     void copiesLoginableSessionIntoContext() throws Exception {
         AccountEntity account = new AccountEntity(
                 new AccountData("raven", "hash", "r@example.com", SecurityLevel.ADMIN));
-        account.setId(new ObjectId());
+        account.setId(EntityId.generate());
         AccountAccessor authSupport = mock(AccountAccessor.class);
         when(authSupport.getAccessor(any(), any())).thenReturn(account);
         new CseCookieAuthenticationFilter(authSupport).doFilter(

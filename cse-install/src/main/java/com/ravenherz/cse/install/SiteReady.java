@@ -6,7 +6,7 @@ import com.fasterxml.jackson.databind.json.JsonMapper;
 import com.ravenherz.cse.constants.SettingKeys;
 import com.ravenherz.cse.core.SiteConfigured;
 import com.ravenherz.cse.dal.DataProvider;
-import com.ravenherz.cse.dal.ServiceProvider;
+import com.ravenherz.cse.dal.dao.AccountService;
 import com.ravenherz.cse.dal.dto.AccountEntity;
 import com.ravenherz.cse.security.InstanceConfigured;
 import org.slf4j.Logger;
@@ -37,16 +37,16 @@ public class SiteReady implements InstanceConfigured, SiteConfigured {
     private static final String JSON_EXT = ".json";
 
     private final DataProvider dataProvider;
-    private final ServiceProvider serviceProvider;
+    private final AccountService accountService;
     private final InstallDisk disk;
 
     private volatile Boolean cachedReady;
     private volatile Boolean cachedMongoReady;
     private volatile boolean installerHeldOpen;
 
-    public SiteReady(DataProvider dataProvider, ServiceProvider serviceProvider, InstallDisk disk) {
+    public SiteReady(DataProvider dataProvider, AccountService accountService, InstallDisk disk) {
         this.dataProvider = dataProvider;
-        this.serviceProvider = serviceProvider;
+        this.accountService = accountService;
         this.disk = disk;
     }
 
@@ -195,7 +195,7 @@ public class SiteReady implements InstanceConfigured, SiteConfigured {
      */
     private Boolean ownerPresent() {
         try {
-            List<AccountEntity> accounts = serviceProvider.getAccountService().getAllAccounts();
+            List<AccountEntity> accounts = accountService.getAllAccounts();
             return accounts != null && !accounts.isEmpty();
         } catch (RuntimeException ex) {
             LOGGER.warn("Could not list accounts while evaluating site ready: {}", ex.getMessage());

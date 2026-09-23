@@ -1,5 +1,7 @@
 package com.ravenherz.cse.controller;
 
+import com.ravenherz.cse.dal.EntityId;
+
 import com.ravenherz.cse.dal.dao.AppStoreService;
 import com.ravenherz.cse.dal.dto.AccountEntity;
 import com.ravenherz.cse.dal.dto.AppEntity;
@@ -166,7 +168,7 @@ class AppDataControllerMvcTest {
     private static AccountEntity member() {
         AccountEntity account = new AccountEntity(new AccountData("ada", "hash", "ada@example.com",
                 SecurityLevel.ACTIVE_USER));
-        account.setId(new ObjectId("68b000000000000000000001"));
+        account.setId(EntityId.of("68b000000000000000000001"));
         return account;
     }
 }

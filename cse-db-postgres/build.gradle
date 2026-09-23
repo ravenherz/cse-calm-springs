@@ -7,6 +7,6 @@ apply from: rootProject.file('gradle/cse-db.gradle')
 description = 'CSE PostgreSQL adapter (not wired)'
 
 dependencies {
-    api project(':cse-db-api')
+    api project(':cse-dal-core')
     api 'org.postgresql:postgresql'
 }

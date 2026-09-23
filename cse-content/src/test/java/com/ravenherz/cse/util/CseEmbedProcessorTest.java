@@ -440,7 +440,7 @@ class CseEmbedProcessorTest {
         data.setPathPublic(path);
         data.setType(type);
         ResourceEntity resource = new ResourceEntity();
-        resource.setId(id);
+        resource.setId(com.ravenherz.cse.dal.EntityId.of(id.toHexString()));
         resource.setResourceData(data);
         return resource;
     }

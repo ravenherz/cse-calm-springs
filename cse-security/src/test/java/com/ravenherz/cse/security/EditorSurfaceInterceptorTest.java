@@ -1,5 +1,7 @@
 package com.ravenherz.cse.security;
 
+import com.ravenherz.cse.dal.EntityId;
+
 import com.ravenherz.cse.dal.dto.AccountEntity;
 import com.ravenherz.cse.dal.dto.basic.AccountData;
 import com.ravenherz.cse.dal.dto.basic.enums.SecurityLevel;
@@ -24,7 +26,7 @@ class EditorSurfaceInterceptorTest {
         CapabilityService capabilities = mock(CapabilityService.class);
         AccountEntity account = new AccountEntity(
                 new AccountData("ada", "hash", "ada@example.com", SecurityLevel.ADMIN));
-        account.setId(new ObjectId());
+        account.setId(EntityId.generate());
         when(auth.getAccessor(any(), any())).thenReturn(account);
         when(capabilities.allows(any(), eq(CapabilityIds.EDITOR_ROLES))).thenReturn(false);
         EditorSurfaceInterceptor interceptor = new EditorSurfaceInterceptor(auth, capabilities);

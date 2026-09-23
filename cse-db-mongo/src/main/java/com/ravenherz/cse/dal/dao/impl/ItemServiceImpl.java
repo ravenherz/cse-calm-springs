@@ -1,12 +1,13 @@
 package com.ravenherz.cse.dal.dao.impl;
 
 import com.ravenherz.cse.dal.DataProvider;
+import com.ravenherz.cse.dal.EntityId;
+import com.ravenherz.cse.dal.MongoIds;
 import com.ravenherz.cse.dal.dao.BasicService;
 import com.ravenherz.cse.dal.dao.ItemService;
 import com.ravenherz.cse.dal.dto.BasicEntity;
 import com.ravenherz.cse.dal.dto.CategoryEntity;
 import com.ravenherz.cse.dal.dto.ItemEntity;
-import com.ravenherz.cse.dal.dto.ResourceEntity;
 import com.ravenherz.cse.dal.dto.basic.AlbumData;
 import com.ravenherz.cse.dal.dto.basic.PageData;
 import org.slf4j.Logger;
@@ -52,7 +53,7 @@ public class ItemServiceImpl extends BasicService implements ItemService {
         if (categoryEntity == null || categoryEntity.getId() == null) {
             return List.of();
         }
-        return mongo().find(Query.query(Criteria.where("refCategoryId").is(categoryEntity.getId())),
+        return mongo().find(Query.query(Criteria.where("refCategoryId").is(MongoIds.toObjectId(categoryEntity.getId()))),
                 ItemEntity.class);
     }
 
@@ -112,11 +113,11 @@ public class ItemServiceImpl extends BasicService implements ItemService {
     }
 
     @Override
-    public List<ItemEntity> getAllByRefImage(ResourceEntity resource) {
-        if (resource == null || resource.getId() == null) {
+    public List<ItemEntity> getAllByRefImage(EntityId imageId) {
+        if (imageId == null) {
             return List.of();
         }
-        return mongo().find(Query.query(Criteria.where("pageData.refImageId").is(resource.getId())),
+        return mongo().find(Query.query(Criteria.where("pageData.refImageId").is(MongoIds.toObjectId(imageId))),
                 ItemEntity.class);
     }
 }

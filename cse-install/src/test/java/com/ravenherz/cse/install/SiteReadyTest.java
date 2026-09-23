@@ -2,7 +2,6 @@ package com.ravenherz.cse.install;
 
 import com.ravenherz.cse.constants.SettingKeys;
 import com.ravenherz.cse.dal.DataProvider;
-import com.ravenherz.cse.dal.ServiceProvider;
 import com.ravenherz.cse.dal.dao.AccountService;
 import com.ravenherz.cse.dal.dto.AccountEntity;
 import org.junit.jupiter.api.AfterEach;
@@ -35,9 +34,7 @@ class SiteReadyTest {
         disk = new TempDisk(temp);
         dataProvider = mock(DataProvider.class);
         accountService = mock(AccountService.class);
-        ServiceProvider serviceProvider = mock(ServiceProvider.class);
-        when(serviceProvider.getAccountService()).thenReturn(accountService);
-        siteReady = new SiteReady(dataProvider, serviceProvider, disk);
+        siteReady = new SiteReady(dataProvider, accountService, disk);
     }
 
     @AfterEach

@@ -125,6 +125,99 @@ public class ResourceGroupIndex implements ResourceGroupRebuild {
         }
     }
 
+    public String filePath(String id) {
+        if (id == null || id.isBlank()) {
+            return null;
+        }
+        String needle = id.trim();
+        ResourceGroupTreeView.Assembled tree = view();
+        if (tree == null) {
+            return null;
+        }
+        String path = pathInGroups(tree.roots(), needle);
+        if (path != null) {
+            return path;
+        }
+        return tree.ungrouped() == null ? null : pathInFiles(tree.ungrouped().getTreeFiles(), needle);
+    }
+
+    public String groupLabel(String id) {
+        if (id == null || id.isBlank()) {
+            return null;
+        }
+        ResourceGroupDisplayDTO group = lookupGroup(view(), id.trim());
+        if (group == null) {
+            return null;
+        }
+        if (group.getPathLabel() != null && !group.getPathLabel().isBlank()) {
+            return group.getPathLabel();
+        }
+        return group.getHumanReadableId();
+    }
+
+    private static ResourceGroupDisplayDTO lookupGroup(ResourceGroupTreeView.Assembled tree, String id) {
+        if (tree == null) {
+            return null;
+        }
+        ResourceGroupDisplayDTO found = lookupGroup(tree.roots(), id);
+        if (found != null) {
+            return found;
+        }
+        ResourceGroupDisplayDTO ungrouped = tree.ungrouped();
+        return ungrouped != null && id.equals(ungrouped.getId()) ? ungrouped : null;
+    }
+
+    private static ResourceGroupDisplayDTO lookupGroup(List<ResourceGroupDisplayDTO> groups, String id) {
+        if (groups == null) {
+            return null;
+        }
+        for (ResourceGroupDisplayDTO group : groups) {
+            if (group == null) {
+                continue;
+            }
+            if (id.equals(group.getId())) {
+                return group;
+            }
+            ResourceGroupDisplayDTO child = lookupGroup(group.getChildren(), id);
+            if (child != null) {
+                return child;
+            }
+        }
+        return null;
+    }
+
+    private static String pathInGroups(List<ResourceGroupDisplayDTO> groups, String id) {
+        if (groups == null) {
+            return null;
+        }
+        for (ResourceGroupDisplayDTO group : groups) {
+            if (group == null) {
+                continue;
+            }
+            String path = pathInFiles(group.getTreeFiles(), id);
+            if (path != null) {
+                return path;
+            }
+            path = pathInGroups(group.getChildren(), id);
+            if (path != null) {
+                return path;
+            }
+        }
+        return null;
+    }
+
+    private static String pathInFiles(List<ResourceTreeFile> files, String id) {
+        if (files == null) {
+            return null;
+        }
+        for (ResourceTreeFile file : files) {
+            if (file != null && id.equals(file.id()) && file.key() != null && !file.key().isBlank()) {
+                return file.key();
+            }
+        }
+        return null;
+    }
+
     public byte[] treePreview(String id) {
         view();
         if (id == null || id.isBlank()) {

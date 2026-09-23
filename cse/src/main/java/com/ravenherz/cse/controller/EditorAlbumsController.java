@@ -1,5 +1,6 @@
 package com.ravenherz.cse.controller;
 
+import com.ravenherz.cse.dal.StoredIds;
 import com.ravenherz.cse.dal.dto.AccountEntity;
 import com.ravenherz.cse.dal.dto.CategoryEntity;
 import com.ravenherz.cse.dal.dto.ItemEntity;
@@ -87,7 +88,7 @@ public class EditorAlbumsController extends AbstractController {
             model.addAttribute("error", "Resource group not found");
             return loadAlbumCreate(model, accessor, categoryId);
         }
-        albumData.setRefResourceGroup(group);
+        albumData.setRefResourceGroupId(group.getId());
 
         ItemEntity newItem = new ItemEntity(name.trim(), albumData, accessor);
         applyAccess(request, newItem);
@@ -95,7 +96,7 @@ public class EditorAlbumsController extends AbstractController {
             try {
                 org.bson.types.ObjectId catObjId = new org.bson.types.ObjectId(categoryId.trim());
                 CategoryEntity category = (CategoryEntity) serviceProvider.getCategoryService()
-                        .getById(CategoryEntity.class, catObjId);
+                        .getById(CategoryEntity.class, StoredIds.entityId(catObjId));
                 newItem.setRefCategory(category);
             } catch (Exception e) {
                 LOGGER.warn("Invalid category ID: " + categoryId);
@@ -141,7 +142,7 @@ public class EditorAlbumsController extends AbstractController {
             fillAlbumFormLookups(model, accessor);
             return "/admin/editor-album-edit";
         }
-        albumData.setRefResourceGroup(group);
+        albumData.setRefResourceGroupId(group.getId());
 
         HistoryData historyData = item.getHistoryData();
         if (historyData == null) {
@@ -150,7 +151,7 @@ public class EditorAlbumsController extends AbstractController {
         Event[] oldEvents = historyData.getEvents();
         Event[] newEvents = new Event[oldEvents.length + 1];
         System.arraycopy(oldEvents, 0, newEvents, 0, oldEvents.length);
-        newEvents[oldEvents.length] = new Event(EventType.ENTITY_EDITED, LocalDateTime.now(), accessor);
+        newEvents[oldEvents.length] = new Event(EventType.ENTITY_EDITED, LocalDateTime.now(), accessor == null ? null : accessor.getId());
         historyData.setEvents(newEvents);
         item.setHistoryData(historyData);
         applyAccess(request, item);
@@ -194,10 +195,6 @@ public class EditorAlbumsController extends AbstractController {
                 }
             }
         }
-        ResourceGroupEntity current = item.getAlbumData().getRefResourceGroup();
-        if (current != null && current.getResourceGroupData() != null) {
-            return current.getResourceGroupData().getHumanReadableId();
-        }
         return null;
     }
 
@@ -205,7 +202,7 @@ public class EditorAlbumsController extends AbstractController {
         try {
             org.bson.types.ObjectId groupId = new org.bson.types.ObjectId(resourceGroupId.trim());
             return (ResourceGroupEntity) serviceProvider.getResourceGroupService()
-                    .getById(ResourceGroupEntity.class, groupId);
+                    .getById(ResourceGroupEntity.class, StoredIds.entityId(groupId));
         } catch (Exception e) {
             LOGGER.warn("Invalid resource group ID: " + resourceGroupId);
             return null;

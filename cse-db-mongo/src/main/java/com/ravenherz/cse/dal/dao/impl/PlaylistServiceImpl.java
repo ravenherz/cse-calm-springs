@@ -5,7 +5,8 @@ import com.ravenherz.cse.dal.dao.BasicService;
 import com.ravenherz.cse.dal.dao.PlaylistService;
 import com.ravenherz.cse.dal.dto.BasicEntity;
 import com.ravenherz.cse.dal.dto.PlaylistEntity;
-import com.ravenherz.cse.dal.dto.ResourceEntity;
+import com.ravenherz.cse.dal.EntityId;
+import com.ravenherz.cse.dal.MongoIds;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.stereotype.Repository;
@@ -35,11 +36,11 @@ public class PlaylistServiceImpl extends BasicService implements PlaylistService
     }
 
     @Override
-    public List<PlaylistEntity> getAllByRefImage(ResourceEntity resource) {
-        if (resource == null || resource.getId() == null) {
+    public List<PlaylistEntity> getAllByRefImage(EntityId imageId) {
+        if (imageId == null) {
             return List.of();
         }
-        return mongo().find(Query.query(Criteria.where("playlistData.refImage").is(resource.getId())),
+        return mongo().find(Query.query(Criteria.where("playlistData.refImage").is(MongoIds.toObjectId(imageId))),
                 PlaylistEntity.class);
     }
 

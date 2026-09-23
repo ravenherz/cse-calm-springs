@@ -1,12 +1,14 @@
 # cse-security
 
-Authentication, CSRF, and editor capability checks.
+Accounts, roles, and the checks that use them.
 
 ## Does
 
-- Spring Security entry points, CSRF cookie handling, role and capability checks, and the editor surface gate.
+- Account and role documents and their store interfaces.
+- Spring Security entry points, CSRF, capabilities, and the editor surface gate.
 
 ## Does not
 
 - Register the HTTP security filter chain. That wiring stays in the WAR.
-- Own account documents. Those are `cse-db-api`.
+- Own pages, files, themes, or apps.
+- Open Mongo. `cse-db-mongo` implements the stores.

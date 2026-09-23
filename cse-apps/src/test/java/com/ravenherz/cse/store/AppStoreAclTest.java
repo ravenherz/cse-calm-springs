@@ -1,9 +1,9 @@
 package com.ravenherz.cse.store;
 
+import com.ravenherz.cse.dal.EntityId;
 import com.ravenherz.cse.dal.dto.AccountEntity;
 import com.ravenherz.cse.dal.dto.basic.AccountData;
 import com.ravenherz.cse.dal.dto.basic.enums.SecurityLevel;
-import org.bson.types.ObjectId;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -66,7 +66,7 @@ class AppStoreAclTest {
 
     private static AccountEntity account(SecurityLevel level, String id) {
         AccountEntity account = new AccountEntity(new AccountData("ada", "hash", "ada@example.com", level));
-        account.setId(new ObjectId(id));
+        account.setId(EntityId.of(id));
         return account;
     }
 }

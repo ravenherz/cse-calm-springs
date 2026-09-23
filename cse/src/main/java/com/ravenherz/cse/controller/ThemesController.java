@@ -1,6 +1,7 @@
 package com.ravenherz.cse.controller;
 
 import com.ravenherz.cse.constants.SettingKeys;
+import com.ravenherz.cse.dal.StoredIds;
 import com.ravenherz.cse.dal.dto.AccountEntity;
 import com.ravenherz.cse.dal.dto.DataChunkEntity;
 import com.ravenherz.cse.dal.dto.ThemeEntity;
@@ -123,7 +124,7 @@ public class ThemesController extends AbstractController {
                 int end = Math.min(start + chunkSize, base64.length());
                 DataChunkEntity chunk = new DataChunkEntity(base64.substring(start, end));
                 serviceProvider.getThemeService().saveDataChunk(chunk);
-                themeData.addDataChunkId(chunk.getId());
+                themeData.addDataChunkId(StoredIds.objectId(chunk.getId()));
             }
         } else {
             themeData.setLargeFile(false);
@@ -140,12 +141,12 @@ public class ThemesController extends AbstractController {
             Event[] oldEvents = historyData.getEvents() == null ? new Event[0] : historyData.getEvents();
             Event[] newEvents = new Event[oldEvents.length + 1];
             System.arraycopy(oldEvents, 0, newEvents, 0, oldEvents.length);
-            newEvents[oldEvents.length] = new Event(EventType.ENTITY_EDITED, LocalDateTime.now(), accessor);
+            newEvents[oldEvents.length] = new Event(EventType.ENTITY_EDITED, LocalDateTime.now(), accessor == null ? null : accessor.getId());
             historyData.setEvents(newEvents);
             existing.setHistoryData(historyData);
             serviceProvider.getThemeService().replace(existing);
         } else {
-            serviceProvider.getThemeService().insert(new ThemeEntity(themeData, accessor));
+            serviceProvider.getThemeService().insert(new ThemeEntity(themeData, accessor == null ? null : accessor.getId()));
         }
 
         try {

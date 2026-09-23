@@ -9,6 +9,7 @@ import com.ravenherz.cse.util.video.VideoWork;
 
 import com.ravenherz.cse.constants.SettingKeys;
 import com.ravenherz.cse.controller.ContentProtectedAndCacheController;
+import com.ravenherz.cse.dal.StoredIds;
 import com.ravenherz.cse.dal.dao.ResourceService;
 import com.ravenherz.cse.dal.dto.BasicEntity;
 import com.ravenherz.cse.dal.dto.ResourceEntity;
@@ -105,7 +106,7 @@ public class VideoTranscodeJob {
         if (id == null || resources == null) {
             return;
         }
-        BasicEntity found = resources.getById(ResourceEntity.class, id);
+            BasicEntity found = resources.getById(ResourceEntity.class, StoredIds.entityId(id));
         if (!(found instanceof ResourceEntity resource) || resource.getResourceData() == null
                 || resource.getResourceData().getType() != ResourceType.VIDEO
                 || !VideoStatus.processing(resource.getResourceData())) {
@@ -156,7 +157,7 @@ public class VideoTranscodeJob {
         } catch (Exception e) {
             LOGGER.warn("Video transcode failed for {}: {}", id, e.getMessage(), e);
             try {
-                BasicEntity latest = resources.getById(ResourceEntity.class, id);
+                BasicEntity latest = resources.getById(ResourceEntity.class, StoredIds.entityId(id));
                 if (latest instanceof ResourceEntity entity && entity.getResourceData() != null) {
                     VideoStatus.fail(entity.getResourceData(), e.getMessage());
                     resources.replace(entity);
@@ -293,7 +294,7 @@ public class VideoTranscodeJob {
             return;
         }
         String preview = resource.getPreviewData() == null ? null : resource.getPreviewData().getPathPublic();
-        progress.ready(resource.getId(), preview, resource.getResourceData().getSizeLabel());
+        progress.ready(StoredIds.objectId(resource.getId()), preview, resource.getResourceData().getSizeLabel());
     }
 
     private void fail(ObjectId id, String message) {

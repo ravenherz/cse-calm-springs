@@ -9,9 +9,9 @@ import com.fasterxml.jackson.databind.json.JsonMapper;
 import com.ravenherz.cse.constants.MongoCollections;
 import com.ravenherz.cse.constants.SettingKeys;
 import com.ravenherz.cse.dal.DataProvider;
-import com.ravenherz.cse.dal.ServiceProvider;
+import com.ravenherz.cse.transfer.SiteServices;
 import com.ravenherz.cse.dal.dao.ResourceService;
-import com.ravenherz.cse.dal.dao.Service;
+import com.ravenherz.cse.dal.dao.Store;
 import com.ravenherz.cse.dal.dto.AccountEntity;
 import com.ravenherz.cse.dal.dto.AppEntity;
 import com.ravenherz.cse.dal.dto.BasicEntity;
@@ -60,12 +60,12 @@ public class CseSiteExporter {
             .disable(SerializationFeature.INDENT_OUTPUT)
             .build();
 
-    public void write(OutputStream out, ServiceProvider services, String sourceEngine,
+    public void write(OutputStream out, SiteServices services, String sourceEngine,
             Map<String, Map<String, String>> settingsOverlay) throws IOException {
         write(out, null, services, sourceEngine, settingsOverlay);
     }
 
-    public void write(OutputStream out, DataProvider dataProvider, ServiceProvider services,
+    public void write(OutputStream out, DataProvider dataProvider, SiteServices services,
             String sourceEngine, Map<String, Map<String, String>> settingsOverlay) throws IOException {
         MongoTemplate mongo = dataProvider == null ? null : dataProvider.getMongoTemplate();
         ZipOutputStream zip = new ZipOutputStream(new NonClosingOutputStream(out), StandardCharsets.UTF_8);
@@ -88,7 +88,7 @@ public class CseSiteExporter {
         }
     }
 
-    Map<String, List<Map<String, Object>>> snapshot(ServiceProvider services,
+    Map<String, List<Map<String, Object>>> snapshot(SiteServices services,
             Map<String, Map<String, String>> settingsOverlay) {
         List<AccountEntity> accounts = typed(services.getAccountService(), AccountEntity.class);
         List<CategoryEntity> categories = typed(services.getCategoryService(), CategoryEntity.class);
@@ -344,7 +344,7 @@ public class CseSiteExporter {
         return loaded == null ? List.of() : loaded;
     }
 
-    private static <T> List<T> typed(Service service, Class<T> type) {
+    private static <T> List<T> typed(Store service, Class<T> type) {
         if (service == null) {
             return List.of();
         }
@@ -374,7 +374,7 @@ public class CseSiteExporter {
         return out;
     }
 
-    private static List<RoleEntity> roles(ServiceProvider services) {
+    private static List<RoleEntity> roles(SiteServices services) {
         if (services == null || services.getRoleService() == null) {
             return List.of();
         }
@@ -382,7 +382,7 @@ public class CseSiteExporter {
         return all == null ? List.of() : all;
     }
 
-    private static RoleMatrixDocument matrix(ServiceProvider services) {
+    private static RoleMatrixDocument matrix(SiteServices services) {
         if (services == null || services.getRoleMatrixService() == null) {
             return null;
         }

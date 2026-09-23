@@ -1,0 +1,13 @@
+plugins {
+    id 'java-library'
+}
+
+apply from: rootProject.file('gradle/cse-db.gradle')
+
+description = 'Shared document base: id, access, history, and a generic store. No feature entities and no Mongo driver.'
+
+dependencies {
+    implementation 'org.slf4j:slf4j-api'
+    testImplementation 'org.junit.jupiter:junit-jupiter'
+    testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+}

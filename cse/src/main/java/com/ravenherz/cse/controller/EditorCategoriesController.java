@@ -2,6 +2,7 @@ package com.ravenherz.cse.controller;
 
 import com.ravenherz.cse.present.EditorTree;
 import com.ravenherz.cse.present.ResourceGroupIndex;
+import com.ravenherz.cse.dal.StoredIds;
 import com.ravenherz.cse.dal.dto.AccountEntity;
 import com.ravenherz.cse.dal.dto.CategoryEntity;
 import com.ravenherz.cse.dal.dto.ItemEntity;
@@ -125,7 +126,7 @@ public class EditorCategoriesController extends AbstractController {
         CategoryEntity category;
         try {
             org.bson.types.ObjectId objId = new org.bson.types.ObjectId(id.trim());
-            category = (CategoryEntity) serviceProvider.getCategoryService().getById(CategoryEntity.class, objId);
+            category = (CategoryEntity) serviceProvider.getCategoryService().getById(CategoryEntity.class, StoredIds.entityId(objId));
         } catch (Exception e) {
             error(404, request, response);
             return null;
@@ -167,7 +168,7 @@ public class EditorCategoriesController extends AbstractController {
         CategoryEntity category;
         try {
             org.bson.types.ObjectId objId = new org.bson.types.ObjectId(id.trim());
-            category = (CategoryEntity) serviceProvider.getCategoryService().getById(CategoryEntity.class, objId);
+            category = (CategoryEntity) serviceProvider.getCategoryService().getById(CategoryEntity.class, StoredIds.entityId(objId));
         } catch (Exception e) {
             error(404, request, response);
             return null;
@@ -198,7 +199,7 @@ public class EditorCategoriesController extends AbstractController {
         Event[] oldEvents = historyData.getEvents();
         Event[] newEvents = new Event[oldEvents.length + 1];
         System.arraycopy(oldEvents, 0, newEvents, 0, oldEvents.length);
-        newEvents[oldEvents.length] = new Event(EventType.ENTITY_EDITED, LocalDateTime.now(), accessor);
+        newEvents[oldEvents.length] = new Event(EventType.ENTITY_EDITED, LocalDateTime.now(), accessor == null ? null : accessor.getId());
         historyData.setEvents(newEvents);
         category.setHistoryData(historyData);
         applyAccess(request, category);
@@ -228,7 +229,7 @@ public class EditorCategoriesController extends AbstractController {
         CategoryEntity category;
         try {
             org.bson.types.ObjectId objId = new org.bson.types.ObjectId(id.trim());
-            category = (CategoryEntity) serviceProvider.getCategoryService().getById(CategoryEntity.class, objId);
+            category = (CategoryEntity) serviceProvider.getCategoryService().getById(CategoryEntity.class, StoredIds.entityId(objId));
         } catch (Exception e) {
             error(404, request, response);
             return null;

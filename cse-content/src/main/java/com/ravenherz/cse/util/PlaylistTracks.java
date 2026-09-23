@@ -11,54 +11,51 @@ public final class PlaylistTracks {
     private PlaylistTracks() {
     }
 
-    public static String title(PlaylistTrack track) {
-        if (track == null) {
+    public static String title(PlaylistTrack track, ResourceEntity resource) {
+        if (track == null && resource == null) {
             return "Unknown";
         }
-        if (track.getTitle() != null && !track.getTitle().isBlank()) {
+        if (track != null && track.getTitle() != null && !track.getTitle().isBlank()) {
             return track.getTitle().trim();
         }
-        String fromMeta = metadata(track, "title");
+        String fromMeta = metadata(resource, "title");
         if (fromMeta != null) {
             return fromMeta;
         }
-        String fileName = fileName(track);
+        String fileName = fileName(resource);
         return fileName.isBlank() ? "Unknown" : fileName;
     }
 
-    public static String artist(PlaylistTrack track) {
-        if (track == null) {
-            return "";
-        }
-        if (track.getArtist() != null && !track.getArtist().isBlank()) {
+    public static String artist(PlaylistTrack track, ResourceEntity resource) {
+        if (track != null && track.getArtist() != null && !track.getArtist().isBlank()) {
             return track.getArtist().trim();
         }
-        String fromMeta = metadata(track, "artist");
+        String fromMeta = metadata(resource, "artist");
         return fromMeta == null ? "" : fromMeta;
     }
 
-    public static String trackNumber(PlaylistTrack track, int index) {
-        String fromMeta = metadata(track, "trackNumber");
+    public static String trackNumber(PlaylistTrack track, ResourceEntity resource, int index) {
+        String fromMeta = metadata(resource, "trackNumber");
         if (fromMeta != null) {
             return fromMeta;
         }
         return String.valueOf(index + 1);
     }
 
-    public static String durationLabel(PlaylistTrack track) {
-        return formatDuration(metadata(track, "duration"));
+    public static String durationLabel(PlaylistTrack track, ResourceEntity resource) {
+        return formatDuration(metadata(resource, "duration"));
     }
 
-    public static String src(PlaylistTrack track) {
-        ResourceData data = resourceData(track);
+    public static String src(PlaylistTrack track, ResourceEntity resource) {
+        ResourceData data = resource == null ? null : resource.getResourceData();
         if (data == null || data.getPathPublic() == null || data.getPathPublic().isBlank()) {
             return "";
         }
         return "./content-protected" + data.getPathPublic();
     }
 
-    public static String waveformBase64(PlaylistTrack track) {
-        ResourceData data = resourceData(track);
+    public static String waveformBase64(PlaylistTrack track, ResourceEntity resource) {
+        ResourceData data = resource == null ? null : resource.getResourceData();
         if (data == null) {
             return "";
         }
@@ -100,19 +97,8 @@ public final class PlaylistTracks {
         return value.trim();
     }
 
-    private static String metadata(PlaylistTrack track, String key) {
-        return metadata(track == null ? null : track.getRefResource(), key);
-    }
-
-    private static ResourceData resourceData(PlaylistTrack track) {
-        if (track == null || track.getRefResource() == null) {
-            return null;
-        }
-        return track.getRefResource().getResourceData();
-    }
-
-    private static String fileName(PlaylistTrack track) {
-        ResourceData data = resourceData(track);
+    private static String fileName(ResourceEntity resource) {
+        ResourceData data = resource == null ? null : resource.getResourceData();
         return data == null ? "" : data.getFileName();
     }
 }

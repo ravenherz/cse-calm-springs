@@ -1,5 +1,8 @@
 package com.ravenherz.cse.present;
 
+import com.ravenherz.cse.dal.EntityId;
+import com.ravenherz.cse.dal.StoredIds;
+
 import com.ravenherz.cse.dal.dao.AppService;
 import com.ravenherz.cse.dal.dao.CategoryService;
 import com.ravenherz.cse.dal.dao.ItemService;
@@ -55,7 +58,7 @@ class ResourceGroupIndexTest {
         ResourceGroupService groups = mock(ResourceGroupService.class);
         ResourceService resources = mock(ResourceService.class);
         when(groups.getAllGroups()).thenReturn(List.of(travel));
-        when(resources.listSizeHints()).thenReturn(List.of(new ResourceSizeHint(travel.getId(), 50)));
+        when(resources.listSizeHints()).thenReturn(List.of(new ResourceSizeHint(StoredIds.objectId(travel.getId()), 50)));
         ResourceGroupIndex index = new ResourceGroupIndex(groups, resources);
 
         ResourceGroupDisplayDTO first = index.view().roots().get(0);
@@ -78,7 +81,7 @@ class ResourceGroupIndexTest {
         ResourceService resources = mock(ResourceService.class);
         when(groups.getAllGroups()).thenReturn(List.of(travel));
         when(resources.listSizeHints()).thenReturn(List.of(
-                new ResourceSizeHint(fileId, travel.getId(), "/u/res/image/cat.jpg", 50)));
+                new ResourceSizeHint(fileId, StoredIds.objectId(travel.getId()), "/u/res/image/cat.jpg", 50)));
         ResourceGroupIndex index = new ResourceGroupIndex(groups, resources);
         ResourceGroupDisplayDTO first = index.view().roots().get(0);
         assertEquals("cat.jpg", first.getTreeFiles().get(0).name());
@@ -94,7 +97,7 @@ class ResourceGroupIndexTest {
         ResourceService resources = mock(ResourceService.class);
         when(groups.getAllGroups()).thenReturn(List.of(travel));
         when(resources.listSizeHints()).thenReturn(List.of(
-                new ResourceSizeHint(fileId, travel.getId(), "/u/res/image/cat.jpg", 50)));
+                new ResourceSizeHint(fileId, StoredIds.objectId(travel.getId()), "/u/res/image/cat.jpg", 50)));
         stubPreviewSources(resources, new ResourcePreviewSource(fileId, tinyJpeg()));
         ResourceGroupIndex index = new ResourceGroupIndex(groups, resources);
         ResourceGroupDisplayDTO first = index.view().roots().get(0);
@@ -137,11 +140,11 @@ class ResourceGroupIndexTest {
         ResourceService resources = mock(ResourceService.class);
         when(groups.getAllGroups()).thenReturn(List.of(travel));
         when(resources.listSizeHints()).thenReturn(List.of(
-                new ResourceSizeHint(fileId, travel.getId(), "/u/res/image/cat.jpg", 50)));
+                new ResourceSizeHint(fileId, StoredIds.objectId(travel.getId()), "/u/res/image/cat.jpg", 50)));
         ResourceGroupIndex index = new ResourceGroupIndex(groups, resources);
         index.view();
         ResourceEntity file = imageWithPreview(travel, tinyJpeg());
-        file.setId(fileId);
+        file.setId(EntityId.of(fileId.toHexString()));
         file.getResourceData().setPathPublic("/u/res/image/dog.jpg");
         index.fileRenamed(file);
         ResourceGroupDisplayDTO after = index.view().roots().get(0);
@@ -162,12 +165,12 @@ class ResourceGroupIndexTest {
         ResourceService resources = mock(ResourceService.class);
         when(groups.getAllGroups()).thenReturn(List.of(travel));
         when(resources.listSizeHints()).thenReturn(List.of(
-                new ResourceSizeHint(fileId, travel.getId(), "/u/res/image/cat.jpg", 50)));
+                new ResourceSizeHint(fileId, StoredIds.objectId(travel.getId()), "/u/res/image/cat.jpg", 50)));
         stubPreviewSources(resources, new ResourcePreviewSource(fileId, tinyJpeg()));
         ResourceGroupIndex index = new ResourceGroupIndex(groups, resources);
         index.view();
         ResourceEntity file = imageWithPreview(travel, tinyJpeg());
-        file.setId(fileId);
+        file.setId(EntityId.of(fileId.toHexString()));
         index.fileRemoved(file);
         assertNull(index.treePreview(fileId.toString()));
         assertTrue(index.view().roots().get(0).getTreeFiles().isEmpty());
@@ -178,13 +181,13 @@ class ResourceGroupIndexTest {
         ResourceGroupEntity unsorted = group("Unsorted");
         ObjectId fileId = new ObjectId();
         CategoryEntity shots = new CategoryEntity(new CategoryData("shots", "Shots", "", true, true), null);
-        shots.setId(new ObjectId());
+        shots.setId(EntityId.generate());
         ItemEntity page = new ItemEntity("aurora", new PageData(), null);
-        page.setId(new ObjectId());
+        page.setId(EntityId.generate());
         page.getPageData().setHeader("Aurora");
         ResourceEntity featured = new ResourceEntity();
-        featured.setId(fileId);
-        page.getPageData().setRefImage(featured);
+        featured.setId(EntityId.of(fileId.toHexString()));
+        page.getPageData().setRefImageId(featured.getId());
         CategoryEntity ref = new CategoryEntity();
         ref.setId(shots.getId());
         page.setRefCategory(ref);
@@ -195,7 +198,7 @@ class ResourceGroupIndexTest {
         ItemService items = mock(ItemService.class);
         when(groups.getAllGroups()).thenReturn(List.of(unsorted));
         when(resources.listSizeHints()).thenReturn(List.of(
-                new ResourceSizeHint(fileId, unsorted.getId(), "/u/res/image/aurora.jpg", 50)));
+                new ResourceSizeHint(fileId, StoredIds.objectId(unsorted.getId()), "/u/res/image/aurora.jpg", 50)));
         stubPreviewSources(resources, new ResourcePreviewSource(fileId, tinyJpeg()));
         when(categories.getAllCategories()).thenReturn(List.of(shots));
         when(items.getAll()).thenReturn(List.of(page));
@@ -227,7 +230,7 @@ class ResourceGroupIndexTest {
         ResourceGroupService groups = mock(ResourceGroupService.class);
         ResourceService resources = mock(ResourceService.class);
         when(groups.getAllGroups()).thenReturn(List.of(travel));
-        when(resources.listSizeHints()).thenReturn(List.of(new ResourceSizeHint(travel.getId(), 50)));
+        when(resources.listSizeHints()).thenReturn(List.of(new ResourceSizeHint(StoredIds.objectId(travel.getId()), 50)));
         ResourceGroupIndex index = new ResourceGroupIndex(groups, resources);
         index.fileAdded(travel.getId().toString(), 50);
         assertEquals(1, index.view().roots().get(0).getOwnFileCount());
@@ -256,7 +259,7 @@ class ResourceGroupIndexTest {
         ResourceService resources = mock(ResourceService.class);
         ResourceEntity grouped = new ResourceEntity(new ResourceData(), null);
         ResourceEntity loose = new ResourceEntity(new ResourceData(), null);
-        when(resources.listForEditor(defaults.getId())).thenReturn(List.of(grouped));
+        when(resources.listForEditor(StoredIds.objectId(defaults.getId()))).thenReturn(List.of(grouped));
         when(resources.listForEditor(null)).thenReturn(List.of(loose));
         ResourceGroupIndex index = new ResourceGroupIndex(groups, resources);
         ResourceGroupDisplayDTO defaultDto = new ResourceGroupDisplayDTO();
@@ -266,7 +269,7 @@ class ResourceGroupIndexTest {
         assertEquals(2, files.size());
         assertTrue(files.contains(grouped));
         assertTrue(files.contains(loose));
-        verify(resources).listForEditor(defaults.getId());
+        verify(resources).listForEditor(StoredIds.objectId(defaults.getId()));
         verify(resources).listForEditor(null);
     }
 
@@ -274,9 +277,9 @@ class ResourceGroupIndexTest {
     void editorRootsCachesContentUntilContentChanges() {
         ResourceGroupEntity unsorted = group("Unsorted");
         CategoryEntity shots = new CategoryEntity(new CategoryData("shots", "Shots", "", true, true), null);
-        shots.setId(new ObjectId());
+        shots.setId(EntityId.generate());
         ItemEntity page = new ItemEntity("aurora", new PageData(), null);
-        page.setId(new ObjectId());
+        page.setId(EntityId.generate());
         page.getPageData().setHeader("Aurora");
         CategoryEntity ref = new CategoryEntity();
         ref.setId(shots.getId());
@@ -305,7 +308,7 @@ class ResourceGroupIndexTest {
         verify(items, times(1)).getAll();
 
         CategoryEntity nights = new CategoryEntity(new CategoryData("nights", "Nights", "", true, true), null);
-        nights.setId(new ObjectId());
+        nights.setId(EntityId.generate());
         when(categories.getAllCategories()).thenReturn(List.of(shots, nights));
         index.contentChanged();
         List<ResourceGroupDisplayDTO> after = index.editorRoots();
@@ -414,7 +417,7 @@ class ResourceGroupIndexTest {
 
     private static ResourceGroupEntity group(String name) {
         ResourceGroupEntity entity = new ResourceGroupEntity(new ResourceGroupData(name), null);
-        entity.setId(new ObjectId());
+        entity.setId(EntityId.generate());
         return entity;
     }
 
@@ -424,7 +427,7 @@ class ResourceGroupIndexTest {
         data.setPathPublic("/u/res/image/cat.jpg");
         data.setSizeInBytes(jpeg == null ? 0 : jpeg.length);
         ResourceEntity entity = new ResourceEntity(data, null);
-        entity.setId(new ObjectId());
+        entity.setId(EntityId.generate());
         entity.setRefResourceGroup(group);
         ResourceData preview = new ResourceData();
         preview.setContentRaw(Base64.getEncoder().encodeToString(jpeg));

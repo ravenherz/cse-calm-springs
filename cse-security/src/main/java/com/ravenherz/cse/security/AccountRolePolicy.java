@@ -3,7 +3,7 @@ package com.ravenherz.cse.security;
 import com.ravenherz.cse.dal.dao.RoleService;
 import com.ravenherz.cse.dal.dto.AccountEntity;
 import com.ravenherz.cse.dal.dto.RoleEntity;
-import org.bson.types.ObjectId;
+import com.ravenherz.cse.dal.EntityId;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -53,7 +53,7 @@ public final class AccountRolePolicy {
         return ownersExcept(accounts, null, roles).size();
     }
 
-    public static List<AccountEntity> ownersExcept(List<AccountEntity> accounts, ObjectId keepId,
+    public static List<AccountEntity> ownersExcept(List<AccountEntity> accounts, EntityId keepId,
             RoleService roles) {
         List<AccountEntity> owners = new ArrayList<>();
         if (accounts == null) {

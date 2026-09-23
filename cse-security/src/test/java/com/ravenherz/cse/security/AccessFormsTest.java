@@ -1,10 +1,11 @@
 package com.ravenherz.cse.security;
 
+import com.ravenherz.cse.dal.EntityId;
+
 import com.ravenherz.cse.dal.dao.RoleService;
-import com.ravenherz.cse.dal.dto.ResourceEntity;
+import com.ravenherz.cse.dal.dto.AccountEntity;
 import com.ravenherz.cse.dal.dto.RoleEntity;
 import com.ravenherz.cse.dal.dto.basic.AccessRule;
-import com.ravenherz.cse.dal.dto.basic.ResourceData;
 import com.ravenherz.cse.dal.role.RoleSeeds;
 import org.bson.types.ObjectId;
 import org.junit.jupiter.api.Test;
@@ -41,7 +42,7 @@ class AccessFormsTest {
         request.addParameter("accessEditRoleIds", member.idHex(), "deadbeef", guest.idHex());
         request.addParameter("accessDeleteInherit", "true");
 
-        ResourceEntity file = new ResourceEntity(new ResourceData(), null);
+        AccountEntity file = new AccountEntity();
         AccessForms.apply(request, file, roles);
 
         AccessRule read = file.getSecurityData().getRead();

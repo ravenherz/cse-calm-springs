@@ -1,5 +1,7 @@
 package com.ravenherz.cse.transfer;
 
+import com.ravenherz.cse.dal.EntityId;
+
 import com.ravenherz.cse.dal.dto.ResourceGroupEntity;
 import com.ravenherz.cse.dal.dto.basic.ResourceGroupData;
 import org.bson.types.ObjectId;
@@ -15,9 +17,9 @@ class CseSiteResourceGroupDocumentsTest {
     @Test
     void parentGroupIdRoundTrips() {
         ResourceGroupEntity parent = new ResourceGroupEntity(new ResourceGroupData("Travel"), null);
-        parent.setId(new ObjectId("68b0000000000000000000aa"));
+        parent.setId(EntityId.of("68b0000000000000000000aa"));
         ResourceGroupEntity child = new ResourceGroupEntity(new ResourceGroupData("2024"), null);
-        child.setId(new ObjectId("68b0000000000000000000bb"));
+        child.setId(EntityId.of("68b0000000000000000000bb"));
         child.setRefParentGroup(parent);
         child.attachRefParentGroup(null);
 
@@ -26,7 +28,7 @@ class CseSiteResourceGroupDocumentsTest {
         assertEquals("68b0000000000000000000aa", doc.get("refParentGroupId"));
 
         ResourceGroupEntity read = CseSiteReaders.resourceGroup(doc);
-        assertEquals(parent.getId(), read.refParentGroupObjectId());
+        assertEquals(parent.getId().toHexString(), read.refParentGroupObjectId().toHexString());
         assertNull(read.getRefParentGroup());
     }
 }

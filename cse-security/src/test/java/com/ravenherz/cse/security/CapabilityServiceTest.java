@@ -1,5 +1,7 @@
 package com.ravenherz.cse.security;
 
+import com.ravenherz.cse.dal.EntityId;
+
 import com.ravenherz.cse.dal.dao.RoleMatrixService;
 import com.ravenherz.cse.dal.dao.RoleService;
 import com.ravenherz.cse.dal.dto.AccountEntity;
@@ -99,7 +101,7 @@ class CapabilityServiceTest {
 
     private static AccountEntity account(SecurityLevel level) {
         AccountEntity entity = new AccountEntity(new AccountData("user", "hash", "u@example.com", level));
-        entity.setId(new ObjectId());
+        entity.setId(EntityId.generate());
         return entity;
     }
 }

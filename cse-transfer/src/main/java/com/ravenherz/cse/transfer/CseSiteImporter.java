@@ -153,10 +153,11 @@ public class CseSiteImporter {
                 continue;
             }
             mongo.save(entity);
-            keep.add(entity.getId());
+            keep.add(com.ravenherz.cse.dal.StoredIds.objectId(entity.getId()));
         }
         for (T existing : mongo.findAll(type)) {
-            if (existing != null && existing.getId() != null && !keep.contains(existing.getId())) {
+            if (existing != null && existing.getId() != null
+                    && !keep.contains(com.ravenherz.cse.dal.StoredIds.objectId(existing.getId()))) {
                 mongo.remove(existing);
             }
         }
@@ -296,7 +297,7 @@ public class CseSiteImporter {
             return matrix.getId();
         }
         if (entity instanceof BasicEntity basic) {
-            return basic.getId();
+            return com.ravenherz.cse.dal.StoredIds.objectId(basic.getId());
         }
         return null;
     }

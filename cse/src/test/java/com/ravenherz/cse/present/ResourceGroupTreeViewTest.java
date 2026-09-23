@@ -1,5 +1,8 @@
 package com.ravenherz.cse.present;
 
+import com.ravenherz.cse.dal.EntityId;
+import com.ravenherz.cse.dal.StoredIds;
+
 import com.ravenherz.cse.dal.dto.ResourceEntity;
 import com.ravenherz.cse.dal.dto.ResourceGroupEntity;
 import com.ravenherz.cse.dal.dto.basic.EntityAccessConstants;
@@ -93,8 +96,8 @@ class ResourceGroupTreeViewTest {
         ResourceGroupEntity y2024 = child("2024", travel);
         ResourceGroupTreeView.Assembled tree = ResourceGroupTreeView.assembleStats(
                 List.of(travel, y2024),
-                List.of(new ResourceSizeHint(travel.getId(), 50),
-                        new ResourceSizeHint(y2024.getId(), 100),
+                List.of(new ResourceSizeHint(StoredIds.objectId(travel.getId()), 50),
+                        new ResourceSizeHint(StoredIds.objectId(y2024.getId()), 100),
                         new ResourceSizeHint(null, 10)));
         ResourceGroupDisplayDTO travelDto = byName(tree.roots(), "Travel");
         assertEquals(1, travelDto.getOwnFileCount());
@@ -113,7 +116,7 @@ class ResourceGroupTreeViewTest {
         ResourceGroupEntity travel = group("Travel");
         ResourceGroupTreeView.Assembled tree = ResourceGroupTreeView.assembleStats(
                 List.of(defaults, travel),
-                List.of(new ResourceSizeHint(travel.getId(), 50),
+                List.of(new ResourceSizeHint(StoredIds.objectId(travel.getId()), 50),
                         new ResourceSizeHint(null, 10)));
         ResourceGroupDisplayDTO defaultDto = byName(tree.roots(), "Unsorted");
         ResourceGroupDisplayDTO travelDto = byName(tree.roots(), "Travel");
@@ -131,7 +134,7 @@ class ResourceGroupTreeViewTest {
         ObjectId fileId = new ObjectId();
         ResourceGroupTreeView.Assembled tree = ResourceGroupTreeView.assembleStats(
                 List.of(travel),
-                List.of(new ResourceSizeHint(fileId, travel.getId(), "/u/res/image/aurora.jpg", 50)));
+                List.of(new ResourceSizeHint(fileId, StoredIds.objectId(travel.getId()), "/u/res/image/aurora.jpg", 50)));
         ResourceGroupDisplayDTO travelDto = byName(tree.roots(), "Travel");
         assertEquals(1, travelDto.getTreeFiles().size());
         assertEquals(fileId.toString(), travelDto.getTreeFiles().get(0).id());
@@ -167,7 +170,7 @@ class ResourceGroupTreeViewTest {
     void withResourcesDoesNotMutateSnapshotChildrenStats() {
         ResourceGroupEntity travel = group("Travel");
         ResourceGroupTreeView.Assembled tree = ResourceGroupTreeView.assembleStats(
-                List.of(travel), List.of(new ResourceSizeHint(travel.getId(), 9)));
+                List.of(travel), List.of(new ResourceSizeHint(StoredIds.objectId(travel.getId()), 9)));
         ResourceGroupDisplayDTO selected = ResourceGroupTreeView.withResources(
                 tree.roots().get(0), List.of(resource(travel, 9)));
         assertEquals(1, selected.getResources().size());
@@ -201,7 +204,7 @@ class ResourceGroupTreeViewTest {
 
     private static ResourceGroupEntity group(String name) {
         ResourceGroupEntity entity = new ResourceGroupEntity(new ResourceGroupData(name), null);
-        entity.setId(new ObjectId());
+        entity.setId(EntityId.generate());
         return entity;
     }
 
@@ -216,7 +219,7 @@ class ResourceGroupTreeViewTest {
         data.setSizeInBytes(bytes);
         data.setPathPublic("/u/res/image/file-" + bytes + ".jpg");
         ResourceEntity entity = new ResourceEntity(data, null);
-        entity.setId(new ObjectId());
+        entity.setId(EntityId.generate());
         entity.setRefResourceGroup(group);
         return entity;
     }

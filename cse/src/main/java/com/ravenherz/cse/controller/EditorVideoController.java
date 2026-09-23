@@ -1,5 +1,6 @@
 package com.ravenherz.cse.controller;
 
+import com.ravenherz.cse.dal.StoredIds;
 import com.ravenherz.cse.dal.dao.ResourceService;
 import com.ravenherz.cse.dal.dto.BasicEntity;
 import com.ravenherz.cse.dal.dto.ResourceEntity;
@@ -64,7 +65,7 @@ public class EditorVideoController extends AbstractController {
         if (resources == null) {
             return null;
         }
-        BasicEntity found = resources.getById(ResourceEntity.class, id);
+        BasicEntity found = resources.getById(ResourceEntity.class, StoredIds.entityId(id));
         if (!(found instanceof ResourceEntity resource) || resource.getResourceData() == null
                 || resource.getResourceData().getType() != ResourceType.VIDEO) {
             return null;

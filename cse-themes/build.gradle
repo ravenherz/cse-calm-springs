@@ -7,7 +7,10 @@ apply from: rootProject.file('gradle/cse-db.gradle')
 description = 'Theme pack deploy, catalog, and disk templates. Theme projects and ThemesController stay outside this library.'
 
 dependencies {
-    api project(':cse-db-api')
+    api project(':cse-dal-core')
+    api project(':cse-security')
+    api project(':cse-media')
+    api 'org.springframework.boot:spring-boot-starter-data-mongodb'
     api project(':cse-core')
     implementation 'org.slf4j:slf4j-api'
     implementation 'org.springframework:spring-context'

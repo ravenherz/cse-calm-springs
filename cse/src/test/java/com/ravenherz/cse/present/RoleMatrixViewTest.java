@@ -1,5 +1,7 @@
 package com.ravenherz.cse.present;
 
+import com.ravenherz.cse.dal.EntityId;
+
 import com.ravenherz.cse.dal.dto.RoleEntity;
 import com.ravenherz.cse.dal.role.CapabilityIds;
 import com.ravenherz.cse.dal.role.RoleSeeds;

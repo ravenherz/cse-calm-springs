@@ -21,7 +21,7 @@ public final class MongoRefs {
     }
 
     public static ObjectId id(BasicEntity entity) {
-        return entity == null ? null : entity.getId();
+        return entity == null ? null : MongoIds.toObjectId(entity.getId());
     }
 
     public static void sync(Object entity) {
@@ -48,7 +48,7 @@ public final class MongoRefs {
         if (page == null) {
             return;
         }
-        page.setRefImage(page.getRefImage());
+        page.setRefImageId(page.getRefImageId());
         if (page.getComments() == null) {
             return;
         }
@@ -63,13 +63,13 @@ public final class MongoRefs {
         if (playlist == null) {
             return;
         }
-        playlist.setRefImage(playlist.getRefImage());
+        playlist.setRefImageId(playlist.getRefImageId());
         if (playlist.getTracks() == null) {
             return;
         }
         for (PlaylistTrack track : playlist.getTracks()) {
             if (track != null) {
-                track.setRefResource(track.getRefResource());
+                track.setRefResourceId(track.getRefResourceId());
             }
         }
     }
@@ -78,7 +78,7 @@ public final class MongoRefs {
         if (album == null) {
             return;
         }
-        album.setRefResourceGroup(album.getRefResourceGroup());
+        album.setRefResourceGroupId(album.getRefResourceGroupId());
     }
 
     private static void syncHistory(HistoryData history) {
@@ -87,7 +87,7 @@ public final class MongoRefs {
         }
         for (Event event : history.getEvents()) {
             if (event != null) {
-                event.setOwner(event.getOwner());
+                event.setOwnerId(event.getOwnerId());
             }
         }
     }

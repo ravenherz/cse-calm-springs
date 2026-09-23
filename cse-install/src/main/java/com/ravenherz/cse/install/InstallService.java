@@ -2,7 +2,10 @@ package com.ravenherz.cse.install;
 
 import com.ravenherz.cse.constants.SettingKeys;
 import com.ravenherz.cse.dal.DataProvider;
-import com.ravenherz.cse.dal.ServiceProvider;
+import com.ravenherz.cse.dal.dao.AccountService;
+import com.ravenherz.cse.dal.dao.CategoryService;
+import com.ravenherz.cse.dal.dao.RoleMatrixService;
+import com.ravenherz.cse.dal.dao.RoleService;
 import com.ravenherz.cse.dal.dto.AccountEntity;
 import com.ravenherz.cse.dal.dto.CategoryEntity;
 import com.ravenherz.cse.dal.dto.basic.AccountData;
@@ -28,19 +31,26 @@ public class InstallService {
 
     private final InstallSettings settings;
     private final DataProvider dataProvider;
-    private final ServiceProvider serviceProvider;
+    private final AccountService accountService;
+    private final RoleService roleService;
+    private final RoleMatrixService roleMatrixService;
+    private final CategoryService categoryService;
     private final PasswordHashes passwordHashes;
     private final StaticAppDeployer staticAppDeployer;
     private final SiteReady siteReady;
     private final UrlTemplateSeeds urlTemplateSeeds;
     private volatile Boolean existingSite;
 
-    public InstallService(InstallSettings settings, DataProvider dataProvider, ServiceProvider serviceProvider,
+    public InstallService(InstallSettings settings, DataProvider dataProvider, AccountService accountService,
+            RoleService roleService, RoleMatrixService roleMatrixService, CategoryService categoryService,
             PasswordHashes passwordHashes, StaticAppDeployer staticAppDeployer,
             SiteReady siteReady, UrlTemplateSeeds urlTemplateSeeds) {
         this.settings = settings;
         this.dataProvider = dataProvider;
-        this.serviceProvider = serviceProvider;
+        this.accountService = accountService;
+        this.roleService = roleService;
+        this.roleMatrixService = roleMatrixService;
+        this.categoryService = categoryService;
         this.passwordHashes = passwordHashes;
         this.staticAppDeployer = staticAppDeployer;
         this.siteReady = siteReady;
@@ -127,15 +137,15 @@ public class InstallService {
         }
         AccountEntity entity = new AccountEntity(new AccountData(login, passwordHashes.hash(password),
                 email, SecurityLevel.OWNER));
-        if (serviceProvider.getRoleService() != null) {
-            serviceProvider.getRoleService().ensureSeeded();
-            if (serviceProvider.getRoleMatrixService() != null) {
-                serviceProvider.getRoleMatrixService().ensureSeeded(serviceProvider.getRoleService());
+        if (roleService != null) {
+            roleService.ensureSeeded();
+            if (roleMatrixService != null) {
+                roleMatrixService.ensureSeeded(roleService);
             }
-            AccountRoles.assignBySlug(entity.getAccountData(), serviceProvider.getRoleService(),
+            AccountRoles.assignBySlug(entity.getAccountData(), roleService,
                     RoleSeeds.OWNER, true);
         }
-        serviceProvider.getAccountService().insert(entity);
+        accountService.insert(entity);
         return entity;
     }
 
@@ -192,7 +202,7 @@ public class InstallService {
 
     private boolean hasOwner() {
         try {
-            List<AccountEntity> accounts = serviceProvider.getAccountService().getAllAccounts();
+            List<AccountEntity> accounts = accountService.getAllAccounts();
             return accounts != null && !accounts.isEmpty();
         } catch (RuntimeException ex) {
             return false;
@@ -201,13 +211,13 @@ public class InstallService {
 
     private void seedCategory(String companyTitle) {
         try {
-            if (!serviceProvider.getCategoryService().getAllCategories().isEmpty()) {
+            if (!categoryService.getAllCategories().isEmpty()) {
                 return;
             }
-            AccountEntity creator = serviceProvider.getAccountService().getAllAccounts().get(0);
+            AccountEntity creator = accountService.getAllAccounts().get(0);
             String title = companyTitle.isEmpty() ? "Home" : companyTitle;
             CategoryData data = new CategoryData("home", title, "", true, true);
-            serviceProvider.getCategoryService().insert(new CategoryEntity(data, creator));
+            categoryService.insert(new CategoryEntity(data, creator));
         } catch (RuntimeException ex) {
             LOGGER.warn("Could not seed a category: {}", ex.getMessage());
         }

@@ -1,5 +1,7 @@
 package com.ravenherz.cse.dal.dto.events;
 
+import com.ravenherz.cse.dal.EntityId;
+
 import com.ravenherz.cse.dal.dto.AccountEntity;
 import com.ravenherz.cse.dal.dto.ItemEntity;
 import com.ravenherz.cse.dal.dto.basic.AccountData;
@@ -31,7 +33,7 @@ class PageEventTest {
         pageData.setComments(comments);
 
         ItemEntity item = new ItemEntity("hello", pageData, author);
-        item.setId(new ObjectId());
+        item.setId(EntityId.generate());
 
         PageEvent event = PageEvent.PageEventConverter.toEvent(item);
 
@@ -50,7 +52,7 @@ class PageEventTest {
         PageData pageData = new PageData("H", "S", "Body", List.of());
         pageData.setNoTopDisplayImage(true);
         ItemEntity item = new ItemEntity("hello", pageData, author);
-        item.setId(new ObjectId());
+        item.setId(EntityId.generate());
 
         PageEvent event = PageEvent.PageEventConverter.toEvent(item);
 
@@ -63,7 +65,7 @@ class PageEventTest {
                 SecurityLevel.ACTIVE_USER));
         PageData pageData = new PageData("H", "S", "Body", List.of());
         ItemEntity item = new ItemEntity("hello", pageData, author);
-        item.setId(new ObjectId());
+        item.setId(EntityId.generate());
 
         assertFalse(pageData.isNoTopDisplayImage());
         assertFalse(PageEvent.PageEventConverter.toEvent(item).isNoTopDisplayImage());
@@ -76,7 +78,7 @@ class PageEventTest {
         PageData pageData = new PageData("H", "S", "Body", List.of());
         pageData.setExportPdf(true);
         ItemEntity item = new ItemEntity("hello", pageData, author);
-        item.setId(new ObjectId());
+        item.setId(EntityId.generate());
 
         PageEvent event = PageEvent.PageEventConverter.toEvent(item);
 
@@ -89,7 +91,7 @@ class PageEventTest {
                 SecurityLevel.ACTIVE_USER));
         PageData pageData = new PageData("H", "S", "Body", List.of());
         ItemEntity item = new ItemEntity("hello", pageData, author);
-        item.setId(new ObjectId());
+        item.setId(EntityId.generate());
 
         assertFalse(pageData.isExportPdf());
         assertFalse(PageEvent.PageEventConverter.toEvent(item).isExportPdf());

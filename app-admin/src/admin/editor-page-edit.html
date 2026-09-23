@@ -48,15 +48,15 @@
             <div class="form-group">
                 <label>Featured Image</label>
                 <div class="featured-image cse-featured-drop" id="featured-image"
-                     th:classappend="${item.pageData?.refImage == null} ? 'is-empty'">
+                     th:classappend="${featuredImagePath == null} ? 'is-empty'">
                   <div class="featured-image-row">
                     <img id="featured-image-img" class="featured-image-preview" alt=""
-                         th:if="${item.pageData?.refImage != null}"
-                         th:src="@{/content-protected{path}(path=${item.pageData.refImage.displayPublicPath()})}"/>
+                         th:if="${featuredImagePath != null}"
+                         th:src="@{/content-protected{path}(path=${featuredImagePath})}"/>
                     <img id="featured-image-img" class="featured-image-preview" alt="" hidden
-                         th:if="${item.pageData?.refImage == null}"/>
+                         th:if="${featuredImagePath == null}"/>
                     <span id="featured-image-path" class="featured-image-path"
-                          th:text="${item.pageData?.refImage?.resourceData?.pathPublic} ?: 'Drop an image'">Drop an image</span>
+                          th:text="${featuredImagePath} ?: 'Drop an image'">Drop an image</span>
                     <input type="hidden" name="imageId" id="imageId"
                            th:value="${item.pageData?.refImageId}"/>
                     <button type="button" class="delete-btn" id="featured-image-remove">Remove</button>

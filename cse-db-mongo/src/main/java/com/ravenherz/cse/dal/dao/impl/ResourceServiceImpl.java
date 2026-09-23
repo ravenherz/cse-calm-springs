@@ -3,6 +3,7 @@ package com.ravenherz.cse.dal.dao.impl;
 import com.ravenherz.cse.constants.MongoCollections;
 import com.ravenherz.cse.dal.DataProvider;
 import com.ravenherz.cse.dal.MediaCache;
+import com.ravenherz.cse.dal.MongoIds;
 import com.ravenherz.cse.dal.dao.BasicService;
 import com.ravenherz.cse.dal.dao.ResourceService;
 import com.ravenherz.cse.dal.dto.BasicEntity;
@@ -158,7 +159,7 @@ public class ResourceServiceImpl extends BasicService implements ResourceService
                 byte[] slice = n == buf.length ? buf : Arrays.copyOf(buf, n);
                 DataChunkEntity chunk = new DataChunkEntity(Base64.getEncoder().encodeToString(slice));
                 saveDataChunk(chunk);
-                data.addDataChunkId(chunk.getId());
+                data.addDataChunkId(MongoIds.toObjectId(chunk.getId()));
             }
         }
     }

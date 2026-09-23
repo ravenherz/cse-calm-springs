@@ -697,11 +697,11 @@
                 <button type="button" class="thumb-action-btn thumb-info-btn" title="Details"
                         aria-label="Details">i</button>
             </div>
-            <img th:if="${item.pageData?.refImage?.resourceData?.pathPublic}"
+            <img th:if="${itemImagePaths != null and itemImagePaths[item.uniqueUriName] != null}"
                  class="item-thumb"
-                 th:src="@{/content-protected{path}(path=${item.pageData.refImage.resourceData.pathPublic})}"
+                 th:src="@{/content-protected{path}(path=${itemImagePaths[item.uniqueUriName]})}"
                  alt=""/>
-            <div th:unless="${item.pageData?.refImage?.resourceData?.pathPublic}"
+            <div th:unless="${itemImagePaths != null and itemImagePaths[item.uniqueUriName] != null}"
                  class="app-logo-fallback"
                  th:text="${item.album} ? 'ALBUM' : ${item.uniqueUriName}">uri</div>
             <div class="thumb-tags">
@@ -729,7 +729,7 @@
                 </dd>
                 <th:block th:if="${item.album}">
                 <dt>Resource group</dt>
-                <dd th:text="${item.albumData?.refResourceGroup?.resourceGroupData?.humanReadableId} ?: '—'">group</dd>
+                <dd th:text="${itemGroupNames != null and itemGroupNames[item.uniqueUriName] != null ? itemGroupNames[item.uniqueUriName] : '—'}">group</dd>
                 </th:block>
                 <dt>Tags</dt>
                 <dd th:if="${item.album}"
@@ -987,7 +987,7 @@
     <div th:fragment="album-resource-group" class="form-group">
         <label>Resource group</label>
         <div class="album-group cse-album-group-drop" id="album-resource-group"
-             th:with="groupId=${item != null ? item.albumData?.refResourceGroup?.id : null}"
+             th:with="groupId=${item != null ? item.albumData?.refResourceGroupId : null}"
              th:classappend="${groupId == null} ? 'is-empty'">
             <div class="album-group-row">
                 <span id="album-resource-group-path" class="album-group-path"

@@ -1,5 +1,7 @@
 package com.ravenherz.cse.security;
 
+import com.ravenherz.cse.dal.EntityId;
+
 import com.ravenherz.cse.controller.AuthSupport;
 import com.ravenherz.cse.dal.dto.AccountEntity;
 import com.ravenherz.cse.dal.dto.basic.AccountData;
@@ -85,7 +87,7 @@ class AppCapabilityMvcTest {
     private static AccountEntity account() {
         AccountEntity entity = new AccountEntity(
                 new AccountData("ada", "hash", "ada@example.com", SecurityLevel.ACTIVE_USER));
-        entity.setId(new ObjectId());
+        entity.setId(EntityId.generate());
         return entity;
     }
 

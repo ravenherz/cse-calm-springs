@@ -1,6 +1,5 @@
 package com.ravenherz.cse.install;
 
-import com.ravenherz.cse.dal.ServiceProvider;
 import com.ravenherz.cse.dal.dao.AccountService;
 import com.ravenherz.cse.dal.dao.UrlTemplateService;
 import com.ravenherz.cse.dal.dto.AccountEntity;
@@ -27,8 +26,6 @@ import static org.mockito.Mockito.when;
 @ExtendWith(MockitoExtension.class)
 class UrlTemplateSeedsTest {
 
-    @Mock
-    private ServiceProvider serviceProvider;
     @Mock
     private AccountService accountService;
     @Mock
@@ -73,12 +70,10 @@ class UrlTemplateSeedsTest {
     @Test
     void ensureSeededInsertsWhenCollectionIsEmpty() {
         AccountEntity creator = new AccountEntity();
-        when(serviceProvider.getUrlTemplateService()).thenReturn(urlTemplateService);
         when(urlTemplateService.getAllUrlTemplates()).thenReturn(List.of());
-        when(serviceProvider.getAccountService()).thenReturn(accountService);
         when(accountService.getAllAccounts()).thenReturn(List.of(creator));
 
-        int inserted = new UrlTemplateSeeds(serviceProvider).ensureSeeded();
+        int inserted = new UrlTemplateSeeds(urlTemplateService, accountService).ensureSeeded();
 
         assertEquals(11, inserted);
         ArgumentCaptor<UrlTemplateEntity> captor = ArgumentCaptor.forClass(UrlTemplateEntity.class);
@@ -89,21 +84,18 @@ class UrlTemplateSeedsTest {
 
     @Test
     void ensureSeededSkipsWhenCollectionHasRows() {
-        when(serviceProvider.getUrlTemplateService()).thenReturn(urlTemplateService);
         when(urlTemplateService.getAllUrlTemplates()).thenReturn(List.of(new UrlTemplateEntity()));
 
-        assertEquals(0, new UrlTemplateSeeds(serviceProvider).ensureSeeded());
+        assertEquals(0, new UrlTemplateSeeds(urlTemplateService, accountService).ensureSeeded());
         verify(urlTemplateService, never()).insert(any());
     }
 
     @Test
     void ensureSeededSkipsWhenNoAccounts() {
-        when(serviceProvider.getUrlTemplateService()).thenReturn(urlTemplateService);
         when(urlTemplateService.getAllUrlTemplates()).thenReturn(List.of());
-        when(serviceProvider.getAccountService()).thenReturn(accountService);
         when(accountService.getAllAccounts()).thenReturn(List.of());
 
-        assertEquals(0, new UrlTemplateSeeds(serviceProvider).ensureSeeded());
+        assertEquals(0, new UrlTemplateSeeds(urlTemplateService, accountService).ensureSeeded());
         verify(urlTemplateService, never()).insert(any());
     }
 

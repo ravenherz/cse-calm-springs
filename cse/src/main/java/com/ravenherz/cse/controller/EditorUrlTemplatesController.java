@@ -1,5 +1,6 @@
 package com.ravenherz.cse.controller;
 
+import com.ravenherz.cse.dal.StoredIds;
 import com.ravenherz.cse.dal.dto.AccountEntity;
 import com.ravenherz.cse.dal.dto.UrlTemplateEntity;
 import com.ravenherz.cse.dal.dto.basic.Event;
@@ -189,7 +190,7 @@ public class EditorUrlTemplatesController extends AbstractController {
         Event[] oldEvents = historyData.getEvents() == null ? new Event[0] : historyData.getEvents();
         Event[] newEvents = new Event[oldEvents.length + 1];
         System.arraycopy(oldEvents, 0, newEvents, 0, oldEvents.length);
-        newEvents[oldEvents.length] = new Event(EventType.ENTITY_EDITED, LocalDateTime.now(), accessor);
+        newEvents[oldEvents.length] = new Event(EventType.ENTITY_EDITED, LocalDateTime.now(), accessor == null ? null : accessor.getId());
         historyData.setEvents(newEvents);
         template.setHistoryData(historyData);
         applyAccess(request, template);
@@ -227,7 +228,7 @@ public class EditorUrlTemplatesController extends AbstractController {
         }
         try {
             return (UrlTemplateEntity) serviceProvider.getUrlTemplateService()
-                    .getById(UrlTemplateEntity.class, new ObjectId(id.trim()));
+                    .getById(UrlTemplateEntity.class, StoredIds.entityId(new ObjectId(id.trim())));
         } catch (Exception e) {
             return null;
         }

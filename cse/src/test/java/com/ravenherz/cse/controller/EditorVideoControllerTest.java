@@ -1,5 +1,7 @@
 package com.ravenherz.cse.controller;
 
+import com.ravenherz.cse.dal.EntityId;
+import com.ravenherz.cse.dal.StoredIds;
 import com.ravenherz.cse.dal.dao.ResourceService;
 import com.ravenherz.cse.dal.dto.ResourceEntity;
 import com.ravenherz.cse.dal.dto.basic.ResourceData;
@@ -51,11 +53,11 @@ class EditorVideoControllerTest {
         ResourceData preview = new ResourceData();
         preview.setPathPublic("/u/res/video/clip.poster.low-res.jpg");
         ResourceEntity entity = new ResourceEntity();
-        entity.setId(id);
+        entity.setId(EntityId.of(id.toHexString()));
         entity.setResourceData(data);
         entity.setPreviewData(preview);
         ResourceService resources = mock(ResourceService.class);
-        when(resources.getById(ResourceEntity.class, id)).thenReturn(entity);
+        when(resources.getById(ResourceEntity.class, StoredIds.entityId(id))).thenReturn(entity);
         EditorVideoController controller = new EditorVideoController(new VideoProgress(), of(resources));
         MockHttpServletRequest request = new MockHttpServletRequest();
         request.setContextPath("/rhz-we");

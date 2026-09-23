@@ -1,5 +1,6 @@
 package com.ravenherz.cse.transfer;
 
+import com.ravenherz.cse.dal.EntityId;
 import com.ravenherz.cse.dal.dto.AccountEntity;
 import com.ravenherz.cse.dal.dto.AppEntity;
 import com.ravenherz.cse.dal.dto.BasicEntity;
@@ -191,7 +192,7 @@ final class CseSiteReaders {
         ObjectId parentId = objectId(doc.get("refParentGroupId"));
         if (parentId != null) {
             ResourceGroupEntity stub = new ResourceGroupEntity();
-            stub.setId(parentId);
+            stub.setId(entityId(parentId));
             entity.setRefParentGroup(stub);
             entity.attachRefParentGroup(null);
         }
@@ -208,7 +209,7 @@ final class CseSiteReaders {
         ObjectId groupId = objectId(doc.get("refResourceGroupId"));
         if (groupId != null) {
             ResourceGroupEntity stub = new ResourceGroupEntity();
-            stub.setId(groupId);
+            stub.setId(entityId(groupId));
             entity.setRefResourceGroup(stub);
             entity.attachRefResourceGroup(null);
         }
@@ -225,7 +226,7 @@ final class CseSiteReaders {
         ObjectId categoryId = objectId(doc.get("refCategoryId"));
         if (categoryId != null) {
             CategoryEntity stub = new CategoryEntity();
-            stub.setId(categoryId);
+            stub.setId(entityId(categoryId));
             entity.setRefCategory(stub);
             entity.attachRefCategory(null);
         }
@@ -247,10 +248,7 @@ final class CseSiteReaders {
             playlistData.setDescription(text(data.get("description")));
             ObjectId coverId = objectId(data.get("refImageId"));
             if (coverId != null) {
-                ResourceEntity stub = new ResourceEntity();
-                stub.setId(coverId);
-                playlistData.setRefImage(stub);
-                playlistData.attachRefImage(null);
+                playlistData.setRefImageId(entityId(coverId));
             }
             List<PlaylistTrack> tracks = new ArrayList<>();
             for (Object row : list(data.get("tracks"))) {
@@ -261,10 +259,7 @@ final class CseSiteReaders {
                 PlaylistTrack track = new PlaylistTrack();
                 ObjectId resourceId = objectId(trackDoc.get("refResourceId"));
                 if (resourceId != null) {
-                    ResourceEntity stub = new ResourceEntity();
-                    stub.setId(resourceId);
-                    track.setRefResource(stub);
-                    track.attachRefResource(null);
+                    track.setRefResourceId(entityId(resourceId));
                 }
                 track.setTitle(text(trackDoc.get("title")));
                 track.setArtist(text(trackDoc.get("artist")));
@@ -408,7 +403,7 @@ final class CseSiteReaders {
         if (id == null) {
             return false;
         }
-        entity.setId(id);
+        entity.setId(entityId(id));
         entity.setEntityVersion(text(doc.get("entityVersion")));
         entity.setSecurityData(security(map(doc.get("securityData"))));
         entity.setHistoryData(history(map(doc.get("historyData"))));
@@ -486,10 +481,7 @@ final class CseSiteReaders {
                 event.setLocalDateTime(time(eventDoc.get("localDateTime")));
                 ObjectId ownerId = objectId(eventDoc.get("ownerId"));
                 if (ownerId != null) {
-                    AccountEntity stub = new AccountEntity();
-                    stub.setId(ownerId);
-                    event.setOwner(stub);
-                    event.attachOwner(null);
+                    event.setOwnerId(com.ravenherz.cse.dal.EntityId.of(ownerId.toHexString()));
                 }
             }
             events[index++] = event;
@@ -541,10 +533,7 @@ final class CseSiteReaders {
         data.setExportPdf(bool(doc.get("exportPdf"), false));
         ObjectId imageId = objectId(doc.get("refImageId"));
         if (imageId != null) {
-            ResourceEntity stub = new ResourceEntity();
-            stub.setId(imageId);
-            data.setRefImage(stub);
-            data.attachRefImage(null);
+            data.setRefImageId(entityId(imageId));
         }
         List<PageData.Comment> comments = new ArrayList<>();
         for (Object row : list(doc.get("comments"))) {
@@ -556,7 +545,7 @@ final class CseSiteReaders {
             ObjectId authorId = objectId(commentDoc.get("authorId"));
             if (authorId != null) {
                 AccountEntity stub = new AccountEntity();
-                stub.setId(authorId);
+                stub.setId(entityId(authorId));
                 comment.setAuthor(stub);
                 comment.attachAuthor(null);
             }
@@ -581,10 +570,7 @@ final class CseSiteReaders {
         data.setTags(stringList(doc.get("tags")));
         ObjectId groupId = objectId(doc.get("refResourceGroupId"));
         if (groupId != null) {
-            ResourceGroupEntity stub = new ResourceGroupEntity();
-            stub.setId(groupId);
-            data.setRefResourceGroup(stub);
-            data.attachRefResourceGroup(null);
+            data.setRefResourceGroupId(entityId(groupId));
         }
         return data;
     }
@@ -598,6 +584,10 @@ final class CseSiteReaders {
             return null;
         }
         return new ObjectId(hex);
+    }
+
+    private static EntityId entityId(ObjectId id) {
+        return id == null ? null : EntityId.of(id.toHexString());
     }
 
     private static List<ObjectId> objectIdList(Object value) {

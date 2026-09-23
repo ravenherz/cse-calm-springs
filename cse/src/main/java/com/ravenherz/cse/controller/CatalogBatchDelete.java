@@ -1,6 +1,7 @@
 package com.ravenherz.cse.controller;
 
 import com.ravenherz.cse.dal.EntityAccess;
+import com.ravenherz.cse.dal.StoredIds;
 import com.ravenherz.cse.dal.ResourceGroupTree;
 import com.ravenherz.cse.dal.ServiceProvider;
 import com.ravenherz.cse.dal.dto.AccountEntity;
@@ -138,20 +139,20 @@ public class CatalogBatchDelete {
             return "not_found";
         }
         LOGGER.info("Deleting resource: {} with id: {}", pathPublic, existing.getId());
-        List<ItemEntity> itemsWithRefImage = serviceProvider.getItemService().getAllByRefImage(existing);
+        List<ItemEntity> itemsWithRefImage = serviceProvider.getItemService().getAllByRefImage(existing.getId());
         if (itemsWithRefImage != null) {
             for (ItemEntity item : itemsWithRefImage) {
                 if (item.getPageData() != null) {
-                    item.getPageData().setRefImage(null);
+                    item.getPageData().setRefImageId(null);
                     serviceProvider.getItemService().replace(item);
                 }
             }
         }
-        List<PlaylistEntity> playlistsWithCover = serviceProvider.getPlaylistService().getAllByRefImage(existing);
+        List<PlaylistEntity> playlistsWithCover = serviceProvider.getPlaylistService().getAllByRefImage(existing.getId());
         if (playlistsWithCover != null) {
             for (PlaylistEntity playlist : playlistsWithCover) {
                 if (playlist.getPlaylistData() != null) {
-                    playlist.getPlaylistData().setRefImage(null);
+                    playlist.getPlaylistData().setRefImageId(null);
                     serviceProvider.getPlaylistService().replace(playlist);
                 }
             }
@@ -193,7 +194,7 @@ public class CatalogBatchDelete {
             return "invalid_item";
         }
         PlaylistEntity playlist = (PlaylistEntity) serviceProvider.getPlaylistService()
-                .getById(PlaylistEntity.class, objectId);
+                .getById(PlaylistEntity.class, StoredIds.entityId(objectId));
         if (playlist == null) {
             return "not_found";
         }
@@ -211,7 +212,7 @@ public class CatalogBatchDelete {
             return "invalid_item";
         }
         UrlTemplateEntity template = (UrlTemplateEntity) serviceProvider.getUrlTemplateService()
-                .getById(UrlTemplateEntity.class, objectId);
+                .getById(UrlTemplateEntity.class, StoredIds.entityId(objectId));
         if (template == null) {
             return "not_found";
         }
@@ -229,7 +230,7 @@ public class CatalogBatchDelete {
             return "invalid_item";
         }
         CategoryEntity category = (CategoryEntity) serviceProvider.getCategoryService()
-                .getById(CategoryEntity.class, objectId);
+                .getById(CategoryEntity.class, StoredIds.entityId(objectId));
         if (category == null) {
             return "not_found";
         }

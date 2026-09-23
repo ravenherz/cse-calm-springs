@@ -1,13 +1,16 @@
 # cse-content
 
-Article text: markdown, embeds, and the public page view model.
+Article text and the content documents: pages, albums, categories, playlists, and URL templates.
 
 ## Does
 
-- Render markdown and expand `<cse-*>` embeds (page, album, image, video, playlist, category, app, URL).
-- Build `PageEvent` for the public index (header is the display title; pages and albums have no stored title).
+- Own those documents and their store interfaces. They extend `cse-dal-core`.
+- A page image, playlist cover, playlist track, and album resource group are an `EntityId`.
+- Render markdown and expand `<cse-*>` embeds.
+- Build `PageEvent` for the public index.
 
 ## Does not
 
-- Render theme chrome or body tags. Those stay in the WAR.
-- Store items or serve `/`.
+- Own files, accounts, themes, or apps.
+- Open Mongo. `cse-db-mongo` implements the stores.
+- Render theme chrome or serve `/`.

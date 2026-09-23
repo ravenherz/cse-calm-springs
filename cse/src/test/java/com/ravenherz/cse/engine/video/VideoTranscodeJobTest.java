@@ -3,6 +3,8 @@ package com.ravenherz.cse.engine.video;
 import com.ravenherz.cse.util.video.VideoProbe;
 import com.ravenherz.cse.util.video.VideoTranscoder;
 
+import com.ravenherz.cse.dal.EntityId;
+import com.ravenherz.cse.dal.StoredIds;
 import com.ravenherz.cse.dal.dao.ResourceService;
 import com.ravenherz.cse.dal.dto.ResourceEntity;
 import com.ravenherz.cse.dal.dto.basic.ResourceData;
@@ -43,7 +45,7 @@ class VideoTranscodeJobTest {
     @Test
     void missingResourceIsNoOp() {
         ObjectId id = new ObjectId();
-        when(resources.getById(ResourceEntity.class, id)).thenReturn(null);
+        when(resources.getById(ResourceEntity.class, StoredIds.entityId(id))).thenReturn(null);
         VideoTranscodeJob.of(resources, fakeTranscoder(), null, null, null, this::info).run(id);
         verify(resources, never()).replace(any());
     }
@@ -52,7 +54,7 @@ class VideoTranscodeJobTest {
     void successMarksReadyAndReplacesBytes() throws Exception {
         ObjectId id = new ObjectId();
         ResourceEntity entity = processingVideo(id);
-        when(resources.getById(ResourceEntity.class, id)).thenReturn(entity);
+        when(resources.getById(ResourceEntity.class, StoredIds.entityId(id))).thenReturn(entity);
         doAnswer(invocation -> {
             Path dest = invocation.getArgument(1);
             Files.writeString(dest, "src");
@@ -74,7 +76,7 @@ class VideoTranscodeJobTest {
     void failureKeepsOriginalAndMarksFailed() {
         ObjectId id = new ObjectId();
         ResourceEntity entity = processingVideo(id);
-        when(resources.getById(ResourceEntity.class, id)).thenReturn(entity);
+        when(resources.getById(ResourceEntity.class, StoredIds.entityId(id))).thenReturn(entity);
         VideoTranscoder boom = new VideoTranscoder() {
             @Override
             public void recode(Path input, Path output) {
@@ -118,7 +120,7 @@ class VideoTranscodeJobTest {
         VideoStatus.set(data, VideoStatus.PROCESSING);
         data.setSizeInBytes(4096);
         ResourceEntity entity = new ResourceEntity();
-        entity.setId(id);
+        entity.setId(EntityId.of(id.toHexString()));
         entity.setResourceData(data);
         return entity;
     }

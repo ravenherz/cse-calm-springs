@@ -7,7 +7,12 @@ apply from: rootProject.file('gradle/cse-db.gradle')
 description = '.csesite export and import. The editor screen stays in the WAR.'
 
 dependencies {
-    api project(':cse-db-api')
+    api project(':cse-content')
+    api project(':cse-media')
+    api project(':cse-security')
+    api project(':cse-themes')
+    api project(':cse-apps')
+    api project(':cse-db-mongo')
     implementation 'org.slf4j:slf4j-api'
     implementation 'org.springframework:spring-context'
     implementation 'com.fasterxml.jackson.core:jackson-databind'

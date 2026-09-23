@@ -474,6 +474,10 @@ final class CseSiteDocuments {
         return id == null ? null : id.toHexString();
     }
 
+    static String hex(com.ravenherz.cse.dal.EntityId id) {
+        return id == null ? null : id.toHexString();
+    }
+
     private static String bsonId(Object id) {
         if (id instanceof ObjectId oid) {
             return oid.toHexString();
