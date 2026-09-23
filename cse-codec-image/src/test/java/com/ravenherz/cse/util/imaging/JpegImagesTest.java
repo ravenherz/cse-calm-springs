@@ -81,4 +81,39 @@ class JpegImagesTest {
         assertTrue(sample.getRed() > 40, sample.toString());
         assertTrue(sample.getBlue() > 40, sample.toString());
     }
+
+    @Test
+    void encodedJpegKeepsChromaOnEveryPixel() throws IOException {
+        BufferedImage src = new BufferedImage(32, 32, BufferedImage.TYPE_INT_RGB);
+        Graphics2D graphics = src.createGraphics();
+        graphics.setColor(Color.ORANGE);
+        graphics.fillRect(0, 0, 32, 32);
+        graphics.dispose();
+        byte[] jpeg = JpegImages.encode(src, 0.9f);
+        int[] sampling = chromaSampling(jpeg);
+        assertEquals(1, sampling[0]);
+        assertEquals(1, sampling[1]);
+        assertEquals(1, sampling[2]);
+        assertEquals(1, sampling[3]);
+        assertEquals(1, sampling[4]);
+        assertEquals(1, sampling[5]);
+    }
+
+    private static int[] chromaSampling(byte[] jpeg) {
+        for (int i = 0; i < jpeg.length - 10; i++) {
+            if ((jpeg[i] & 0xFF) == 0xFF && (jpeg[i + 1] & 0xFF) == 0xC0) {
+                int components = jpeg[i + 9] & 0xFF;
+                int[] factors = new int[components * 2];
+                int offset = i + 10;
+                for (int c = 0; c < components; c++) {
+                    int sampling = jpeg[offset + 1] & 0xFF;
+                    factors[c * 2] = sampling >> 4;
+                    factors[c * 2 + 1] = sampling & 0x0F;
+                    offset += 3;
+                }
+                return factors;
+            }
+        }
+        throw new AssertionError("JPEG has no baseline frame header");
+    }
 }

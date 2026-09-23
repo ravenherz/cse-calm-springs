@@ -3,8 +3,12 @@ package com.ravenherz.cse.util.imaging;
 import javax.imageio.IIOImage;
 import javax.imageio.ImageIO;
 import javax.imageio.ImageReader;
+import javax.imageio.ImageTypeSpecifier;
 import javax.imageio.ImageWriteParam;
 import javax.imageio.ImageWriter;
+import javax.imageio.metadata.IIOInvalidTreeException;
+import javax.imageio.metadata.IIOMetadata;
+import javax.imageio.metadata.IIOMetadataNode;
 import javax.imageio.stream.ImageInputStream;
 import javax.imageio.stream.ImageOutputStream;
 import java.awt.Color;
@@ -16,6 +20,8 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.util.Iterator;
 import java.util.Optional;
+
+import org.w3c.dom.NodeList;
 
 public final class JpegImages {
 
@@ -44,9 +50,13 @@ public final class JpegImages {
             param.setCompressionMode(ImageWriteParam.MODE_EXPLICIT);
             param.setCompressionQuality(clampQuality(quality));
         }
+        BufferedImage rgb = toRgb(image);
+        IIOMetadata metadata = writer.getDefaultImageMetadata(
+                ImageTypeSpecifier.createFromRenderedImage(rgb), param);
+        keepFullChroma(metadata);
         try (ImageOutputStream ios = ImageIO.createImageOutputStream(out)) {
             writer.setOutput(ios);
-            writer.write(null, new IIOImage(toRgb(image), null, null), param);
+            writer.write(null, new IIOImage(rgb, null, metadata), param);
             ios.flush();
         } finally {
             writer.dispose();
@@ -168,6 +178,37 @@ public final class JpegImages {
         graphics.drawImage(src, 0, 0, newWidth, newHeight, null);
         graphics.dispose();
         return new Encoded(encode(dest, quality), newWidth, newHeight);
+    }
+
+    /**
+     * The JDK JPEG writer defaults to 4:2:0. Chroma then lives in 16×16 blocks, and scaling
+     * a large photo draws those blocks as a square grid. 4:4:4 keeps chroma on every pixel.
+     */
+    private static void keepFullChroma(IIOMetadata metadata) throws IOException {
+        if (metadata == null) {
+            return;
+        }
+        String format = "javax_imageio_jpeg_image_1.0";
+        IIOMetadataNode root;
+        try {
+            root = (IIOMetadataNode) metadata.getAsTree(format);
+        } catch (IllegalArgumentException ex) {
+            return;
+        }
+        NodeList specs = root.getElementsByTagName("componentSpec");
+        if (specs.getLength() == 0) {
+            return;
+        }
+        for (int i = 0; i < specs.getLength(); i++) {
+            IIOMetadataNode spec = (IIOMetadataNode) specs.item(i);
+            spec.setAttribute("HsamplingFactor", "1");
+            spec.setAttribute("VsamplingFactor", "1");
+        }
+        try {
+            metadata.setFromTree(format, root);
+        } catch (IIOInvalidTreeException ex) {
+            throw new IOException("Could not set JPEG chroma sampling", ex);
+        }
     }
 
     public static float clampQuality(float quality) {
