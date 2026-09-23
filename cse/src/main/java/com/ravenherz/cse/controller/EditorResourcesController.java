@@ -1,11 +1,12 @@
 package com.ravenherz.cse.controller;
 
+import com.ravenherz.cse.dal.EntityAccess;
 import com.ravenherz.cse.dal.ResourceGroupTree;
+import com.ravenherz.cse.dal.StoredIds;
 import com.ravenherz.cse.dal.dto.*;
 import com.ravenherz.cse.dal.dto.basic.*;
 import com.ravenherz.cse.dal.dto.basic.enums.AccessType;
 import com.ravenherz.cse.dal.dto.basic.enums.ResourceType;
-import com.ravenherz.cse.dal.EntityAccess;
 import com.ravenherz.cse.present.EditorTree;
 import com.ravenherz.cse.present.ResourceFileNames;
 import com.ravenherz.cse.present.ResourceGroupDisplayDTO;
@@ -198,15 +199,16 @@ public class EditorResourcesController extends AbstractController {
             }
         }
         if (imageMeta != null) {
-            ImageMetadata.applyTo(resourceData, imageMeta);
+            resourceData.setMetadata(ImageMetadata.merge(resourceData.getMetadata(), imageMeta));
         }
         if (convertedWidth != null && convertedHeight != null) {
-            ImageMetadata.setDimensions(resourceData, convertedWidth, convertedHeight);
+            resourceData.setMetadata(ImageMetadata.withDimensions(resourceData.getMetadata(),
+                    convertedWidth, convertedHeight));
         }
         Mp3Metadata.Parsed mp3 = null;
         if (resourceType == ResourceType.AUDIO) {
             mp3 = Mp3Metadata.parse(content);
-            Mp3Metadata.applyTo(resourceData, mp3);
+            resourceData.setMetadata(Mp3Metadata.merge(resourceData.getMetadata(), mp3));
             byte[] waveform = Mp3Waveform.extract(content);
             if (waveform != null) {
                 resourceData.setWaveform(waveform);
@@ -215,8 +217,10 @@ public class EditorResourcesController extends AbstractController {
 
         fillResourceContent(resourceData, content);
 
-        ResourceEntity resourceEntity = new ResourceEntity(resourceData, accessor);
-        ImageMetadata.applyCreationDate(resourceEntity, imageMeta);
+        ResourceEntity resourceEntity = new ResourceEntity(resourceData, accessor == null ? null : accessor.getId());
+        if (imageMeta != null && imageMeta.dateTaken() != null) {
+            resourceEntity.setCreationLocalDateTime(imageMeta.dateTaken());
+        }
         if (resourceType == IMAGE) {
             ResourceData previewData = buildImagePreview(resourceData, content, resourceId.trim(),
                     extension, userId, uploadOptions);
@@ -275,7 +279,7 @@ public class EditorResourcesController extends AbstractController {
             resourceData.addMetadata(VideoStatus.SOURCE_EXT_KEY, extension);
             serviceProvider.getResourceService().fillFromFile(resourceData, temp);
             VideoStatus.rememberSourceSize(resourceData);
-            ResourceEntity resourceEntity = new ResourceEntity(resourceData, accessor);
+            ResourceEntity resourceEntity = new ResourceEntity(resourceData, accessor == null ? null : accessor.getId());
             ResourceGroupEntity uploadGroup = loadGroup(groupId);
             if (uploadGroup == null) {
                 uploadGroup = loadDefaultGroup();
@@ -286,7 +290,7 @@ public class EditorResourcesController extends AbstractController {
             serviceProvider.getResourceService().insert(resourceEntity);
             resourceGroupIndex.fileAdded(resourceEntity);
             if (videoTranscodeQueue != null && resourceEntity.getId() != null) {
-                videoTranscodeQueue.enqueue(resourceEntity.getId());
+                videoTranscodeQueue.enqueue(StoredIds.objectId(resourceEntity.getId()));
             }
         } catch (Exception e) {
             LOGGER.warn("Video upload failed: {}", e.getMessage(), e);
@@ -379,18 +383,18 @@ public class EditorResourcesController extends AbstractController {
 
         LOGGER.info("Deleting resource: " + pathPublic + " with id: " + existing.getId());
         try {
-            List<ItemEntity> itemsWithRefImage = serviceProvider.getItemService().getAllByRefImage(existing);
+            List<ItemEntity> itemsWithRefImage = serviceProvider.getItemService().getAllByRefImage(existing.getId());
             for (ItemEntity item : itemsWithRefImage) {
-                item.getPageData().setRefImage(null);
+                item.getPageData().setRefImageId(null);
                 serviceProvider.getItemService().replace(item);
                 LOGGER.info("Cleared refImage on item: " + item.getUniqueUriName());
             }
             List<PlaylistEntity> playlistsWithCover = serviceProvider.getPlaylistService()
-                    .getAllByRefImage(existing);
+                    .getAllByRefImage(existing.getId());
             if (playlistsWithCover != null) {
                 for (PlaylistEntity playlist : playlistsWithCover) {
                     if (playlist.getPlaylistData() != null) {
-                        playlist.getPlaylistData().setRefImage(null);
+                        playlist.getPlaylistData().setRefImageId(null);
                         serviceProvider.getPlaylistService().replace(playlist);
                     }
                 }
@@ -507,7 +511,7 @@ public class EditorResourcesController extends AbstractController {
             }
             try {
                 ResourceEntity resource = (ResourceEntity) serviceProvider.getResourceService()
-                        .getById(ResourceEntity.class, objId);
+                        .getById(ResourceEntity.class, StoredIds.entityId(objId));
                 if (resource == null) {
                     continue;
                 }
@@ -670,7 +674,7 @@ public class EditorResourcesController extends AbstractController {
 
             ResourceGroupData groupData = new ResourceGroupData();
             groupData.setHumanReadableId(humanReadableId.trim());
-            ResourceGroupEntity newGroup = new ResourceGroupEntity(groupData, accessor);
+            ResourceGroupEntity newGroup = new ResourceGroupEntity(groupData, accessor == null ? null : accessor.getId());
             if (parentObjId != null) {
                 newGroup.setRefParentGroup(ResourceGroupTree.find(existingGroups, parentObjId));
             }
@@ -765,7 +769,7 @@ public class EditorResourcesController extends AbstractController {
             return "invalid_item";
         }
         ResourceEntity existing = (ResourceEntity) serviceProvider.getResourceService()
-                .getById(ResourceEntity.class, id);
+                .getById(ResourceEntity.class, StoredIds.entityId(id));
         if (existing == null || existing.getResourceData() == null) {
             return "invalid_item";
         }
@@ -809,7 +813,7 @@ public class EditorResourcesController extends AbstractController {
             return "invalid_item";
         }
         PlaylistEntity playlist = (PlaylistEntity) serviceProvider.getPlaylistService()
-                .getById(PlaylistEntity.class, id);
+                .getById(PlaylistEntity.class, StoredIds.entityId(id));
         if (playlist == null) {
             return "invalid_item";
         }
@@ -832,7 +836,7 @@ public class EditorResourcesController extends AbstractController {
             return "invalid_name";
         }
         UrlTemplateEntity template = (UrlTemplateEntity) serviceProvider.getUrlTemplateService()
-                .getById(UrlTemplateEntity.class, id);
+                .getById(UrlTemplateEntity.class, StoredIds.entityId(id));
         if (template == null) {
             return "invalid_item";
         }
@@ -852,7 +856,7 @@ public class EditorResourcesController extends AbstractController {
             return "invalid_item";
         }
         CategoryEntity category = (CategoryEntity) serviceProvider.getCategoryService()
-                .getById(CategoryEntity.class, id);
+                .getById(CategoryEntity.class, StoredIds.entityId(id));
         if (category == null) {
             return "invalid_item";
         }
@@ -947,8 +951,31 @@ public class EditorResourcesController extends AbstractController {
         } else if (EditorTree.CATEGORIES_ID.equals(selectedId)) {
             model.addAttribute("paneCategories", resourceGroupIndex.categories());
         } else if (selectedId.startsWith(EditorTree.CATEGORY_PREFIX)) {
-            model.addAttribute("panePages", resourceGroupIndex.itemsInCategory(
-                    selectedId.substring(EditorTree.CATEGORY_PREFIX.length())));
+            List<ItemEntity> pages = resourceGroupIndex.itemsInCategory(
+                    selectedId.substring(EditorTree.CATEGORY_PREFIX.length()));
+            model.addAttribute("panePages", pages);
+            Map<String, String> imagePaths = new java.util.LinkedHashMap<>();
+            Map<String, String> groupNames = new java.util.LinkedHashMap<>();
+            for (ItemEntity item : pages) {
+                if (item == null || item.getUniqueUriName() == null) {
+                    continue;
+                }
+                if (item.getPageData() != null && item.getPageData().getRefImageId() != null) {
+                    String path = resourceGroupIndex.filePath(item.getPageData().getRefImageId().toString());
+                    if (path != null) {
+                        imagePaths.put(item.getUniqueUriName(), path);
+                    }
+                }
+                if (item.getAlbumData() != null && item.getAlbumData().getRefResourceGroupId() != null) {
+                    String name = resourceGroupIndex.groupLabel(
+                            item.getAlbumData().getRefResourceGroupId().toString());
+                    if (name != null) {
+                        groupNames.put(item.getUniqueUriName(), name);
+                    }
+                }
+            }
+            model.addAttribute("itemImagePaths", imagePaths);
+            model.addAttribute("itemGroupNames", groupNames);
         }
     }
 
@@ -964,7 +991,7 @@ public class EditorResourcesController extends AbstractController {
         }
         try {
             return (ResourceGroupEntity) serviceProvider.getResourceGroupService()
-                    .getById(ResourceGroupEntity.class, id);
+                    .getById(ResourceGroupEntity.class, StoredIds.entityId(id));
         } catch (Exception e) {
             LOGGER.warn("Invalid resource group ID: " + groupId);
             return null;
@@ -1194,7 +1221,7 @@ public class EditorResourcesController extends AbstractController {
                 String chunkData = base64Content.substring(start, end);
                 DataChunkEntity chunk = new DataChunkEntity(chunkData);
                 serviceProvider.getResourceService().saveDataChunk(chunk);
-                resourceData.addDataChunkId(chunk.getId());
+                resourceData.addDataChunkId(StoredIds.objectId(chunk.getId()));
             }
             resourceData.setContentRaw(null);
         } else {

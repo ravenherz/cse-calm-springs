@@ -2,6 +2,7 @@ package com.ravenherz.cse.present;
 
 import com.ravenherz.cse.dal.EntityAccess;
 import com.ravenherz.cse.dal.ResourceGroupTree;
+import com.ravenherz.cse.dal.StoredIds;
 import com.ravenherz.cse.dal.dto.ResourceEntity;
 import com.ravenherz.cse.dal.dto.ResourceGroupEntity;
 import com.ravenherz.cse.dal.dto.basic.SecurityData;
@@ -140,8 +141,8 @@ public final class ResourceGroupTreeView {
             dto.setDefaultGroup(ResourceGroupTree.isDefault(group));
             dto.setHumanReadableId(dto.isDefaultGroup()
                     ? ResourceGroupTree.DEFAULT_NAME : ResourceGroupTree.nameOf(group));
-            dto.setDepth(ResourceGroupTree.depthOf(all, group.getId()));
-            dto.setSubtreeHeight(ResourceGroupTree.heightOf(all, group.getId()));
+            dto.setDepth(ResourceGroupTree.depthOf(all, StoredIds.objectId(group.getId())));
+            dto.setSubtreeHeight(ResourceGroupTree.heightOf(all, StoredIds.objectId(group.getId())));
             applyOwn(dto, ownStats);
             dto.setTreeFiles(sortedTreeFiles(
                     treeFilesByGroupId == null ? null : treeFilesByGroupId.get(dto.getId())));

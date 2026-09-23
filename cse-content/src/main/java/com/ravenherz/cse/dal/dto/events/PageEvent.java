@@ -31,7 +31,10 @@ public class PageEvent extends PageData {
                 .toFormatter(Locale.US);
 
         public static PageEvent toEvent(ItemEntity itemEntity) {
-            return toEvent(itemEntity, List.of());
+            if (itemEntity != null && itemEntity.isAlbum()) {
+                return toEvent(itemEntity, java.util.Collections.emptyList());
+            }
+            return toEvent(itemEntity, (ResourceEntity) null);
         }
 
         public static PageEvent toEvent(ItemEntity itemEntity, List<ResourceEntity> albumImages) {
@@ -39,11 +42,16 @@ public class PageEvent extends PageData {
             if (itemEntity != null && itemEntity.isAlbum()) {
                 return new PageEvent(itemEntity, albumImages, created);
             }
+            return toEvent(itemEntity, (ResourceEntity) null);
+        }
+
+        public static PageEvent toEvent(ItemEntity itemEntity, ResourceEntity featuredImage) {
+            Event created = createdEvent(itemEntity);
             PageData pageData = itemEntity.getPageData() == null ? new PageData() : itemEntity.getPageData();
             return new PageEvent(itemEntity.getId().toString(),
                     categoryItemName(itemEntity),
                     itemEntity.getUniqueUriName(),
-                    pageData, created);
+                    pageData, created, featuredImage);
         }
 
         private static Event createdEvent(ItemEntity itemEntity) {
@@ -116,7 +124,7 @@ public class PageEvent extends PageData {
     private List<AlbumImageDTO> albumImages = new ArrayList<>();
 
     private PageEvent(String id, String categoryItemName, String uniqueUriName, PageData pageData,
-            Event event) {
+            Event event, ResourceEntity featured) {
         super(pageData.getHeader(),
                 pageData.getSubHeader(),
                 CseEmbedProcessor.expand(MarkdownRenderer.render(pageData.getDescription())),
@@ -126,9 +134,9 @@ public class PageEvent extends PageData {
         setExportPdf(pageData.isExportPdf());
         this.uniqueUriName = uniqueUriName;
         this.pageLink = "./?page=" + uniqueUriName;
-        if (pageData.getRefImage() != null && pageData.getRefImage().getResourceData() != null) {
-            this.imageLinkFull = "./content-protected" + pageData.getRefImage().getResourceData()
-                    .getPathPublic();
+        if (featured != null && featured.getResourceData() != null
+                && featured.getResourceData().getPathPublic() != null) {
+            this.imageLinkFull = "./content-protected" + featured.getResourceData().getPathPublic();
         } else {
             this.imageLinkFull = "./content-public/cse-core/images/no-image.jpg";
         }

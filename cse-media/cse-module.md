@@ -1,12 +1,14 @@
 # cse-media
 
-Instance disk and the protected-file cache. No codecs.
+Files and folders: the media documents, and the disk cache that serves them.
 
 ## Does
 
-- Writable disk root, upload size limits, and servlet file helpers used when a protected file is materialized.
+- Own resource, resource-group, and data-chunk documents and their store interfaces.
+- Writable disk root, upload size limits, and the protected-file cache.
 
 ## Does not
 
-- Decode JPEG, HEIC, MP3, or video. Those are `cse-image`, `cse-audio`, and `cse-video`.
-- Decide who may read a file. The WAR controller does the access check, then uses this library to cache it.
+- Decode JPEG, HEIC, MP3, or video. Those are `cse-codec-*`.
+- Own pages, accounts, themes, or apps.
+- Open Mongo. `cse-db-mongo` implements the stores.

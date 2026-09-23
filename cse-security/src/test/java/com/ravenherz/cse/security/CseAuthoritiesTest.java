@@ -1,5 +1,7 @@
 package com.ravenherz.cse.security;
 
+import com.ravenherz.cse.dal.EntityId;
+
 import com.ravenherz.cse.dal.dto.AccountEntity;
 import com.ravenherz.cse.dal.dto.basic.AccountData;
 import com.ravenherz.cse.dal.dto.basic.enums.SecurityLevel;
@@ -56,7 +58,7 @@ class CseAuthoritiesTest {
 
     private static AccountEntity account(SecurityLevel level) {
         AccountEntity entity = new AccountEntity(new AccountData("user", "hash", "u@example.com", level));
-        entity.setId(new ObjectId());
+        entity.setId(EntityId.generate());
         return entity;
     }
 }

@@ -3,7 +3,6 @@ package com.ravenherz.cse.install;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.json.JsonMapper;
-import com.ravenherz.cse.dal.ServiceProvider;
 import com.ravenherz.cse.dal.dao.AccountService;
 import com.ravenherz.cse.dal.dao.UrlTemplateService;
 import com.ravenherz.cse.dal.dto.AccountEntity;
@@ -36,15 +35,16 @@ class UrlTemplateSeeds {
     private static final String INIT_PATH = "/static/content-private/cse-url-templates-init.json";
     private static final Pattern ID = Pattern.compile("^[a-z0-9][a-z0-9-]*$");
 
-    private final ServiceProvider serviceProvider;
+    private final UrlTemplateService templates;
+    private final AccountService accounts;
 
-    public UrlTemplateSeeds(ServiceProvider serviceProvider) {
-        this.serviceProvider = serviceProvider;
+    public UrlTemplateSeeds(UrlTemplateService templates, AccountService accounts) {
+        this.templates = templates;
+        this.accounts = accounts;
     }
 
     public int ensureSeeded() {
         try {
-            UrlTemplateService templates = serviceProvider.getUrlTemplateService();
             List<UrlTemplateEntity> existing = templates == null ? null : templates.getAllUrlTemplates();
             if (templates == null || (existing != null && !existing.isEmpty())) {
                 return 0;
@@ -104,7 +104,6 @@ class UrlTemplateSeeds {
     }
 
     private AccountEntity firstAccount() {
-        AccountService accounts = serviceProvider.getAccountService();
         if (accounts == null) {
             return null;
         }

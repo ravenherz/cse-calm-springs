@@ -1,5 +1,6 @@
 package com.ravenherz.cse.util;
 
+import com.ravenherz.cse.dal.EntityId;
 import com.ravenherz.cse.dal.dto.PlaylistEntity;
 import com.ravenherz.cse.dal.dto.ResourceEntity;
 import com.ravenherz.cse.dal.dto.basic.PlaylistData;
@@ -17,7 +18,7 @@ class PlaylistEmbedProcessorTest {
 
     @Test
     void knownIdExpandsToMarkupWithTrackSrc() {
-        PlaylistEmbedProcessor processor = PlaylistEmbedProcessor.of(id -> oceanBlue());
+        PlaylistEmbedProcessor processor = processor(oceanBlue());
         String html = processor.expandHtml("<p>Intro</p><cse-playlist id=\"ocean-blue\"></cse-playlist><p>Outro</p>");
         assertTrue(html.contains("<p>Intro</p>"));
         assertTrue(html.contains("<p>Outro</p>"));
@@ -41,7 +42,7 @@ class PlaylistEmbedProcessorTest {
 
     @Test
     void withImageRendersCoverFromPlaylistImage() {
-        PlaylistEmbedProcessor processor = PlaylistEmbedProcessor.of(id -> oceanBlueWithCover());
+        PlaylistEmbedProcessor processor = processor(oceanBlueWithCover());
         String html = processor.expandHtml("<cse-playlist id=\"ocean-blue\" withImage=\"true\"></cse-playlist>");
         assertTrue(html.contains("cse-playlist-with-image"));
         assertTrue(html.contains("cse-playlist-cover"));
@@ -51,7 +52,7 @@ class PlaylistEmbedProcessorTest {
 
     @Test
     void withImageDefaultsToFalse() {
-        PlaylistEmbedProcessor processor = PlaylistEmbedProcessor.of(id -> oceanBlueWithCover());
+        PlaylistEmbedProcessor processor = processor(oceanBlueWithCover());
         String html = processor.expandHtml("<cse-playlist id=\"ocean-blue\"></cse-playlist>");
         assertFalse(html.contains("cse-playlist-with-image"));
         assertFalse(html.contains("cse-playlist-cover"));
@@ -59,7 +60,7 @@ class PlaylistEmbedProcessorTest {
 
     @Test
     void withImageBareAttributeIsTrue() {
-        PlaylistEmbedProcessor processor = PlaylistEmbedProcessor.of(id -> oceanBlueWithCover());
+        PlaylistEmbedProcessor processor = processor(oceanBlueWithCover());
         String html = processor.expandHtml("<cse-playlist id=\"ocean-blue\" withImage></cse-playlist>");
         assertTrue(html.contains("cse-playlist-with-image"));
     }
@@ -69,8 +70,10 @@ class PlaylistEmbedProcessorTest {
         PlaylistEntity playlist = oceanBlue();
         ResourceData preview = new ResourceData();
         preview.setPathPublic("/user/res/images/tide-cover.jpg");
-        playlist.getPlaylistData().getTracks().get(0).getRefResource().setPreviewData(preview);
-        PlaylistEmbedProcessor processor = PlaylistEmbedProcessor.of(id -> playlist);
+        playlist.getPlaylistData().getTracks().get(0);
+        preview.setPathPublic("/user/res/images/tide-cover.jpg");
+        lastTide.setPreviewData(preview);
+        PlaylistEmbedProcessor processor = processor(playlist);
         String html = processor.expandHtml("<cse-playlist id=\"ocean-blue\" withImage=\"true\"></cse-playlist>");
         assertTrue(html.contains("cse-playlist-with-image"));
         assertTrue(html.contains("src=\"./content-protected/user/res/images/tide-cover.jpg\""));
@@ -78,7 +81,7 @@ class PlaylistEmbedProcessorTest {
 
     @Test
     void withImageFalseOmitsCover() {
-        PlaylistEmbedProcessor processor = PlaylistEmbedProcessor.of(id -> oceanBlueWithCover());
+        PlaylistEmbedProcessor processor = processor(oceanBlueWithCover());
         String html = processor.expandHtml("<cse-playlist id=\"ocean-blue\" withImage=\"false\"></cse-playlist>");
         assertFalse(html.contains("cse-playlist-with-image"));
         assertFalse(html.contains("cse-playlist-cover"));
@@ -86,7 +89,7 @@ class PlaylistEmbedProcessorTest {
 
     @Test
     void selfClosingTagExpands() {
-        PlaylistEmbedProcessor processor = PlaylistEmbedProcessor.of(id -> oceanBlue());
+        PlaylistEmbedProcessor processor = processor(oceanBlue());
         String html = processor.expandHtml("<cse-playlist id=\"ocean-blue\" />");
         assertTrue(html.contains("class=\"cse-playlist\""));
         assertTrue(html.contains("data-src=\"./content-protected/user/res/audio/tide.mp3\""));
@@ -105,9 +108,28 @@ class PlaylistEmbedProcessorTest {
 
     @Test
     void unknownTagsAreLeftUntouched() {
-        PlaylistEmbedProcessor processor = PlaylistEmbedProcessor.of(id -> oceanBlue());
+        PlaylistEmbedProcessor processor = processor(oceanBlue());
         String html = processor.expandHtml("<cse-other id=\"ocean-blue\"></cse-other>");
         assertTrue(html.contains("<cse-other id=\"ocean-blue\"></cse-other>"));
+    }
+
+    private static final EntityId TIDE = EntityId.of("68b000000000000000000011");
+    private static final EntityId COVER = EntityId.of("68b000000000000000000022");
+    private static ResourceEntity lastTide;
+    private static ResourceEntity lastCover;
+
+    private static PlaylistEmbedProcessor processor(PlaylistEntity playlist) {
+        return PlaylistEmbedProcessor.of(id -> playlist, PlaylistEmbedProcessorTest::resource);
+    }
+
+    private static ResourceEntity resource(EntityId id) {
+        if (TIDE.equals(id)) {
+            return lastTide;
+        }
+        if (COVER.equals(id)) {
+            return lastCover;
+        }
+        return null;
     }
 
     private static PlaylistEntity oceanBlueWithCover() {
@@ -116,8 +138,10 @@ class PlaylistEmbedProcessorTest {
         imageData.setType(ResourceType.IMAGE);
         imageData.setPathPublic("/user/res/images/cover.jpg");
         ResourceEntity cover = new ResourceEntity();
+        cover.setId(COVER);
         cover.setResourceData(imageData);
-        playlist.getPlaylistData().setRefImage(cover);
+        lastCover = cover;
+        playlist.getPlaylistData().setRefImageId(COVER);
         return playlist;
     }
 
@@ -130,9 +154,12 @@ class PlaylistEmbedProcessorTest {
         data.addMetadata("trackNumber", "3");
         data.setWaveform(new byte[] {0, 64, -128});
         ResourceEntity resource = new ResourceEntity();
+        resource.setId(TIDE);
         resource.setResourceData(data);
+        lastTide = resource;
+        lastCover = null;
         PlaylistTrack track = new PlaylistTrack();
-        track.setRefResource(resource);
+        track.setRefResourceId(TIDE);
         PlaylistData playlistData = new PlaylistData();
         playlistData.setTitle("Ocean Blue");
         playlistData.setTracks(List.of(track));

@@ -1,5 +1,7 @@
 package com.ravenherz.cse.controller;
 
+import com.ravenherz.cse.dal.EntityId;
+import com.ravenherz.cse.dal.StoredIds;
 import com.ravenherz.cse.dal.dto.*;
 import com.ravenherz.cse.dal.dto.basic.*;
 import com.ravenherz.cse.dal.dto.basic.enums.AccessType;
@@ -172,7 +174,7 @@ public class EditorPagesController extends AbstractController {
         if (categoryId != null && !categoryId.trim().isEmpty()) {
             try {
                 org.bson.types.ObjectId catObjId = new org.bson.types.ObjectId(categoryId.trim());
-                CategoryEntity category = (CategoryEntity) serviceProvider.getCategoryService().getById(CategoryEntity.class, catObjId);
+                CategoryEntity category = (CategoryEntity) serviceProvider.getCategoryService().getById(CategoryEntity.class, StoredIds.entityId(catObjId));
                 newItem.setRefCategory(category);
             } catch (Exception e) {
                 LOGGER.warn("Invalid category ID: " + categoryId);
@@ -240,6 +242,7 @@ public class EditorPagesController extends AbstractController {
 
         addEditorChrome(model, accessor);
         EditorInline.putTreeForItem(model, resourceGroupIndex, item);
+        model.addAttribute("featuredImagePath", featuredImagePath(item));
         addAccessPanel(model, item, accessor);
 
         return "/admin/editor-page-edit";
@@ -293,6 +296,7 @@ public class EditorPagesController extends AbstractController {
             }
             addEditorChrome(model, accessor);
             EditorInline.putTreeForItem(model, resourceGroupIndex, item);
+            model.addAttribute("featuredImagePath", featuredImagePath(item));
             addAccessPanel(model, item, accessor);
             return "/admin/editor-page-edit";
         }
@@ -324,13 +328,13 @@ public class EditorPagesController extends AbstractController {
         if (imageId != null && !imageId.trim().isEmpty()) {
             try {
                 org.bson.types.ObjectId imgObjId = new org.bson.types.ObjectId(imageId.trim());
-                ResourceEntity image = (ResourceEntity) serviceProvider.getResourceService().getById(ResourceEntity.class, imgObjId);
-                pageData.setRefImage(image);
+                ResourceEntity image = (ResourceEntity) serviceProvider.getResourceService().getById(ResourceEntity.class, StoredIds.entityId(imgObjId));
+                pageData.setRefImageId(image.getId());
             } catch (Exception e) {
                 LOGGER.warn("Invalid image ID: " + imageId);
             }
         } else {
-            pageData.setRefImage(null);
+            pageData.setRefImageId(null);
         }
 
         HistoryData historyData = item.getHistoryData();
@@ -340,7 +344,7 @@ public class EditorPagesController extends AbstractController {
         Event[] oldEvents = historyData.getEvents();
         Event[] newEvents = new Event[oldEvents.length + 1];
         System.arraycopy(oldEvents, 0, newEvents, 0, oldEvents.length);
-        newEvents[oldEvents.length] = new Event(EventType.ENTITY_EDITED, LocalDateTime.now(), accessor);
+        newEvents[oldEvents.length] = new Event(EventType.ENTITY_EDITED, LocalDateTime.now(), accessor == null ? null : accessor.getId());
         historyData.setEvents(newEvents);
         item.setHistoryData(historyData);
         applyAccess(request, item);
@@ -385,7 +389,7 @@ public class EditorPagesController extends AbstractController {
             try {
                 org.bson.types.ObjectId catObjId = new org.bson.types.ObjectId(rawCategory);
                 category = (CategoryEntity) serviceProvider.getCategoryService()
-                        .getById(CategoryEntity.class, catObjId);
+                        .getById(CategoryEntity.class, StoredIds.entityId(catObjId));
             } catch (Exception e) {
                 LOGGER.warn("Invalid category ID: " + rawCategory);
             }
@@ -426,6 +430,11 @@ public class EditorPagesController extends AbstractController {
                 ? EditorTree.CATEGORIES_ID : returnGroup.trim();
         response.sendRedirect(request.getContextPath() + "/editor/resources?group="
                 + java.net.URLEncoder.encode(group, java.nio.charset.StandardCharsets.UTF_8));
+    }
+
+    private String featuredImagePath(ItemEntity item) {
+        EntityId imageId = item == null || item.getPageData() == null ? null : item.getPageData().getRefImageId();
+        return imageId == null ? null : resourceGroupIndex.filePath(imageId.toString());
     }
 
     @PostMapping("/delete")

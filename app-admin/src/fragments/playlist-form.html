@@ -23,16 +23,16 @@
   </div>
 
   <section class="playlist-cover cse-playlist-drop" id="playlist-cover"
-           th:classappend="${playlist?.playlistData?.refImage == null} ? ' is-empty'">
+           th:classappend="${coverImagePath == null} ? ' is-empty'">
     <h2 class="settings-context-title">Cover</h2>
     <p class="field-hint">Drag an image from the tree. Used when the embed has <code>withImage="true"</code>.</p>
     <div class="playlist-cover-row">
       <span class="playlist-cover-preview-host" aria-hidden="true">
         <img id="playlist-cover-img" class="playlist-cover-preview" alt=""
-             th:if="${playlist?.playlistData?.refImage != null}"
-             th:src="@{/content-protected{path}(path=${playlist.playlistData.refImage.displayPublicPath()})}"/>
+             th:if="${coverImagePath != null}"
+             th:src="@{/content-protected{path}(path=${coverImagePath})}"/>
         <img id="playlist-cover-img" class="playlist-cover-preview" alt="" hidden
-             th:if="${playlist?.playlistData?.refImage == null}"/>
+             th:if="${coverImagePath == null}"/>
       </span>
       <input type="hidden" name="coverResourceId" id="coverResourceId"
              th:value="${playlist?.playlistData?.refImageId}"/>

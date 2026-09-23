@@ -1,6 +1,7 @@
 package com.ravenherz.cse.security;
 
 import com.ravenherz.cse.dal.EntityAccess;
+import com.ravenherz.cse.dal.EntityAccessLookup;
 import com.ravenherz.cse.dal.dao.AccountService;
 import com.ravenherz.cse.dal.dao.RoleMatrixService;
 import com.ravenherz.cse.dal.dao.RoleService;
@@ -24,11 +25,11 @@ public class RoleMatrixBootstrap implements ApplicationRunner {
     private final RoleService roles;
     private final RoleMatrixService matrix;
     private final AccountService accounts;
-    private final EntityAccessLookupImpl accessLookup;
+    private final EntityAccessLookup accessLookup;
     private final CapabilityCatalog catalog;
 
     public RoleMatrixBootstrap(RoleService roles, RoleMatrixService matrix, AccountService accounts,
-            EntityAccessLookupImpl accessLookup, CapabilityCatalog catalog) {
+            EntityAccessLookup accessLookup, CapabilityCatalog catalog) {
         this.roles = roles;
         this.matrix = matrix;
         this.accounts = accounts;

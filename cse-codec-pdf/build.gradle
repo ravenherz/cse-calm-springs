@@ -1,0 +1,19 @@
+plugins {
+    id 'java-library'
+}
+
+apply from: rootProject.file('gradle/cse-db.gradle')
+
+description = 'Public article PDF (flying-saucer). Resource thumbnails stay in cse-codec-image.'
+
+dependencies {
+    implementation project(':cse-content')
+    implementation project(':cse-security')
+    implementation 'org.jsoup:jsoup:1.18.3'
+    implementation 'org.xhtmlrenderer:flying-saucer-pdf-openpdf:9.4.0'
+    implementation 'org.slf4j:slf4j-api'
+
+    testImplementation 'org.junit.jupiter:junit-jupiter'
+    testImplementation 'org.apache.pdfbox:pdfbox:3.0.5'
+    testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+}

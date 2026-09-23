@@ -1,0 +1,19 @@
+plugins {
+    id 'java-library'
+}
+
+apply from: rootProject.file('gradle/cse-db.gradle')
+
+description = 'JPEG, HEIC, image metadata, and PDF resource thumbnails. Article PDF stays in cse-codec-pdf.'
+
+dependencies {
+    api project(':cse-dal-core')
+    // HEIC is HEVC in an ISOBMFF container, so the bundled FFmpeg decodes it.
+    implementation project(':cse-codec-video')
+    implementation 'org.slf4j:slf4j-api'
+    implementation 'org.apache.pdfbox:pdfbox:3.0.5'
+    implementation 'com.drewnoakes:metadata-extractor:2.21.0'
+
+    testImplementation 'org.junit.jupiter:junit-jupiter'
+    testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+}

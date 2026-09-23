@@ -1,5 +1,7 @@
 package com.ravenherz.cse.controller.publicsite;
 
+import com.ravenherz.cse.dal.EntityId;
+
 import com.ravenherz.cse.dal.dto.AccountEntity;
 import com.ravenherz.cse.dal.dto.ItemEntity;
 import com.ravenherz.cse.dal.dto.basic.AccountData;
@@ -82,7 +84,7 @@ class PublicSiteJsonTest {
         PageData pageData = new PageData("H", "S", "Body", List.of());
         pageData.setNoTopDisplayImage(true);
         ItemEntity item = new ItemEntity("hello", pageData, author);
-        item.setId(new ObjectId());
+        item.setId(EntityId.generate());
         Map<String, Object> map = PublicSiteJson.item(PageEvent.PageEventConverter.toEvent(item));
         assertEquals(true, map.get("noTopDisplayImage"));
         pageData.setNoTopDisplayImage(false);
@@ -97,7 +99,7 @@ class PublicSiteJsonTest {
         PageData pageData = new PageData("H", "S", "Body", List.of());
         pageData.setExportPdf(true);
         ItemEntity item = new ItemEntity("hello", pageData, author);
-        item.setId(new ObjectId());
+        item.setId(EntityId.generate());
         Map<String, Object> map = PublicSiteJson.item(PageEvent.PageEventConverter.toEvent(item));
         assertEquals(true, map.get("exportPdf"));
         pageData.setExportPdf(false);

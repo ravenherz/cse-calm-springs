@@ -1,5 +1,7 @@
 package com.ravenherz.cse.present;
 
+import com.ravenherz.cse.dal.EntityId;
+
 import com.ravenherz.cse.dal.dto.CategoryEntity;
 import com.ravenherz.cse.dal.dto.ItemEntity;
 import com.ravenherz.cse.dal.dto.PlaylistEntity;
@@ -9,7 +11,6 @@ import com.ravenherz.cse.dal.dto.basic.AlbumData;
 import com.ravenherz.cse.dal.dto.basic.CategoryData;
 import com.ravenherz.cse.dal.dto.basic.PageData;
 import com.ravenherz.cse.dal.dto.basic.ResourceGroupData;
-import org.bson.types.ObjectId;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
@@ -180,11 +181,11 @@ class EditorTreeTest {
                 EditorTree.selectionId("/editor/resources", "travel", null, null, null, null));
         assertNull(EditorTree.selectionId("/editor/settings", null, null, null, null, null));
         PlaylistEntity playlist = new PlaylistEntity();
-        playlist.setId(new ObjectId());
+        playlist.setId(EntityId.generate());
         assertEquals(EditorTree.PLAYLIST_PREFIX + playlist.getId(), EditorTree.playlistLeafId(playlist));
         assertNull(EditorTree.playlistLeafId(null));
         UrlTemplateEntity urlTemplate = new UrlTemplateEntity();
-        urlTemplate.setId(new ObjectId());
+        urlTemplate.setId(EntityId.generate());
         assertEquals(EditorTree.URL_TEMPLATE_PREFIX + urlTemplate.getId(),
                 EditorTree.urlTemplateLeafId(urlTemplate));
         assertNull(EditorTree.urlTemplateLeafId(null));
@@ -239,7 +240,7 @@ class EditorTreeTest {
 
     private static ResourceGroupEntity group(String name) {
         ResourceGroupEntity entity = new ResourceGroupEntity(new ResourceGroupData(name), null);
-        entity.setId(new ObjectId());
+        entity.setId(EntityId.generate());
         return entity;
     }
 
@@ -247,15 +248,15 @@ class EditorTreeTest {
         CategoryData data = new CategoryData(name.toLowerCase(), name, "", true, true);
         data.setDisplayPriority(priority);
         CategoryEntity entity = new CategoryEntity(data, null);
-        entity.setId(new ObjectId());
+        entity.setId(EntityId.generate());
         return entity;
     }
 
-    private static ItemEntity page(String uri, String title, ObjectId categoryId) {
+    private static ItemEntity page(String uri, String title, EntityId categoryId) {
         PageData data = new PageData();
         data.setHeader(title);
         ItemEntity item = new ItemEntity(uri, data, null);
-        item.setId(new ObjectId());
+        item.setId(EntityId.generate());
         if (categoryId != null) {
             CategoryEntity ref = new CategoryEntity();
             ref.setId(categoryId);
@@ -264,11 +265,11 @@ class EditorTreeTest {
         return item;
     }
 
-    private static ItemEntity album(String uri, String title, ObjectId categoryId) {
+    private static ItemEntity album(String uri, String title, EntityId categoryId) {
         AlbumData data = new AlbumData();
         data.setHeader(title);
         ItemEntity item = new ItemEntity(uri, data, null);
-        item.setId(new ObjectId());
+        item.setId(EntityId.generate());
         if (categoryId != null) {
             CategoryEntity ref = new CategoryEntity();
             ref.setId(categoryId);

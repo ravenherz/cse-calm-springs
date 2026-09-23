@@ -1,10 +1,11 @@
 package com.ravenherz.cse.install;
 
-import com.ravenherz.cse.dal.DataProvider;
-import com.ravenherz.cse.dal.ServiceProvider;
 import com.ravenherz.cse.constants.SettingKeys;
+import com.ravenherz.cse.dal.DataProvider;
 import com.ravenherz.cse.dal.dao.AccountService;
 import com.ravenherz.cse.dal.dao.CategoryService;
+import com.ravenherz.cse.dal.dao.RoleMatrixService;
+import com.ravenherz.cse.dal.dao.RoleService;
 import com.ravenherz.cse.dal.dto.AccountEntity;
 import com.ravenherz.cse.dal.dto.CategoryEntity;
 import com.ravenherz.cse.util.PasswordHashes;
@@ -36,7 +37,13 @@ class InstallServiceTest {
     @Mock
     private DataProvider dataProvider;
     @Mock
-    private ServiceProvider serviceProvider;
+    private AccountService accountService;
+    @Mock
+    private RoleService roleService;
+    @Mock
+    private RoleMatrixService roleMatrixService;
+    @Mock
+    private CategoryService categoryService;
     @Mock
     private PasswordHashes passwordHashes;
     @Mock
@@ -45,15 +52,12 @@ class InstallServiceTest {
     private SiteReady siteReady;
     @Mock
     private UrlTemplateSeeds urlTemplateSeeds;
-    @Mock
-    private AccountService accountService;
     @InjectMocks
     private InstallService installService;
 
     @Test
     void ownerRejectsMismatchedPasswords() {
         when(dataProvider.ping()).thenReturn(true);
-        when(serviceProvider.getAccountService()).thenReturn(accountService);
         when(accountService.getAllAccounts()).thenReturn(List.of());
         InstallException ex = assertThrows(InstallException.class, () -> installService.createOwner(
                 Map.of("login", "aleksei", "email", "a@example.com",
@@ -64,7 +68,6 @@ class InstallServiceTest {
     @Test
     void ownerConflictIfAccountExists() {
         when(dataProvider.ping()).thenReturn(true);
-        when(serviceProvider.getAccountService()).thenReturn(accountService);
         when(accountService.getAllAccounts()).thenReturn(List.of(new AccountEntity()));
         InstallException ex = assertThrows(InstallException.class, () -> installService.createOwner(
                 Map.of("login", "aleksei", "email", "a@example.com",
@@ -84,7 +87,6 @@ class InstallServiceTest {
     @Test
     void finishRequiresOwner() {
         when(dataProvider.ping()).thenReturn(true);
-        when(serviceProvider.getAccountService()).thenReturn(accountService);
         when(accountService.getAllAccounts()).thenReturn(List.of());
         InstallException ex = assertThrows(InstallException.class,
                 () -> installService.finish(Map.of(), ""));
@@ -94,7 +96,6 @@ class InstallServiceTest {
     @Test
     void finishRequiresSiteTitle() {
         when(dataProvider.ping()).thenReturn(true);
-        when(serviceProvider.getAccountService()).thenReturn(accountService);
         when(accountService.getAllAccounts()).thenReturn(List.of(new AccountEntity()));
         InstallException ex = assertThrows(InstallException.class,
                 () -> installService.finish(Map.of(), ""));
@@ -104,10 +105,7 @@ class InstallServiceTest {
     @Test
     void finishKeepsNameWhenDatabaseAlreadyHasOwner() throws IOException {
         when(dataProvider.ping()).thenReturn(true);
-        when(serviceProvider.getAccountService()).thenReturn(accountService);
         when(accountService.getAllAccounts()).thenReturn(List.of(new AccountEntity()));
-        CategoryService categoryService = mock(CategoryService.class);
-        when(serviceProvider.getCategoryService()).thenReturn(categoryService);
         when(categoryService.getAllCategories()).thenReturn(List.of(new CategoryEntity()));
 
         Map<String, Object> status = installService.status();
@@ -126,7 +124,6 @@ class InstallServiceTest {
     @Test
     void existingSiteDoesNotFlipAfterOwnerIsCreated() {
         when(dataProvider.ping()).thenReturn(true);
-        when(serviceProvider.getAccountService()).thenReturn(accountService);
         when(accountService.getAllAccounts()).thenReturn(List.of());
 
         assertEquals(false, installService.status().get("existingSite"));
@@ -140,10 +137,7 @@ class InstallServiceTest {
     @Test
     void finishUndeploysAndRedirects() throws IOException {
         when(dataProvider.ping()).thenReturn(true);
-        when(serviceProvider.getAccountService()).thenReturn(accountService);
         when(accountService.getAllAccounts()).thenReturn(List.of(new AccountEntity()));
-        CategoryService categoryService = mock(CategoryService.class);
-        when(serviceProvider.getCategoryService()).thenReturn(categoryService);
         when(categoryService.getAllCategories()).thenReturn(List.of(new CategoryEntity()));
         when(settings.persistContext(any())).thenReturn(true);
 

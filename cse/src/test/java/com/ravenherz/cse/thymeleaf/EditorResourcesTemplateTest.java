@@ -1,5 +1,7 @@
 package com.ravenherz.cse.thymeleaf;
 
+import com.ravenherz.cse.dal.EntityId;
+
 import com.ravenherz.cse.dal.dto.CategoryEntity;
 import com.ravenherz.cse.dal.dto.ItemEntity;
 import com.ravenherz.cse.dal.dto.PlaylistEntity;
@@ -267,7 +269,7 @@ class EditorResourcesTemplateTest {
         PageData hostData = new PageData();
         hostData.setHeader("Host (2015)");
         ItemEntity host = new ItemEntity("host", hostData, null);
-        host.setId(new ObjectId());
+        host.setId(EntityId.generate());
         context.setVariable("panePages", List.of(host));
         String categoryHtml = engine.process("admin/editor-resources", context);
         assertTrue(categoryHtml.contains("page-row"), categoryHtml);
@@ -359,7 +361,7 @@ class EditorResourcesTemplateTest {
         assertTrue(themesHtml.contains("v=2048"), themesHtml);
 
         CategoryEntity shots = new CategoryEntity(new CategoryData("shots", "Shots", "", true, true), null);
-        shots.setId(new ObjectId());
+        shots.setId(EntityId.generate());
         context.setVariable("selectedGroup", categories);
         context.setVariable("paneThemes", null);
         context.setVariable("paneCategories", List.of(shots));
@@ -382,7 +384,7 @@ class EditorResourcesTemplateTest {
         PlaylistData playlistData = new PlaylistData();
         playlistData.setTitle("Ocean Blue");
         PlaylistEntity playlist = new PlaylistEntity("ocean-blue", playlistData, null);
-        playlist.setId(new ObjectId());
+        playlist.setId(EntityId.generate());
         context.setVariable("selectedGroup", group("content-playlists", "Playlists", "Content / Playlists", 2));
         context.setVariable("paneCategories", null);
         context.setVariable("panePlaylists", List.of(playlist));
@@ -403,7 +405,7 @@ class EditorResourcesTemplateTest {
         templateData.setUrlPattern("https://youtube.com/%s");
         templateData.setUrlDefaultText("Find more videos on my YouTube channel: %s");
         UrlTemplateEntity template = new UrlTemplateEntity("youtube", templateData, null);
-        template.setId(new ObjectId());
+        template.setId(EntityId.generate());
         context.setVariable("selectedGroup", group("content-url-templates", "URL Templates",
                 "Content / URL Templates", 2));
         context.setVariable("panePlaylists", null);
@@ -490,7 +492,7 @@ class EditorResourcesTemplateTest {
         ItemEntity host = new ItemEntity("host", hostData, null);
         CategoryData catData = new CategoryData("music", "music", "everything related to music", true, true);
         CategoryEntity category = new CategoryEntity(catData, null);
-        category.setId(new ObjectId());
+        category.setId(EntityId.generate());
 
         SpringTemplateEngine engine = engine();
         MockServletContext servletContext = new MockServletContext();
@@ -545,11 +547,12 @@ class EditorResourcesTemplateTest {
         assertFalse(pageHtml.contains("<select id=\"categoryId\""), pageHtml);
 
         ResourceEntity cover = new ResourceEntity();
-        cover.setId(new ObjectId());
+        cover.setId(EntityId.generate());
         ResourceData coverData = new ResourceData();
         coverData.setPathPublic("/ravenherz/res/images/logo.png");
         cover.setResourceData(coverData);
-        host.getPageData().setRefImage(cover);
+        host.getPageData().setRefImageId(cover.getId());
+        context.setVariable("featuredImagePath", coverData.getPathPublic());
         String coveredHtml = engine.process("admin/editor-page-edit", context);
         assertFalse(coveredHtml.contains("${"), coveredHtml);
         assertTrue(coveredHtml.contains("/ravenherz/res/images/logo.png"), coveredHtml);
@@ -608,7 +611,7 @@ class EditorResourcesTemplateTest {
         PlaylistData ocean = new PlaylistData();
         ocean.setTitle("Ocean Blue");
         PlaylistEntity playlist = new PlaylistEntity("ocean-blue", ocean, null);
-        playlist.setId(new ObjectId());
+        playlist.setId(EntityId.generate());
         playlists.setTreeFiles(List.of(new ResourceTreeFile(
                 "playlist-" + playlist.getId(), "Ocean Blue",
                 "/editor/playlist/edit?id=" + playlist.getId(),
@@ -657,7 +660,7 @@ class EditorResourcesTemplateTest {
         youtubeData.setUrlPattern("https://youtube.com/%s");
         youtubeData.setUrlDefaultText("Find more videos on my YouTube channel: %s");
         UrlTemplateEntity youtube = new UrlTemplateEntity("youtube", youtubeData, null);
-        youtube.setId(new ObjectId());
+        youtube.setId(EntityId.generate());
         urlTemplates.setTreeFiles(List.of(new ResourceTreeFile(
                 "url-template-" + youtube.getId(), "youtube",
                 "/editor/url-template/edit?id=" + youtube.getId(),
@@ -716,7 +719,7 @@ class EditorResourcesTemplateTest {
         data.setPathPublic("/u/res/image/aurora.jpg");
         data.setType(ResourceType.IMAGE);
         ResourceEntity file = new ResourceEntity(data, null);
-        file.setId(new ObjectId());
+        file.setId(EntityId.generate());
         file.setSecurityData(new SecurityData(EntityAccessConstants.forLevel(SecurityLevel.OPERATOR)));
         y2024.setResources(List.of(file));
 
@@ -776,7 +779,7 @@ class EditorResourcesTemplateTest {
         data.setSizeInBytes(123000000);
         VideoStatus.set(data, VideoStatus.PROCESSING);
         ResourceEntity video = new ResourceEntity(data, null);
-        video.setId(new ObjectId());
+        video.setId(EntityId.generate());
         unsorted.setResources(List.of(video));
 
         SpringTemplateEngine engine = engine();

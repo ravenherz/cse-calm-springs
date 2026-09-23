@@ -7,7 +7,10 @@ apply from: rootProject.file('gradle/cse-db.gradle')
 description = 'Markdown, page embeds, and article assembly. Theme body tags stay in the WAR.'
 
 dependencies {
-    api project(':cse-db-api')
+    api project(':cse-dal-core')
+    api project(':cse-security')
+    api project(':cse-media')
+    api 'org.springframework.boot:spring-boot-starter-data-mongodb'
     implementation 'org.slf4j:slf4j-api'
     implementation 'org.springframework:spring-context'
     implementation 'org.commonmark:commonmark:0.22.0'

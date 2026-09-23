@@ -1,5 +1,6 @@
 package com.ravenherz.cse.controller;
 
+import com.ravenherz.cse.dal.StoredIds;
 import com.ravenherz.cse.dal.dto.AccountEntity;
 import com.ravenherz.cse.dal.dto.PlaylistEntity;
 import com.ravenherz.cse.dal.dto.ResourceEntity;
@@ -99,7 +100,7 @@ public class EditorPlaylistsController extends AbstractController {
         data.setTitle(title.trim());
         data.setDescription(blankToNull(description));
         data.setTracks(tracks);
-        data.setRefImage(cover);
+        data.setRefImageId(cover == null ? null : cover.getId());
         PlaylistEntity playlist = new PlaylistEntity(normalizedId, data, accessor);
         applyAccess(request, playlist);
         try {
@@ -160,7 +161,7 @@ public class EditorPlaylistsController extends AbstractController {
         playlist.getPlaylistData().setTitle(title);
         playlist.getPlaylistData().setDescription(description);
         playlist.getPlaylistData().setTracks(tracks);
-        playlist.getPlaylistData().setRefImage(cover);
+        playlist.getPlaylistData().setRefImageId(cover == null ? null : cover.getId());
         if (!PlaylistIds.isValid(normalizedId)) {
             model.addAttribute("error", "Playlist id must be lowercase letters, numbers, and hyphens.");
             addPlaylistForm(model, accessor, playlist, tracks);
@@ -186,7 +187,7 @@ public class EditorPlaylistsController extends AbstractController {
         Event[] oldEvents = historyData.getEvents() == null ? new Event[0] : historyData.getEvents();
         Event[] newEvents = new Event[oldEvents.length + 1];
         System.arraycopy(oldEvents, 0, newEvents, 0, oldEvents.length);
-        newEvents[oldEvents.length] = new Event(EventType.ENTITY_EDITED, LocalDateTime.now(), accessor);
+        newEvents[oldEvents.length] = new Event(EventType.ENTITY_EDITED, LocalDateTime.now(), accessor == null ? null : accessor.getId());
         historyData.setEvents(newEvents);
         playlist.setHistoryData(historyData);
         applyAccess(request, playlist);
@@ -224,7 +225,7 @@ public class EditorPlaylistsController extends AbstractController {
         }
         try {
             return (PlaylistEntity) serviceProvider.getPlaylistService()
-                    .getById(PlaylistEntity.class, new ObjectId(id.trim()));
+                    .getById(PlaylistEntity.class, StoredIds.entityId(new ObjectId(id.trim())));
         } catch (Exception e) {
             return null;
         }
@@ -233,6 +234,7 @@ public class EditorPlaylistsController extends AbstractController {
     private void addPlaylistForm(Model model, AccountEntity accessor, PlaylistEntity playlist,
             List<PlaylistTrack> tracks) {
         model.addAttribute("playlist", playlist);
+        model.addAttribute("coverImagePath", coverImagePath(playlist));
         model.addAttribute("selectedTracks", toViews(tracks));
         addEditorChrome(model, accessor);
         if (playlist != null && playlist.getId() != null) {
@@ -241,6 +243,14 @@ public class EditorPlaylistsController extends AbstractController {
             EditorInline.putTreeForPlaylistCreate(model, resourceGroupIndex);
         }
         addAccessPanel(model, playlist, accessor);
+    }
+
+    private String coverImagePath(PlaylistEntity playlist) {
+        if (playlist == null || playlist.getPlaylistData() == null
+                || playlist.getPlaylistData().getRefImageId() == null) {
+            return null;
+        }
+        return resourceGroupIndex.filePath(playlist.getPlaylistData().getRefImageId().toString());
     }
 
     private List<PlaylistTrack> playlistTracks(PlaylistEntity playlist) {
@@ -260,14 +270,13 @@ public class EditorPlaylistsController extends AbstractController {
             if (track == null) {
                 continue;
             }
-            ResourceEntity resource = track.getRefResource();
-            if (resource == null && track.getRefResourceId() != null) {
+            ResourceEntity resource = null;
+            if (track.getRefResourceId() != null) {
                 try {
                     Object found = serviceProvider.getResourceService()
                             .getById(ResourceEntity.class, track.getRefResourceId());
                     if (found instanceof ResourceEntity loaded) {
                         resource = loaded;
-                        track.attachRefResource(loaded);
                     }
                 } catch (Exception e) {
                     LOGGER.warn("Could not load playlist track resource {}: {}",
@@ -288,13 +297,12 @@ public class EditorPlaylistsController extends AbstractController {
         view.setId(resource.getId() == null ? "" : resource.getId().toString());
         view.setFileName(resource.getResourceData() == null ? "" : resource.getResourceData().getFileName());
         PlaylistTrack probe = new PlaylistTrack();
-        probe.attachRefResource(resource);
         probe.setTitle(titleOverride);
         probe.setArtist(artistOverride);
-        view.setTitle(PlaylistTracks.title(probe));
-        view.setArtist(PlaylistTracks.artist(probe));
-        view.setDurationLabel(PlaylistTracks.durationLabel(probe));
-        view.setTrackNumber(PlaylistTracks.trackNumber(probe, index));
+        view.setTitle(PlaylistTracks.title(probe, resource));
+        view.setArtist(PlaylistTracks.artist(probe, resource));
+        view.setDurationLabel(PlaylistTracks.durationLabel(probe, resource));
+        view.setTrackNumber(PlaylistTracks.trackNumber(probe, resource, index));
         view.setTitleOverride(titleOverride);
         view.setArtistOverride(artistOverride);
         if (resource.getPreviewData() != null && resource.getPreviewData().getPathPublic() != null
@@ -310,7 +318,7 @@ public class EditorPlaylistsController extends AbstractController {
         }
         try {
             ResourceEntity resource = (ResourceEntity) serviceProvider.getResourceService()
-                    .getById(ResourceEntity.class, new ObjectId(resourceId.trim()));
+                    .getById(ResourceEntity.class, StoredIds.entityId(new ObjectId(resourceId.trim())));
             if (resource == null || resource.getResourceData() == null
                     || resource.getResourceData().getType() != ResourceType.IMAGE) {
                 return null;
@@ -335,7 +343,7 @@ public class EditorPlaylistsController extends AbstractController {
             ResourceEntity resource;
             try {
                 resource = (ResourceEntity) serviceProvider.getResourceService()
-                        .getById(ResourceEntity.class, new ObjectId(resourceId.trim()));
+                        .getById(ResourceEntity.class, StoredIds.entityId(new ObjectId(resourceId.trim())));
             } catch (Exception e) {
                 continue;
             }
@@ -344,7 +352,7 @@ public class EditorPlaylistsController extends AbstractController {
                 continue;
             }
             PlaylistTrack track = new PlaylistTrack();
-            track.setRefResource(resource);
+            track.setRefResourceId(resource.getId());
             track.setTitle(valueAt(titleOverrides, i));
             track.setArtist(valueAt(artistOverrides, i));
             tracks.add(track);
@@ -358,7 +366,7 @@ public class EditorPlaylistsController extends AbstractController {
         data.setTitle(title);
         data.setDescription(description);
         data.setTracks(tracks);
-        data.setRefImage(cover);
+        data.setRefImageId(cover == null ? null : cover.getId());
         PlaylistEntity playlist = new PlaylistEntity();
         playlist.setPlaylistId(playlistId);
         playlist.setPlaylistData(data);

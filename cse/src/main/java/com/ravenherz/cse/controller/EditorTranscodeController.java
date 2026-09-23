@@ -1,6 +1,7 @@
 package com.ravenherz.cse.controller;
 
 import com.ravenherz.cse.dal.EntityAccess;
+import com.ravenherz.cse.dal.StoredIds;
 import com.ravenherz.cse.dal.dao.ResourceService;
 import com.ravenherz.cse.dal.dto.AccountEntity;
 import com.ravenherz.cse.dal.dto.BasicEntity;
@@ -132,7 +133,7 @@ public class EditorTranscodeController extends AbstractController {
         if (id == null || resources == null) {
             return null;
         }
-        BasicEntity found = resources.getById(ResourceEntity.class, id);
+        BasicEntity found = resources.getById(ResourceEntity.class, StoredIds.entityId(id));
         return found instanceof ResourceEntity resource ? resource : null;
     }
 
@@ -140,18 +141,13 @@ public class EditorTranscodeController extends AbstractController {
         if (resource != null && resource.getHistoryData() != null
                 && resource.getHistoryData().getEvents() != null) {
             Event created = EntityAccess.getLastEventByType(EventType.ENTITY_CREATED, resource);
-            if (created != null) {
-                String login = loginOf(created.getOwner());
+            if (created != null && created.getOwnerId() != null
+                    && serviceProvider != null && serviceProvider.getAccountService() != null) {
+                BasicEntity found = serviceProvider.getAccountService()
+                        .getById(AccountEntity.class, created.getOwnerId());
+                String login = found instanceof AccountEntity account ? loginOf(account) : null;
                 if (login != null) {
                     return login;
-                }
-                ObjectId ownerId = created.getOwnerId();
-                if (ownerId != null && serviceProvider != null && serviceProvider.getAccountService() != null) {
-                    BasicEntity found = serviceProvider.getAccountService().getById(AccountEntity.class, ownerId);
-                    login = found instanceof AccountEntity account ? loginOf(account) : null;
-                    if (login != null) {
-                        return login;
-                    }
                 }
             }
         }
@@ -200,7 +196,7 @@ public class EditorTranscodeController extends AbstractController {
         if (resources == null) {
             return null;
         }
-        BasicEntity found = resources.getById(ResourceEntity.class, id);
+        BasicEntity found = resources.getById(ResourceEntity.class, StoredIds.entityId(id));
         if (!(found instanceof ResourceEntity resource) || resource.getResourceData() == null
                 || resource.getResourceData().getType() != ResourceType.VIDEO) {
             return null;

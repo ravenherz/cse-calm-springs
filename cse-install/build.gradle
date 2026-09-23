@@ -7,7 +7,9 @@ apply from: rootProject.file('gradle/cse-db.gradle')
 description = 'First-run bootstrap. The install HTTP endpoints stay in the WAR.'
 
 dependencies {
-    api project(':cse-db-api')
+    api project(':cse-content')
+    api project(':cse-security')
+    api project(':cse-db-mongo')
     implementation project(':cse-core')
     implementation project(':cse-security')
     implementation project(':cse-apps')

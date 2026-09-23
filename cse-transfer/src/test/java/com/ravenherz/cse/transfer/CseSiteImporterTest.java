@@ -1,8 +1,10 @@
 package com.ravenherz.cse.transfer;
 
+import com.ravenherz.cse.dal.EntityId;
+
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.ravenherz.cse.constants.MongoCollections;
-import com.ravenherz.cse.dal.ServiceProvider;
+import com.ravenherz.cse.transfer.SiteServices;
 import com.ravenherz.cse.dal.dao.AccountService;
 import com.ravenherz.cse.dal.dao.AppService;
 import com.ravenherz.cse.dal.dao.CategoryService;
@@ -61,14 +63,14 @@ class CseSiteImporterTest {
 
     private final CseSiteExporter exporter = new CseSiteExporter();
     private final CseSiteImporter importer = new CseSiteImporter();
-    private ServiceProvider services;
+    private SiteServices services;
     private ResourceService resourceService;
     private MongoTemplate mongo;
     private SiteSettings settings;
 
     @BeforeEach
     void stubs() {
-        services = mock(ServiceProvider.class);
+        services = mock(SiteServices.class);
         AccountService accounts = mock(AccountService.class);
         CategoryService categories = mock(CategoryService.class);
         ResourceGroupService groups = mock(ResourceGroupService.class);
@@ -114,33 +116,33 @@ class CseSiteImporterTest {
 
         AccountEntity owner = new AccountEntity(new AccountData("ada", "argon2-hash", "ada@example.com",
                 SecurityLevel.OWNER));
-        owner.setId(ownerId);
+        owner.setId(EntityId.of(ownerId.toHexString()));
         owner.getAccountData().setSessions(Set.of(new AccountData.AccountSession(
                 "127.0.0.1", "test-agent", "live-session-token",
                 LocalDateTime.of(2026, Month.SEPTEMBER, 2, 10, 0))));
 
         CategoryEntity category = new CategoryEntity(
                 new CategoryData("journal", "Journal", "desc", true, true), owner);
-        category.setId(categoryId);
+        category.setId(EntityId.of(categoryId.toHexString()));
 
         ResourceData image = new ResourceData();
         image.setType(ResourceType.IMAGE);
         image.setPathPublic("/ada/res/images/cover.jpg");
         image.setContentRaw("Zm9v");
-        ResourceEntity resource = new ResourceEntity(image, owner);
-        resource.setId(imageId);
+        ResourceEntity resource = new ResourceEntity(image, owner.getId());
+        resource.setId(EntityId.of(imageId.toHexString()));
 
         DataChunkEntity chunk = new DataChunkEntity("Zm9vYmFy");
-        chunk.setId(chunkId);
+        chunk.setId(EntityId.of(chunkId.toHexString()));
         image.setLargeFile(true);
         image.addDataChunkId(chunkId);
 
         PageData pageData = new PageData("H", "S", "Body", List.of("tag"));
-        pageData.setRefImage(resource);
+        pageData.setRefImageId(resource.getId());
         ItemEntity page = new ItemEntity("hello", pageData, owner);
-        page.setId(pageId);
+        page.setId(EntityId.of(pageId.toHexString()));
         page.setRefCategory(category);
-        page.setHistoryData(new HistoryData(owner));
+        page.setHistoryData(new HistoryData(owner.getId()));
 
         when(services.getAccountService().getAll()).thenReturn(List.of(owner));
         when(services.getCategoryService().getAll()).thenReturn(List.of(category));
@@ -173,12 +175,11 @@ class CseSiteImporterTest {
                 .map(ItemEntity.class::cast)
                 .findFirst()
                 .orElseThrow();
-        assertEquals(pageId, importedPage.getId());
+        assertEquals(pageId.toHexString(), importedPage.getId().toHexString());
         assertEquals("hello", importedPage.getUniqueUriName());
         assertEquals(categoryId, importedPage.getRefCategoryId());
         assertEquals("Body", importedPage.getPageData().getDescription());
-        assertEquals(imageId, importedPage.getPageData().getRefImageId());
-        assertNull(importedPage.getPageData().getRefImage());
+        assertEquals(imageId.toHexString(), importedPage.getPageData().getRefImageId().toHexString());
 
         AccountEntity importedAccount = stored.stream()
                 .filter(AccountEntity.class::isInstance)
@@ -213,7 +214,7 @@ class CseSiteImporterTest {
         exporter.write(zip, services, "mongodb", Map.of());
 
         AccountEntity stale = new AccountEntity();
-        stale.setId(new ObjectId("68b000000000000000000099"));
+        stale.setId(EntityId.of("68b000000000000000000099"));
         when(mongo.findAll(AccountEntity.class)).thenReturn(List.of(stale));
 
         SettingContextEntity secret = new SettingContextEntity();
@@ -272,7 +273,7 @@ class CseSiteImporterTest {
         appData.setStoreTables(List.of(new com.ravenherz.cse.store.AppStoreTableSpec(
                 "progress", com.ravenherz.cse.store.AppStoreAccess.OWNER, null)));
         AppEntity app = new AppEntity();
-        app.setId(new ObjectId("68b0000000000000000000a1"));
+        app.setId(EntityId.of("68b0000000000000000000a1"));
         app.setAppData(appData);
         when(services.getAppService().getAll()).thenReturn(List.of(app));
 

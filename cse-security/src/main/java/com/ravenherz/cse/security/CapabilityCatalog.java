@@ -1,8 +1,5 @@
 package com.ravenherz.cse.security;
 
-import com.ravenherz.cse.dal.dao.AppService;
-import com.ravenherz.cse.dal.dto.AppEntity;
-import com.ravenherz.cse.dal.dto.basic.AppData;
 import com.ravenherz.cse.dal.role.CapabilityIds;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -74,12 +71,12 @@ public class CapabilityCatalog {
             CapabilityRecord.engine(CapabilityIds.EDITOR_INSTANCE, "editor", "Instance", false,
                     "Open Instance and view host CPU, GPU, memory, and disks."));
 
-    private final AppService appService;
+    private final AppSlugSource appSlugs;
     private final ShippedAppStems shippedApps;
     private volatile List<CapabilityRecord> all = List.of();
 
-    public CapabilityCatalog(AppService appService, ObjectProvider<ShippedAppStems> shippedApps) {
-        this.appService = appService;
+    public CapabilityCatalog(ObjectProvider<AppSlugSource> appSlugs, ObjectProvider<ShippedAppStems> shippedApps) {
+        this.appSlugs = appSlugs == null ? null : appSlugs.getIfAvailable();
         this.shippedApps = shippedApps == null ? null : shippedApps.getIfAvailable();
         refresh();
     }
@@ -125,13 +122,10 @@ public class CapabilityCatalog {
             LOGGER.debug("Shipped apps for catalog: {}", ex.getMessage());
         }
         try {
-            if (appService != null) {
-                for (var entity : appService.getAll()) {
-                    if (entity instanceof AppEntity app && app.getAppData() != null) {
-                        AppData data = app.getAppData();
-                        if (data.getSlug() != null && !data.getSlug().isBlank()) {
-                            slugs.add(data.getSlug().trim().toLowerCase(Locale.ROOT));
-                        }
+            if (appSlugs != null) {
+                for (String slug : appSlugs.slugs()) {
+                    if (slug != null && !slug.isBlank()) {
+                        slugs.add(slug.trim().toLowerCase(Locale.ROOT));
                     }
                 }
             }

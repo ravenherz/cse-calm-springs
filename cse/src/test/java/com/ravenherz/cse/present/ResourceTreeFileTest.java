@@ -1,5 +1,7 @@
 package com.ravenherz.cse.present;
 
+import com.ravenherz.cse.dal.EntityId;
+
 import com.ravenherz.cse.dal.dto.ResourceEntity;
 import com.ravenherz.cse.dal.dto.basic.ResourceData;
 import com.ravenherz.cse.dal.dto.basic.enums.ResourceType;
@@ -69,7 +71,7 @@ class ResourceTreeFileTest {
         data.setType(type);
         data.setPathPublic(path);
         ResourceEntity entity = new ResourceEntity();
-        entity.setId(new ObjectId());
+        entity.setId(EntityId.generate());
         entity.setResourceData(data);
         return entity;
     }

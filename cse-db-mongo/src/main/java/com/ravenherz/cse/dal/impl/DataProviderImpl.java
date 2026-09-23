@@ -5,6 +5,7 @@ import com.mongodb.MongoClientSettings;
 import com.mongodb.client.MongoClient;
 import com.mongodb.client.MongoClients;
 import com.ravenherz.cse.constants.SettingKeys;
+import com.ravenherz.cse.dal.AssignEntityId;
 import com.ravenherz.cse.dal.ConfigSource;
 import com.ravenherz.cse.dal.DataProvider;
 import com.ravenherz.cse.dal.EntityVersions;
@@ -161,6 +162,7 @@ public class DataProviderImpl implements DataProvider {
         MongoTemplate template = new MongoTemplate(factory, converter);
         ReferenceHydrator hydrator = new ReferenceHydrator(template);
         template.setEntityCallbacks(EntityCallbacks.create(
+                new AssignEntityId(),
                 (AfterConvertCallback<Object>) (entity, document, collection) -> {
                     hydrator.hydrate(entity);
                     return entity;

@@ -1,6 +1,9 @@
 package com.ravenherz.cse.util;
 
+import com.ravenherz.cse.dal.EntityId;
 import com.ravenherz.cse.dal.dao.PlaylistService;
+import com.ravenherz.cse.dal.dao.ResourceService;
+import com.ravenherz.cse.dal.dto.BasicEntity;
 import com.ravenherz.cse.dal.dto.PlaylistEntity;
 import com.ravenherz.cse.dal.dto.ResourceEntity;
 import com.ravenherz.cse.dal.dto.basic.PlaylistData;
@@ -33,20 +36,41 @@ class PlaylistEmbedProcessor {
 
     private static volatile PlaylistEmbedProcessor instance;
 
+    interface Resources {
+        ResourceEntity find(EntityId id);
+    }
+
     private final Lookup lookup;
+    private final Resources resources;
 
     @Autowired
-    public PlaylistEmbedProcessor(ObjectProvider<PlaylistService> playlistService) {
+    public PlaylistEmbedProcessor(ObjectProvider<PlaylistService> playlistService,
+            ObjectProvider<ResourceService> resourceService) {
         PlaylistService service = playlistService == null ? null : playlistService.getIfAvailable();
+        ResourceService files = resourceService == null ? null : resourceService.getIfAvailable();
         this.lookup = service == null ? id -> null : service::getByPlaylistId;
+        this.resources = id -> load(files, id);
     }
 
     static PlaylistEmbedProcessor of(Lookup lookup) {
-        return new PlaylistEmbedProcessor(lookup);
+        return of(lookup, id -> null);
     }
 
-    private PlaylistEmbedProcessor(Lookup lookup) {
+    static PlaylistEmbedProcessor of(Lookup lookup, Resources resources) {
+        return new PlaylistEmbedProcessor(lookup, resources);
+    }
+
+    private PlaylistEmbedProcessor(Lookup lookup, Resources resources) {
         this.lookup = lookup == null ? id -> null : lookup;
+        this.resources = resources == null ? id -> null : resources;
+    }
+
+    private static ResourceEntity load(ResourceService files, EntityId id) {
+        if (files == null || id == null) {
+            return null;
+        }
+        BasicEntity found = files.getById(ResourceEntity.class, id);
+        return found instanceof ResourceEntity resource ? resource : null;
     }
 
     @PostConstruct
@@ -127,15 +151,16 @@ class PlaylistEmbedProcessor {
             if (track == null) {
                 continue;
             }
-            String src = PlaylistTracks.src(track);
+            ResourceEntity resource = resources.find(track.getRefResourceId());
+            String src = PlaylistTracks.src(track, resource);
             if (src.isBlank()) {
                 continue;
             }
-            String trackTitle = PlaylistTracks.title(track);
-            String artist = PlaylistTracks.artist(track);
-            String duration = PlaylistTracks.durationLabel(track);
-            String number = PlaylistTracks.trackNumber(track, i);
-            String waveform = PlaylistTracks.waveformBase64(track);
+            String trackTitle = PlaylistTracks.title(track, resource);
+            String artist = PlaylistTracks.artist(track, resource);
+            String duration = PlaylistTracks.durationLabel(track, resource);
+            String number = PlaylistTracks.trackNumber(track, resource, i);
+            String waveform = PlaylistTracks.waveformBase64(track, resource);
             html.append("<li class=\"cse-track\"")
                     .append(" data-src=\"").append(escape(src)).append("\"")
                     .append(" data-title=\"").append(escape(trackTitle)).append("\"")
@@ -180,20 +205,20 @@ class PlaylistEmbedProcessor {
         return WITH_IMAGE_BARE.matcher(attrs).find();
     }
 
-    private static String coverSrc(PlaylistData data) {
+    private String coverSrc(PlaylistData data) {
         if (data == null) {
             return "";
         }
-        String fromImage = imageSrc(data.getRefImage());
+        String fromImage = imageSrc(resources.find(data.getRefImageId()));
         if (!fromImage.isBlank()) {
             return fromImage;
         }
         for (PlaylistTrack track : data.getTracks()) {
-            if (track == null || track.getRefResource() == null) {
+            if (track == null) {
                 continue;
             }
-            ResourceEntity resource = track.getRefResource();
-            if (resource.getPreviewData() == null) {
+            ResourceEntity resource = resources.find(track.getRefResourceId());
+            if (resource == null || resource.getPreviewData() == null) {
                 continue;
             }
             String src = CseEmbedProcessor.publicSrc(resource.getPreviewData().getPathPublic());

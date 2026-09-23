@@ -1,5 +1,6 @@
 package com.ravenherz.cse.controller;
 
+import com.ravenherz.cse.dal.StoredIds;
 import com.ravenherz.cse.dal.dao.RoleMatrixService;
 import com.ravenherz.cse.dal.dao.RoleService;
 import com.ravenherz.cse.dal.dto.AccountEntity;
@@ -220,7 +221,7 @@ public class EditorRolesController extends AbstractController {
         AccountEntity target;
         try {
             target = (AccountEntity) serviceProvider.getAccountService()
-                    .getById(AccountEntity.class, new ObjectId(id.trim()));
+                    .getById(AccountEntity.class, StoredIds.entityId(new ObjectId(id.trim())));
         } catch (Exception ex) {
             error(404, request, response);
             return null;

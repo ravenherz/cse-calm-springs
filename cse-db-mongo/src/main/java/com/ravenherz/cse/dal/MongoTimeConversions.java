@@ -1,9 +1,11 @@
 package com.ravenherz.cse.dal;
 
+import com.ravenherz.cse.dal.EntityId;
 import com.ravenherz.cse.dal.dto.basic.AccessRule;
 import com.ravenherz.cse.dal.dto.basic.enums.SecurityLevel;
 import com.ravenherz.cse.dal.role.RoleSeeds;
 import org.bson.Document;
+import org.bson.types.ObjectId;
 import org.springframework.core.convert.converter.Converter;
 import org.springframework.data.convert.ReadingConverter;
 import org.springframework.data.convert.WritingConverter;
@@ -35,7 +37,9 @@ public final class MongoTimeConversions {
                 new StringToSecurityLevelConverter(),
                 new StringToAccessRuleConverter(),
                 new DocumentToAccessRuleConverter(),
-                new AccessRuleToDocumentConverter()));
+                new AccessRuleToDocumentConverter(),
+                new ObjectIdToEntityIdConverter(),
+                new EntityIdToObjectIdConverter()));
     }
 
     static LocalDateTime fromDate(Date date) {
@@ -230,6 +234,22 @@ public final class MongoTimeConversions {
             document.put("roleIds", source == null ? List.of() : withoutRetired(source.getRoleIds()));
             document.put("accountIds", source == null ? List.of() : source.getAccountIds());
             return document;
+        }
+    }
+
+    @ReadingConverter
+    static final class ObjectIdToEntityIdConverter implements Converter<ObjectId, EntityId> {
+        @Override
+        public EntityId convert(ObjectId source) {
+            return source == null ? null : EntityId.of(source.toHexString());
+        }
+    }
+
+    @WritingConverter
+    static final class EntityIdToObjectIdConverter implements Converter<EntityId, ObjectId> {
+        @Override
+        public ObjectId convert(EntityId source) {
+            return source == null ? null : new ObjectId(source.hex());
         }
     }
 

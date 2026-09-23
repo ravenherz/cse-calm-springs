@@ -1,5 +1,7 @@
 package com.ravenherz.cse.transfer;
 
+import com.ravenherz.cse.dal.EntityId;
+
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -7,7 +9,7 @@ import com.mongodb.client.FindIterable;
 import com.mongodb.client.MongoCollection;
 import com.ravenherz.cse.constants.MongoCollections;
 import com.ravenherz.cse.dal.DataProvider;
-import com.ravenherz.cse.dal.ServiceProvider;
+import com.ravenherz.cse.transfer.SiteServices;
 import com.ravenherz.cse.dal.dao.AccountService;
 import com.ravenherz.cse.dal.dao.AppService;
 import com.ravenherz.cse.dal.dao.CategoryService;
@@ -61,12 +63,12 @@ class CseSiteExporterTest {
     private static final ObjectMapper JSON = new ObjectMapper();
 
     private final CseSiteExporter exporter = new CseSiteExporter();
-    private ServiceProvider services;
+    private SiteServices services;
     private ResourceService resourceService;
 
     @BeforeEach
     void stubs() {
-        services = mock(ServiceProvider.class);
+        services = mock(SiteServices.class);
         AccountService accounts = mock(AccountService.class);
         CategoryService categories = mock(CategoryService.class);
         ResourceGroupService groups = mock(ResourceGroupService.class);
@@ -108,7 +110,7 @@ class CseSiteExporterTest {
 
         AccountEntity owner = new AccountEntity(new AccountData("ada", "argon2-hash", "ada@example.com",
                 SecurityLevel.OWNER));
-        owner.setId(ownerId);
+        owner.setId(EntityId.of(ownerId.toHexString()));
         owner.getAccountData().setShownName("Ada");
         owner.getAccountData().setAvatar("data:image/jpeg;base64,Zm9v");
         AccountData.AccountSession session = new AccountData.AccountSession(
@@ -118,7 +120,7 @@ class CseSiteExporterTest {
 
         CategoryEntity category = new CategoryEntity(
                 new CategoryData("journal", "Journal", "desc", true, true), owner);
-        category.setId(categoryId);
+        category.setId(EntityId.of(categoryId.toHexString()));
 
         ResourceData image = new ResourceData();
         image.setType(ResourceType.IMAGE);
@@ -126,18 +128,18 @@ class CseSiteExporterTest {
         image.setContentRaw("Zm9v");
         image.setLargeFile(true);
         image.addDataChunkId(chunkId);
-        ResourceEntity resource = new ResourceEntity(image, owner);
-        resource.setId(imageId);
+        ResourceEntity resource = new ResourceEntity(image, owner.getId());
+        resource.setId(EntityId.of(imageId.toHexString()));
 
         DataChunkEntity chunk = new DataChunkEntity("Zm9vYmFy");
-        chunk.setId(chunkId);
+        chunk.setId(EntityId.of(chunkId.toHexString()));
 
         PageData pageData = new PageData("H", "S", "Body", List.of("tag"));
-        pageData.setRefImage(resource);
+        pageData.setRefImageId(resource.getId());
         ItemEntity page = new ItemEntity("hello", pageData, owner);
-        page.setId(pageId);
+        page.setId(EntityId.of(pageId.toHexString()));
         page.setRefCategory(category);
-        page.setHistoryData(new HistoryData(owner));
+        page.setHistoryData(new HistoryData(owner.getId()));
         page.getHistoryData().getEvents()[0].setLocalDateTime(
                 LocalDateTime.of(2026, Month.AUGUST, 22, 1, 14, 0));
 
@@ -232,7 +234,7 @@ class CseSiteExporterTest {
         ObjectId chunkId = new ObjectId("68b000000000000000000004");
         ItemEntity page = new ItemEntity("hello", new PageData("H", "S", "Body", List.of("tag")),
                 new AccountEntity(new AccountData("ada", "hash", "ada@example.com", SecurityLevel.OWNER)));
-        page.setId(pageId);
+        page.setId(EntityId.of(pageId.toHexString()));
 
         MongoTemplate mongo = mock(MongoTemplate.class);
         DataProvider data = mock(DataProvider.class);
@@ -281,7 +283,7 @@ class CseSiteExporterTest {
         appData.setStoreEnabled(true);
         AppEntity app = new AppEntity();
         app.setAppData(appData);
-        app.setId(new ObjectId("68b0000000000000000000a1"));
+        app.setId(EntityId.of("68b0000000000000000000a1"));
 
         MongoTemplate mongo = mock(MongoTemplate.class);
         DataProvider data = mock(DataProvider.class);

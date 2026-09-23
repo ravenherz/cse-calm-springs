@@ -3,11 +3,14 @@ package com.ravenherz.cse.controller.publicsite;
 import com.ravenherz.cse.constants.SettingKeys;
 import com.ravenherz.cse.constants.Strings;
 import com.ravenherz.cse.dal.EntityAccess;
+import com.ravenherz.cse.dal.EntityId;
 import com.ravenherz.cse.dal.ServiceProvider;
 import com.ravenherz.cse.dal.dto.AccountEntity;
+import com.ravenherz.cse.dal.dto.BasicEntity;
 import com.ravenherz.cse.dal.dto.CategoryEntity;
 import com.ravenherz.cse.dal.dto.ItemEntity;
 import com.ravenherz.cse.dal.dto.ResourceEntity;
+import com.ravenherz.cse.dal.dto.ResourceGroupEntity;
 import com.ravenherz.cse.dal.dto.basic.enums.AccessType;
 import com.ravenherz.cse.dal.dto.events.PageEvent;
 import com.ravenherz.cse.dal.dto.events.PageEvent.PageEventConverter;
@@ -15,7 +18,6 @@ import com.ravenherz.cse.present.CategorySectionDTO;
 import com.ravenherz.cse.engine.util.Settings;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-import org.bson.types.ObjectId;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
@@ -228,7 +230,7 @@ public class PublicIndexModel {
                 .filter(item -> EntityAccess.isAccessible(item, AccessType.ACCESS_READ, accessor))
                 .collect(Collectors.toList());
 
-        Map<ObjectId, CategoryEntity> categoriesById = new LinkedHashMap<>();
+        Map<EntityId, CategoryEntity> categoriesById = new LinkedHashMap<>();
         for (ItemEntity item : taggedItems) {
             CategoryEntity itemCategory = item.getRefCategory();
             if (itemCategory != null && itemCategory.getId() != null) {
@@ -236,7 +238,7 @@ public class PublicIndexModel {
             }
         }
 
-        Set<ObjectId> allowedCategoryIds = categoriesById.values().stream()
+        Set<EntityId> allowedCategoryIds = categoriesById.values().stream()
                 .filter(itemCategory -> itemCategory.getCategoryData() != null
                         && itemCategory.getCategoryData().isActive())
                 .filter(itemCategory -> EntityAccess.isAccessible(itemCategory, AccessType.ACCESS_READ, accessor))
@@ -254,11 +256,23 @@ public class PublicIndexModel {
 
     private PageEvent toPublicEvent(ItemEntity item) {
         if (item != null && item.isAlbum()) {
-            List<ResourceEntity> images = serviceProvider.getResourceService()
-                    .getImagesByGroup(item.getAlbumData() == null ? null : item.getAlbumData().getRefResourceGroup());
+            EntityId groupId = item.getAlbumData() == null ? null : item.getAlbumData().getRefResourceGroupId();
+            ResourceGroupEntity group = null;
+            if (groupId != null) {
+                BasicEntity found = serviceProvider.getResourceGroupService()
+                        .getById(ResourceGroupEntity.class, groupId);
+                group = found instanceof ResourceGroupEntity loaded ? loaded : null;
+            }
+            List<ResourceEntity> images = serviceProvider.getResourceService().getImagesByGroup(group);
             return PageEventConverter.toEvent(item, images);
         }
-        return PageEventConverter.toEvent(item);
+        EntityId imageId = item == null || item.getPageData() == null ? null : item.getPageData().getRefImageId();
+        ResourceEntity featured = null;
+        if (imageId != null) {
+            BasicEntity found = serviceProvider.getResourceService().getById(ResourceEntity.class, imageId);
+            featured = found instanceof ResourceEntity loaded ? loaded : null;
+        }
+        return PageEventConverter.toEvent(item, featured);
     }
 
     private static boolean isPublicContent(ItemEntity item) {
@@ -308,7 +322,7 @@ public class PublicIndexModel {
         if (!EntityAccess.isAccessible(item, AccessType.ACCESS_READ, accessor)) {
             return null;
         }
-        return PageEventConverter.toEvent(item);
+        return toPublicEvent(item);
     }
 
     @FunctionalInterface

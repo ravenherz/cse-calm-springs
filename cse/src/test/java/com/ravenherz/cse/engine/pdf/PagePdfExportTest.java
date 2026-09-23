@@ -1,5 +1,7 @@
 package com.ravenherz.cse.engine.pdf;
 
+import com.ravenherz.cse.dal.EntityId;
+
 import com.ravenherz.cse.pdf.PagePdfRenderer;
 
 import com.ravenherz.cse.controller.AuthSupport;
@@ -42,7 +44,7 @@ class PagePdfExportTest {
     void albumIs404() throws Exception {
         AccountEntity author = author();
         ItemEntity album = new ItemEntity("shots", new AlbumData(), author);
-        album.setId(new ObjectId());
+        album.setId(EntityId.generate());
         PagePdfExport export = export(album);
         MockHttpServletResponse response = new MockHttpServletResponse();
         export.write(new MockHttpServletRequest(), response, "shots");
@@ -116,7 +118,7 @@ class PagePdfExportTest {
         PageData pageData = new PageData("Ada", "Sub", "Body", List.of());
         pageData.setExportPdf(exportPdf);
         ItemEntity item = new ItemEntity("cv", pageData, author());
-        item.setId(new ObjectId());
+        item.setId(EntityId.generate());
         return item;
     }
 
