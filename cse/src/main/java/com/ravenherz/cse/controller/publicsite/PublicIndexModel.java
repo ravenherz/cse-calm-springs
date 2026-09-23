@@ -322,7 +322,7 @@ public class PublicIndexModel {
         if (!EntityAccess.isAccessible(item, AccessType.ACCESS_READ, accessor)) {
             return null;
         }
-        return PageEventConverter.toEvent(item);
+        return toPublicEvent(item);
     }
 
     @FunctionalInterface
