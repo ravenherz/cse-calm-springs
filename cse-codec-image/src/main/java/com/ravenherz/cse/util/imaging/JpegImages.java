@@ -198,7 +198,9 @@ public final class JpegImages {
     }
 
     private static BufferedImage toRgb(BufferedImage src) {
-        if (src.getType() == BufferedImage.TYPE_INT_RGB) {
+        // Both are opaque 3-channel sRGB, so the JPEG writer takes them as they are.
+        // Copying a full-size frame here is what a 48MP photo cannot afford.
+        if (src.getType() == BufferedImage.TYPE_INT_RGB || src.getType() == BufferedImage.TYPE_3BYTE_BGR) {
             return src;
         }
         BufferedImage rgb = new BufferedImage(src.getWidth(), src.getHeight(), BufferedImage.TYPE_INT_RGB);

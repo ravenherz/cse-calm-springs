@@ -32,7 +32,6 @@ description = 'calm-springs-engine'
 
 repositories {
     mavenCentral()
-    maven { url 'https://jitpack.io' }
 }
 
 tasks.named("bootRun") { Task it ->
@@ -163,7 +162,7 @@ tasks.named('processResources', Copy) {
 
 cargo {
     Boolean deployRemote = true
-    String deployOverride = "production"
+    String deployOverride = "stage"
     var cargoParamResolver = new CargoContextResolver(deployRemote, project, deployOverride)
     System.out.println("deploying to '${cargoParamResolver.getWhereToDeploy()}'")
 

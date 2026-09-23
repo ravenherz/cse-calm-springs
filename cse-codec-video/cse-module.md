@@ -5,6 +5,8 @@ Codec for FFmpeg probe and transcode (JavaCPP). A codec transforms bytes. It doe
 ## Does
 
 - Run FFmpeg to inspect a video and transcode it.
+- Own the bundled FFmpeg binaries and the process runner. `cse-codec-image` uses them to
+  decode HEVC stills out of HEIC.
 
 ## Does not
 

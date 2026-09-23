@@ -11,7 +11,7 @@ import java.util.Map;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 
-final class FfmpegProcess {
+public final class FfmpegProcess {
 
     private static final int MAX_CAPTURE = 64 * 1024;
 
@@ -22,7 +22,7 @@ final class FfmpegProcess {
         return execute(command, timeout, false, null);
     }
 
-    static void run(List<String> command, Duration timeout) throws IOException {
+    public static void run(List<String> command, Duration timeout) throws IOException {
         execute(command, timeout, true, null);
     }
 

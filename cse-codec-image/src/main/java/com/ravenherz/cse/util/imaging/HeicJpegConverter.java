@@ -1,46 +1,45 @@
 package com.ravenherz.cse.util.imaging;
 
-import openize.heic.decoder.AuxiliaryReferenceType;
-import openize.heic.decoder.HeicImage;
-import openize.heic.decoder.HeicImageFrame;
-import openize.heic.decoder.ImageFrameType;
-import openize.heic.decoder.PixelFormat;
-import openize.io.IOFileStream;
-import openize.io.IOMode;
-import openize.isobmff.BoxType;
-import openize.isobmff.ItemReferenceBox;
-import openize.isobmff.SingleItemTypeReferenceBox;
+import com.ravenherz.cse.util.video.FfmpegBinaries;
+import com.ravenherz.cse.util.video.FfmpegProcess;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.awt.Color;
-import java.awt.Graphics2D;
-import java.awt.geom.AffineTransform;
+import java.awt.Transparency;
+import java.awt.color.ColorSpace;
 import java.awt.image.BufferedImage;
+import java.awt.image.ColorModel;
+import java.awt.image.ComponentColorModel;
+import java.awt.image.DataBuffer;
+import java.awt.image.DataBufferByte;
+import java.awt.image.Raster;
+import java.awt.image.WritableRaster;
+import java.io.BufferedOutputStream;
 import java.io.IOException;
-import java.lang.reflect.Field;
+import java.io.OutputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.Map;
+import java.time.Duration;
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.List;
+import java.util.stream.Stream;
 
 /**
  * Decodes HEIC/HEIF uploads and re-encodes them as JPEG so stored resources
  * remain browser-friendly.
  * <p>
- * Openize materializes pixels as {@code byte[w][h][4]} and copies that graph
- * again when the file has an {@code irot}/{@code imir} transform (typical for
- * iPhone photos). A 12MP frame can need several hundred MB. This converter
- * strips those transforms before decode, applies them on a packed bitmap,
- * and stitches tiled {@code grid} primaries one cell at a time so a 12MP
- * iPhone photo does not allocate Openize's {@code byte[w][h][4]} graph.
- * The embedded thumbnail is used only when the primary is a single huge
- * frame or stitching fails.
+ * A HEIC photo is HEVC intra frames in an ISOBMFF container, and an iPhone writes the
+ * primary image as a grid of tiles. We read the container here, hand the tiles to the
+ * bundled FFmpeg as one elementary stream, and let it decode, assemble and rotate them.
+ * Decoding in a real HEVC decoder is what keeps the in-loop deblocking filter, without
+ * which tile edges stay visible as a grid over the photo.
  */
 public final class HeicJpegConverter {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(HeicJpegConverter.class);
-    private static final Object DECODE_LOCK = new Object();
-    private static final long BYTES_PER_PIXEL_BUDGET = 72L;
+    private static final Duration DECODE_TIMEOUT = Duration.ofMinutes(10);
+    private static final long MAX_PIXELS = Integer.MAX_VALUE / 3L;
 
     private HeicJpegConverter() {
     }
@@ -66,329 +65,162 @@ public final class HeicJpegConverter {
         if (heicBytes == null || heicBytes.length == 0) {
             throw new IOException("HEIC file is empty");
         }
-        DecodeLog log = new DecodeLog(uploader, publicPath);
-        synchronized (DECODE_LOCK) {
-            Path tmp = Files.createTempFile("cse-heic-", ".heic");
-            try {
-                Files.write(tmp, heicBytes);
+        HeifFile heif = HeifFile.parse(heicBytes);
+        int primary = heif.primaryItemId();
+        Path work = Files.createTempDirectory("cse-heic-");
+        try {
+            Path elementary = work.resolve("image.hevc");
+            Layout layout = writeElementaryStream(heif, primary, elementary);
+            List<HeifFile.Transform> transforms = heif.transforms(primary);
+            int[] size = displaySize(layout, transforms);
+            if ((long) size[0] * size[1] > MAX_PIXELS) {
+                throw new IOException("HEIC image is too large to decode: " + size[0] + "x" + size[1]);
+            }
+            LOGGER.info("HEIC decoding {}x{} from {} tile(s) uploader={} path={}",
+                    size[0], size[1], layout.columns() * layout.rows(),
+                    blankToDash(uploader), blankToDash(publicPath));
+            Path pixels = work.resolve("image.bgr");
+            decode(elementary, pixels, filterChain(layout, transforms));
+            BufferedImage image = readPixels(pixels, size[0], size[1]);
+            return new JpegImages.Encoded(JpegImages.encode(image, quality), size[0], size[1]);
+        } catch (OutOfMemoryError e) {
+            throw new IOException("Could not decode HEIC image (not enough memory)", e);
+        } finally {
+            deleteQuietly(work);
+        }
+    }
+
+    /** Tile geometry of the primary image, before rotation. */
+    record Layout(int columns, int rows, int width, int height) {
+    }
+
+    private static Layout writeElementaryStream(HeifFile heif, int primary, Path dest) throws IOException {
+        String type = heif.itemType(primary);
+        try (OutputStream out = new BufferedOutputStream(Files.newOutputStream(dest), 1 << 16)) {
+            if ("grid".equals(type)) {
+                return writeGrid(heif, primary, out);
+            }
+            if ("hvc1".equals(type) || "hev1".equals(type)) {
+                return writeSingle(heif, primary, out);
+            }
+            throw new IOException("Unsupported HEIC image type: " + type);
+        }
+    }
+
+    private static Layout writeGrid(HeifFile heif, int primary, OutputStream out) throws IOException {
+        HeifFile.Grid grid = heif.grid(primary);
+        List<Integer> tiles = heif.derivedFrom(primary);
+        int needed = grid.columns() * grid.rows();
+        if (tiles.size() < needed) {
+            throw new IOException("HEIC grid needs " + needed + " tiles but lists " + tiles.size());
+        }
+        byte[] config = heif.decoderConfig(tiles.get(0));
+        int lengthSize = HevcAnnexB.lengthSize(config);
+        for (int i = 0; i < needed; i++) {
+            HevcAnnexB.writeParameterSets(config, out);
+            HevcAnnexB.writeNalUnits(heif.itemData(tiles.get(i)), lengthSize, out);
+        }
+        return new Layout(grid.columns(), grid.rows(), grid.width(), grid.height());
+    }
+
+    private static Layout writeSingle(HeifFile heif, int primary, OutputStream out) throws IOException {
+        byte[] config = heif.decoderConfig(primary);
+        HevcAnnexB.writeParameterSets(config, out);
+        HevcAnnexB.writeNalUnits(heif.itemData(primary), HevcAnnexB.lengthSize(config), out);
+        int[] size = heif.size(primary);
+        if (size == null || size[0] <= 0 || size[1] <= 0) {
+            throw new IOException("HEIC image has no size");
+        }
+        return new Layout(1, 1, size[0], size[1]);
+    }
+
+    /**
+     * Assembles the tiles, trims the padding the grid adds, then applies the container's
+     * rotation and mirroring in the order the file lists them.
+     */
+    static String filterChain(Layout layout, List<HeifFile.Transform> transforms) {
+        List<String> steps = new ArrayList<>();
+        if (layout.columns() * layout.rows() > 1) {
+            steps.add("tile=" + layout.columns() + "x" + layout.rows());
+        }
+        steps.add("crop=" + layout.width() + ":" + layout.height() + ":0:0");
+        for (HeifFile.Transform transform : transforms) {
+            if ("irot".equals(transform.type())) {
+                switch (transform.value()) {
+                    case 1 -> steps.add("transpose=2");
+                    case 2 -> {
+                        steps.add("hflip");
+                        steps.add("vflip");
+                    }
+                    case 3 -> steps.add("transpose=1");
+                    default -> {
+                    }
+                }
+            } else if ("imir".equals(transform.type())) {
+                steps.add(transform.value() == 0 ? "hflip" : "vflip");
+            }
+        }
+        return String.join(",", steps);
+    }
+
+    static int[] displaySize(Layout layout, List<HeifFile.Transform> transforms) {
+        int width = layout.width();
+        int height = layout.height();
+        for (HeifFile.Transform transform : transforms) {
+            if ("irot".equals(transform.type()) && (transform.value() == 1 || transform.value() == 3)) {
+                int swap = width;
+                width = height;
+                height = swap;
+            }
+        }
+        return new int[] {width, height};
+    }
+
+    private static void decode(Path elementary, Path pixels, String filter) throws IOException {
+        FfmpegProcess.run(List.of(
+                FfmpegBinaries.ffmpeg(),
+                "-hide_banner",
+                "-y",
+                "-nostdin",
+                "-hwaccel", "none",
+                "-f", "hevc",
+                "-i", elementary.toAbsolutePath().toString(),
+                "-frames:v", "1",
+                "-vf", filter,
+                "-f", "rawvideo",
+                "-pix_fmt", "bgr24",
+                pixels.toAbsolutePath().toString()), DECODE_TIMEOUT);
+    }
+
+    /** Wraps the raw frame without copying it; {@code bgr24} is already the layout of TYPE_3BYTE_BGR. */
+    private static BufferedImage readPixels(Path pixels, int width, int height) throws IOException {
+        long expected = (long) width * height * 3;
+        if (!Files.isRegularFile(pixels) || Files.size(pixels) != expected) {
+            throw new IOException("FFmpeg produced " + (Files.exists(pixels) ? Files.size(pixels) : 0)
+                    + " bytes for a " + width + "x" + height + " frame, expected " + expected);
+        }
+        byte[] bytes = Files.readAllBytes(pixels);
+        DataBufferByte buffer = new DataBufferByte(bytes, bytes.length);
+        WritableRaster raster = Raster.createInterleavedRaster(
+                buffer, width, height, width * 3, 3, new int[] {2, 1, 0}, null);
+        ColorModel model = new ComponentColorModel(ColorSpace.getInstance(ColorSpace.CS_sRGB),
+                false, false, Transparency.OPAQUE, DataBuffer.TYPE_BYTE);
+        return new BufferedImage(model, raster, false, null);
+    }
+
+    private static void deleteQuietly(Path directory) {
+        try (Stream<Path> tree = Files.walk(directory)) {
+            tree.sorted(Comparator.reverseOrder()).forEach(path -> {
                 try {
-                    return decodeToJpeg(tmp, quality, maxDecodablePixels(), log);
-                } catch (OutOfMemoryError e) {
-                    LOGGER.warn("HEIC primary frame ran out of memory, trying thumbnail");
-                    return decodeToJpeg(tmp, quality, 1_200_000L, log);
+                    Files.deleteIfExists(path);
+                } catch (IOException ignored) {
                 }
-            } catch (OutOfMemoryError e) {
-                throw new IOException("Could not decode HEIC image (not enough memory)", e);
-            } catch (RuntimeException e) {
-                throw new IOException("Could not decode HEIC image", e);
-            } finally {
-                Files.deleteIfExists(tmp);
-            }
+            });
+        } catch (IOException ignored) {
         }
     }
 
-    static long maxDecodablePixels() {
-        long maxHeap = Runtime.getRuntime().maxMemory();
-        if (maxHeap <= 0) {
-            return 2_500_000L;
-        }
-        return Math.max(800_000L, Math.min(12_000_000L, maxHeap / BYTES_PER_PIXEL_BUDGET));
-    }
-
-    static BufferedImage applyHeifOrientation(BufferedImage src, int angle, int mirror) {
-        if (src == null) {
-            return null;
-        }
-        if ((angle & 0xFF) == 0 && (mirror & 0xFF) == 0) {
-            return src;
-        }
-        AffineTransform transform = new AffineTransform();
-        int srcW = src.getWidth();
-        int srcH = src.getHeight();
-        int destW = srcW;
-        int destH = srcH;
-        switch (angle & 0xFF) {
-            case 1 -> {
-                destW = srcH;
-                destH = srcW;
-                transform.translate(0, destH);
-                transform.rotate(-Math.PI / 2);
-            }
-            case 2 -> {
-                transform.translate(destW, destH);
-                transform.rotate(Math.PI);
-            }
-            case 3 -> {
-                destW = srcH;
-                destH = srcW;
-                transform.translate(destW, 0);
-                transform.rotate(Math.PI / 2);
-            }
-            default -> {
-            }
-        }
-        if ((mirror & 0xFF) == 1) {
-            transform.scale(1, -1);
-            transform.translate(0, -srcH);
-        } else if ((mirror & 0xFF) == 2) {
-            transform.scale(-1, 1);
-            transform.translate(-srcW, 0);
-        }
-        BufferedImage dest = new BufferedImage(destW, destH, BufferedImage.TYPE_INT_RGB);
-        Graphics2D graphics = dest.createGraphics();
-        graphics.setColor(Color.WHITE);
-        graphics.fillRect(0, 0, destW, destH);
-        graphics.drawImage(src, transform, null);
-        graphics.dispose();
-        return dest;
-    }
-
-    private static JpegImages.Encoded decodeToJpeg(Path heicFile, float quality, long maxPixels, DecodeLog log)
-            throws IOException {
-        try (IOFileStream stream = new IOFileStream(heicFile.toFile(), IOMode.READ)) {
-            HeicImage image = HeicImage.load(stream);
-            HeicImageFrame frame = chooseFrame(image, maxPixels);
-            if (frame == null || !frame.isImage()) {
-                throw new IOException("HEIC image has no pixel data");
-            }
-            try {
-                return encodeFrame(image, frame, quality, log);
-            } catch (OutOfMemoryError | IOException e) {
-                HeicImageFrame thumbnail = findThumbnail(image, Math.min(maxPixels, 1_200_000L));
-                if (thumbnail == null || thumbnail.getID() == frame.getID()) {
-                    throw e;
-                }
-                LOGGER.warn("HEIC full frame failed ({}), using thumbnail {}x{}",
-                        e.getMessage() != null ? e.getMessage() : e.getClass().getSimpleName(),
-                        thumbnail.getWidth(),
-                        thumbnail.getHeight());
-                return encodeFrame(image, thumbnail, quality, log);
-            }
-        }
-    }
-
-    private static JpegImages.Encoded encodeFrame(HeicImage image, HeicImageFrame frame, float quality, DecodeLog log)
-            throws IOException {
-        Orientation orientation = stealOrientation(frame);
-        BufferedImage rgb = isGrid(frame) ? stitchGrid(image, frame, log) : rasterToImage(frame);
-        rgb = applyHeifOrientation(rgb, orientation.angle, orientation.mirror);
-        return new JpegImages.Encoded(JpegImages.encode(rgb, quality), rgb.getWidth(), rgb.getHeight());
-    }
-
-    private static boolean isGrid(HeicImageFrame frame) {
-        return frame != null && frame.getImageType() == ImageFrameType.grid;
-    }
-
-    private static BufferedImage rasterToImage(HeicImageFrame frame) throws IOException {
-        int[] pixels = frame.getInt32Array(PixelFormat.Argb32);
-        int width = Math.toIntExact(frame.getWidth());
-        int height = Math.toIntExact(frame.getHeight());
-        if (pixels == null || width <= 0 || height <= 0 || pixels.length < width * height) {
-            throw new IOException("HEIC image has no pixel data");
-        }
-        BufferedImage rgb = new BufferedImage(width, height, BufferedImage.TYPE_INT_RGB);
-        rgb.setRGB(0, 0, width, height, pixels, 0, width);
-        releaseDecodedPixels(frame);
-        return rgb;
-    }
-
-    private static BufferedImage stitchGrid(HeicImage image, HeicImageFrame grid, DecodeLog log) throws IOException {
-        long[] tileIds = derivedIds(image, grid.getID());
-        if (tileIds.length == 0) {
-            throw new IOException("HEIC grid has no tiles");
-        }
-        Map<Long, HeicImageFrame> frames = image.getAllFrames();
-        HeicImageFrame first = frames.get(tileIds[0]);
-        if (first == null || !first.isImage()) {
-            throw new IOException("HEIC grid tile is missing");
-        }
-        stealOrientation(first);
-        int cellW = Math.toIntExact(first.getWidth());
-        int cellH = Math.toIntExact(first.getHeight());
-        int outW = Math.toIntExact(grid.getWidth());
-        int outH = Math.toIntExact(grid.getHeight());
-        if (cellW <= 0 || cellH <= 0 || outW <= 0 || outH <= 0) {
-            throw new IOException("HEIC grid has no pixel data");
-        }
-        int columns = (outW + cellW - 1) / cellW;
-        int rows = (outH + cellH - 1) / cellH;
-        int needed = columns * rows;
-        if (tileIds.length < needed) {
-            throw new IOException("HEIC grid tile count does not match image size");
-        }
-        LOGGER.info("HEIC stitching grid {}x{} from {} tiles ({}x{}) uploader={} path={}",
-                outW, outH, needed, columns, rows, log.uploader(), log.publicPath());
-        BufferedImage dest = new BufferedImage(outW, outH, BufferedImage.TYPE_INT_RGB);
-        for (int row = 0; row < rows; row++) {
-            for (int col = 0; col < columns; col++) {
-                HeicImageFrame tile = frames.get(tileIds[row * columns + col]);
-                if (tile == null || !tile.isImage()) {
-                    throw new IOException("HEIC grid tile is missing");
-                }
-                stealOrientation(tile);
-                int[] pixels = tile.getInt32Array(PixelFormat.Argb32);
-                int tileW = Math.toIntExact(tile.getWidth());
-                int tileH = Math.toIntExact(tile.getHeight());
-                if (pixels == null || tileW <= 0 || tileH <= 0 || pixels.length < tileW * tileH) {
-                    throw new IOException("HEIC grid tile has no pixel data");
-                }
-                blitTile(dest, col * cellW, row * cellH, pixels, tileW, tileH);
-                releaseDecodedPixels(tile);
-            }
-        }
-        return dest;
-    }
-
-    private static void releaseDecodedPixels(HeicImageFrame frame) {
-        writeField(frame, "rawPixels", null);
-        writeField(frame, "rawPixelsHighColorRange", null);
-        writeField(frame, "cashed", Boolean.FALSE);
-    }
-
-    private static void blitTile(BufferedImage dest, int x, int y, int[] src, int tileW, int tileH) {
-        int copyW = Math.min(tileW, dest.getWidth() - x);
-        int copyH = Math.min(tileH, dest.getHeight() - y);
-        if (copyW <= 0 || copyH <= 0) {
-            return;
-        }
-        if (copyW == tileW && copyH == tileH) {
-            dest.setRGB(x, y, tileW, tileH, src, 0, tileW);
-            return;
-        }
-        int[] slice = new int[copyW * copyH];
-        for (int row = 0; row < copyH; row++) {
-            System.arraycopy(src, row * tileW, slice, row * copyW, copyW);
-        }
-        dest.setRGB(x, y, copyW, copyH, slice, 0, copyW);
-    }
-
-    private static long[] derivedIds(HeicImage image, long frameId) {
-        ItemReferenceBox iref = image.getHeader().getMeta().getiref();
-        if (iref == null || iref.references == null) {
-            return new long[0];
-        }
-        long[] any = null;
-        for (Object raw : iref.references) {
-            if (!(raw instanceof SingleItemTypeReferenceBox ref)
-                    || ref.from_item_ID != frameId
-                    || ref.to_item_ID == null
-                    || ref.to_item_ID.length == 0) {
-                continue;
-            }
-            if (ref.type == BoxType.dimg) {
-                return ref.to_item_ID;
-            }
-            if (any == null) {
-                any = ref.to_item_ID;
-            }
-        }
-        return any != null ? any : new long[0];
-    }
-
-    private static HeicImageFrame chooseFrame(HeicImage image, long maxPixels) {
-        HeicImageFrame primary = image.getDefaultFrame();
-        if (primary != null && primary.isImage() && (isGrid(primary) || pixelsOf(primary) <= maxPixels)) {
-            return primary;
-        }
-        HeicImageFrame thumbnail = findThumbnail(image, maxPixels);
-        if (thumbnail != null) {
-            LOGGER.info("HEIC primary {}x{} exceeds decode budget {} px; using thumbnail {}x{}",
-                    primary == null ? 0 : primary.getWidth(),
-                    primary == null ? 0 : primary.getHeight(),
-                    maxPixels,
-                    thumbnail.getWidth(),
-                    thumbnail.getHeight());
-            return thumbnail;
-        }
-        return primary;
-    }
-
-    private static HeicImageFrame findThumbnail(HeicImage image, long maxPixels) {
-        HeicImageFrame best = null;
-        long bestPixels = 0;
-        Map<Long, HeicImageFrame> frames = image.getAllFrames();
-        if (frames == null) {
-            return null;
-        }
-        for (HeicImageFrame frame : frames.values()) {
-            if (frame == null || !frame.isImage()) {
-                continue;
-            }
-            if (frame.getDerivativeType() != BoxType.thmb) {
-                continue;
-            }
-            if (isAuxiliary(frame)) {
-                continue;
-            }
-            long pixels = pixelsOf(frame);
-            if (pixels <= 0 || pixels > maxPixels) {
-                continue;
-            }
-            if (pixels > bestPixels) {
-                best = frame;
-                bestPixels = pixels;
-            }
-        }
-        return best;
-    }
-
-    private static boolean isAuxiliary(HeicImageFrame frame) {
-        AuxiliaryReferenceType type = frame.getAuxiliaryReferenceType();
-        return type != null && type != AuxiliaryReferenceType.Undefined;
-    }
-
-    private static long pixelsOf(HeicImageFrame frame) {
-        return Math.max(0L, frame.getWidth()) * Math.max(0L, frame.getHeight());
-    }
-
-    private static Orientation stealOrientation(HeicImageFrame frame) {
-        int angle = readByte(frame, "imageRotationAngle");
-        int mirror = readByte(frame, "imageMirrorAxis");
-        writeByte(frame, "imageRotationAngle", (byte) 0);
-        writeByte(frame, "imageMirrorAxis", (byte) 0);
-        writeField(frame, "alphaReference", null);
-        return new Orientation(angle, mirror);
-    }
-
-    private static int readByte(Object target, String name) {
-        try {
-            Field field = target.getClass().getDeclaredField(name);
-            field.setAccessible(true);
-            return field.getByte(target) & 0xFF;
-        } catch (ReflectiveOperationException e) {
-            return 0;
-        }
-    }
-
-    private static void writeByte(Object target, String name, byte value) {
-        try {
-            Field field = target.getClass().getDeclaredField(name);
-            field.setAccessible(true);
-            field.setByte(target, value);
-        } catch (ReflectiveOperationException ignored) {
-        }
-    }
-
-    private static void writeField(Object target, String name, Object value) {
-        try {
-            Field field = target.getClass().getDeclaredField(name);
-            field.setAccessible(true);
-            field.set(target, value);
-        } catch (ReflectiveOperationException ignored) {
-        }
-    }
-
-    private record Orientation(int angle, int mirror) {
-    }
-
-    private record DecodeLog(String uploader, String publicPath) {
-        DecodeLog {
-            uploader = blankToDash(uploader);
-            publicPath = blankToDash(publicPath);
-        }
-
-        private static String blankToDash(String value) {
-            return value == null || value.isBlank() ? "-" : value.trim();
-        }
+    private static String blankToDash(String value) {
+        return value == null || value.isBlank() ? "-" : value.trim();
     }
 }
