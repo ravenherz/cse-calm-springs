@@ -40,7 +40,7 @@ public final class TagSoftVersion
                 .addAttribute(HtmlNames.ATTR_NAME_HEIGHT, HtmlNames.ATTR_VALUE_SOCIAL_LINK_SIZE)
                 .addAttribute(HtmlNames.ATTR_NAME_BORDER, "0")
                 .surroundByContainer(Strings.STR_DUMMY, Strings.STR_DUMMY, HtmlNames.ELEM_NAME_A)
-                .addAttribute(HtmlNames.ATTR_NAME_HREF, "https://ravenherz.com/rhz-we/?page=cse")
+                .addAttribute(HtmlNames.ATTR_NAME_HREF, "https://ravenherz.com/?page=cse")
                 .addAttribute(HtmlNames.ATTR_NAME_CLASS, SettingKeys.KEY_TAG_COMPANY_SOCIAL)
                 .addAttribute(HtmlNames.ATTR_NAME_TARGET, HtmlNames.ATTR_VALUE_BLANK)
                 .build()
