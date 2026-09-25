@@ -528,7 +528,11 @@
                          class="resource-tree-file-icon resource-tree-file-preview"
                          th:src="@{/editor/resources/tree-preview/{id}(id=${file.id})}"
                          width="64" height="64" alt=""/>
-                    <svg th:unless="${file.preview}" class="resource-tree-file-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                    <svg th:if="${file.glyph == 'arrow'}" class="resource-tree-file-icon resource-tree-file-arrow" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                        <path d="M4.5 12h15"/>
+                        <path d="M13.5 6.75 19.5 12l-6 5.25"/>
+                    </svg>
+                    <svg th:unless="${file.preview or file.glyph == 'arrow'}" class="resource-tree-file-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
                         <path d="M7 3.75h6.5L19.5 10v10.25H7z"/>
                         <path d="M13.5 3.75V10H19.5"/>
                     </svg>

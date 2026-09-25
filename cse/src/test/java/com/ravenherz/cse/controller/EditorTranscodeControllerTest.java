@@ -1,5 +1,6 @@
 package com.ravenherz.cse.controller;
 
+import com.ravenherz.cse.admin.TranscodeQueue;
 import com.ravenherz.cse.dal.EntityId;
 import com.ravenherz.cse.dal.ServiceProvider;
 import com.ravenherz.cse.dal.StoredIds;
@@ -41,11 +42,10 @@ class EditorTranscodeControllerTest {
         when(resources.getById(ResourceEntity.class, StoredIds.entityId(stored))).thenReturn(entity);
         ResourceEntity liveEntity = processingVideo(live, "/u/res/video/live.mov");
         when(resources.getById(ResourceEntity.class, StoredIds.entityId(live))).thenReturn(liveEntity);
-        EditorTranscodeController controller = new EditorTranscodeController(progress, of(resources), of(null));
-        controller.serviceProvider = accounts();
+        TranscodeQueueAdapter controller = new TranscodeQueueAdapter(progress, of(resources), of(null), accounts());
         MockHttpServletRequest request = new MockHttpServletRequest();
         request.setContextPath("/rhz-we");
-        EditorTranscodeController.QueueSnapshot snapshot = controller.snapshot(request);
+        TranscodeQueue.QueueSnapshot snapshot = controller.snapshot(request);
         assertEquals(2, snapshot.videos().size());
         assertEquals(2, snapshot.running());
         assertEquals(0, snapshot.queued());
@@ -73,9 +73,8 @@ class EditorTranscodeControllerTest {
         ResourceService resources = mock(ResourceService.class);
         when(resources.listProcessingVideoIds()).thenReturn(List.of());
         when(resources.getById(ResourceEntity.class, StoredIds.entityId(id))).thenReturn(entity);
-        EditorTranscodeController controller = new EditorTranscodeController(progress, of(resources), of(null));
-        controller.serviceProvider = accounts();
-        EditorTranscodeController.Item item = controller.snapshot(new MockHttpServletRequest()).videos().get(0);
+        TranscodeQueueAdapter controller = new TranscodeQueueAdapter(progress, of(resources), of(null), accounts());
+        TranscodeQueue.Item item = controller.snapshot(new MockHttpServletRequest()).videos().get(0);
         assertEquals("ada", item.author());
         assertEquals("2048 bytes", item.sizeIn());
         assertEquals("1024 bytes", item.sizeOut());

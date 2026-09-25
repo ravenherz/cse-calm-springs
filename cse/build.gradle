@@ -64,6 +64,8 @@ dependencies {
     implementation project(':cse-transfer')
     implementation project(':cse-install')
     implementation project(':cse-core')
+    implementation project(':cse-redirect')
+    implementation project(':cse-admin')
     implementation project(':cse-codec-pdf')
     implementation project(':cse-media')
     implementation project(':cse-codec-image')
@@ -162,7 +164,7 @@ tasks.named('processResources', Copy) {
 
 cargo {
     Boolean deployRemote = true
-    String deployOverride = "production"
+    String deployOverride = "stage"
     var cargoParamResolver = new CargoContextResolver(deployRemote, project, deployOverride)
     System.out.println("deploying to '${cargoParamResolver.getWhereToDeploy()}'")
 

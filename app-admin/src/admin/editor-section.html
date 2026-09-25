@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="en">
+<head th:replace="~{fragments/shared :: shared-head}"></head>
+<body>
+  <div class="editor-layout">
+    <aside class="editor-sidebar" th:replace="~{fragments/shared :: shared-editor-sidebar}"></aside>
+    <main class="editor-main resource-page">
+      <div class="error-message"
+           th:each="error : ${adminSection.errors()}"
+           th:if="${error.field() == ''}"
+           th:text="${error.message()}">Error</div>
+      <div class="resource-browser">
+        <th:block th:replace="~{fragments/shared :: shared-editor-tree}"></th:block>
+        <section class="resource-pane">
+          <div class="resource-pane-header">
+            <div class="resource-pane-title">
+              <h2 th:text="${adminSection.section().title()}">Section</h2>
+            </div>
+          </div>
+
+          <div th:if="${adminSection.mode() == 'list'}" class="tile-grid-wrap">
+            <ul class="item-list tile-grid">
+              <li class="resource-plus-tile">
+                <a class="resource-plus-form"
+                   th:href="@{/editor/sections/{id}/create(id=${adminSection.section().id()})}">
+                  <span class="resource-plus-drop">
+                    <span class="group-toggle resource-plus-mark" aria-hidden="true"></span>
+                    <span class="visually-hidden">New</span>
+                  </span>
+                </a>
+              </li>
+              <li class="tile-row" th:each="row : ${adminSection.rows()}"
+                  th:if="${row.get('id') != null}">
+                <div class="item-thumb-wrap">
+                  <div class="thumb-actions">
+                    <form th:action="@{/editor/sections/{section}/delete/{id}(section=${adminSection.section().id()},id=${row.get('id')})}"
+                          method="post" class="thumb-delete">
+                      <th:block th:replace="~{fragments/csrf :: field}"></th:block>
+                      <button type="submit" class="thumb-action-btn thumb-delete-btn" title="Delete">×</button>
+                    </form>
+                  </div>
+                  <a class="item-thumb-link"
+                     th:href="@{/editor/sections/{section}/edit/{id}(section=${adminSection.section().id()},id=${row.get('id')})}">
+                    <div class="app-logo-fallback"
+                         th:text="${adminSection.section().treeLabel(row)}">301 /rhz-we/* to /*</div>
+                  </a>
+                  <div class="thumb-tags">
+                    <span class="thumb-tag thumb-tag-type"
+                          th:each="field : ${adminSection.section().fields()}"
+                          th:if="${field.cardPlace().name() == 'SOURCE' and row.get(field.name()) != null and !#strings.isEmpty(row.get(field.name()))}"
+                          th:text="${row.get(field.name())}">/rhz-we/*</span>
+                    <span class="thumb-tag"
+                          th:each="field : ${adminSection.section().fields()}"
+                          th:if="${(field.cardPlace().name() == 'CODE' or field.cardPlace().name() == 'TARGET') and row.get(field.name()) != null and !#strings.isEmpty(row.get(field.name()))}"
+                          th:text="${row.get(field.name())}">301</span>
+                  </div>
+                </div>
+              </li>
+            </ul>
+            <p class="field-hint" th:if="${adminSection.rows().isEmpty()}">No rows.</p>
+          </div>
+
+          <form th:if="${adminSection.mode() != 'list'}" method="post" class="form-panel"
+                th:action="${adminSection.mode() == 'edit'}
+                  ? @{/editor/sections/{section}/edit/{id}(section=${adminSection.section().id()},id=${adminSection.id()})}
+                  : @{/editor/sections/{section}/create(section=${adminSection.section().id()})}">
+            <th:block th:replace="~{fragments/csrf :: field}"></th:block>
+            <table class="settings-table">
+              <tbody>
+                <tr th:each="field : ${adminSection.section().fields()}">
+                  <th scope="row">
+                    <label th:for="${field.name()}" th:text="${field.label()}">From</label>
+                  </th>
+                  <td>
+                    <select th:if="${field.type().name() == 'BOOLEAN'}"
+                            th:id="${field.name()}"
+                            th:name="${field.name()}">
+                      <option value="true" th:selected="${adminSection.values().get(field.name()) == 'true'}">true</option>
+                      <option value="false" th:selected="${adminSection.values().get(field.name()) == 'false'}">false</option>
+                    </select>
+                    <select th:if="${field.type().name() == 'ENUM'}"
+                            th:id="${field.name()}"
+                            th:name="${field.name()}">
+                      <option th:each="option : ${field.options()}"
+                              th:value="${option}"
+                              th:text="${option}"
+                              th:selected="${option == adminSection.values().get(field.name())}">301</option>
+                    </select>
+                    <input th:if="${field.type().name() == 'TEXT' or field.type().name() == 'PATH' or field.type().name() == 'ENTITY_ID'}"
+                           type="text"
+                           th:id="${field.name()}"
+                           th:name="${field.name()}"
+                           th:value="${adminSection.values().get(field.name())}"/>
+                    <div class="error-message"
+                         th:each="error : ${adminSection.errors()}"
+                         th:if="${error.field() == field.name()}"
+                         th:text="${error.message()}">Required</div>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+            <div class="editor-actions">
+              <button type="submit" class="btn btn-primary">Save</button>
+            </div>
+          </form>
+        </section>
+      </div>
+    </main>
+  </div>
+</body>
+</html>

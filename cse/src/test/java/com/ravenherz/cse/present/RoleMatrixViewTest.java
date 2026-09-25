@@ -6,6 +6,7 @@ import com.ravenherz.cse.dal.dto.RoleEntity;
 import com.ravenherz.cse.dal.role.CapabilityIds;
 import com.ravenherz.cse.dal.role.RoleSeeds;
 import com.ravenherz.cse.security.CapabilityRecord;
+import com.ravenherz.cse.security.RoleMatrixView;
 import org.bson.types.ObjectId;
 import org.junit.jupiter.api.Test;
 

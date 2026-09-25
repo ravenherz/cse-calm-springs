@@ -5,6 +5,7 @@ Article text and the content documents: pages, albums, categories, playlists, an
 ## Does
 
 - Own those documents and their store interfaces. They extend `cse-dal-core`.
+- Publish URL template and playlist catalog sections through `AdminSectionSource`. The host draws the folder from that contract. Tracks stay on the playlist document and are not fields on that form.
 - A page image, playlist cover, playlist track, and album resource group are an `EntityId`.
 - Render markdown and expand `<cse-*>` embeds.
 - Build `PageEvent` for the public index.

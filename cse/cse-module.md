@@ -5,7 +5,8 @@ The Spring Boot WAR. Tomcat deploy, HTTP, and the admin and public screens that 
 ## Does
 
 - Boot entry, MVC config, and Cargo deploy.
-- Controllers for the public site, Catalog, accounts, settings, logs, and JSON auth.
+- Controllers for the public site. Admin page controllers live in `cse-admin`.
+- Public redirect filter: a stored path sends `Location`; `/editor/**` and the code redirects stay on their controllers.
 - Admin catalog tree, access checks on requests, and theme HTML tags.
 - Packs selected front ends into the WAR: `setup.cseapp`, `admin.cseapp`, `login.cseapp`, and `modern.csetheme`.
 

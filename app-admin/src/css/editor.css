@@ -2665,6 +2665,10 @@ a.resource-tree-root-label:hover {
   stroke-linecap: round;
 }
 
+.resource-tree-file-arrow {
+  stroke-width: 1.6;
+}
+
 img.resource-tree-file-preview {
   object-fit: cover;
   border-radius: 2px;

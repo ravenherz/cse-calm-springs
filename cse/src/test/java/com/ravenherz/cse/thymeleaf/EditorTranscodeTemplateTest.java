@@ -1,7 +1,7 @@
 package com.ravenherz.cse.thymeleaf;
 
-import com.ravenherz.cse.controller.EditorTranscodeController.Item;
-import com.ravenherz.cse.controller.EditorTranscodeController.QueueSnapshot;
+import com.ravenherz.cse.admin.TranscodeQueue.Item;
+import com.ravenherz.cse.admin.TranscodeQueue.QueueSnapshot;
 import org.junit.jupiter.api.Test;
 import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.mock.web.MockHttpServletResponse;

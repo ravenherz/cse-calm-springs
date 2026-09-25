@@ -25,6 +25,7 @@ public final class EditorTree {
     public static final String CATEGORIES_ID = "content-categories";
     public static final String PLAYLISTS_ID = "content-playlists";
     public static final String URL_TEMPLATES_ID = "content-url-templates";
+    public static final String REDIRECTS_ID = "content-redirects";
     public static final String THEMES_ID = "content-themes";
     public static final String CATEGORY_PREFIX = "category-";
     public static final String PAGE_PREFIX = "page-";
@@ -34,8 +35,9 @@ public final class EditorTree {
     public static final String CONTENT_HREF = "/editor/resources?group=content";
     public static final String APPS_HREF = "/editor/resources?group=" + APPS_ID;
     public static final String CATEGORIES_HREF = "/editor/resources?group=" + CATEGORIES_ID;
-    public static final String PLAYLISTS_HREF = "/editor/resources?group=" + PLAYLISTS_ID;
-    public static final String URL_TEMPLATES_HREF = "/editor/resources?group=" + URL_TEMPLATES_ID;
+    public static final String PLAYLISTS_HREF = "/editor/sections/playlists";
+    public static final String URL_TEMPLATES_HREF = "/editor/sections/url-templates";
+    public static final String REDIRECTS_HREF = "/editor/sections/redirects";
     public static final String THEMES_HREF = "/editor/resources?group=" + THEMES_ID;
 
     private EditorTree() {
@@ -51,6 +53,7 @@ public final class EditorTree {
                 || CATEGORIES_ID.equals(trimmed)
                 || PLAYLISTS_ID.equals(trimmed)
                 || URL_TEMPLATES_ID.equals(trimmed)
+                || REDIRECTS_ID.equals(trimmed)
                 || THEMES_ID.equals(trimmed)
                 || trimmed.startsWith(CATEGORY_PREFIX)
                 || trimmed.startsWith(PAGE_PREFIX);
@@ -133,6 +136,7 @@ public final class EditorTree {
             case CATEGORIES_ID -> CATEGORIES_HREF;
             case PLAYLISTS_ID -> PLAYLISTS_HREF;
             case URL_TEMPLATES_ID -> URL_TEMPLATES_HREF;
+            case REDIRECTS_ID -> REDIRECTS_HREF;
             case THEMES_ID -> THEMES_HREF;
             default -> {
                 if (trimmed.startsWith(CATEGORY_PREFIX)) {
@@ -215,6 +219,15 @@ public final class EditorTree {
         if (uri.contains("/editor/url-template")) {
             return URL_TEMPLATES_ID;
         }
+        if (uri.contains("/editor/sections/playlists")) {
+            return PLAYLISTS_ID;
+        }
+        if (uri.contains("/editor/sections/url-templates")) {
+            return URL_TEMPLATES_ID;
+        }
+        if (uri.contains("/editor/sections")) {
+            return REDIRECTS_ID;
+        }
         if (uri.contains("/editor/category/edit")) {
             return categoryNodeId(categoryEditId) != null
                     ? categoryNodeId(categoryEditId) : CATEGORIES_ID;
@@ -258,6 +271,8 @@ public final class EditorTree {
         ResourceGroupDisplayDTO themes = virtual(THEMES_ID, "Themes", THEMES_HREF, CONTENT_ID, 2);
         ResourceGroupDisplayDTO urlTemplates = virtual(URL_TEMPLATES_ID, "URL Templates",
                 URL_TEMPLATES_HREF, CONTENT_ID, 2);
+        ResourceGroupDisplayDTO redirects = virtual(REDIRECTS_ID, "Redirects",
+                REDIRECTS_HREF, CONTENT_ID, 2);
         apps.setTreeFiles(sortedLeaves(appFiles));
         playlists.setTreeFiles(sortedLeaves(playlistFiles));
         themes.setTreeFiles(sortedLeaves(themeFiles));
@@ -268,6 +283,7 @@ public final class EditorTree {
         content.getChildren().add(playlists);
         content.getChildren().add(themes);
         content.getChildren().add(urlTemplates);
+        content.getChildren().add(redirects);
         content.setSubtreeHeight(content.getChildren().stream().anyMatch(ResourceGroupDisplayDTO::hasExpandableChildren)
                 ? 2 : 1);
         content.setPathLabel("Content");

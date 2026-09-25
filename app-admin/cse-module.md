@@ -4,7 +4,7 @@ Catalog desk UI. Packed as `admin.cseapp` and copied into the WAR.
 
 ## Does
 
-- Admin HTML, fragments, and `editor.css` for Catalog, accounts, settings, and the other top-bar tools.
+- Admin HTML, fragments, and `editor.css` for Catalog, accounts, settings, the other top-bar tools, and the generic section screen.
 
 ## Does not
 

@@ -12,6 +12,7 @@ import com.ravenherz.cse.dal.dao.RoleMatrixService;
 import com.ravenherz.cse.dal.dao.RoleService;
 import com.ravenherz.cse.dal.dao.ThemeService;
 import com.ravenherz.cse.dal.dao.UrlTemplateService;
+import com.ravenherz.cse.redirect.ResourceRedirectService;
 import org.springframework.stereotype.Service;
 
 @Service(value = "serviceProvider")
@@ -28,13 +29,14 @@ public class ServiceProviderImpl implements ServiceProvider {
     private final UrlTemplateService urlTemplateService;
     private final RoleService roleService;
     private final RoleMatrixService roleMatrixService;
+    private final ResourceRedirectService resourceRedirectService;
 
     public ServiceProviderImpl(AccountService accountService, CategoryService categoryService,
             ItemService itemService, ResourceService resourceService,
             ResourceGroupService resourceGroupService, AppService appService,
             ThemeService themeService, PlaylistService playlistService,
             UrlTemplateService urlTemplateService, RoleService roleService,
-            RoleMatrixService roleMatrixService) {
+            RoleMatrixService roleMatrixService, ResourceRedirectService resourceRedirectService) {
         this.accountService = accountService;
         this.categoryService = categoryService;
         this.itemService = itemService;
@@ -46,6 +48,12 @@ public class ServiceProviderImpl implements ServiceProvider {
         this.urlTemplateService = urlTemplateService;
         this.roleService = roleService;
         this.roleMatrixService = roleMatrixService;
+        this.resourceRedirectService = resourceRedirectService;
+    }
+
+    @Override
+    public ResourceRedirectService getResourceRedirectService() {
+        return resourceRedirectService;
     }
 
     @Override

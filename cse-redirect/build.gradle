@@ -1,0 +1,16 @@
+plugins {
+    id 'java-library'
+}
+
+apply from: rootProject.file('gradle/cse-db.gradle')
+
+description = 'Redirect documents, save checks, and the in-memory path map. No Mongo driver and no HTTP.'
+
+dependencies {
+    api project(':cse-dal-core')
+    api project(':cse-core')
+    implementation 'org.springframework.data:spring-data-mongodb'
+
+    testImplementation 'org.junit.jupiter:junit-jupiter'
+    testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+}
