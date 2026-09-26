@@ -3,6 +3,7 @@ package com.ravenherz.cse.web;
 import com.ravenherz.cse.core.route.PathTarget;
 import com.ravenherz.cse.core.route.ReservedPaths;
 import com.ravenherz.cse.dal.ServiceProvider;
+import com.ravenherz.cse.present.ResourceGroupIndex;
 import com.ravenherz.cse.redirect.RedirectIndex;
 import com.ravenherz.cse.redirect.RedirectReload;
 import jakarta.servlet.FilterChain;
@@ -26,11 +27,13 @@ public class RedirectFilter extends OncePerRequestFilter implements RedirectRelo
     private static final Logger LOGGER = LoggerFactory.getLogger(RedirectFilter.class);
 
     private final ServiceProvider services;
+    private final ResourceGroupIndex catalog;
     private final RedirectIndex index = new RedirectIndex();
     private volatile boolean loaded;
 
-    public RedirectFilter(ServiceProvider services) {
+    public RedirectFilter(ServiceProvider services, ResourceGroupIndex catalog) {
         this.services = services;
+        this.catalog = catalog;
     }
 
     public void reload() {
@@ -41,6 +44,7 @@ public class RedirectFilter extends OncePerRequestFilter implements RedirectRelo
     @Override
     public void reloadRedirects() {
         reload();
+        catalog.contentChanged();
     }
 
     @Override

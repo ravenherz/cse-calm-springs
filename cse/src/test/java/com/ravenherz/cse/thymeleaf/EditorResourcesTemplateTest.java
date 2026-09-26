@@ -60,7 +60,9 @@ class EditorResourcesTemplateTest {
                 new ResourceTreeFile("page-host", "Host (2015)", "/editor/edit?name=host",
                         ResourceTreeFile.Mark.PAGE).withKey("host"),
                 new ResourceTreeFile("page-home", "Home", "/editor/edit?name=home",
-                        ResourceTreeFile.Mark.ALBUM).withKey("home")));
+                        ResourceTreeFile.Mark.ALBUM).withKey("home"),
+                new ResourceTreeFile("section-script", "on-save", "/editor/sections/scripts/edit/script")
+                        .withGlyph("js")));
         categories.getChildren().add(music);
         content.getChildren().add(apps);
         content.getChildren().add(categories);
@@ -147,6 +149,8 @@ class EditorResourcesTemplateTest {
         assertTrue(html.contains("is-album"), html);
         assertTrue(html.contains(">Page<"), html);
         assertTrue(html.contains(">Album<"), html);
+        assertTrue(html.contains("is-js"), html);
+        assertTrue(html.contains(">js<"), html);
         assertTrue(html.contains("aurora.jpg"), html);
         assertTrue(html.contains("data-resource-type=\"IMAGE\""), html);
         assertTrue(html.contains("data-resource-type=\"AUDIO\""), html);
@@ -211,6 +215,7 @@ class EditorResourcesTemplateTest {
         assertTrue(html.contains("id=\"catalog-batch-delete-form\""), html);
         assertTrue(html.contains("/editor/batch-delete"), html);
         assertTrue(html.contains("id=\"resourceMultiSelect\""), html);
+        assertTrue(html.contains("id=\"resourceMultiDelete\""), html);
         assertTrue(html.contains(">Multi-select</button>"), html);
         assertTrue(html.contains("id=\"catalog-activate-form\""), html);
         assertTrue(html.contains("id=\"resource-category-delete-form\""), html);

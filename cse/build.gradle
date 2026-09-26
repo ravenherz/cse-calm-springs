@@ -66,6 +66,7 @@ dependencies {
     implementation project(':cse-install')
     implementation project(':cse-core')
     implementation project(':cse-redirect')
+    implementation project(':cse-scripting-js')
     implementation project(':cse-admin')
     implementation project(':cse-codec-pdf')
     implementation project(':cse-media')

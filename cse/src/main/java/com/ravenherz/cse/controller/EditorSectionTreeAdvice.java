@@ -40,7 +40,14 @@ public class EditorSectionTreeAdvice {
         if (context != null && !context.isEmpty() && uri.startsWith(context)) {
             uri = uri.substring(context.length());
         }
-        if (uri == null || !uri.contains("/editor/sections/")) {
+        if (uri == null || uri.isBlank()) {
+            return;
+        }
+        if (uri.contains("/editor/scripting/runs")) {
+            EditorInline.putTree(model, resourceGroupIndex, EditorTree.SCRIPTS_ID, null);
+            return;
+        }
+        if (!uri.contains("/editor/sections/")) {
             return;
         }
         String rest = uri.substring(uri.indexOf("/editor/sections/") + "/editor/sections/".length());

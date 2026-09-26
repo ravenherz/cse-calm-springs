@@ -293,6 +293,7 @@ public final class ResourceGroupTree {
             case "invalid_name" -> "That name is not allowed.";
             case "name_taken" -> "That name is already in use.";
             case "invalid_item" -> "Could not update that item.";
+            case "not_found" -> "That item was not found.";
             case "forbidden" -> "You cannot delete that item.";
             case "bundled" -> "Cannot delete a bundled app or theme.";
             case "theme_active" -> "Cannot delete the active theme. Switch styles-theme first.";

@@ -1,5 +1,8 @@
 package com.ravenherz.cse.present;
 
+import com.ravenherz.cse.core.admin.AdminSection;
+import com.ravenherz.cse.core.admin.AdminSectionRecords;
+import com.ravenherz.cse.core.admin.AdminSectionSource;
 import com.ravenherz.cse.dal.dao.AppService;
 import com.ravenherz.cse.transfer.ResourceGroupRebuild;
 import com.ravenherz.cse.dal.dao.CategoryService;
@@ -9,6 +12,8 @@ import com.ravenherz.cse.dal.dao.ResourceGroupService;
 import com.ravenherz.cse.dal.dao.ResourceService;
 import com.ravenherz.cse.dal.dao.ThemeService;
 import com.ravenherz.cse.dal.dao.UrlTemplateService;
+import com.ravenherz.cse.scripting.ScriptEntity;
+import com.ravenherz.cse.scripting.ScriptService;
 import com.ravenherz.cse.dal.dto.BasicEntity;
 import com.ravenherz.cse.dal.dto.CategoryEntity;
 import com.ravenherz.cse.dal.dto.ItemEntity;
@@ -29,6 +34,7 @@ import com.ravenherz.cse.util.themes.ThemeCatalog;
 import org.bson.types.ObjectId;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
@@ -60,28 +66,31 @@ public class ResourceGroupIndex implements ResourceGroupRebuild {
     private final AppService appService;
     private final PlaylistService playlistService;
     private final UrlTemplateService urlTemplateService;
+    private final ScriptService scriptService;
     private final ThemeCatalog themeCatalog;
     private final StaticAppDeployer staticAppDeployer;
     private final ThemeService themeService;
+    private ObjectProvider<AdminSectionSource> sectionSources;
+    private ObjectProvider<AdminSectionRecords> sectionRecords;
     private final Object lock = new Object();
     private final AtomicReference<ResourceGroupTreeView.Assembled> snapshot = new AtomicReference<>();
     private final AtomicReference<ContentCache> content = new AtomicReference<>();
     private final AtomicReference<Map<String, byte[]>> previews = new AtomicReference<>(Map.of());
 
     public ResourceGroupIndex(ResourceGroupService groupService, ResourceService resourceService) {
-        this(groupService, resourceService, null, null, null, null, null, null, null, null);
+        this(groupService, resourceService, null, null, null, null, null, null, null, null, null);
     }
 
     public ResourceGroupIndex(ResourceGroupService groupService, ResourceService resourceService,
             CategoryService categoryService, ItemService itemService) {
-        this(groupService, resourceService, categoryService, itemService, null, null, null, null, null, null);
+        this(groupService, resourceService, categoryService, itemService, null, null, null, null, null, null, null);
     }
 
     public ResourceGroupIndex(ResourceGroupService groupService, ResourceService resourceService,
             CategoryService categoryService, ItemService itemService, AppService appService,
             PlaylistService playlistService, ThemeCatalog themeCatalog) {
         this(groupService, resourceService, categoryService, itemService, appService, playlistService,
-                themeCatalog, null, null, null);
+                themeCatalog, null, null, null, null);
     }
 
     public ResourceGroupIndex(ResourceGroupService groupService, ResourceService resourceService,
@@ -89,7 +98,7 @@ public class ResourceGroupIndex implements ResourceGroupRebuild {
             PlaylistService playlistService, ThemeCatalog themeCatalog,
             StaticAppDeployer staticAppDeployer, ThemeService themeService) {
         this(groupService, resourceService, categoryService, itemService, appService, playlistService,
-                themeCatalog, staticAppDeployer, themeService, null);
+                themeCatalog, staticAppDeployer, themeService, null, null);
     }
 
     @Autowired
@@ -97,7 +106,7 @@ public class ResourceGroupIndex implements ResourceGroupRebuild {
             CategoryService categoryService, ItemService itemService, AppService appService,
             PlaylistService playlistService, ThemeCatalog themeCatalog,
             StaticAppDeployer staticAppDeployer, ThemeService themeService,
-            UrlTemplateService urlTemplateService) {
+            UrlTemplateService urlTemplateService, ScriptService scriptService) {
         this.groupService = groupService;
         this.resourceService = resourceService;
         this.categoryService = categoryService;
@@ -108,6 +117,14 @@ public class ResourceGroupIndex implements ResourceGroupRebuild {
         this.staticAppDeployer = staticAppDeployer;
         this.themeService = themeService;
         this.urlTemplateService = urlTemplateService;
+        this.scriptService = scriptService;
+    }
+
+    @Autowired(required = false)
+    void sectionCatalog(ObjectProvider<AdminSectionSource> sectionSources,
+            ObjectProvider<AdminSectionRecords> sectionRecords) {
+        this.sectionSources = sectionSources;
+        this.sectionRecords = sectionRecords;
     }
 
     public ResourceGroupTreeView.Assembled view() {
@@ -499,12 +516,14 @@ public class ResourceGroupIndex implements ResourceGroupRebuild {
         List<ThemeDisplayDTO> themes = EditorContentCatalog.themes(themeCatalog, themeService);
         List<PlaylistEntity> playlists = loadPlaylists();
         List<UrlTemplateEntity> urlTemplates = loadUrlTemplates();
+        List<ScriptEntity> scripts = loadScripts();
         List<CategoryEntity> categories = loadCategories();
         List<ItemEntity> items = loadItems();
-        content.set(new ContentCache(
-                EditorTree.contentBranch(categories, items, appLeaves(apps), playlistLeaves(playlists),
-                        themeLeaves(themes), urlTemplateLeaves(urlTemplates)),
-                apps, themes, playlists, urlTemplates, categories, items));
+        ResourceGroupDisplayDTO branch = EditorTree.contentBranch(categories, items, appLeaves(apps),
+                playlistLeaves(playlists), themeLeaves(themes), urlTemplateLeaves(urlTemplates),
+                scriptLeaves(scripts));
+        attachSectionRows(branch);
+        content.set(new ContentCache(branch, apps, themes, playlists, urlTemplates, categories, items));
         Map<String, byte[]> next = new HashMap<>(orEmpty(previews.get()));
         next.keySet().removeIf(id -> id == null || !ObjectId.isValid(id));
         putItemDerived(next);
@@ -512,6 +531,44 @@ public class ResourceGroupIndex implements ResourceGroupRebuild {
         previews.set(Map.copyOf(next));
         ResourceGroupTreeView.applyPreviews(content.get().tree(), next.keySet());
         LOGGER.debug("Rebuilt content branch");
+    }
+
+    /**
+     * Sections that do not already have their own leaves get rows from the section API.
+     * Card placement stays on the fields. The tree uses the section label and glyph.
+     */
+    private void attachSectionRows(ResourceGroupDisplayDTO content) {
+        if (content == null || sectionSources == null || sectionRecords == null) {
+            return;
+        }
+        List<AdminSectionSource> sources = sectionSources.orderedStream().toList();
+        List<AdminSectionRecords> stores = sectionRecords.orderedStream().toList();
+        if (sources.isEmpty()) {
+            return;
+        }
+        Map<String, AdminSectionRecords> byId = new HashMap<>();
+        for (AdminSectionRecords store : stores) {
+            if (store != null && store.sectionId() != null) {
+                byId.putIfAbsent(store.sectionId(), store);
+            }
+        }
+        for (AdminSectionSource source : sources) {
+            if (source == null || source.section() == null) {
+                continue;
+            }
+            AdminSection section = source.section();
+            ResourceGroupDisplayDTO folder = EditorTree.find(List.of(content), "content-" + section.id());
+            if (folder == null || !folder.getTreeFiles().isEmpty()) {
+                continue;
+            }
+            AdminSectionRecords store = byId.get(section.id());
+            List<Map<String, String>> rows = store == null ? List.of() : store.list();
+            folder.setTreeFiles(EditorTree.sectionLeaves(section, rows));
+            if (folder.hasExpandableChildren()) {
+                folder.setSubtreeHeight(1);
+                content.setSubtreeHeight(Math.max(content.getSubtreeHeight(), 2));
+            }
+        }
     }
 
     private List<CategoryEntity> loadCategories() {
@@ -525,6 +582,32 @@ public class ResourceGroupIndex implements ResourceGroupRebuild {
         }
         List<PlaylistEntity> all = playlistService.getAllPlaylists();
         return all == null ? List.of() : all;
+    }
+
+    private List<ScriptEntity> loadScripts() {
+        if (scriptService == null) {
+            return List.of();
+        }
+        List<ScriptEntity> all = scriptService.list();
+        return all == null ? List.of() : all;
+    }
+
+    private static List<ResourceTreeFile> scriptLeaves(List<ScriptEntity> scripts) {
+        List<ResourceTreeFile> out = new ArrayList<>();
+        if (scripts == null) {
+            return out;
+        }
+        for (ScriptEntity script : scripts) {
+            if (script == null || script.getId() == null) {
+                continue;
+            }
+            String id = script.getId().toHexString();
+            String name = script.getScriptId() == null || script.getScriptId().isBlank()
+                    ? id : script.getScriptId();
+            out.add(new ResourceTreeFile("section-" + id, name,
+                    "/editor/sections/scripts/edit/" + id).withGlyph("js"));
+        }
+        return out;
     }
 
     private List<UrlTemplateEntity> loadUrlTemplates() {

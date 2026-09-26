@@ -9,6 +9,9 @@
         }
         return;
     }
+    if (tree.getAttribute('data-tree') === 'scripts') {
+        return;
+    }
     var meta = document.querySelector('meta[name="cse-context"]');
     var storageKey = 'cse.resource-tree.open:' + ((meta && meta.getAttribute('content')) || '');
 
@@ -1039,6 +1042,7 @@
         if (box && box.disabled) {
             tile.classList.remove('is-selected');
         }
+        refreshMultiDelete();
     }
 
     function ensureTileCheckbox(tile) {
@@ -1073,6 +1077,18 @@
                 setTileSelected(tile, false);
             }
         });
+        refreshMultiDelete();
+    }
+
+    function refreshMultiDelete() {
+        var pane = document.querySelector('.resource-pane');
+        var button = document.getElementById('resourceMultiDelete');
+        if (!button) {
+            return;
+        }
+        var count = pane && pane.classList.contains('is-multi-select') ? selectedTiles().length : 0;
+        button.hidden = count === 0;
+        button.textContent = count > 1 ? 'Delete ' + count : 'Delete';
     }
 
     function batchTarget(host) {
@@ -1080,7 +1096,8 @@
         var id = host.getAttribute('data-id') || '';
         var key = host.getAttribute('data-key') || id;
         if (kind === 'resource') {
-            return key ? { kind: 'resource', id: key } : null;
+            var resourceId = /^[a-f0-9]{24}$/i.test(id) ? id : key;
+            return resourceId ? { kind: 'resource', id: resourceId } : null;
         }
         if (kind === 'page' || kind === 'album' || kind === 'playlist' || kind === 'url-template'
                 || kind === 'category'
@@ -1180,6 +1197,13 @@
             hideMenu();
             setPaneMultiSelect(!pane.classList.contains('is-multi-select'));
         });
+        var deleteButton = document.getElementById('resourceMultiDelete');
+        if (deleteButton) {
+            deleteButton.addEventListener('click', function () {
+                hideMenu();
+                submitBatchDelete();
+            });
+        }
         pane.addEventListener('change', function (e) {
             if (!e.target.classList.contains('resource-select-box')) {
                 return;
@@ -1195,7 +1219,7 @@
             if (!pane.classList.contains('is-multi-select')) {
                 return;
             }
-            if (e.target.closest('.resource-plus-tile, .resource-tip, .resource-select, .resource-pane-header')) {
+            if (e.target.closest('.resource-plus-tile, .resource-tip, .resource-select, .resource-pane-header, .thumb-actions')) {
                 return;
             }
             var tile = e.target.closest('.item-list > li.tile-row');

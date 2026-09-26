@@ -5,7 +5,8 @@ package com.ravenherz.cse.core.admin;
  */
 public enum TreeGlyph {
     FILE,
-    ARROW;
+    ARROW,
+    JS;
 
     public String token() {
         return name().toLowerCase(java.util.Locale.ROOT);

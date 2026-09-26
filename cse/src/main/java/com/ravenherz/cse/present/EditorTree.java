@@ -1,5 +1,6 @@
 package com.ravenherz.cse.present;
 
+import com.ravenherz.cse.core.admin.AdminSection;
 import com.ravenherz.cse.dal.dto.CategoryEntity;
 import com.ravenherz.cse.dal.dto.ItemEntity;
 import com.ravenherz.cse.dal.dto.PlaylistEntity;
@@ -26,6 +27,7 @@ public final class EditorTree {
     public static final String PLAYLISTS_ID = "content-playlists";
     public static final String URL_TEMPLATES_ID = "content-url-templates";
     public static final String REDIRECTS_ID = "content-redirects";
+    public static final String SCRIPTS_ID = "content-scripts";
     public static final String THEMES_ID = "content-themes";
     public static final String CATEGORY_PREFIX = "category-";
     public static final String PAGE_PREFIX = "page-";
@@ -38,6 +40,7 @@ public final class EditorTree {
     public static final String PLAYLISTS_HREF = "/editor/sections/playlists";
     public static final String URL_TEMPLATES_HREF = "/editor/sections/url-templates";
     public static final String REDIRECTS_HREF = "/editor/sections/redirects";
+    public static final String SCRIPTS_HREF = "/editor/sections/scripts";
     public static final String THEMES_HREF = "/editor/resources?group=" + THEMES_ID;
 
     private EditorTree() {
@@ -54,6 +57,7 @@ public final class EditorTree {
                 || PLAYLISTS_ID.equals(trimmed)
                 || URL_TEMPLATES_ID.equals(trimmed)
                 || REDIRECTS_ID.equals(trimmed)
+                || SCRIPTS_ID.equals(trimmed)
                 || THEMES_ID.equals(trimmed)
                 || trimmed.startsWith(CATEGORY_PREFIX)
                 || trimmed.startsWith(PAGE_PREFIX);
@@ -69,6 +73,7 @@ public final class EditorTree {
                 || CATEGORIES_ID.equals(trimmed)
                 || PLAYLISTS_ID.equals(trimmed)
                 || URL_TEMPLATES_ID.equals(trimmed)
+                || SCRIPTS_ID.equals(trimmed)
                 || THEMES_ID.equals(trimmed)
                 || trimmed.startsWith(CATEGORY_PREFIX);
     }
@@ -137,6 +142,7 @@ public final class EditorTree {
             case PLAYLISTS_ID -> PLAYLISTS_HREF;
             case URL_TEMPLATES_ID -> URL_TEMPLATES_HREF;
             case REDIRECTS_ID -> REDIRECTS_HREF;
+            case SCRIPTS_ID -> SCRIPTS_HREF;
             case THEMES_ID -> THEMES_HREF;
             default -> {
                 if (trimmed.startsWith(CATEGORY_PREFIX)) {
@@ -176,13 +182,20 @@ public final class EditorTree {
     public static ResourceGroupDisplayDTO contentBranch(List<CategoryEntity> categories,
             List<ItemEntity> items, List<ResourceTreeFile> apps, List<ResourceTreeFile> playlists,
             List<ResourceTreeFile> themes) {
-        return contentBranch(categories, items, apps, playlists, themes, List.of());
+        return contentBranch(categories, items, apps, playlists, themes, List.of(), List.of());
     }
 
     public static ResourceGroupDisplayDTO contentBranch(List<CategoryEntity> categories,
             List<ItemEntity> items, List<ResourceTreeFile> apps, List<ResourceTreeFile> playlists,
             List<ResourceTreeFile> themes, List<ResourceTreeFile> urlTemplates) {
-        return buildContent(categories, items, apps, playlists, themes, urlTemplates);
+        return contentBranch(categories, items, apps, playlists, themes, urlTemplates, List.of());
+    }
+
+    public static ResourceGroupDisplayDTO contentBranch(List<CategoryEntity> categories,
+            List<ItemEntity> items, List<ResourceTreeFile> apps, List<ResourceTreeFile> playlists,
+            List<ResourceTreeFile> themes, List<ResourceTreeFile> urlTemplates,
+            List<ResourceTreeFile> scripts) {
+        return buildContent(categories, items, apps, playlists, themes, urlTemplates, scripts);
     }
 
     public static ResourceGroupDisplayDTO find(List<ResourceGroupDisplayDTO> roots, String id) {
@@ -219,14 +232,12 @@ public final class EditorTree {
         if (uri.contains("/editor/url-template")) {
             return URL_TEMPLATES_ID;
         }
-        if (uri.contains("/editor/sections/playlists")) {
-            return PLAYLISTS_ID;
+        if (uri.contains("/editor/scripting")) {
+            return SCRIPTS_ID;
         }
-        if (uri.contains("/editor/sections/url-templates")) {
-            return URL_TEMPLATES_ID;
-        }
-        if (uri.contains("/editor/sections")) {
-            return REDIRECTS_ID;
+        String sectionId = sectionId(uri);
+        if (sectionId != null) {
+            return "content-" + sectionId;
         }
         if (uri.contains("/editor/category/edit")) {
             return categoryNodeId(categoryEditId) != null
@@ -263,7 +274,7 @@ public final class EditorTree {
     private static ResourceGroupDisplayDTO buildContent(List<CategoryEntity> categories,
             List<ItemEntity> items, List<ResourceTreeFile> appFiles,
             List<ResourceTreeFile> playlistFiles, List<ResourceTreeFile> themeFiles,
-            List<ResourceTreeFile> urlTemplateFiles) {
+            List<ResourceTreeFile> urlTemplateFiles, List<ResourceTreeFile> scriptFiles) {
         ResourceGroupDisplayDTO content = virtual(CONTENT_ID, "Content", CONTENT_HREF, null, 1);
         ResourceGroupDisplayDTO apps = virtual(APPS_ID, "Apps", APPS_HREF, CONTENT_ID, 2);
         ResourceGroupDisplayDTO cats = virtual(CATEGORIES_ID, "Categories", CATEGORIES_HREF, CONTENT_ID, 2);
@@ -273,10 +284,13 @@ public final class EditorTree {
                 URL_TEMPLATES_HREF, CONTENT_ID, 2);
         ResourceGroupDisplayDTO redirects = virtual(REDIRECTS_ID, "Redirects",
                 REDIRECTS_HREF, CONTENT_ID, 2);
+        ResourceGroupDisplayDTO scripts = virtual(SCRIPTS_ID, "Scripts",
+                SCRIPTS_HREF, CONTENT_ID, 2);
         apps.setTreeFiles(sortedLeaves(appFiles));
         playlists.setTreeFiles(sortedLeaves(playlistFiles));
         themes.setTreeFiles(sortedLeaves(themeFiles));
         urlTemplates.setTreeFiles(sortedLeaves(urlTemplateFiles));
+        scripts.setTreeFiles(sortedLeaves(scriptFiles));
         attachCategories(cats, categories, items);
         content.getChildren().add(apps);
         content.getChildren().add(cats);
@@ -284,6 +298,7 @@ public final class EditorTree {
         content.getChildren().add(themes);
         content.getChildren().add(urlTemplates);
         content.getChildren().add(redirects);
+        content.getChildren().add(scripts);
         content.setSubtreeHeight(content.getChildren().stream().anyMatch(ResourceGroupDisplayDTO::hasExpandableChildren)
                 ? 2 : 1);
         content.setPathLabel("Content");
@@ -389,6 +404,52 @@ public final class EditorTree {
             return null;
         }
         return PLAYLIST_PREFIX + playlist.getId();
+    }
+
+    /**
+     * Tree rows for one catalog section. The section's presentation picks the label and glyph.
+     */
+    public static List<ResourceTreeFile> sectionLeaves(AdminSection section, List<Map<String, String>> rows) {
+        List<ResourceTreeFile> files = new ArrayList<>();
+        if (section == null || rows == null) {
+            return files;
+        }
+        String glyph = section.presentation().treeGlyph().token();
+        for (Map<String, String> row : rows) {
+            if (row == null) {
+                continue;
+            }
+            String id = row.get("id");
+            if (id == null || id.isBlank()) {
+                continue;
+            }
+            String trimmed = id.trim();
+            files.add(new ResourceTreeFile("section-" + trimmed, section.treeLabel(row),
+                    "/editor/sections/" + section.id() + "/edit/" + trimmed).withGlyph(glyph));
+        }
+        return files;
+    }
+
+    public static String sectionId(String uri) {
+        if (uri == null) {
+            return null;
+        }
+        String marker = "/editor/sections/";
+        int at = uri.indexOf(marker);
+        if (at < 0) {
+            return null;
+        }
+        String rest = uri.substring(at + marker.length());
+        int cut = rest.length();
+        for (int i = 0; i < rest.length(); i++) {
+            char c = rest.charAt(i);
+            if (c == '/' || c == '?' || c == '#') {
+                cut = i;
+                break;
+            }
+        }
+        String id = rest.substring(0, cut).trim();
+        return id.isEmpty() ? null : id;
     }
 
     public static String urlTemplateLeafId(UrlTemplateEntity template) {

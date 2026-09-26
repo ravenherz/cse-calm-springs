@@ -17,6 +17,13 @@
               <h2 th:text="${adminSection.section().title()}">Section</h2>
             </div>
           </div>
+          <nav class="settings-tabs" role="tablist" aria-label="Section"
+               th:if="${adminSection.section().runsHref() != null}">
+            <a role="tab" class="is-active" aria-selected="true"
+               th:href="@{/editor/sections/{id}(id=${adminSection.section().id()})}">Editor</a>
+            <a role="tab" aria-selected="false"
+               th:href="@{${adminSection.section().runsHref()}}">Runs</a>
+          </nav>
 
           <div th:if="${adminSection.mode() == 'list'}" class="tile-grid-wrap">
             <ul class="item-list tile-grid">
@@ -64,48 +71,55 @@
             <p class="field-hint" th:if="${adminSection.rows().isEmpty()}">No rows.</p>
           </div>
 
-          <form th:if="${adminSection.mode() != 'list'}" method="post" class="form-panel"
+          <form th:if="${adminSection.mode() != 'list'}" method="post" class="form-panel section-form"
                 th:action="${adminSection.mode() == 'edit'}
                   ? @{/editor/sections/{section}/edit/{id}(section=${adminSection.section().id()},id=${adminSection.id()})}
                   : @{/editor/sections/{section}/create(section=${adminSection.section().id()})}">
             <th:block th:replace="~{fragments/csrf :: field}"></th:block>
-            <table class="settings-table">
-              <tbody>
-                <tr th:each="field : ${adminSection.section().fields()}">
-                  <th scope="row">
-                    <label th:for="${field.name()}" th:text="${field.label()}">From</label>
-                  </th>
-                  <td>
-                    <select th:if="${field.type().name() == 'BOOLEAN'}"
-                            th:id="${field.name()}"
-                            th:name="${field.name()}">
-                      <option value="true" th:selected="${adminSection.values().get(field.name()) == 'true'}">true</option>
-                      <option value="false" th:selected="${adminSection.values().get(field.name()) == 'false'}">false</option>
-                    </select>
-                    <select th:if="${field.type().name() == 'ENUM'}"
-                            th:id="${field.name()}"
-                            th:name="${field.name()}">
-                      <option th:each="option : ${field.options()}"
-                              th:value="${option}"
-                              th:text="${option}"
-                              th:selected="${option == adminSection.values().get(field.name())}">301</option>
-                    </select>
-                    <input th:if="${field.type().name() == 'TEXT' or field.type().name() == 'PATH' or field.type().name() == 'ENTITY_ID'}"
-                           type="text"
-                           th:id="${field.name()}"
-                           th:name="${field.name()}"
-                           th:value="${adminSection.values().get(field.name())}"/>
-                    <div class="error-message"
-                         th:each="error : ${adminSection.errors()}"
-                         th:if="${error.field() == field.name()}"
-                         th:text="${error.message()}">Required</div>
-                  </td>
-                </tr>
-              </tbody>
-            </table>
+            <div class="form-group" th:each="field : ${adminSection.section().fields()}">
+              <label th:for="${field.name()}" th:text="${field.label()}">From</label>
+              <select th:if="${field.type().name() == 'BOOLEAN'}"
+                      th:id="${field.name()}"
+                      th:name="${field.name()}">
+                <option value="true" th:selected="${adminSection.values().get(field.name()) == 'true'}">true</option>
+                <option value="false" th:selected="${adminSection.values().get(field.name()) == 'false'}">false</option>
+              </select>
+              <select th:if="${field.type().name() == 'ENUM'}"
+                      th:id="${field.name()}"
+                      th:name="${field.name()}">
+                <option th:each="option : ${field.options()}"
+                        th:value="${option}"
+                        th:text="${option}"
+                        th:selected="${option == adminSection.values().get(field.name())}">301</option>
+              </select>
+              <textarea th:if="${field.type().name() == 'MULTILINE'}"
+                        class="section-multiline"
+                        th:id="${field.name()}"
+                        th:name="${field.name()}"
+                        rows="16"
+                        spellcheck="false"
+                        th:text="${adminSection.values().get(field.name())}"></textarea>
+              <input th:if="${field.type().name() == 'TEXT' or field.type().name() == 'PATH' or field.type().name() == 'ENTITY_ID'}"
+                     type="text"
+                     th:id="${field.name()}"
+                     th:name="${field.name()}"
+                     th:value="${adminSection.values().get(field.name())}"/>
+              <div class="error-message"
+                   th:each="error : ${adminSection.errors()}"
+                   th:if="${error.field() == field.name()}"
+                   th:text="${error.message()}">Required</div>
+            </div>
             <div class="editor-actions">
               <button type="submit" class="btn btn-primary">Save</button>
+              <button type="submit" class="btn" form="section-run"
+                      th:if="${adminSection.mode() == 'edit' and adminSection.id() != null and adminSection.section().runHref() != null}">Run</button>
             </div>
+          </form>
+          <form id="section-run" method="post" hidden
+                th:if="${adminSection.mode() == 'edit' and adminSection.id() != null and adminSection.section().runHref() != null}"
+                th:action="@{${adminSection.section().runHref()}}">
+            <th:block th:replace="~{fragments/csrf :: field}"></th:block>
+            <input type="hidden" name="id" th:value="${adminSection.id()}"/>
           </form>
         </section>
       </div>

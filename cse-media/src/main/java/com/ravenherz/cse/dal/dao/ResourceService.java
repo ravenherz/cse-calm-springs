@@ -23,6 +23,13 @@ public interface ResourceService extends Store {
     List<DataChunkEntity> getDataChunks(List<ObjectId> chunkIds);
     byte[] getRawBytesFromChunks(List<ObjectId> chunkIds);
     void saveDataChunk(DataChunkEntity chunk);
+
+    /**
+     * Ids of every {@code cse-datachunks} row. Does not load chunk bytes.
+     */
+    List<ObjectId> listDataChunkIds();
+
+    void deleteDataChunk(ObjectId id);
     void fillFromFile(ResourceData data, Path file) throws IOException;
     void writeToFile(ResourceData data, Path dest) throws IOException;
     void deleteStoredContent(ResourceData data);

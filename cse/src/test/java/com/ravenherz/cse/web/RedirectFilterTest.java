@@ -28,7 +28,7 @@ class RedirectFilterTest {
         store = mock(ResourceRedirectService.class);
         ServiceProvider services = mock(ServiceProvider.class);
         when(services.getResourceRedirectService()).thenReturn(store);
-        filter = new RedirectFilter(services);
+        filter = new RedirectFilter(services, mock(com.ravenherz.cse.present.ResourceGroupIndex.class));
     }
 
     @Test

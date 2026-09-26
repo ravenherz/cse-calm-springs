@@ -26,8 +26,8 @@
             th:src="@{/content-public/js/cse-editor.js(v=4)}"
             src="../../../static/content-public/js/cse-editor.js?v=4"></script>
     <script id="script-cse-editor-tree" type="text/javascript"
-            th:src="@{/content-public/js/cse-editor-tree.js(v=18)}"
-            src="../../../static/content-public/js/cse-editor-tree.js?v=18"></script>
+            th:src="@{/content-public/js/cse-editor-tree.js(v=20)}"
+            src="../../../static/content-public/js/cse-editor-tree.js?v=20"></script>
 </head>
 <body>
     <div class="editor-layout">
@@ -476,7 +476,19 @@
                     <th:block th:replace="~{fragments/shared :: resource-asterisk}"></th:block>
                 </span>
             </button>
-            <span class="resource-tree-toggle is-leaf" th:unless="${group.hasExpandableChildren()}"
+            <a th:if="${not group.hasExpandableChildren() and group.href != null}"
+               class="resource-tree-toggle is-leaf"
+               th:href="${(cseContextPath == '/' ? '' : (cseContextPath != null ? cseContextPath : '')) + group.href}"
+               th:attr="aria-label=${group.humanReadableId}">
+                <span class="resource-tree-folder-host"
+                      th:classappend="${group.locked or group.guestDenied} ? 'is-locked'">
+                    <th:block th:replace="~{fragments/shared :: resource-tree-folders}"></th:block>
+                    <th:block th:replace="~{fragments/shared :: folder-access-lock(group=${group})}"></th:block>
+                    <th:block th:replace="~{fragments/shared :: resource-asterisk}"></th:block>
+                </span>
+            </a>
+            <span class="resource-tree-toggle is-leaf"
+                  th:if="${not group.hasExpandableChildren() and group.href == null}"
                   aria-hidden="true">
                 <span class="resource-tree-folder-host"
                       th:classappend="${group.locked or group.guestDenied} ? 'is-locked'">
@@ -527,7 +539,7 @@
              draggable=${file.embeddable}">
             <span class="resource-tree-icon" aria-hidden="true">
                 <span class="resource-tree-file-host"
-                      th:classappend="${file.album} ? 'is-album' : (${file.contentPage} ? 'is-page' : '')">
+                      th:classappend="${file.glyph == 'js'} ? 'is-js' : (${file.album} ? 'is-album' : (${file.contentPage} ? 'is-page' : ''))">
                     <img th:if="${file.preview}"
                          class="resource-tree-file-icon resource-tree-file-preview"
                          th:src="@{/editor/resources/tree-preview/{id}(id=${file.id})}"
@@ -542,6 +554,7 @@
                     </svg>
                     <span class="resource-tree-file-mark" th:if="${file.album}">Album</span>
                     <span class="resource-tree-file-mark" th:if="${file.contentPage}">Page</span>
+                    <span class="resource-tree-file-mark" th:if="${file.glyph == 'js'}">js</span>
                 </span>
             </span>
             <a class="resource-tree-link"

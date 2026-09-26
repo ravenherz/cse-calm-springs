@@ -82,10 +82,20 @@ public class CatalogBatchDelete {
         }
         rest.sort((a, b) -> Integer.compare(rank(a.kind), rank(b.kind)));
         String firstError = null;
+        int missed = 0;
         for (Target target : rest) {
-            firstError = keepFirst(firstError, deleteOne(target.kind, target.id, accessor));
+            String error = deleteOne(target.kind, target.id, accessor);
+            if ("not_found".equals(error)) {
+                missed++;
+            } else {
+                firstError = keepFirst(firstError, error);
+            }
         }
-        return deleteGroups(groups, accessor, firstError);
+        String groupsError = deleteGroups(groups, accessor, firstError);
+        if (groupsError == null && missed > 0 && missed == rest.size() && groups.isEmpty()) {
+            return "not_found";
+        }
+        return groupsError;
     }
 
     private String deleteGroups(List<Target> groups, AccountEntity accessor, String firstError) {
@@ -130,14 +140,15 @@ public class CatalogBatchDelete {
         }
     }
 
-    private String deleteResource(String pathPublic, AccountEntity accessor) {
+    private String deleteResource(String id, AccountEntity accessor) {
         if (!allows(accessor, CapabilityIds.EDITOR_FILES)) {
             return "forbidden";
         }
-        ResourceEntity existing = serviceProvider.getResourceService().getByPublicPath(pathPublic);
+        ResourceEntity existing = findResource(id);
         if (existing == null) {
             return "not_found";
         }
+        String pathPublic = existing.getResourceData() == null ? null : existing.getResourceData().getPathPublic();
         LOGGER.info("Deleting resource: {} with id: {}", pathPublic, existing.getId());
         List<ItemEntity> itemsWithRefImage = serviceProvider.getItemService().getAllByRefImage(existing.getId());
         if (itemsWithRefImage != null) {
@@ -160,13 +171,35 @@ public class CatalogBatchDelete {
                 resourceGroupIndex.contentChanged();
             }
         }
-        serviceProvider.getResourceService().deleteByPublicPath(pathPublic);
-        contentCacheController.invalidateCacheForResource(pathPublic);
+        if (pathPublic != null && !pathPublic.isBlank()) {
+            serviceProvider.getResourceService().deleteByPublicPath(pathPublic);
+            contentCacheController.invalidateCacheForResource(pathPublic);
+        } else {
+            serviceProvider.getResourceService().delete(existing);
+        }
         if (existing.getPreviewData() != null && existing.getPreviewData().getPathPublic() != null) {
             contentCacheController.invalidateCacheForResource(existing.getPreviewData().getPathPublic());
         }
         resourceGroupIndex.fileRemoved(existing);
         return null;
+    }
+
+    private ResourceEntity findResource(String id) {
+        if (id == null || id.isBlank()) {
+            return null;
+        }
+        String value = id.trim();
+        ResourceEntity byPath = serviceProvider.getResourceService().getByPublicPath(value);
+        if (byPath != null) {
+            return byPath;
+        }
+        ObjectId objectId = parseObjectId(value);
+        if (objectId == null) {
+            return null;
+        }
+        Object row = serviceProvider.getResourceService().getById(ResourceEntity.class,
+                StoredIds.entityId(objectId));
+        return row instanceof ResourceEntity resource ? resource : null;
     }
 
     private String deletePage(String name, AccountEntity accessor) {

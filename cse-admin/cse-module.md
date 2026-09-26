@@ -10,6 +10,7 @@ Backend for generic editor sections. Feature modules publish a form descriptor a
 - Serve the logs page at `/editor/logs`, including the JSON tail and the plain-text download. The WAR reads the file through `LogTail`.
 - Serve the instance page at `/editor/instance` and the JSON sample at `/editor/instance/snapshot`. The WAR probes the machine through `InstanceCapture`.
 - Serve the transcode page at `/editor/transcode` and the JSON queue at `/editor/transcode/queue`. The WAR builds the rows through `TranscodeQueue`.
+- Serve `/editor/scripting` and `/editor/scripting/runs`. The WAR stores scripts and run rows through `ScriptDesk`.
 - Serve `/editor/settings` and `/editor/settings/save`. The WAR reads and writes the groups through `SettingsForm`.
 - Serve `/editor/roles` and the role create, archive, delete, matrix, save, and transfer posts. Stores and the matrix view stay in `cse-security`.
 - Serve `/editor/accounts` and `/editor/account/delete`. Login search and the account rows live with this page.

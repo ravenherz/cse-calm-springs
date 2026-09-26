@@ -12,12 +12,19 @@ public final class AdminSection {
     private final String title;
     private final List<AdminField> fields;
     private final AdminPresentation presentation;
+    private final String runsHref;
+    private final String runHref;
 
     public AdminSection(String id, String title, List<AdminField> fields) {
-        this(id, title, fields, null);
+        this(id, title, fields, null, null, null);
     }
 
     public AdminSection(String id, String title, List<AdminField> fields, AdminPresentation presentation) {
+        this(id, title, fields, presentation, null, null);
+    }
+
+    public AdminSection(String id, String title, List<AdminField> fields, AdminPresentation presentation,
+            String runsHref, String runHref) {
         if (id == null || id.isBlank()) {
             throw new IllegalArgumentException("section id is required");
         }
@@ -32,6 +39,8 @@ public final class AdminSection {
         this.fields = List.copyOf(fields);
         this.presentation = presentation == null
                 ? new AdminPresentation("", TreeGlyph.FILE) : presentation;
+        this.runsHref = blank(runsHref);
+        this.runHref = blank(runHref);
     }
 
     public String id() {
@@ -48,6 +57,18 @@ public final class AdminSection {
 
     public AdminPresentation presentation() {
         return presentation;
+    }
+
+    public String runsHref() {
+        return runsHref;
+    }
+
+    public String runHref() {
+        return runHref;
+    }
+
+    private static String blank(String value) {
+        return value == null || value.isBlank() ? null : value.trim();
     }
 
     public String treeLabel(Map<String, String> row) {

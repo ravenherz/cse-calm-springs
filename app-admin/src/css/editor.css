@@ -2547,8 +2547,11 @@ textarea.editor-textarea {
   overflow: visible;
 }
 
-button.resource-tree-toggle {
+button.resource-tree-toggle,
+a.resource-tree-toggle {
   cursor: pointer;
+  color: var(--accent);
+  text-decoration: none;
 }
 
 .resource-tree-folder-host {
@@ -2741,6 +2744,39 @@ img.resource-tree-file-preview {
 
 .resource-tree-file-host.is-page .resource-tree-file-mark {
   color: var(--text-success);
+}
+
+.resource-tree-file-host.is-js .resource-tree-file-mark {
+  color: var(--text-error);
+}
+
+.section-form {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.section-form .form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin: 0;
+}
+
+.section-form .error-message {
+  margin: 4px 0 0;
+  padding: 6px 8px;
+}
+
+.section-multiline {
+  display: block;
+  width: 100%;
+  min-height: 16rem;
+  margin-top: 0;
+  padding: 8px 10px;
+  font-family: "IBM Plex Mono", ui-monospace, monospace;
+  font-size: 12px;
+  line-height: 1.45;
 }
 
 .resource-tree-file > .resource-tree-row .resource-tree-link {
@@ -3294,6 +3330,10 @@ a.resource-plus-form {
   outline-offset: -2px;
 }
 
+.settings-tabs a[role="tab"] {
+  text-decoration: none;
+}
+
 .settings-tab-panel {
   display: none;
 }
@@ -3367,6 +3407,32 @@ a.resource-plus-form {
 
 .settings-page .editor-actions {
   margin-top: 12px;
+}
+
+.scripting-page .settings-table th,
+.scripting-page .settings-table td {
+  padding: 0;
+  border-bottom: none;
+}
+
+.scripting-page .settings-context-title {
+  margin: 10px 0 0;
+}
+
+.scripting-page textarea {
+  display: block;
+  width: 100%;
+  min-height: 16rem;
+  margin-top: 6px;
+  font-family: "IBM Plex Mono", ui-monospace, monospace;
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+.scripting-page .editor-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 10px;
 }
 
 .instance-page .field-hint {

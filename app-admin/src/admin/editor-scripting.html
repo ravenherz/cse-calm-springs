@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="en">
+<head th:replace="~{fragments/shared :: shared-head}"></head>
+<body>
+  <div class="editor-layout">
+    <aside class="editor-sidebar" th:replace="~{fragments/shared :: shared-editor-sidebar}"></aside>
+    <main class="editor-main resource-page scripting-page">
+      <div class="error-message" th:if="${scriptError != null and scriptError != ''}" th:text="${scriptError}">Error</div>
+      <div class="resource-browser">
+        <th:block th:replace="~{fragments/shared :: shared-editor-tree}"></th:block>
+        <section class="resource-pane">
+          <div class="resource-pane-header">
+            <div class="resource-pane-title">
+              <h2>Scripts</h2>
+            </div>
+          </div>
+          <nav class="settings-tabs" role="tablist" aria-label="Scripts">
+            <a role="tab" aria-selected="false" th:href="@{/editor/sections/scripts}">Editor</a>
+            <a role="tab" class="is-active" aria-selected="true" th:href="@{/editor/scripting/runs}">Runs</a>
+          </nav>
+          <p class="field-hint">A run is recorded when a script executes.</p>
+          <table class="settings-table">
+            <thead>
+              <tr>
+                <th scope="col">Script</th>
+                <th scope="col">Status</th>
+                <th scope="col">Started</th>
+                <th scope="col">Message</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr th:each="run : ${scriptRuns}">
+                <td th:text="${run.scriptId}">on-save</td>
+                <td th:text="${run.status}">Done</td>
+                <td th:text="${run.started}">2026-09-26 12:00:00</td>
+                <td th:text="${run.message}"></td>
+              </tr>
+            </tbody>
+          </table>
+          <p class="field-hint" th:if="${scriptRuns == null or scriptRuns.isEmpty()}">No runs.</p>
+        </section>
+      </div>
+    </main>
+  </div>
+</body>
+</html>

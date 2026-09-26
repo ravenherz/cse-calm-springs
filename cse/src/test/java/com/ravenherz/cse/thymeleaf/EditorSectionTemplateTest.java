@@ -8,7 +8,9 @@ import com.ravenherz.cse.core.admin.AdminSection;
 import com.ravenherz.cse.core.admin.CardPlace;
 import com.ravenherz.cse.core.admin.FieldType;
 import com.ravenherz.cse.core.admin.TreeGlyph;
+import com.ravenherz.cse.present.ResourceGroupDisplayDTO;
 import com.ravenherz.cse.redirect.RedirectAdmin;
+import com.ravenherz.cse.scripting.ScriptAdmin;
 import org.junit.jupiter.api.Test;
 import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.mock.web.MockHttpServletResponse;
@@ -51,6 +53,8 @@ class EditorSectionTemplateTest {
         assertTrue(html.contains(">301<"), html);
         assertTrue(html.contains(">302<"), html);
         assertTrue(html.contains("A redirect from this path already exists"), html);
+        assertFalse(html.contains(">Runs</a>"), html);
+        assertFalse(html.contains(">Run</button>"), html);
 
         AdminSectionPage list = AdminSectionPage.list(
                 new RedirectAdmin().section(),
@@ -82,6 +86,36 @@ class EditorSectionTemplateTest {
         assertTrue(cards.contains("src=\"data:image/png;base64,abc+def/ghi=\""), cards);
         assertFalse(cards.contains("/rhz-we/data:"), cards);
         assertFalse(cards.contains("app-logo-fallback"), cards);
+    }
+
+    @Test
+    void scriptEditShowsRunAndTheRunsTab() {
+        AdminSectionPage page = AdminSectionPage.form(
+                new ScriptAdmin().section(),
+                "edit",
+                "aaaaaaaaaaaaaaaaaaaaaaaa",
+                Map.of("scriptId", "delete-orphans", "folder", "maintenance", "source", "cse.deleteOrphans();"),
+                List.of());
+        String html = engine().process("admin/editor-section", context(page));
+        assertTrue(html.contains(">Runs</a>"), html);
+        assertTrue(html.contains("/rhz-we/editor/scripting/runs"), html);
+        assertTrue(html.contains(">Run</button>"), html);
+        assertTrue(html.contains("/rhz-we/editor/scripting/run"), html);
+        assertTrue(html.contains("cse.deleteOrphans();"), html);
+    }
+
+    @Test
+    void emptySectionFolderIconOpensTheSection() {
+        ResourceGroupDisplayDTO redirects = new ResourceGroupDisplayDTO();
+        redirects.setId("content-redirects");
+        redirects.setHumanReadableId("Redirects");
+        redirects.setVirtual(true);
+        redirects.setHref("/editor/sections/redirects");
+        WebContext web = context(AdminSectionPage.list(new RedirectAdmin().section(), List.of()));
+        web.setVariable("resourceGroupTree", List.of(redirects));
+        String html = engine().process("admin/editor-section", web);
+        assertTrue(html.contains("<a class=\"resource-tree-toggle is-leaf\""), html);
+        assertTrue(html.contains("href=\"/rhz-we/editor/sections/redirects\""), html);
     }
 
     private static WebContext context(AdminSectionPage page) {
