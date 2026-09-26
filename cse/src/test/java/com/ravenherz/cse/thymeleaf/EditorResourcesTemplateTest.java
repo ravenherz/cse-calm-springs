@@ -60,7 +60,9 @@ class EditorResourcesTemplateTest {
                 new ResourceTreeFile("page-host", "Host (2015)", "/editor/edit?name=host",
                         ResourceTreeFile.Mark.PAGE).withKey("host"),
                 new ResourceTreeFile("page-home", "Home", "/editor/edit?name=home",
-                        ResourceTreeFile.Mark.ALBUM).withKey("home")));
+                        ResourceTreeFile.Mark.ALBUM).withKey("home"),
+                new ResourceTreeFile("section-script", "on-save", "/editor/sections/scripts/edit/script")
+                        .withGlyph("js")));
         categories.getChildren().add(music);
         content.getChildren().add(apps);
         content.getChildren().add(categories);
@@ -130,7 +132,7 @@ class EditorResourcesTemplateTest {
         assertTrue(html.contains("resource-browser"), html);
         assertTrue(html.contains("cse-editor.js"), html);
         assertTrue(html.contains("cse-editor-tree.js"), html);
-        assertTrue(html.contains("resource-tree-origin"), html);
+        assertTrue(html.contains("id=\"resource-tree-search\""), html);
         assertTrue(html.contains("resource-tree-root-label"), html);
         assertTrue(html.contains("id=\"group-default-id\""), html);
         assertTrue(html.contains("resource-lock-overlay"), html);
@@ -147,6 +149,8 @@ class EditorResourcesTemplateTest {
         assertTrue(html.contains("is-album"), html);
         assertTrue(html.contains(">Page<"), html);
         assertTrue(html.contains(">Album<"), html);
+        assertTrue(html.contains("is-js"), html);
+        assertTrue(html.contains(">js<"), html);
         assertTrue(html.contains("aurora.jpg"), html);
         assertTrue(html.contains("data-resource-type=\"IMAGE\""), html);
         assertTrue(html.contains("data-resource-type=\"AUDIO\""), html);
@@ -162,6 +166,10 @@ class EditorResourcesTemplateTest {
         assertTrue(html.contains("resource-plus-tile"), html);
         assertTrue(html.contains("placeResourceTip"), html);
         assertTrue(html.contains("id=\"file\""), html);
+        assertTrue(html.contains("id=\"uploadCurrentFill\""), html);
+        assertTrue(html.contains("id=\"uploadOverallMeter\""), html);
+        assertTrue(html.contains("id=\"uploadSpeedCurrent\""), html);
+        assertTrue(html.contains("id=\"uploadSpeedOverall\""), html);
         assertTrue(html.contains("multiple"), html);
         assertTrue(html.contains(".mp4"), html);
         assertTrue(html.contains(".pdf"), html);
@@ -207,6 +215,7 @@ class EditorResourcesTemplateTest {
         assertTrue(html.contains("id=\"catalog-batch-delete-form\""), html);
         assertTrue(html.contains("/editor/batch-delete"), html);
         assertTrue(html.contains("id=\"resourceMultiSelect\""), html);
+        assertTrue(html.contains("id=\"resourceMultiDelete\""), html);
         assertTrue(html.contains(">Multi-select</button>"), html);
         assertTrue(html.contains("id=\"catalog-activate-form\""), html);
         assertTrue(html.contains("id=\"resource-category-delete-form\""), html);

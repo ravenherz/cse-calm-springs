@@ -4,7 +4,7 @@ MongoDB adapter. The WAR depends on this module, not on `cse-db-postgres`.
 
 ## Does
 
-- Implement the feature stores with `MongoTemplate`.
+- Implement the feature stores with `MongoTemplate`, including `ResourceRedirectService`.
 - Connect on first use (`DataProvider`), store settings documents, and convert `EntityId` to `ObjectId`.
 
 ## Does not

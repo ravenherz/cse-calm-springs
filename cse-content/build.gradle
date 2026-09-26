@@ -8,6 +8,7 @@ description = 'Markdown, page embeds, and article assembly. Theme body tags stay
 
 dependencies {
     api project(':cse-dal-core')
+    api project(':cse-core')
     api project(':cse-security')
     api project(':cse-media')
     api 'org.springframework.boot:spring-boot-starter-data-mongodb'

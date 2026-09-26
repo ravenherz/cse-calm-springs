@@ -1,0 +1,19 @@
+plugins {
+    id 'java-library'
+}
+
+apply from: rootProject.file('gradle/cse-db.gradle')
+
+description = 'Generic editor handler. Reads form descriptors and does not import feature entities.'
+
+dependencies {
+    api project(':cse-core')
+    api project(':cse-security')
+    implementation 'org.springframework:spring-web'
+    implementation 'org.springframework:spring-context'
+    implementation 'jakarta.servlet:jakarta.servlet-api'
+
+    testImplementation 'org.junit.jupiter:junit-jupiter'
+    testImplementation 'org.springframework:spring-test'
+    testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+}

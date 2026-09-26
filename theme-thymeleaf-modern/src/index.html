@@ -204,9 +204,10 @@
         </a>
         <a th:if="${section.hasMore}" class="piece-card piece-more"
            th:href="@{/(category=${section.itemName})}">
-          <div class="piece-media piece-more-media"><span>→</span></div>
-          <h3>Display more</h3>
-          <p th:text="'All ' + ${section.totalCount} + ' items'">All items</p>
+          <div class="piece-media piece-more-media">
+            <h3>Display more</h3>
+            <p th:text="'All ' + ${section.totalCount} + ' items'">All items</p>
+          </div>
         </a>
       </div>
     </section>

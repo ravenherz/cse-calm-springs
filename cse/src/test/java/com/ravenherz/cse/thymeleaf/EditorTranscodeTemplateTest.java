@@ -1,7 +1,7 @@
 package com.ravenherz.cse.thymeleaf;
 
-import com.ravenherz.cse.controller.EditorTranscodeController.Item;
-import com.ravenherz.cse.controller.EditorTranscodeController.QueueSnapshot;
+import com.ravenherz.cse.admin.TranscodeQueue.Item;
+import com.ravenherz.cse.admin.TranscodeQueue.QueueSnapshot;
 import org.junit.jupiter.api.Test;
 import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.mock.web.MockHttpServletResponse;
@@ -24,7 +24,7 @@ class EditorTranscodeTemplateTest {
     @Test
     void transcodeTabRendersQueueAndPoller() {
         QueueSnapshot queue = new QueueSnapshot(1, 1, 0, 0, 1, 1, List.of(
-                new Item("aaaaaaaaaaaaaaaaaaaaaaaa", "processing", 42, null, null, "ada",
+                new Item("aaaaaaaaaaaaaaaaaaaaaaaa", "in-progress", 42, null, null, "ada",
                         "483.84 MB", null, "live.mov"),
                 new Item("bbbbbbbbbbbbbbbbbbbbbbbb", "queued", 0, null, null, "ada",
                         "8.0 MB", null, "next.mp4")));
@@ -68,7 +68,11 @@ class EditorTranscodeTemplateTest {
         assertTrue(html.contains("483.84 MB"), html);
         assertTrue(html.contains("transcode-meter"), html);
         assertTrue(html.contains("42%"), html);
-        assertTrue(html.contains("id=\"transcode-auto\""), html);
+        assertTrue(html.contains("id=\"transcode-size\""), html);
+        assertTrue(html.contains("value=\"20\""), html);
+        assertTrue(html.contains("value=\"50\""), html);
+        assertTrue(html.contains("value=\"100\""), html);
+        assertTrue(html.contains("In progress"), html);
         assertTrue(html.contains("class=\"editor-nav\""), html);
         assertTrue(html.contains("/editor/transcode\""), html);
         assertTrue(html.contains("nav-sep"), html);

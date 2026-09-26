@@ -5,3 +5,8 @@ plugins {
 apply from: rootProject.file('gradle/cse-db.gradle')
 
 description = 'Types that more than one feature library would otherwise copy. No Spring, Mongo, or codecs.'
+
+dependencies {
+    testImplementation 'org.junit.jupiter:junit-jupiter'
+    testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+}

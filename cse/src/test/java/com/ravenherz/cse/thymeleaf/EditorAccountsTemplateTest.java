@@ -1,7 +1,7 @@
 package com.ravenherz.cse.thymeleaf;
 
-import com.ravenherz.cse.present.AccountDisplayDTO;
-import com.ravenherz.cse.present.RoleOptionDTO;
+import com.ravenherz.cse.admin.AccountDisplayDTO;
+import com.ravenherz.cse.admin.RoleOptionDTO;
 import org.junit.jupiter.api.Test;
 import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.mock.web.MockHttpServletResponse;

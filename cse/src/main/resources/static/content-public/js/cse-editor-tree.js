@@ -9,6 +9,9 @@
         }
         return;
     }
+    if (tree.getAttribute('data-tree') === 'scripts') {
+        return;
+    }
     var meta = document.querySelector('meta[name="cse-context"]');
     var storageKey = 'cse.resource-tree.open:' + ((meta && meta.getAttribute('content')) || '');
 
@@ -95,6 +98,57 @@
     restoreOpen();
     saveOpen();
     tree.addEventListener('cse-tree-persist', saveOpen);
+    var searchInput = document.getElementById('resource-tree-search');
+    if (searchInput) {
+        searchInput.addEventListener('input', function () {
+            filterTree(searchInput.value);
+        });
+    }
+
+    function filterTree(raw) {
+        clearSearchOpen();
+        var query = (raw || '').trim().toLowerCase();
+        if (!query) {
+            saveOpen();
+            return;
+        }
+        var origin = tree.querySelector('.resource-tree-origin');
+        if (origin) {
+            filterNode(origin, query);
+        }
+    }
+
+    function clearSearchOpen() {
+        var opened = tree.querySelectorAll('[data-search-opened]');
+        for (var i = 0; i < opened.length; i++) {
+            opened[i].classList.remove('is-open');
+            opened[i].removeAttribute('data-search-opened');
+        }
+        var hidden = tree.querySelectorAll('.is-filtered-out');
+        for (var j = 0; j < hidden.length; j++) {
+            hidden[j].classList.remove('is-filtered-out');
+        }
+    }
+
+    function filterNode(node, query) {
+        var children = node.querySelectorAll(':scope > .resource-tree-children > .resource-tree-node');
+        var childHit = false;
+        for (var i = 0; i < children.length; i++) {
+            if (filterNode(children[i], query)) {
+                childHit = true;
+            }
+        }
+        var label = node.querySelector(':scope > .resource-tree-row .resource-tree-link, :scope > .resource-tree-row .resource-tree-root-label');
+        var text = label ? label.textContent.toLowerCase() : '';
+        var show = text.indexOf(query) !== -1 || childHit;
+        node.classList.toggle('is-filtered-out', !show);
+        if (show && childHit && !node.classList.contains('is-open')) {
+            node.classList.add('is-open');
+            node.setAttribute('data-search-opened', 'true');
+        }
+        return show;
+    }
+
     tree.addEventListener('click', function (e) {
         var toggle = e.target.closest('.resource-tree-toggle');
         if (!toggle || toggle.classList.contains('is-leaf')) {
@@ -988,6 +1042,7 @@
         if (box && box.disabled) {
             tile.classList.remove('is-selected');
         }
+        refreshMultiDelete();
     }
 
     function ensureTileCheckbox(tile) {
@@ -1022,6 +1077,18 @@
                 setTileSelected(tile, false);
             }
         });
+        refreshMultiDelete();
+    }
+
+    function refreshMultiDelete() {
+        var pane = document.querySelector('.resource-pane');
+        var button = document.getElementById('resourceMultiDelete');
+        if (!button) {
+            return;
+        }
+        var count = pane && pane.classList.contains('is-multi-select') ? selectedTiles().length : 0;
+        button.hidden = count === 0;
+        button.textContent = count > 1 ? 'Delete ' + count : 'Delete';
     }
 
     function batchTarget(host) {
@@ -1029,7 +1096,8 @@
         var id = host.getAttribute('data-id') || '';
         var key = host.getAttribute('data-key') || id;
         if (kind === 'resource') {
-            return key ? { kind: 'resource', id: key } : null;
+            var resourceId = /^[a-f0-9]{24}$/i.test(id) ? id : key;
+            return resourceId ? { kind: 'resource', id: resourceId } : null;
         }
         if (kind === 'page' || kind === 'album' || kind === 'playlist' || kind === 'url-template'
                 || kind === 'category'
@@ -1129,6 +1197,13 @@
             hideMenu();
             setPaneMultiSelect(!pane.classList.contains('is-multi-select'));
         });
+        var deleteButton = document.getElementById('resourceMultiDelete');
+        if (deleteButton) {
+            deleteButton.addEventListener('click', function () {
+                hideMenu();
+                submitBatchDelete();
+            });
+        }
         pane.addEventListener('change', function (e) {
             if (!e.target.classList.contains('resource-select-box')) {
                 return;
@@ -1144,7 +1219,7 @@
             if (!pane.classList.contains('is-multi-select')) {
                 return;
             }
-            if (e.target.closest('.resource-plus-tile, .resource-tip, .resource-select, .resource-pane-header')) {
+            if (e.target.closest('.resource-plus-tile, .resource-tip, .resource-select, .resource-pane-header, .thumb-actions')) {
                 return;
             }
             var tile = e.target.closest('.item-list > li.tile-row');

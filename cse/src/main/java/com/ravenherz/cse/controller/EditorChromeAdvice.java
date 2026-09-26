@@ -32,5 +32,6 @@ public class EditorChromeAdvice {
         model.addAttribute("navLogs", uri.contains("/editor/logs"));
         model.addAttribute("navTranscode", uri.contains("/editor/transcode"));
         model.addAttribute("navInstance", uri.contains("/editor/instance"));
+        model.addAttribute("navScripting", uri.contains("/editor/scripting"));
     }
 }

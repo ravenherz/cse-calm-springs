@@ -12,6 +12,10 @@ import com.ravenherz.cse.dal.dao.RoleMatrixService;
 import com.ravenherz.cse.dal.dao.RoleService;
 import com.ravenherz.cse.dal.dao.ThemeService;
 import com.ravenherz.cse.dal.dao.UrlTemplateService;
+import com.ravenherz.cse.redirect.ResourceRedirectService;
+import com.ravenherz.cse.scripting.ScriptRunService;
+import com.ravenherz.cse.scripting.ScriptService;
+import com.ravenherz.cse.util.video.VideoTranscodeService;
 import org.springframework.stereotype.Service;
 
 @Service(value = "serviceProvider")
@@ -28,13 +32,19 @@ public class ServiceProviderImpl implements ServiceProvider {
     private final UrlTemplateService urlTemplateService;
     private final RoleService roleService;
     private final RoleMatrixService roleMatrixService;
+    private final ResourceRedirectService resourceRedirectService;
+    private final VideoTranscodeService videoTranscodeService;
+    private final ScriptService scriptService;
+    private final ScriptRunService scriptRunService;
 
     public ServiceProviderImpl(AccountService accountService, CategoryService categoryService,
             ItemService itemService, ResourceService resourceService,
             ResourceGroupService resourceGroupService, AppService appService,
             ThemeService themeService, PlaylistService playlistService,
             UrlTemplateService urlTemplateService, RoleService roleService,
-            RoleMatrixService roleMatrixService) {
+            RoleMatrixService roleMatrixService, ResourceRedirectService resourceRedirectService,
+            VideoTranscodeService videoTranscodeService, ScriptService scriptService,
+            ScriptRunService scriptRunService) {
         this.accountService = accountService;
         this.categoryService = categoryService;
         this.itemService = itemService;
@@ -46,6 +56,30 @@ public class ServiceProviderImpl implements ServiceProvider {
         this.urlTemplateService = urlTemplateService;
         this.roleService = roleService;
         this.roleMatrixService = roleMatrixService;
+        this.resourceRedirectService = resourceRedirectService;
+        this.videoTranscodeService = videoTranscodeService;
+        this.scriptService = scriptService;
+        this.scriptRunService = scriptRunService;
+    }
+
+    @Override
+    public ResourceRedirectService getResourceRedirectService() {
+        return resourceRedirectService;
+    }
+
+    @Override
+    public VideoTranscodeService getVideoTranscodeService() {
+        return videoTranscodeService;
+    }
+
+    @Override
+    public ScriptService getScriptService() {
+        return scriptService;
+    }
+
+    @Override
+    public ScriptRunService getScriptRunService() {
+        return scriptRunService;
     }
 
     @Override

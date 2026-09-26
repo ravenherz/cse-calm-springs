@@ -340,7 +340,7 @@ select optgroup {
   width: 100%;
   max-width: var(--main-max);
   margin: 0 auto;
-  padding: 36px 28px 80px;
+  padding: 0px 28px 0px;
 }
 
 .page-header {
@@ -349,6 +349,7 @@ select optgroup {
   align-items: flex-end;
   gap: 16px;
   margin-bottom: 32px;
+  margin-top: 16px;
   padding-bottom: 18px;
   border-bottom: 1px solid var(--border-default);
 }
@@ -2390,24 +2391,55 @@ textarea.editor-textarea {
 }
 
 .resource-tree-column {
-  min-width: 0;
-  min-height: 0;
-}
-
-.resource-tree {
   position: sticky;
   top: calc(var(--bar-h) + 12px);
   max-height: calc(100vh - var(--bar-h) - 28px);
   max-height: calc(100dvh - var(--bar-h) - 28px);
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  min-height: 0;
+  border-right: 1px solid var(--border-default);
+}
+
+.resource-tree-search {
+  flex: 0 0 auto;
+  margin: 0 16px 8px 8px;
+}
+
+.resource-tree-search input {
+  font-size: 13px;
+  padding: 4px 0;
+}
+
+.resource-tree {
+  flex: 1 1 auto;
+  min-height: 0;
   overflow-x: auto;
   overflow-y: auto;
   overscroll-behavior: contain;
   scrollbar-width: thin;
   scrollbar-color: var(--border-hover) transparent;
-  border-right: 1px solid var(--border-default);
   padding-left: 8px;
   padding-right: 16px;
   padding-bottom: 16px;
+}
+
+.resource-tree-node.is-filtered-out {
+  display: none;
+}
+
+.resource-pane {
+  position: sticky;
+  top: calc(var(--bar-h) + 12px);
+  max-height: calc(100vh - var(--bar-h) - 28px);
+  max-height: calc(100dvh - var(--bar-h) - 28px);
+  overflow-x: hidden;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-width: thin;
+  scrollbar-color: var(--border-hover) transparent;
+  min-width: 0;
   min-height: 0;
 }
 
@@ -2515,8 +2547,11 @@ textarea.editor-textarea {
   overflow: visible;
 }
 
-button.resource-tree-toggle {
+button.resource-tree-toggle,
+a.resource-tree-toggle {
   cursor: pointer;
+  color: var(--accent);
+  text-decoration: none;
 }
 
 .resource-tree-folder-host {
@@ -2665,6 +2700,10 @@ a.resource-tree-root-label:hover {
   stroke-linecap: round;
 }
 
+.resource-tree-file-arrow {
+  stroke-width: 1.6;
+}
+
 img.resource-tree-file-preview {
   object-fit: cover;
   border-radius: 2px;
@@ -2705,6 +2744,39 @@ img.resource-tree-file-preview {
 
 .resource-tree-file-host.is-page .resource-tree-file-mark {
   color: var(--text-success);
+}
+
+.resource-tree-file-host.is-js .resource-tree-file-mark {
+  color: var(--text-error);
+}
+
+.section-form {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.section-form .form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin: 0;
+}
+
+.section-form .error-message {
+  margin: 4px 0 0;
+  padding: 6px 8px;
+}
+
+.section-multiline {
+  display: block;
+  width: 100%;
+  min-height: 16rem;
+  margin-top: 0;
+  padding: 8px 10px;
+  font-family: "IBM Plex Mono", ui-monospace, monospace;
+  font-size: 12px;
+  line-height: 1.45;
 }
 
 .resource-tree-file > .resource-tree-row .resource-tree-link {
@@ -2833,6 +2905,7 @@ img.resource-tree-file-preview {
   flex-wrap: wrap;
   gap: 16px;
   margin-bottom: 16px;
+  margin-top: 16px;
   padding-bottom: 12px;
   border-bottom: 1px solid var(--border-default);
 }
@@ -3019,6 +3092,88 @@ a.resource-plus-form {
   inset: 12px;
   width: auto;
   height: auto;
+  display: flex;
+  flex-direction: column;
+  padding: 0;
+  background: #0c0e12;
+}
+
+.resource-plus-form .upload-progress[hidden] {
+  display: none;
+}
+
+.resource-plus-form .upload-current {
+  position: relative;
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.resource-plus-form .upload-current .upload-progress-fill {
+  height: 100%;
+}
+
+.resource-plus-form .upload-progress-label {
+  flex-direction: column;
+  gap: 2px;
+  text-transform: none;
+  letter-spacing: 0.04em;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.85);
+}
+
+.resource-plus-form .upload-rates {
+  display: grid;
+  grid-template-columns: 1.6rem auto;
+  column-gap: 6px;
+  row-gap: 1px;
+  justify-content: center;
+  font-size: 10px;
+  font-weight: 500;
+  line-height: 1.25;
+  letter-spacing: 0.02em;
+  font-variant-numeric: tabular-nums;
+}
+
+.resource-plus-form .upload-speed-key {
+  text-align: right;
+  opacity: 0.8;
+}
+
+.resource-plus-form .upload-overall {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 6px;
+  height: 16px;
+  padding: 0 6px;
+  border-top: 1px solid var(--border-default);
+  background: #0c0e12;
+}
+
+.resource-plus-form .upload-overall[hidden] {
+  display: none;
+}
+
+.resource-plus-form .upload-overall-key,
+.resource-plus-form .upload-overall-pct {
+  font-size: 10px;
+  line-height: 1;
+  color: var(--text-white);
+  font-variant-numeric: tabular-nums;
+}
+
+.resource-plus-form .upload-overall-track {
+  display: block;
+  height: 4px;
+  overflow: hidden;
+  background: #23262f;
+}
+
+.resource-plus-form .upload-overall-fill {
+  display: block;
+  height: 100%;
+  width: 0;
+  background: var(--accent);
 }
 
 .resource-plus-form.is-busy .resource-plus-drop {
@@ -3175,6 +3330,10 @@ a.resource-plus-form {
   outline-offset: -2px;
 }
 
+.settings-tabs a[role="tab"] {
+  text-decoration: none;
+}
+
 .settings-tab-panel {
   display: none;
 }
@@ -3248,6 +3407,32 @@ a.resource-plus-form {
 
 .settings-page .editor-actions {
   margin-top: 12px;
+}
+
+.scripting-page .settings-table th,
+.scripting-page .settings-table td {
+  padding: 0;
+  border-bottom: none;
+}
+
+.scripting-page .settings-context-title {
+  margin: 10px 0 0;
+}
+
+.scripting-page textarea {
+  display: block;
+  width: 100%;
+  min-height: 16rem;
+  margin-top: 6px;
+  font-family: "IBM Plex Mono", ui-monospace, monospace;
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+.scripting-page .editor-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 10px;
 }
 
 .instance-page .field-hint {
@@ -3512,6 +3697,14 @@ a.resource-plus-form {
   .resource-browser {
     grid-template-columns: 1fr;
   }
+  .resource-tree-column {
+    position: static;
+    max-height: none;
+    border-right: none;
+  }
+  .resource-tree-search {
+    margin-right: 0;
+  }
   .resource-tree {
     position: static;
     border-right: none;
@@ -3521,6 +3714,11 @@ a.resource-plus-form {
     min-height: 0;
     max-height: min(40vh, 20rem);
     max-height: min(40dvh, 20rem);
+  }
+  .resource-pane {
+    position: static;
+    max-height: none;
+    overflow: visible;
   }
   .page-header { flex-wrap: wrap; align-items: flex-start; }
   .prop-grid { grid-template-columns: 6.5rem minmax(0, 1fr); }

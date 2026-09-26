@@ -13,7 +13,7 @@ buildscript {
     }
 
     dependencies {
-        classpath 'com.bmuschko:gradle-cargo-plugin:2.4'
+        classpath 'com.bmuschko:gradle-cargo-plugin:2.9'
     }
 }
 
@@ -22,9 +22,10 @@ plugins {
     id 'war'
     id 'org.springframework.boot' version '3.5.8'
     id 'io.spring.dependency-management' version '1.1.7'
+    id("com.bmuschko.cargo") version "2.9.0"
 }
 
-apply plugin: 'com.bmuschko.cargo'
+// apply plugin: 'com.bmuschko.cargo'
 
 
 group = 'com.ravenherz'
@@ -64,6 +65,9 @@ dependencies {
     implementation project(':cse-transfer')
     implementation project(':cse-install')
     implementation project(':cse-core')
+    implementation project(':cse-redirect')
+    implementation project(':cse-scripting-js')
+    implementation project(':cse-admin')
     implementation project(':cse-codec-pdf')
     implementation project(':cse-media')
     implementation project(':cse-codec-image')
@@ -162,7 +166,7 @@ tasks.named('processResources', Copy) {
 
 cargo {
     Boolean deployRemote = true
-    String deployOverride = "stage"
+    String deployOverride = "production"
     var cargoParamResolver = new CargoContextResolver(deployRemote, project, deployOverride)
     System.out.println("deploying to '${cargoParamResolver.getWhereToDeploy()}'")
 

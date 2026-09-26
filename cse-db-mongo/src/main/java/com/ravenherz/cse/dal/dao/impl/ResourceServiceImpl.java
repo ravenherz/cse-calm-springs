@@ -217,6 +217,28 @@ public class ResourceServiceImpl extends BasicService implements ResourceService
     }
 
     @Override
+    public List<ObjectId> listDataChunkIds() {
+        Query query = new Query();
+        query.fields().include("_id");
+        List<ObjectId> ids = new ArrayList<>();
+        for (Document doc : mongo().find(query, Document.class, MongoCollections.DATABASE_DATACHUNKS)) {
+            ObjectId id = objectId(doc == null ? null : doc.get("_id"));
+            if (id != null) {
+                ids.add(id);
+            }
+        }
+        return ids;
+    }
+
+    @Override
+    public void deleteDataChunk(ObjectId id) {
+        if (id == null) {
+            return;
+        }
+        mongo().remove(Query.query(Criteria.where("_id").is(id)), DataChunkEntity.class);
+    }
+
+    @Override
     public List<ResourceEntity> getImagesByGroup(ResourceGroupEntity group) {
         if (group == null || group.getId() == null) {
             return new ArrayList<>();

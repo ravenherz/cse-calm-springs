@@ -12,6 +12,9 @@ dependencies {
     api project(':cse-security')
     api project(':cse-themes')
     api project(':cse-apps')
+    api project(':cse-redirect')
+    api project(':cse-scripting-js')
+    api project(':cse-codec-video')
     implementation 'org.springframework.boot:spring-boot-starter-data-mongodb'
     implementation 'org.springframework:spring-web'
     testImplementation 'org.junit.jupiter:junit-jupiter'

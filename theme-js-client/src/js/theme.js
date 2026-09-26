@@ -162,8 +162,8 @@
         if (section.hasMore) {
           more = '<a class="piece-card piece-more" href="./?category='
             + encodeURIComponent(section.itemName || section.slug || '') + '">'
-            + '<div class="piece-media piece-more-media"><span>→</span></div>'
-            + '<h3>Display more</h3><p>All ' + escapeHtml(section.totalCount) + ' items</p></a>';
+            + '<div class="piece-media piece-more-media"><h3>Display more</h3>'
+            + '<p>All ' + escapeHtml(section.totalCount) + ' items</p></div></a>';
         }
         html += pieceGrid(section.pages, site, more);
       }

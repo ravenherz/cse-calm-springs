@@ -11,9 +11,11 @@ import com.ravenherz.cse.dal.dto.basic.AlbumData;
 import com.ravenherz.cse.dal.dto.basic.CategoryData;
 import com.ravenherz.cse.dal.dto.basic.PageData;
 import com.ravenherz.cse.dal.dto.basic.ResourceGroupData;
+import com.ravenherz.cse.redirect.RedirectAdmin;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
+import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -42,7 +44,7 @@ class EditorTreeTest {
         assertTrue(content.isLocked());
         assertFalse(content.canCreateChild());
         assertEquals(EditorTree.CONTENT_HREF, content.getHref());
-        assertEquals(List.of("Apps", "Categories", "Playlists", "Themes", "URL Templates"),
+        assertEquals(List.of("Apps", "Categories", "Playlists", "Themes", "URL Templates", "Redirects", "Scripts"),
                 content.getChildren().stream().map(ResourceGroupDisplayDTO::getHumanReadableId).toList());
         for (ResourceGroupDisplayDTO child : content.getChildren()) {
             assertTrue(child.isVirtual());
@@ -111,9 +113,31 @@ class EditorTreeTest {
         assertEquals("page-draft", EditorTree.pageLeafId(unnamed));
         assertNull(EditorTree.pageLeafId(null));
         assertEquals("/editor/resources?group=content-apps", content.getChildren().get(0).getHref());
-        assertEquals("/editor/resources?group=content-playlists", content.getChildren().get(2).getHref());
+        assertEquals("/editor/sections/playlists", content.getChildren().get(2).getHref());
         assertEquals("/editor/resources?group=content-themes", content.getChildren().get(3).getHref());
-        assertEquals("/editor/resources?group=content-url-templates", content.getChildren().get(4).getHref());
+        assertEquals("/editor/sections/url-templates", content.getChildren().get(4).getHref());
+        assertEquals("/editor/sections/redirects", content.getChildren().get(5).getHref());
+        assertEquals("/editor/sections/scripts", content.getChildren().get(6).getHref());
+    }
+
+    @Test
+    void sectionRowsUseThePresentationAndOpenTheFolder() {
+        ResourceGroupDisplayDTO content = EditorTree.contentBranch(List.of(), List.of());
+        ResourceGroupDisplayDTO redirects = content.getChildren().get(5);
+        assertEquals(EditorTree.REDIRECTS_ID, redirects.getId());
+        assertFalse(redirects.hasExpandableChildren());
+        redirects.setTreeFiles(EditorTree.sectionLeaves(new RedirectAdmin().section(), List.of(Map.of(
+                "id", "abc",
+                "status", "301",
+                "fromPath", "/old",
+                "targetPath", "/new"))));
+        assertTrue(redirects.hasExpandableChildren());
+        assertEquals("301 /old to /new", redirects.getTreeFiles().get(0).name());
+        assertEquals("arrow", redirects.getTreeFiles().get(0).glyph());
+        assertEquals("/editor/sections/redirects/edit/abc", redirects.getTreeFiles().get(0).href());
+        assertEquals("redirects", EditorTree.sectionId("/editor/sections/redirects/edit/abc"));
+        assertEquals(EditorTree.REDIRECTS_ID,
+                EditorTree.selectionId("/editor/sections/redirects", null, null, null, null, null));
     }
 
     @Test
@@ -151,6 +175,14 @@ class EditorTreeTest {
                 EditorTree.selectionId("/editor/url-template/create", null, null, null, null, null));
         assertEquals(EditorTree.URL_TEMPLATES_ID,
                 EditorTree.selectionId("/editor/url-template/edit", null, null, null, null, null));
+        assertEquals(EditorTree.REDIRECTS_ID,
+                EditorTree.selectionId("/editor/sections/redirects", null, null, null, null, null));
+        assertEquals(EditorTree.SCRIPTS_ID,
+                EditorTree.selectionId("/editor/sections/scripts", null, null, null, null, null));
+        assertEquals(EditorTree.SCRIPTS_ID,
+                EditorTree.selectionId("/editor/sections/scripts/create", null, null, null, null, null));
+        assertEquals(EditorTree.SCRIPTS_ID,
+                EditorTree.selectionId("/editor/sections/scripts/edit/abc", null, null, null, null, null));
         assertEquals(EditorTree.CATEGORIES_ID,
                 EditorTree.selectionId("/editor/categories", null, null, null, null, null));
         assertEquals(EditorTree.CATEGORIES_ID,
@@ -193,10 +225,12 @@ class EditorTreeTest {
         assertEquals("/editor/resources?group=content", EditorTree.hrefOf(EditorTree.CONTENT_ID));
         assertEquals("/editor/resources?group=content-categories", EditorTree.hrefOf(EditorTree.CATEGORIES_ID));
         assertEquals("/editor/resources?group=content-apps", EditorTree.hrefOf(EditorTree.APPS_ID));
-        assertEquals("/editor/resources?group=content-playlists", EditorTree.hrefOf(EditorTree.PLAYLISTS_ID));
-        assertEquals("/editor/resources?group=content-url-templates",
+        assertEquals("/editor/sections/playlists", EditorTree.hrefOf(EditorTree.PLAYLISTS_ID));
+        assertEquals("/editor/sections/url-templates",
                 EditorTree.hrefOf(EditorTree.URL_TEMPLATES_ID));
         assertEquals("/editor/resources?group=content-themes", EditorTree.hrefOf(EditorTree.THEMES_ID));
+        assertEquals("/editor/sections/redirects", EditorTree.hrefOf(EditorTree.REDIRECTS_ID));
+        assertEquals("/editor/sections/scripts", EditorTree.hrefOf(EditorTree.SCRIPTS_ID));
         assertEquals("/editor/resources?group=content-apps",
                 EditorTree.packUploadReturnHref(EditorTree.APPS_ID));
         assertEquals("/editor/resources?group=content-themes",

@@ -11,8 +11,8 @@ class EditorResourcesControllerIdsTest {
     @Test
     void uniqueIdsKeepsOrderAndDropsBlanks() {
         assertEquals(List.of("a", "b"),
-                EditorResourcesController.uniqueIds(java.util.Arrays.asList(" a ", "", "a", "b", null)));
-        assertEquals(List.of(), EditorResourcesController.uniqueIds(null));
-        assertEquals(List.of(), EditorResourcesController.uniqueIds(List.of("  ")));
+                ResourceAdapter.uniqueIds(java.util.Arrays.asList(" a ", "", "a", "b", null)));
+        assertEquals(List.of(), ResourceAdapter.uniqueIds(null));
+        assertEquals(List.of(), ResourceAdapter.uniqueIds(List.of("  ")));
     }
 }

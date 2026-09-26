@@ -4,10 +4,12 @@ plugins {
 
 apply from: rootProject.file('gradle/cse-db.gradle')
 
-description = 'Codec for FFmpeg probe and transcode. The upload queue and JPEG posters stay in the WAR. No DAL.'
+description = 'Codec for FFmpeg probe and transcode. Owns the transcode document. Mongo and HTTP stay outside.'
 
 dependencies {
+    api project(':cse-dal-core')
     implementation project(':cse-media')
+    implementation 'org.springframework.data:spring-data-mongodb'
     implementation 'org.slf4j:slf4j-api'
     implementation 'org.springframework:spring-core'
     implementation 'com.fasterxml.jackson.core:jackson-databind'

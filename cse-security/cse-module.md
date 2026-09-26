@@ -5,6 +5,7 @@ Accounts, roles, and the checks that use them.
 ## Does
 
 - Account and role documents and their store interfaces.
+- The role matrix grouped for the editor page.
 - Spring Security entry points, CSRF, capabilities, and the editor surface gate.
 
 ## Does not

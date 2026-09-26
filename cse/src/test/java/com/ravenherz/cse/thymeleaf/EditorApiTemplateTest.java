@@ -1,6 +1,6 @@
 package com.ravenherz.cse.thymeleaf;
 
-import com.ravenherz.cse.controller.PublicApiDocs;
+import com.ravenherz.cse.admin.PublicApiDocs;
 import org.junit.jupiter.api.Test;
 import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.mock.web.MockHttpServletResponse;

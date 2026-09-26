@@ -26,8 +26,8 @@
             th:src="@{/content-public/js/cse-editor.js(v=4)}"
             src="../../../static/content-public/js/cse-editor.js?v=4"></script>
     <script id="script-cse-editor-tree" type="text/javascript"
-            th:src="@{/content-public/js/cse-editor-tree.js(v=17)}"
-            src="../../../static/content-public/js/cse-editor-tree.js?v=17"></script>
+            th:src="@{/content-public/js/cse-editor-tree.js(v=20)}"
+            src="../../../static/content-public/js/cse-editor-tree.js?v=20"></script>
 </head>
 <body>
     <div class="editor-layout">
@@ -93,6 +93,10 @@
             </div>
         </aside>
         <div class="resource-tree-column" th:fragment="shared-editor-tree">
+            <label class="resource-tree-search">
+                <input type="search" id="resource-tree-search" placeholder="Search" autocomplete="off"
+                       aria-label="Search catalog" enterkeyhint="search"/>
+            </label>
             <nav class="resource-tree" aria-label="Resource groups" data-can-create-root="true"
                  th:attr="data-default-group-id=${defaultGroupId}">
                 <div class="resource-tree-node is-open resource-tree-origin">
@@ -472,7 +476,19 @@
                     <th:block th:replace="~{fragments/shared :: resource-asterisk}"></th:block>
                 </span>
             </button>
-            <span class="resource-tree-toggle is-leaf" th:unless="${group.hasExpandableChildren()}"
+            <a th:if="${not group.hasExpandableChildren() and group.href != null}"
+               class="resource-tree-toggle is-leaf"
+               th:href="${(cseContextPath == '/' ? '' : (cseContextPath != null ? cseContextPath : '')) + group.href}"
+               th:attr="aria-label=${group.humanReadableId}">
+                <span class="resource-tree-folder-host"
+                      th:classappend="${group.locked or group.guestDenied} ? 'is-locked'">
+                    <th:block th:replace="~{fragments/shared :: resource-tree-folders}"></th:block>
+                    <th:block th:replace="~{fragments/shared :: folder-access-lock(group=${group})}"></th:block>
+                    <th:block th:replace="~{fragments/shared :: resource-asterisk}"></th:block>
+                </span>
+            </a>
+            <span class="resource-tree-toggle is-leaf"
+                  th:if="${not group.hasExpandableChildren() and group.href == null}"
                   aria-hidden="true">
                 <span class="resource-tree-folder-host"
                       th:classappend="${group.locked or group.guestDenied} ? 'is-locked'">
@@ -523,17 +539,22 @@
              draggable=${file.embeddable}">
             <span class="resource-tree-icon" aria-hidden="true">
                 <span class="resource-tree-file-host"
-                      th:classappend="${file.album} ? 'is-album' : (${file.contentPage} ? 'is-page' : '')">
+                      th:classappend="${file.glyph == 'js'} ? 'is-js' : (${file.album} ? 'is-album' : (${file.contentPage} ? 'is-page' : ''))">
                     <img th:if="${file.preview}"
                          class="resource-tree-file-icon resource-tree-file-preview"
                          th:src="@{/editor/resources/tree-preview/{id}(id=${file.id})}"
                          width="64" height="64" alt=""/>
-                    <svg th:unless="${file.preview}" class="resource-tree-file-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                    <svg th:if="${file.glyph == 'arrow'}" class="resource-tree-file-icon resource-tree-file-arrow" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                        <path d="M4.5 12h15"/>
+                        <path d="M13.5 6.75 19.5 12l-6 5.25"/>
+                    </svg>
+                    <svg th:unless="${file.preview or file.glyph == 'arrow'}" class="resource-tree-file-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
                         <path d="M7 3.75h6.5L19.5 10v10.25H7z"/>
                         <path d="M13.5 3.75V10H19.5"/>
                     </svg>
                     <span class="resource-tree-file-mark" th:if="${file.album}">Album</span>
                     <span class="resource-tree-file-mark" th:if="${file.contentPage}">Page</span>
+                    <span class="resource-tree-file-mark" th:if="${file.glyph == 'js'}">js</span>
                 </span>
             </span>
             <a class="resource-tree-link"
@@ -741,13 +762,13 @@
                 <dt>Created</dt>
                 <dd th:if="${events != null and events.length > 0}">
                     <span th:text="${#temporals.format(events[0].localDateTime, 'yyyy-MM-dd HH:mm')}">2024-01-01 12:00</span>
-                    by <span th:text="${events[0].owner?.accountData?.login} ?: '—'">admin</span>
+                    by <span th:text="${events[0].ownerId} ?: '—'">admin</span>
                 </dd>
                 <dd th:unless="${events != null and events.length > 0}">—</dd>
                 <dt>Updated</dt>
                 <dd th:if="${events != null and events.length > 1}">
                     <span th:text="${#temporals.format(events[events.length - 1].localDateTime, 'yyyy-MM-dd HH:mm')}">2024-01-02 12:00</span>
-                    by <span th:text="${events[events.length - 1].owner?.accountData?.login} ?: '—'">admin</span>
+                    by <span th:text="${events[events.length - 1].ownerId} ?: '—'">admin</span>
                 </dd>
                 <dd th:unless="${events != null and events.length > 1}">—</dd>
                 <dt>ID</dt>

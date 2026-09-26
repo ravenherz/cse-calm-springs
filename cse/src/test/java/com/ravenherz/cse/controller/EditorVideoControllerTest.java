@@ -30,10 +30,10 @@ class EditorVideoControllerTest {
         progress.start(id);
         progress.percent(id, 42);
         ResourceService resources = mock(ResourceService.class);
-        EditorVideoController controller = new EditorVideoController(progress, of(resources));
+        VideoProgressAdapter controller = new VideoProgressAdapter(progress, of(resources));
         MockHttpServletRequest request = new MockHttpServletRequest();
         request.setContextPath("/rhz-we");
-        Map<String, Object> body = controller.progress(id.toHexString(), request).getBody();
+        Map<String, Object> body = controller.progress(id.toHexString(), request);
         @SuppressWarnings("unchecked")
         List<VideoProgress.View> videos = (List<VideoProgress.View>) body.get("videos");
         assertEquals(1, videos.size());
@@ -58,10 +58,10 @@ class EditorVideoControllerTest {
         entity.setPreviewData(preview);
         ResourceService resources = mock(ResourceService.class);
         when(resources.getById(ResourceEntity.class, StoredIds.entityId(id))).thenReturn(entity);
-        EditorVideoController controller = new EditorVideoController(new VideoProgress(), of(resources));
+        VideoProgressAdapter controller = new VideoProgressAdapter(new VideoProgress(), of(resources));
         MockHttpServletRequest request = new MockHttpServletRequest();
         request.setContextPath("/rhz-we");
-        Map<String, Object> body = controller.progress(id.toHexString(), request).getBody();
+        Map<String, Object> body = controller.progress(id.toHexString(), request);
         @SuppressWarnings("unchecked")
         List<VideoProgress.View> videos = (List<VideoProgress.View>) body.get("videos");
         assertEquals(VideoProgress.READY, videos.get(0).status());
@@ -74,8 +74,8 @@ class EditorVideoControllerTest {
         MockHttpServletRequest request = new MockHttpServletRequest();
         request.setContextPath("/rhz-we");
         assertEquals("/rhz-we/content-protected/u/res/video/a.jpg",
-                EditorVideoController.href(request, "/u/res/video/a.jpg"));
-        assertNull(EditorVideoController.href(request, " "));
+                VideoProgressAdapter.href(request, "/u/res/video/a.jpg"));
+        assertNull(VideoProgressAdapter.href(request, " "));
     }
 
     private static ObjectProvider<ResourceService> of(ResourceService value) {

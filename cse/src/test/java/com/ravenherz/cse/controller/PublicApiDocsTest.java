@@ -1,5 +1,6 @@
 package com.ravenherz.cse.controller;
 
+import com.ravenherz.cse.admin.PublicApiDocs;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;

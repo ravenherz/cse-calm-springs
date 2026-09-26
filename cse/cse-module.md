@@ -5,8 +5,11 @@ The Spring Boot WAR. Tomcat deploy, HTTP, and the admin and public screens that 
 ## Does
 
 - Boot entry, MVC config, and Cargo deploy.
-- Controllers for the public site, Catalog, accounts, settings, logs, and JSON auth.
+- Controllers for the public site. Admin page controllers live in `cse-admin`.
+- Public redirect filter: a stored path sends `Location`; `/editor/**` and the code redirects stay on their controllers.
 - Admin catalog tree, access checks on requests, and theme HTML tags.
+- Scripting desk adapter: the editor page in `cse-admin` stores scripts through `cse-scripting-js`.
+- `delete-orphans` removes resources whose group is missing, references that point at a missing resource, and data chunks that no remaining resource, app, or theme lists. A run of that script is stored on the Runs tab.
 - Packs selected front ends into the WAR: `setup.cseapp`, `admin.cseapp`, `login.cseapp`, and `modern.csetheme`.
 
 ## Does not
