@@ -164,8 +164,21 @@
                        multiple required/>
               </div>
               <div class="upload-progress" id="uploadProgress" hidden>
-                <div class="upload-progress-fill" id="uploadProgressFill"></div>
-                <div class="upload-progress-label" id="uploadProgressLabel">0%</div>
+                <div class="upload-current">
+                  <div class="upload-progress-fill" id="uploadCurrentFill"></div>
+                  <div class="upload-progress-label">
+                    <span id="uploadCurrentLabel">0%</span>
+                    <span class="upload-rates">
+                      <span class="upload-speed-key">3s</span><span id="uploadSpeedCurrent">0 B/s</span>
+                      <span class="upload-speed-key">avg</span><span id="uploadSpeedOverall">0 B/s</span>
+                    </span>
+                  </div>
+                </div>
+                <div class="upload-overall" id="uploadOverallMeter" hidden>
+                  <span class="upload-overall-key">all</span>
+                  <span class="upload-overall-track"><span class="upload-overall-fill" id="uploadOverallFill"></span></span>
+                  <span class="upload-overall-pct" id="uploadOverallLabel">0%</span>
+                </div>
               </div>
             </form>
           </li>
@@ -272,9 +285,15 @@
           var fileInput = document.getElementById('file');
           var form = document.getElementById('resourceUploadForm');
           var progress = document.getElementById('uploadProgress');
-          var fill = document.getElementById('uploadProgressFill');
-          var label = document.getElementById('uploadProgressLabel');
-          if (!form || !dropZone || !fileInput || !progress || !fill || !label) {
+          var currentFill = document.getElementById('uploadCurrentFill');
+          var currentLabel = document.getElementById('uploadCurrentLabel');
+          var overallMeter = document.getElementById('uploadOverallMeter');
+          var overallFill = document.getElementById('uploadOverallFill');
+          var overallLabel = document.getElementById('uploadOverallLabel');
+          var speedCurrent = document.getElementById('uploadSpeedCurrent');
+          var speedOverall = document.getElementById('uploadSpeedOverall');
+          if (!form || !dropZone || !fileInput || !progress || !currentFill || !currentLabel
+                  || !overallMeter || !overallFill || !overallLabel || !speedCurrent || !speedOverall) {
               return;
           }
           var pane = form.closest('.resource-pane');
@@ -287,6 +306,17 @@
           var skipped = 0;
           var lastRedirect = null;
           var uploading = false;
+          var queuedBytes = 0;
+          var finishedBytes = 0;
+          var sentBytes = 0;
+          var inflight = 0;
+          var activeFile = null;
+          var activeFraction = 0;
+          var sessionStarted = 0;
+          var samples = [];
+          var speedTimer = null;
+          var shownPercent = 0;
+          var shownProcessing = false;
 
           function fileExtension(name) {
               var lastDot = name.lastIndexOf('.');
@@ -425,6 +455,9 @@
               }
               queue = queue.concat(accepted);
               total += accepted.length;
+              for (var b = 0; b < accepted.length; b++) {
+                  queuedBytes += accepted[b].size || 0;
+              }
               if (!uploading) {
                   startQueue();
               }
@@ -432,8 +465,12 @@
 
           function startQueue() {
               uploading = true;
+              if (!sessionStarted) {
+                  sessionStarted = nowMs();
+              }
               setFormBusy(true);
               showProgress();
+              startSpeedClock();
               uploadNext();
           }
 
@@ -443,6 +480,8 @@
                   return;
               }
               var file = queue.shift();
+              activeFile = file;
+              activeFraction = 0;
               var resourceId = uniqueResourceId(file.name);
               updateProgress(0, false);
               extractMetadata(file, function (metadata) {
@@ -522,23 +561,34 @@
               if (csrfToken) {
                   payload.set('_csrf', csrfToken);
               }
+              var bodySent = false;
               xhr.upload.addEventListener('progress', function (event) {
+                  if (bodySent) {
+                      return;
+                  }
                   if (!event.lengthComputable) {
                       updateProgress(0, true);
                       return;
                   }
-                  var percent = Math.round((event.loaded / event.total) * 100);
+                  inflight = event.loaded;
+                  activeFraction = event.total > 0 ? event.loaded / event.total : 0;
+                  pushSample();
+                  var percent = Math.round(activeFraction * 100);
                   updateProgress(percent, percent >= 100);
               });
               xhr.upload.addEventListener('load', function () {
+                  bodySent = true;
+                  sentBytes += inflight;
+                  inflight = 0;
+                  activeFraction = 1;
+                  pushSample();
                   updateProgress(100, true);
               });
               xhr.addEventListener('load', function () {
                   if (xhr.status >= 200 && xhr.status < 300 && xhr.responseURL
                           && !samePath(xhr.responseURL, form.action)) {
                       lastRedirect = xhr.responseURL;
-                      completed++;
-                      uploadNext();
+                      settleFile(file, true);
                       return;
                   }
                   var message = 'Upload failed';
@@ -551,23 +601,33 @@
                   } catch (err) {
                   }
                   failed.push(file.name + ': ' + message);
-                  completed++;
-                  uploadNext();
+                  settleFile(file, bodySent);
               });
               xhr.addEventListener('error', function () {
                   failed.push(file.name + ': Upload failed');
-                  completed++;
-                  uploadNext();
+                  settleFile(file, bodySent);
               });
               xhr.addEventListener('abort', function () {
                   failed.push(file.name + ': Upload cancelled');
-                  completed++;
-                  uploadNext();
+                  settleFile(file, bodySent);
               });
               xhr.send(payload);
           }
 
+          function settleFile(file, fullySent) {
+              sentBytes += inflight;
+              inflight = 0;
+              var size = file && file.size ? file.size : 0;
+              finishedBytes += fullySent ? size : Math.round(size * activeFraction);
+              activeFile = null;
+              activeFraction = 0;
+              pushSample();
+              completed++;
+              uploadNext();
+          }
+
           function finishQueue() {
+              stopSpeedClock();
               uploading = false;
               fileInput.value = '';
               var notice = failed.slice(0, 8);
@@ -607,26 +667,126 @@
               failed = [];
               skipped = 0;
               lastRedirect = null;
+              queuedBytes = 0;
+              finishedBytes = 0;
+              sentBytes = 0;
+              inflight = 0;
+              activeFile = null;
+              activeFraction = 0;
+              sessionStarted = 0;
+              samples = [];
+              shownPercent = 0;
+              shownProcessing = false;
+          }
+
+          function nowMs() {
+              return window.performance && performance.now ? performance.now() : Date.now();
+          }
+
+          function pushSample() {
+              var now = nowMs();
+              samples.push({ t: now, bytes: sentBytes + inflight });
+              var cutoff = now - 3000;
+              while (samples.length > 1 && samples[0].t < cutoff) {
+                  samples.shift();
+              }
+          }
+
+          function windowSpeed() {
+              var now = nowMs();
+              var bytes = sentBytes + inflight;
+              var cutoff = now - 3000;
+              while (samples.length > 1 && samples[0].t < cutoff) {
+                  samples.shift();
+              }
+              if (!samples.length) {
+                  return 0;
+              }
+              var dt = (now - samples[0].t) / 1000;
+              if (dt < 0.25) {
+                  return 0;
+              }
+              return Math.max(0, (bytes - samples[0].bytes) / dt);
+          }
+
+          function overallSpeed() {
+              if (!sessionStarted) {
+                  return 0;
+              }
+              var dt = (nowMs() - sessionStarted) / 1000;
+              if (dt < 0.25) {
+                  return 0;
+              }
+              return Math.max(0, (sentBytes + inflight) / dt);
+          }
+
+          function formatRate(bytesPerSec) {
+              var rate = bytesPerSec > 0 ? bytesPerSec : 0;
+              var units = ['B/s', 'KB/s', 'MB/s', 'GB/s'];
+              var unit = 0;
+              while (rate >= 1024 && unit < units.length - 1) {
+                  rate /= 1024;
+                  unit++;
+              }
+              var text = unit === 0 || rate >= 10 ? String(Math.round(rate)) : rate.toFixed(1);
+              return text + ' ' + units[unit];
+          }
+
+          function overallPercent(fraction) {
+              var clamped = Math.max(0, Math.min(1, fraction));
+              if (queuedBytes > 0) {
+                  var size = activeFile && activeFile.size ? activeFile.size : 0;
+                  var sent = finishedBytes + size * clamped;
+                  return Math.max(0, Math.min(100, Math.round((sent / queuedBytes) * 100)));
+              }
+              if (!total) {
+                  return 0;
+              }
+              return Math.max(0, Math.min(100, Math.round(((completed + clamped) / total) * 100)));
+          }
+
+          function paintSpeed() {
+              speedCurrent.textContent = formatRate(windowSpeed());
+              speedOverall.textContent = formatRate(overallSpeed());
+          }
+
+          function startSpeedClock() {
+              if (speedTimer) {
+                  return;
+              }
+              speedTimer = setInterval(function () {
+                  updateProgress(shownPercent, shownProcessing);
+              }, 250);
+          }
+
+          function stopSpeedClock() {
+              if (!speedTimer) {
+                  return;
+              }
+              clearInterval(speedTimer);
+              speedTimer = null;
           }
 
           function updateProgress(filePercent, processing) {
-              var overall = total === 0 ? 0
-                      : Math.round(((completed + Math.max(0, Math.min(100, filePercent)) / 100) / total) * 100);
+              shownPercent = filePercent;
+              shownProcessing = !!processing;
+              var fraction = Math.max(0, Math.min(100, filePercent)) / 100;
+              var overall = overallPercent(fraction);
               if (processing) {
                   progress.classList.add('is-processing');
-                  fill.style.width = '';
+                  currentFill.style.width = '';
               } else {
                   progress.classList.remove('is-processing');
-                  fill.style.width = Math.max(0, Math.min(100, overall)) + '%';
+                  currentFill.style.width = Math.round(fraction * 100) + '%';
               }
-              if (total > 1) {
-                  var current = Math.min(total, completed + 1);
-                  label.textContent = current + ' / ' + total;
-              } else if (processing || filePercent >= 100) {
-                  label.textContent = 'Processing';
-              } else {
-                  label.textContent = filePercent + '%';
+              currentLabel.textContent = Math.round(fraction * 100) + '%';
+              var multi = total > 1;
+              overallMeter.hidden = !multi;
+              if (multi) {
+                  overallFill.style.width = overall + '%';
+                  overallLabel.textContent = overall + '%';
               }
+              paintSpeed();
           }
 
           function setFormBusy(busy) {
@@ -646,10 +806,16 @@
           }
 
           function hideProgress() {
+              stopSpeedClock();
               progress.hidden = true;
               progress.classList.remove('is-processing');
-              fill.style.width = '';
-              label.textContent = '';
+              currentFill.style.width = '';
+              currentLabel.textContent = '0%';
+              overallMeter.hidden = true;
+              overallFill.style.width = '';
+              overallLabel.textContent = '0%';
+              speedCurrent.textContent = '0 B/s';
+              speedOverall.textContent = '0 B/s';
               setFormBusy(false);
           }
 

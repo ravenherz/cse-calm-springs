@@ -7,5 +7,6 @@ public enum CardPlace {
     NONE,
     SOURCE,
     CODE,
-    TARGET
+    TARGET,
+    IMAGE
 }

@@ -1,6 +1,7 @@
 package com.ravenherz.cse.core.admin;
 
 import java.util.List;
+import java.util.Map;
 
 /**
  * One generic editor screen. The handler reads this value and does not see the feature entity.
@@ -49,8 +50,24 @@ public final class AdminSection {
         return presentation;
     }
 
-    public String treeLabel(java.util.Map<String, String> row) {
+    public String treeLabel(Map<String, String> row) {
         String label = presentation.treeLabel(fields, row);
         return label.isBlank() ? title : label;
+    }
+
+    public String cardImage(Map<String, String> row) {
+        if (row == null) {
+            return null;
+        }
+        for (AdminField field : fields) {
+            if (field.cardPlace() != CardPlace.IMAGE) {
+                continue;
+            }
+            String value = row.get(field.name());
+            if (value != null && !value.isBlank()) {
+                return value.trim();
+            }
+        }
+        return null;
     }
 }

@@ -34,7 +34,7 @@ final class UrlTemplateAdmin implements AdminSectionSource {
                 new AdminField("urlTemplateId", "Id", FieldType.TEXT, true, List.of(), CardPlace.SOURCE),
                 new AdminField("urlPattern", "Pattern", FieldType.TEXT, true, List.of(), CardPlace.TARGET),
                 new AdminField("urlDefaultText", "Default text", FieldType.TEXT, false, List.of()),
-                new AdminField("urlImage", "Image", FieldType.TEXT, false, List.of())),
+                new AdminField("urlImage", "Image", FieldType.TEXT, false, List.of(), CardPlace.IMAGE)),
                 new AdminPresentation("{urlTemplateId}", TreeGlyph.FILE));
     }
 }

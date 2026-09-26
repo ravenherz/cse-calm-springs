@@ -95,6 +95,57 @@
     restoreOpen();
     saveOpen();
     tree.addEventListener('cse-tree-persist', saveOpen);
+    var searchInput = document.getElementById('resource-tree-search');
+    if (searchInput) {
+        searchInput.addEventListener('input', function () {
+            filterTree(searchInput.value);
+        });
+    }
+
+    function filterTree(raw) {
+        clearSearchOpen();
+        var query = (raw || '').trim().toLowerCase();
+        if (!query) {
+            saveOpen();
+            return;
+        }
+        var origin = tree.querySelector('.resource-tree-origin');
+        if (origin) {
+            filterNode(origin, query);
+        }
+    }
+
+    function clearSearchOpen() {
+        var opened = tree.querySelectorAll('[data-search-opened]');
+        for (var i = 0; i < opened.length; i++) {
+            opened[i].classList.remove('is-open');
+            opened[i].removeAttribute('data-search-opened');
+        }
+        var hidden = tree.querySelectorAll('.is-filtered-out');
+        for (var j = 0; j < hidden.length; j++) {
+            hidden[j].classList.remove('is-filtered-out');
+        }
+    }
+
+    function filterNode(node, query) {
+        var children = node.querySelectorAll(':scope > .resource-tree-children > .resource-tree-node');
+        var childHit = false;
+        for (var i = 0; i < children.length; i++) {
+            if (filterNode(children[i], query)) {
+                childHit = true;
+            }
+        }
+        var label = node.querySelector(':scope > .resource-tree-row .resource-tree-link, :scope > .resource-tree-row .resource-tree-root-label');
+        var text = label ? label.textContent.toLowerCase() : '';
+        var show = text.indexOf(query) !== -1 || childHit;
+        node.classList.toggle('is-filtered-out', !show);
+        if (show && childHit && !node.classList.contains('is-open')) {
+            node.classList.add('is-open');
+            node.setAttribute('data-search-opened', 'true');
+        }
+        return show;
+    }
+
     tree.addEventListener('click', function (e) {
         var toggle = e.target.closest('.resource-tree-toggle');
         if (!toggle || toggle.classList.contains('is-leaf')) {

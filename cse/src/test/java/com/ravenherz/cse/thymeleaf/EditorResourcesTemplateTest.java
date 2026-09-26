@@ -130,7 +130,7 @@ class EditorResourcesTemplateTest {
         assertTrue(html.contains("resource-browser"), html);
         assertTrue(html.contains("cse-editor.js"), html);
         assertTrue(html.contains("cse-editor-tree.js"), html);
-        assertTrue(html.contains("resource-tree-origin"), html);
+        assertTrue(html.contains("id=\"resource-tree-search\""), html);
         assertTrue(html.contains("resource-tree-root-label"), html);
         assertTrue(html.contains("id=\"group-default-id\""), html);
         assertTrue(html.contains("resource-lock-overlay"), html);
@@ -162,6 +162,10 @@ class EditorResourcesTemplateTest {
         assertTrue(html.contains("resource-plus-tile"), html);
         assertTrue(html.contains("placeResourceTip"), html);
         assertTrue(html.contains("id=\"file\""), html);
+        assertTrue(html.contains("id=\"uploadCurrentFill\""), html);
+        assertTrue(html.contains("id=\"uploadOverallMeter\""), html);
+        assertTrue(html.contains("id=\"uploadSpeedCurrent\""), html);
+        assertTrue(html.contains("id=\"uploadSpeedOverall\""), html);
         assertTrue(html.contains("multiple"), html);
         assertTrue(html.contains(".mp4"), html);
         assertTrue(html.contains(".pdf"), html);

@@ -41,7 +41,11 @@
                   </div>
                   <a class="item-thumb-link"
                      th:href="@{/editor/sections/{section}/edit/{id}(section=${adminSection.section().id()},id=${row.get('id')})}">
+                    <img class="item-thumb" draggable="false" alt=""
+                         th:if="${adminSection.section().cardImage(row) != null}"
+                         th:src="${adminSection.section().cardImage(row)}"/>
                     <div class="app-logo-fallback"
+                         th:if="${adminSection.section().cardImage(row) == null}"
                          th:text="${adminSection.section().treeLabel(row)}">301 /rhz-we/* to /*</div>
                   </a>
                   <div class="thumb-tags">

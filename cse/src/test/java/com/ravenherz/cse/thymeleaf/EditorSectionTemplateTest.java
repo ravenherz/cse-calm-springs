@@ -1,7 +1,13 @@
 package com.ravenherz.cse.thymeleaf;
 
 import com.ravenherz.cse.admin.AdminSectionPage;
+import com.ravenherz.cse.core.admin.AdminField;
 import com.ravenherz.cse.core.admin.AdminFieldError;
+import com.ravenherz.cse.core.admin.AdminPresentation;
+import com.ravenherz.cse.core.admin.AdminSection;
+import com.ravenherz.cse.core.admin.CardPlace;
+import com.ravenherz.cse.core.admin.FieldType;
+import com.ravenherz.cse.core.admin.TreeGlyph;
 import com.ravenherz.cse.redirect.RedirectAdmin;
 import org.junit.jupiter.api.Test;
 import org.springframework.mock.web.MockHttpServletRequest;
@@ -59,6 +65,23 @@ class EditorSectionTemplateTest {
         assertTrue(cards.contains(">/rhz-we/*<"), cards);
         assertTrue(cards.contains(">/*<"), cards);
         assertTrue(cards.contains(">301<"), cards);
+    }
+
+    @Test
+    void sectionCardShowsAnImageField() {
+        AdminSection section = new AdminSection("url-templates", "URL Templates", List.of(
+                new AdminField("urlTemplateId", "Id", FieldType.TEXT, true, List.of(), CardPlace.SOURCE),
+                new AdminField("urlImage", "Image", FieldType.TEXT, false, List.of(), CardPlace.IMAGE)),
+                new AdminPresentation("{urlTemplateId}", TreeGlyph.FILE));
+        AdminSectionPage list = AdminSectionPage.list(section, List.of(Map.of(
+                "id", "abc",
+                "urlTemplateId", "youtube",
+                "urlImage", "data:image/png;base64,abc+def/ghi=")));
+        String cards = engine().process("admin/editor-section", context(list));
+        assertTrue(cards.contains("class=\"item-thumb\""), cards);
+        assertTrue(cards.contains("src=\"data:image/png;base64,abc+def/ghi=\""), cards);
+        assertFalse(cards.contains("/rhz-we/data:"), cards);
+        assertFalse(cards.contains("app-logo-fallback"), cards);
     }
 
     private static WebContext context(AdminSectionPage page) {

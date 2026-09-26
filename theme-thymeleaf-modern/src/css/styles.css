@@ -264,13 +264,29 @@ img {
 
 .piece-more-media {
     display: flex;
+    flex-direction: column;
     align-items: center;
     justify-content: center;
+    gap: 6px;
+    padding: 16px;
+    text-align: center;
     background: var(--surface-2);
     border-radius: calc(14px * var(--main-sp));
-    color: var(--accent);
-    font-size: calc(2rem * var(--main-fs));
-    font-weight: 500;
+    color: var(--ink);
+}
+
+.piece-more-media h3,
+.piece-more-media p {
+    margin: 0;
+}
+
+.piece-more-media h3 {
+    font-size: calc(1.05rem * var(--main-fs));
+}
+
+.piece-more-media p {
+    color: var(--muted);
+    font-size: calc(0.95rem * var(--main-fs));
 }
 
 .piece-more:hover .piece-more-media {

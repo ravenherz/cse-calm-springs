@@ -26,8 +26,8 @@
             th:src="@{/content-public/js/cse-editor.js(v=4)}"
             src="../../../static/content-public/js/cse-editor.js?v=4"></script>
     <script id="script-cse-editor-tree" type="text/javascript"
-            th:src="@{/content-public/js/cse-editor-tree.js(v=17)}"
-            src="../../../static/content-public/js/cse-editor-tree.js?v=17"></script>
+            th:src="@{/content-public/js/cse-editor-tree.js(v=18)}"
+            src="../../../static/content-public/js/cse-editor-tree.js?v=18"></script>
 </head>
 <body>
     <div class="editor-layout">
@@ -93,6 +93,10 @@
             </div>
         </aside>
         <div class="resource-tree-column" th:fragment="shared-editor-tree">
+            <label class="resource-tree-search">
+                <input type="search" id="resource-tree-search" placeholder="Search" autocomplete="off"
+                       aria-label="Search catalog" enterkeyhint="search"/>
+            </label>
             <nav class="resource-tree" aria-label="Resource groups" data-can-create-root="true"
                  th:attr="data-default-group-id=${defaultGroupId}">
                 <div class="resource-tree-node is-open resource-tree-origin">
