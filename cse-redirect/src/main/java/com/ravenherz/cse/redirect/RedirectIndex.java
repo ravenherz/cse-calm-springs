@@ -35,9 +35,10 @@ public final class RedirectIndex implements PathResolver {
                 }
                 PathTarget pathTarget = new PathTarget(target.get(), redirect.getStatus(),
                         redirect.isPreserveQuery());
-                if (from.get().endsWith("/*") && from.get().length() > 2) {
+                if (RedirectPaths.prefixWildcard(from.get())
+                        && !RedirectPaths.prefixBase(from.get()).isEmpty()) {
                     prefixRules.add(PrefixRule.of(from.get(), pathTarget));
-                } else if (!from.get().endsWith("/*")) {
+                } else if (!RedirectPaths.prefixWildcard(from.get())) {
                     next.put(from.get(), pathTarget);
                 }
             }
@@ -73,10 +74,10 @@ public final class RedirectIndex implements PathResolver {
     private record PrefixRule(String base, String targetBase, boolean splice, int status, boolean preserveQuery) {
 
         static PrefixRule of(String from, PathTarget target) {
-            String base = from.substring(0, from.length() - 2);
-            boolean splice = target.targetPath().endsWith("/*");
+            String base = RedirectPaths.prefixBase(from);
+            boolean splice = RedirectPaths.prefixWildcard(target.targetPath());
             String targetBase = splice
-                    ? target.targetPath().substring(0, target.targetPath().length() - 2)
+                    ? RedirectPaths.prefixBase(target.targetPath())
                     : target.targetPath();
             return new PrefixRule(base, targetBase, splice, target.status(), target.preserveQuery());
         }

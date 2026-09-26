@@ -35,6 +35,9 @@ class RedirectIndexTest {
         assertEquals("/editor/resources", legacy.targetPath());
         assertEquals("/", index.resolve("/rhz-we").orElseThrow().targetPath());
         assertEquals("/apps/login", index.resolve("/static-pages/login").orElseThrow().targetPath());
+        store.insert(new ResourceRedirectEntity("/legacy/*/", "/apps/*/", null, true, 301, false, null));
+        index.load(store);
+        assertEquals("/apps/login", index.resolve("/legacy/login/").orElseThrow().targetPath());
         assertEquals("redirects", new RedirectAdmin().section().id());
         assertEquals(FieldType.ENUM, new RedirectAdmin().section().fields().get(4).type());
     }

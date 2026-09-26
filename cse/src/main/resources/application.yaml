@@ -15,6 +15,7 @@ logging:
     org.springframework: INFO
     org.springframework.data.mongodb.core.convert.QueryMapper: WARN
     com.ravenherz.cse.controller: INFO
+    org.thymeleaf: WARN
   file:
     name: "./logs/cse.log"
 

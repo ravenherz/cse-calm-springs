@@ -71,6 +71,22 @@ class RedirectFilterTest {
     }
 
     @Test
+    void pageQueryRedirectsBeforeTheIndex() throws Exception {
+        when(store.getAll()).thenReturn(List.of(
+                new ResourceRedirectEntity("/?page=rhz-we", "/?page=cse", null, true, 301, false, null)));
+        MockHttpServletRequest request = request("", "/");
+        request.setQueryString("page=rhz-we");
+        MockHttpServletResponse response = new MockHttpServletResponse();
+        FilterChain chain = mock(FilterChain.class);
+
+        filter.doFilter(request, response, chain);
+
+        assertEquals(301, response.getStatus());
+        assertEquals("/?page=cse", response.getHeader("Location"));
+        verify(chain, org.mockito.Mockito.never()).doFilter(request, response);
+    }
+
+    @Test
     void missFallsThrough() throws Exception {
         when(store.getAll()).thenReturn(List.of());
         MockHttpServletRequest request = request("", "/unknown");

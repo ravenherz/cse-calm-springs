@@ -23,7 +23,7 @@ public final class RedirectRules {
         Optional<String> target = RedirectPaths.normalize(row.getTargetPath());
         if (from.isEmpty()) {
             errors.add(new RedirectFieldError("fromPath", "Use a path that starts with /"));
-        } else if ("/*".equals(from.get())) {
+        } else if ("/*".equals(from.get()) || "/*/".equals(from.get())) {
             errors.add(new RedirectFieldError("fromPath", "Name the prefix before /*"));
         } else if (ReservedPaths.isReserved(from.get())) {
             errors.add(new RedirectFieldError("fromPath", "That path is reserved"));
@@ -90,11 +90,12 @@ public final class RedirectRules {
     }
 
     private static boolean prefixLoops(String from, String target) {
-        if (from == null || target == null || !from.endsWith("/*")) {
+        if (from == null || target == null || !RedirectPaths.prefixWildcard(from)) {
             return false;
         }
-        String base = from.substring(0, from.length() - 2);
-        String targetBase = target.endsWith("/*") ? target.substring(0, target.length() - 2) : target;
+        String base = RedirectPaths.prefixBase(from);
+        String targetBase = RedirectPaths.prefixWildcard(target)
+                ? RedirectPaths.prefixBase(target) : target;
         return targetBase.equals(base) || targetBase.startsWith(base + "/");
     }
 

@@ -15,6 +15,11 @@
             <option value="5000">5s</option>
             <option value="10000">10s</option>
           </select>
+          <select id="transcode-size" class="log-interval" aria-label="Rows per page">
+            <option value="20" selected>20</option>
+            <option value="50">50</option>
+            <option value="100">100</option>
+          </select>
           <button type="button" class="btn btn-secondary" id="transcode-refresh">Refresh</button>
         </div>
       </header>
@@ -44,16 +49,16 @@
           <tr th:each="video : ${queue.videos}" th:attr="data-id=${video.id}">
             <th scope="row" th:text="${video.fileName != null ? video.fileName : video.id}">clip.mp4</th>
             <td th:text="${video.author != null ? video.author : '—'}">—</td>
-            <td th:text="${video.status}">processing</td>
+            <td th:text="${video.statusLabel}">In progress</td>
             <td>
-              <div class="transcode-progress" th:if="${video.status == 'processing'}">
+              <div class="transcode-progress" th:if="${video.status == 'in-progress' or video.status == 'processing'}">
                 <div class="transcode-meter">
                   <div class="transcode-meter-fill" th:style="|width: ${video.percent}%|"></div>
                 </div>
                 <span th:text="|${video.percent}%|">0%</span>
               </div>
               <span th:if="${video.status == 'queued'}">—</span>
-              <span th:if="${video.status == 'ready'}">done</span>
+              <span th:if="${video.status == 'done' or video.status == 'ready'}">done</span>
               <span th:if="${video.status == 'failed'}" th:text="${video.error != null ? video.error : 'failed'}">failed</span>
             </td>
             <td class="transcode-num" th:text="${video.sizeIn != null ? video.sizeIn : '—'}">—</td>
@@ -74,6 +79,10 @@
       var intervalSel = document.getElementById('transcode-interval');
       var AUTO_KEY = 'cse-transcode-auto';
       var INTERVAL_KEY = 'cse-transcode-interval';
+      var sizeSel = document.getElementById('transcode-size');
+      var SIZES = [20, 50, 100];
+      var SIZE_KEY = 'cse-transcode-size';
+      var page = 1;
       var INTERVALS = [1000, 2000, 5000, 10000];
       var DEFAULT_INTERVAL = 1000;
       if (!table || !table.dataset.queueUrl || !body) {
@@ -126,13 +135,13 @@
       }
       function progressCell(video) {
         var status = video.status || '';
-        if (status === 'processing') {
+        if (status === 'in-progress' || status === 'processing') {
           var percent = typeof video.percent === 'number' ? video.percent : 0;
           return '<div class="transcode-progress"><div class="transcode-meter">'
               + '<div class="transcode-meter-fill" style="width:' + percent + '%"></div></div>'
               + '<span>' + percent + '%</span></div>';
         }
-        if (status === 'ready') {
+        if (status === 'done' || status === 'ready') {
           return 'done';
         }
         if (status === 'failed') {
@@ -164,14 +173,19 @@
           return '<tr data-id="' + escapeHtml(video.id) + '">'
               + '<th scope="row">' + escapeHtml(video.fileName || video.id) + '</th>'
               + '<td>' + escapeHtml(video.author || '—') + '</td>'
-              + '<td>' + escapeHtml(video.status || '') + '</td>'
+              + '<td>' + escapeHtml(video.statusLabel || video.status || '') + '</td>'
               + '<td>' + progressCell(video) + '</td>'
               + '<td class="transcode-num">' + escapeHtml(video.sizeIn || '—') + '</td>'
               + '<td class="transcode-num">' + escapeHtml(video.sizeOut || '—') + '</td></tr>';
         }).join('');
       }
+      function queueUrl() {
+        var size = sizeSel ? sizeSel.value : '20';
+        var joiner = table.dataset.queueUrl.indexOf('?') === -1 ? '?' : '&';
+        return table.dataset.queueUrl + joiner + 'page=' + page + '&size=' + size;
+      }
       function load() {
-        fetch(table.dataset.queueUrl, {
+        fetch(queueUrl(), {
           credentials: 'same-origin',
           headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' }
         }).then(function (res) {
@@ -194,6 +208,26 @@
             load();
           }
         }, ms);
+      }
+      if (sizeSel) {
+        try {
+          var storedSize = parseInt(localStorage.getItem(SIZE_KEY), 10);
+          if (SIZES.indexOf(storedSize) !== -1) {
+            sizeSel.value = String(storedSize);
+          }
+        } catch (e) {}
+        sizeSel.addEventListener('change', function () {
+          var n = parseInt(sizeSel.value, 10);
+          if (SIZES.indexOf(n) === -1) {
+            n = 20;
+            sizeSel.value = '20';
+          }
+          page = 1;
+          try {
+            localStorage.setItem(SIZE_KEY, String(n));
+          } catch (e) {}
+          load();
+        });
       }
       if (intervalSel) {
         intervalSel.value = String(storedInterval());

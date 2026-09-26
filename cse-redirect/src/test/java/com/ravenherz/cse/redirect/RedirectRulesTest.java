@@ -23,6 +23,17 @@ class RedirectRulesTest {
     }
 
     @Test
+    void trailingSlashAfterAStarIsTheSamePrefix() {
+        ResourceRedirectEntity row = row("/static-pages/*/", "/apps/*/", 301, true);
+
+        List<RedirectFieldError> errors = RedirectRules.check(row, List.of());
+
+        assertTrue(errors.isEmpty());
+        assertEquals("/static-pages/*/", row.getFromPath());
+        assertEquals("/apps/*/", row.getTargetPath());
+    }
+
+    @Test
     void rejectsReservedSourceAndOpenRedirect() {
         ResourceRedirectEntity reserved = row("/editor/roles", "/?page=home", 301, true);
         ResourceRedirectEntity open = row("/old", "//evil.example", 301, true);

@@ -1,6 +1,11 @@
 package com.ravenherz.cse.engine.video;
 
+import com.ravenherz.cse.dal.StoredIds;
+import com.ravenherz.cse.util.video.VideoTranscodeService;
+import com.ravenherz.cse.util.video.VideoTranscodeStatus;
 import org.bson.types.ObjectId;
+import org.springframework.beans.factory.ObjectProvider;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import java.util.ArrayList;
@@ -26,6 +31,16 @@ public class VideoProgress {
     }
 
     private final ConcurrentHashMap<String, Entry> byId = new ConcurrentHashMap<>();
+    private final VideoTranscodeService transcodes;
+
+    public VideoProgress() {
+        this.transcodes = null;
+    }
+
+    @Autowired
+    public VideoProgress(ObjectProvider<VideoTranscodeService> transcodes) {
+        this.transcodes = transcodes == null ? null : transcodes.getIfAvailable();
+    }
 
     public void queued(ObjectId id) {
         if (id == null) {
@@ -38,6 +53,7 @@ public class VideoProgress {
             }
             return Entry.queued(key);
         });
+        record(byId.get(id.toHexString()));
     }
 
     public void start(ObjectId id) {
@@ -55,6 +71,7 @@ public class VideoProgress {
             entry.touch();
             return entry;
         });
+        record(byId.get(id.toHexString()));
     }
 
     public void percent(ObjectId id, int percent) {
@@ -68,6 +85,7 @@ public class VideoProgress {
         entry.status = PROCESSING;
         entry.percent = Math.max(entry.percent, Math.max(0, Math.min(99, percent)));
         entry.touch();
+        record(entry);
     }
 
     public void ready(ObjectId id, String previewPath, String sizeLabel) {
@@ -81,6 +99,7 @@ public class VideoProgress {
         entry.preview = blankToNull(previewPath);
         entry.sizeLabel = blankToNull(sizeLabel);
         entry.touch();
+        record(entry);
     }
 
     public void failed(ObjectId id, String error) {
@@ -91,6 +110,7 @@ public class VideoProgress {
         entry.status = FAILED;
         entry.error = blankToNull(error);
         entry.touch();
+        record(entry);
     }
 
     public View view(ObjectId id) {
@@ -112,6 +132,19 @@ public class VideoProgress {
                 .thenComparingInt((View view) -> PROCESSING.equals(view.status()) ? -view.percent() : 0)
                 .thenComparing(View::id));
         return out;
+    }
+
+    private void record(Entry entry) {
+        if (transcodes == null || entry == null) {
+            return;
+        }
+        try {
+            ObjectId id = new ObjectId(entry.id);
+            VideoTranscodeStatus status = VideoTranscodeStatus.fromToken(entry.status);
+            transcodes.upsert(StoredIds.entityId(id), status, entry.percent, entry.error);
+        } catch (RuntimeException ex) {
+            // The live meter still updates when the document write fails.
+        }
     }
 
     private static int rank(String status) {

@@ -78,7 +78,7 @@ class EditorTranscodeControllerTest {
         assertEquals("ada", item.author());
         assertEquals("2048 bytes", item.sizeIn());
         assertEquals("1024 bytes", item.sizeOut());
-        assertEquals("ready", item.status());
+        assertEquals("done", item.status());
     }
 
     private static ServiceProvider accounts() {

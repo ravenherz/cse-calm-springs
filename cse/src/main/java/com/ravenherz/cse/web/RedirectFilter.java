@@ -52,7 +52,12 @@ public class RedirectFilter extends OncePerRequestFilter implements RedirectRelo
             return;
         }
         ensureLoaded();
-        Optional<PathTarget> target = index.resolve(path);
+        String query = request.getQueryString();
+        String lookup = query == null || query.isBlank() ? path : path + "?" + query;
+        Optional<PathTarget> target = index.resolve(lookup);
+        if (target.isEmpty() && !lookup.equals(path)) {
+            target = index.resolve(path);
+        }
         if (target.isEmpty()) {
             filterChain.doFilter(request, response);
             return;

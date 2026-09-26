@@ -745,13 +745,13 @@
                 <dt>Created</dt>
                 <dd th:if="${events != null and events.length > 0}">
                     <span th:text="${#temporals.format(events[0].localDateTime, 'yyyy-MM-dd HH:mm')}">2024-01-01 12:00</span>
-                    by <span th:text="${events[0].owner?.accountData?.login} ?: '—'">admin</span>
+                    by <span th:text="${events[0].ownerId} ?: '—'">admin</span>
                 </dd>
                 <dd th:unless="${events != null and events.length > 0}">—</dd>
                 <dt>Updated</dt>
                 <dd th:if="${events != null and events.length > 1}">
                     <span th:text="${#temporals.format(events[events.length - 1].localDateTime, 'yyyy-MM-dd HH:mm')}">2024-01-02 12:00</span>
-                    by <span th:text="${events[events.length - 1].owner?.accountData?.login} ?: '—'">admin</span>
+                    by <span th:text="${events[events.length - 1].ownerId} ?: '—'">admin</span>
                 </dd>
                 <dd th:unless="${events != null and events.length > 1}">—</dd>
                 <dt>ID</dt>

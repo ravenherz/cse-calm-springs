@@ -13,6 +13,7 @@ import com.ravenherz.cse.dal.dao.RoleService;
 import com.ravenherz.cse.dal.dao.ThemeService;
 import com.ravenherz.cse.dal.dao.UrlTemplateService;
 import com.ravenherz.cse.redirect.ResourceRedirectService;
+import com.ravenherz.cse.util.video.VideoTranscodeService;
 import org.springframework.stereotype.Service;
 
 @Service(value = "serviceProvider")
@@ -30,13 +31,15 @@ public class ServiceProviderImpl implements ServiceProvider {
     private final RoleService roleService;
     private final RoleMatrixService roleMatrixService;
     private final ResourceRedirectService resourceRedirectService;
+    private final VideoTranscodeService videoTranscodeService;
 
     public ServiceProviderImpl(AccountService accountService, CategoryService categoryService,
             ItemService itemService, ResourceService resourceService,
             ResourceGroupService resourceGroupService, AppService appService,
             ThemeService themeService, PlaylistService playlistService,
             UrlTemplateService urlTemplateService, RoleService roleService,
-            RoleMatrixService roleMatrixService, ResourceRedirectService resourceRedirectService) {
+            RoleMatrixService roleMatrixService, ResourceRedirectService resourceRedirectService,
+            VideoTranscodeService videoTranscodeService) {
         this.accountService = accountService;
         this.categoryService = categoryService;
         this.itemService = itemService;
@@ -49,11 +52,17 @@ public class ServiceProviderImpl implements ServiceProvider {
         this.roleService = roleService;
         this.roleMatrixService = roleMatrixService;
         this.resourceRedirectService = resourceRedirectService;
+        this.videoTranscodeService = videoTranscodeService;
     }
 
     @Override
     public ResourceRedirectService getResourceRedirectService() {
         return resourceRedirectService;
+    }
+
+    @Override
+    public VideoTranscodeService getVideoTranscodeService() {
+        return videoTranscodeService;
     }
 
     @Override

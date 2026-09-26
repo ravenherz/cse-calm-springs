@@ -15,6 +15,11 @@ import com.ravenherz.cse.dal.dto.basic.enums.ResourceType;
 import com.ravenherz.cse.engine.video.VideoProgress;
 import com.ravenherz.cse.engine.video.VideoStatus;
 import com.ravenherz.cse.engine.video.VideoTranscodeQueue;
+import com.ravenherz.cse.util.video.VideoTranscodeEntity;
+import com.ravenherz.cse.util.video.VideoTranscodePage;
+import com.ravenherz.cse.util.video.VideoTranscodePageSize;
+import com.ravenherz.cse.util.video.VideoTranscodeService;
+import com.ravenherz.cse.util.video.VideoTranscodeStatus;
 import jakarta.servlet.http.HttpServletRequest;
 import org.bson.types.ObjectId;
 import org.springframework.beans.factory.ObjectProvider;
@@ -43,26 +48,16 @@ public class TranscodeQueueAdapter implements TranscodeQueue {
 
     @Override
     public QueueSnapshot snapshot(HttpServletRequest request) {
-        Map<String, VideoProgress.View> byId = new LinkedHashMap<>();
-        if (progress != null) {
-            for (VideoProgress.View view : progress.views()) {
-                byId.put(view.id(), view);
+        int page = VideoTranscodePageSize.page(request == null ? null : request.getParameter("page"));
+        int size = VideoTranscodePageSize.normalize(request == null ? null : request.getParameter("size"));
+        VideoTranscodeService store = serviceProvider == null ? null : serviceProvider.getVideoTranscodeService();
+        if (store != null) {
+            VideoTranscodePage stored = store.page(page, size);
+            if (stored.total() > 0) {
+                return fromStore(stored, request);
             }
         }
-        if (resources != null) {
-            List<ObjectId> processing = resources.listProcessingVideoIds();
-            if (processing != null) {
-                for (ObjectId id : processing) {
-                    if (id == null || byId.containsKey(id.toHexString())) {
-                        continue;
-                    }
-                    VideoProgress.View stored = fromStore(id);
-                    if (stored != null) {
-                        byId.put(stored.id(), stored);
-                    }
-                }
-            }
-        }
+        Map<String, VideoProgress.View> byId = liveViews();
         List<Item> videos = new ArrayList<>();
         int running = 0;
         int queued = 0;
@@ -85,15 +80,69 @@ public class TranscodeQueueAdapter implements TranscodeQueue {
             if (rank != 0) {
                 return rank;
             }
-            if (VideoProgress.PROCESSING.equals(a.status())) {
+            if ("in-progress".equals(a.status())) {
                 return Integer.compare(b.percent(), a.percent());
             }
             return a.id().compareTo(b.id());
         });
+        int from = (page - 1) * size;
+        List<Item> window = from >= videos.size()
+                ? List.of()
+                : List.copyOf(videos.subList(from, Math.min(videos.size(), from + size)));
         return new QueueSnapshot(running, queued, failed, ready,
                 queue == null ? 0 : queue.workerRunning(),
                 queue == null ? 0 : queue.workerWaiting(),
-                videos);
+                window, page, size, videos.size());
+    }
+
+    private QueueSnapshot fromStore(VideoTranscodePage stored, HttpServletRequest request) {
+        List<Item> videos = new ArrayList<>();
+        for (VideoTranscodeEntity row : stored.items()) {
+            videos.add(item(viewOf(row), request));
+        }
+        return new QueueSnapshot((int) stored.inProgress(), (int) stored.queued(), (int) stored.failed(),
+                (int) stored.done(),
+                queue == null ? 0 : queue.workerRunning(),
+                queue == null ? 0 : queue.workerWaiting(),
+                videos, stored.page(), stored.size(), stored.total());
+    }
+
+    private Map<String, VideoProgress.View> liveViews() {
+        Map<String, VideoProgress.View> byId = new LinkedHashMap<>();
+        if (progress != null) {
+            for (VideoProgress.View view : progress.views()) {
+                byId.put(view.id(), view);
+            }
+        }
+        if (resources != null) {
+            List<ObjectId> processing = resources.listProcessingVideoIds();
+            if (processing != null) {
+                for (ObjectId id : processing) {
+                    if (id == null || byId.containsKey(id.toHexString())) {
+                        continue;
+                    }
+                    VideoProgress.View stored = fromResource(id);
+                    if (stored != null) {
+                        byId.put(stored.id(), stored);
+                    }
+                }
+            }
+        }
+        return byId;
+    }
+
+    private VideoProgress.View viewOf(VideoTranscodeEntity row) {
+        String id = row.getResourceId() == null ? "" : row.getResourceId().toHexString();
+        VideoProgress.View live = progress == null || id.isEmpty() ? null : progress.view(new ObjectId(id));
+        if (live != null) {
+            return live;
+        }
+        VideoTranscodeStatus status = row.getStatus();
+        String token = status == VideoTranscodeStatus.IN_PROGRESS ? VideoProgress.PROCESSING
+                : status == VideoTranscodeStatus.DONE ? VideoProgress.READY
+                : status == VideoTranscodeStatus.FAILED ? VideoProgress.FAILED
+                : VideoProgress.QUEUED;
+        return new VideoProgress.View(id, token, row.getPercent(), row.getError(), null, null);
     }
 
     private Item item(VideoProgress.View view, HttpServletRequest request) {
@@ -101,8 +150,8 @@ public class TranscodeQueueAdapter implements TranscodeQueue {
         ResourceEntity resource = loadResource(id);
         ResourceData data = resource == null ? null : resource.getResourceData();
         String fileName = data == null ? null : blankToNull(data.getFileName());
-        return new Item(view.id(), view.status(), view.percent(), view.error(),
-                VideoProgressAdapter.href(request, view.preview()),
+        return new Item(view.id(), VideoTranscodeStatus.fromToken(view.status()).token(), view.percent(),
+                view.error(), VideoProgressAdapter.href(request, view.preview()),
                 author(resource, data), sizeIn(view.status(), data), sizeOut(view.status(), data),
                 fileName);
     }
@@ -170,7 +219,7 @@ public class TranscodeQueueAdapter implements TranscodeQueue {
         return slash > 0 ? blankToNull(path.substring(0, slash)) : null;
     }
 
-    private VideoProgress.View fromStore(ObjectId id) {
+    private VideoProgress.View fromResource(ObjectId id) {
         if (resources == null) {
             return null;
         }
@@ -196,13 +245,13 @@ public class TranscodeQueueAdapter implements TranscodeQueue {
     }
 
     private static int rank(String status) {
-        if (VideoProgress.PROCESSING.equals(status)) {
+        if ("in-progress".equals(status)) {
             return 0;
         }
-        if (VideoProgress.QUEUED.equals(status)) {
+        if ("queued".equals(status)) {
             return 1;
         }
-        if (VideoProgress.FAILED.equals(status)) {
+        if ("failed".equals(status)) {
             return 2;
         }
         return 3;
