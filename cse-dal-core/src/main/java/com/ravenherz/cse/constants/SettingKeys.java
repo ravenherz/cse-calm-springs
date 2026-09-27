@@ -51,6 +51,7 @@ public final class SettingKeys {
     public static final String KEY_VIDEO_UPLOAD_MAX_MB = "video-upload-max-mb";
     public static final String KEY_AUDIO_UPLOAD_MAX_MB = "audio-upload-max-mb";
     public static final String KEY_BINARY_UPLOAD_MAX_MB = "binary-upload-max-mb";
+    public static final String KEY_UPLOAD_PARALLELISM = "upload-parallelism";
 
     /**
      * Public {@code config-personal} keys the greenfield installer may set.

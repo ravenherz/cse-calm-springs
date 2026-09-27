@@ -47,6 +47,19 @@ public class EditorResourcesController {
         return desk.upload(resourceId, file, metadataJson, imageDescription, groupId, model, request, response);
     }
 
+    @PostMapping("/resources/upload-part")
+    public String uploadResourcePart(@RequestParam("resourceId") String resourceId,
+            @RequestParam("partIndex") Integer partIndex, @RequestParam("partCount") Integer partCount,
+            @RequestParam("totalSize") Long totalSize, @RequestParam("fileName") String fileName,
+            @RequestParam(value = "file", required = false) MultipartFile file,
+            @RequestParam(value = "metadata", required = false) String metadataJson,
+            @RequestParam(value = "groupId", required = false) String groupId,
+            @RequestParam(value = "cancel", required = false) String cancel, Model model, HttpServletRequest request,
+            HttpServletResponse response) throws IOException {
+        return desk.uploadPart(resourceId, partIndex, partCount, totalSize, fileName, file, metadataJson, groupId,
+                "true".equalsIgnoreCase(cancel), model, request, response);
+    }
+
     @GetMapping("/resources/download")
     public void downloadResource(@RequestParam("pathPublic") String pathPublic, HttpServletRequest request,
             HttpServletResponse response) throws IOException {

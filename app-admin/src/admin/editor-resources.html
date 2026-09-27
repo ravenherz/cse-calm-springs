@@ -150,7 +150,8 @@
         <ul class="item-list" th:if="${paneApps == null and paneThemes == null and panePlaylists == null and paneUrlTemplates == null and paneCategories == null and panePages == null}">
           <li class="resource-plus-tile" th:if="${selectedGroup.canAcceptFiles()}">
             <form th:action="@{/editor/resources/upload}" method="post" enctype="multipart/form-data"
-                  class="resource-plus-form" id="resourceUploadForm">
+                  class="resource-plus-form" id="resourceUploadForm"
+                  th:attr="data-upload-parallelism=${#ctx.containsVariable('uploadParallelism') ? uploadParallelism : 1}">
               <th:block th:replace="~{fragments/csrf :: field}"></th:block>
               <input type="hidden" id="resourceId" name="resourceId"/>
               <input type="hidden" id="metadata" name="metadata"/>
@@ -318,6 +319,10 @@
           var speedTimer = null;
           var shownPercent = 0;
           var shownProcessing = false;
+          var parallelism = parseInt(form.getAttribute('data-upload-parallelism'), 10);
+          if (!parallelism || parallelism < 1) {
+              parallelism = 1;
+          }
 
           function fileExtension(name) {
               var lastDot = name.lastIndexOf('.');
@@ -548,7 +553,164 @@
               doneMeta();
           }
 
+          function partCountFor(file) {
+              if (parallelism <= 1 || !file || !file.size) {
+                  return 1;
+              }
+              var minPart = 256 * 1024;
+              var count = parallelism;
+              if (file.size / count < minPart) {
+                  count = Math.max(1, Math.floor(file.size / minPart));
+              }
+              return count;
+          }
+
+          function partAction() {
+              return String(form.action || '').replace(/\/upload\/?$/, '/upload-part');
+          }
+
           function sendFile(file, resourceId, metadata) {
+              var parts = partCountFor(file);
+              if (parts > 1) {
+                  sendFileParts(file, resourceId, metadata, parts);
+                  return;
+              }
+              sendFileWhole(file, resourceId, metadata);
+          }
+
+          function sendFileParts(file, resourceId, metadata, parts) {
+              var partLoaded = [];
+              var xhrs = [];
+              var settled = false;
+              var bodies = 0;
+
+              function sync() {
+                  var sum = 0;
+                  for (var i = 0; i < parts; i++) {
+                      sum += partLoaded[i] || 0;
+                  }
+                  inflight = sum;
+                  activeFraction = file.size > 0 ? sum / file.size : 0;
+                  pushSample();
+                  updateProgress(Math.round(activeFraction * 100), bodies >= parts);
+              }
+
+              function cancelParts() {
+                  var payload = new FormData(form);
+                  payload.delete('file');
+                  payload.set('resourceId', resourceId);
+                  payload.set('cancel', 'true');
+                  payload.set('partIndex', '0');
+                  payload.set('partCount', '2');
+                  payload.set('totalSize', '1');
+                  payload.set('fileName', file.name);
+                  var xhr = new XMLHttpRequest();
+                  xhr.open(form.method || 'POST', partAction());
+                  var csrfToken = typeof window.csePrepareCsrf === 'function'
+                          ? window.csePrepareCsrf(xhr, form) : '';
+                  if (csrfToken) {
+                      payload.set('_csrf', csrfToken);
+                  }
+                  xhr.send(payload);
+              }
+
+              function finish(fullySent, message) {
+                  if (settled) {
+                      return;
+                  }
+                  settled = true;
+                  for (var i = 0; i < xhrs.length; i++) {
+                      if (xhrs[i] && xhrs[i].readyState !== 4) {
+                          xhrs[i].abort();
+                      }
+                  }
+                  if (!fullySent) {
+                      failed.push(file.name + ': ' + (message || 'Upload failed'));
+                      cancelParts();
+                  }
+                  settleFile(file, fullySent);
+              }
+
+              function errorText(xhr) {
+                  var message = 'Upload failed';
+                  try {
+                      var doc = new DOMParser().parseFromString(xhr.responseText, 'text/html');
+                      var serverError = doc.querySelector('.error-message');
+                      if (serverError && serverError.textContent.trim()) {
+                          message = serverError.textContent.trim();
+                      }
+                  } catch (err) {
+                  }
+                  return message;
+              }
+
+              function sendPart(index) {
+                  var start = Math.floor(file.size * index / parts);
+                  var end = index === parts - 1 ? file.size : Math.floor(file.size * (index + 1) / parts);
+                  var payload = new FormData(form);
+                  payload.delete('file');
+                  payload.set('file', file.slice(start, end), file.name);
+                  payload.set('resourceId', resourceId);
+                  payload.set('metadata', JSON.stringify(metadata || {}));
+                  payload.set('partIndex', String(index));
+                  payload.set('partCount', String(parts));
+                  payload.set('totalSize', String(file.size));
+                  payload.set('fileName', file.name);
+                  var xhr = new XMLHttpRequest();
+                  xhrs[index] = xhr;
+                  xhr.open(form.method || 'POST', partAction());
+                  var csrfToken = typeof window.csePrepareCsrf === 'function'
+                          ? window.csePrepareCsrf(xhr, form) : '';
+                  if (csrfToken) {
+                      payload.set('_csrf', csrfToken);
+                  }
+                  xhr.upload.addEventListener('progress', function (event) {
+                      if (settled) {
+                          return;
+                      }
+                      partLoaded[index] = event.lengthComputable ? event.loaded : 0;
+                      sync();
+                  });
+                  xhr.upload.addEventListener('load', function () {
+                      if (settled) {
+                          return;
+                      }
+                      partLoaded[index] = end - start;
+                      bodies++;
+                      sync();
+                  });
+                  xhr.addEventListener('load', function () {
+                      if (settled) {
+                          return;
+                      }
+                      if (xhr.status === 204) {
+                          return;
+                      }
+                      if (xhr.status >= 200 && xhr.status < 400 && xhr.responseURL
+                              && !samePath(xhr.responseURL, partAction())) {
+                          lastRedirect = xhr.responseURL;
+                          finish(true);
+                          return;
+                      }
+                      finish(false, errorText(xhr));
+                  });
+                  xhr.addEventListener('error', function () {
+                      finish(false, 'Upload failed');
+                  });
+                  xhr.addEventListener('abort', function () {
+                      if (!settled) {
+                          finish(false, 'Upload cancelled');
+                      }
+                  });
+                  xhr.send(payload);
+              }
+
+              for (var p = 0; p < parts; p++) {
+                  sendPart(p);
+              }
+          }
+
+          function sendFileWhole(file, resourceId, metadata) {
               var payload = new FormData(form);
               payload.delete('file');
               payload.set('file', file);

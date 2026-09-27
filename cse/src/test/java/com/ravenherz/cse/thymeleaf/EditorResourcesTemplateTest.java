@@ -170,6 +170,7 @@ class EditorResourcesTemplateTest {
         assertTrue(html.contains("id=\"uploadOverallMeter\""), html);
         assertTrue(html.contains("id=\"uploadSpeedCurrent\""), html);
         assertTrue(html.contains("id=\"uploadSpeedOverall\""), html);
+        assertTrue(html.contains("data-upload-parallelism=\"1\""), html);
         assertTrue(html.contains("multiple"), html);
         assertTrue(html.contains(".mp4"), html);
         assertTrue(html.contains(".pdf"), html);

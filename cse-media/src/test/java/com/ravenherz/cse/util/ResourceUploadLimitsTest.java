@@ -52,7 +52,17 @@ class ResourceUploadLimitsTest {
         assertEquals(1, limits.imageMb());
         assertEquals(99999, limits.videoMb());
         assertEquals(50, limits.audioMb());
-        assertEquals(50, ResourceUploadLimits.from(null).imageMb());
+        assertEquals(1, limits.parallelism());
+        assertEquals(1, ResourceUploadLimits.defaults().parallelism());
+        assertEquals(1, ResourceUploadLimits.from(null).parallelism());
+    }
+
+    @Test
+    void parallelismDefaultsToOneAndClamps() {
+        assertEquals(4, ResourceUploadLimits.from(settings(SettingKeys.KEY_UPLOAD_PARALLELISM, "4")).parallelism());
+        assertEquals(1, ResourceUploadLimits.from(settings(SettingKeys.KEY_UPLOAD_PARALLELISM, "0")).parallelism());
+        assertEquals(6, ResourceUploadLimits.from(settings(SettingKeys.KEY_UPLOAD_PARALLELISM, "12")).parallelism());
+        assertEquals(1, ResourceUploadLimits.from(settings(SettingKeys.KEY_UPLOAD_PARALLELISM, "nope")).parallelism());
     }
 
     private static ConfigSource settings(String... pairs) {

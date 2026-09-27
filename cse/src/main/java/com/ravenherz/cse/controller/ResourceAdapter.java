@@ -60,6 +60,7 @@ public class ResourceAdapter implements ResourceDesk {
     private final ResourceGroupIndex resourceGroupIndex;
     private final CatalogBatchDelete catalogBatchDelete;
     private final VideoTranscodeQueue videoTranscodeQueue;
+    private final ParallelUpload parallelUploads;
 
     public ResourceAdapter(AuthSupport authSupport, ServiceProvider serviceProvider, Settings settings,
             ContentProtectedAndCacheController contentCacheController, ResourceGroupIndex resourceGroupIndex,
@@ -71,6 +72,11 @@ public class ResourceAdapter implements ResourceDesk {
         this.resourceGroupIndex = resourceGroupIndex;
         this.catalogBatchDelete = catalogBatchDelete;
         this.videoTranscodeQueue = videoTranscodeQueue == null ? null : videoTranscodeQueue.getIfAvailable();
+        try {
+            this.parallelUploads = new ParallelUpload();
+        } catch (IOException e) {
+            throw new IllegalStateException("Could not prepare upload storage", e);
+        }
     }
 
     @Override
@@ -248,6 +254,66 @@ public class ResourceAdapter implements ResourceDesk {
 
         redirectResources(request, response, null);
         return null;
+    }
+
+    @Override
+    public String uploadPart(String resourceId, Integer partIndex, Integer partCount, Long totalSize, String fileName,
+            MultipartFile file, String metadataJson, String groupId, boolean cancel, Model model,
+            HttpServletRequest request, HttpServletResponse response) throws IOException {
+        AccountEntity accessor = authSupport.getAccessor(request, response);
+        if (accessor == null) {
+            return null;
+        }
+        if (cancel) {
+            if (resourceId != null && !resourceId.isBlank()) {
+                parallelUploads.cancel(resourceId.trim());
+            }
+            response.setStatus(HttpServletResponse.SC_NO_CONTENT);
+            return null;
+        }
+        if (resourceId == null || !resourceId.trim().matches("[a-z0-9_-]{1,120}")) {
+            model.addAttribute("error", "Resource ID is required");
+            return loadResourcesWithError(model, accessor, request);
+        }
+        int parallelism = ResourceUploadLimits.from(settings).parallelism();
+        int count = partCount == null ? 0 : partCount;
+        int index = partIndex == null ? -1 : partIndex;
+        long declared = totalSize == null ? 0 : totalSize;
+        if (count < 2 || count > parallelism || index < 0 || index >= count) {
+            model.addAttribute("error", "Upload parallelism is " + parallelism);
+            return loadResourcesWithError(model, accessor, request);
+        }
+        if (fileName == null || !fileName.contains(".") || file == null || file.isEmpty()) {
+            model.addAttribute("error", "File is required");
+            return loadResourcesWithError(model, accessor, request);
+        }
+        ResourceType resourceType = ResourceType.getByFileName(fileName);
+        ResourceUploadLimits limits = ResourceUploadLimits.from(settings);
+        if (resourceType == ResourceType.INVALID || declared < 1 || declared > limits.maxBytes(resourceType)) {
+            model.addAttribute("error", resourceType == ResourceType.INVALID
+                    ? "Invalid file type. Supported: jpg, png, heic, mp3, mp4, mov, webm, mkv, pdf"
+                    : limits.tooLargeMessage(resourceType));
+            return loadResourcesWithError(model, accessor, request);
+        }
+        String id = resourceId.trim();
+        try {
+            Path assembled = parallelUploads.accept(id, index, count, declared, file);
+            if (assembled == null) {
+                response.setStatus(HttpServletResponse.SC_NO_CONTENT);
+                return null;
+            }
+            try {
+                return upload(id, new FileMultipart(assembled, fileName), metadataJson, null, groupId, model, request,
+                        response);
+            } finally {
+                parallelUploads.cancel(id);
+            }
+        } catch (IOException e) {
+            parallelUploads.cancel(id);
+            LOGGER.warn("Parallel upload failed: {}", e.getMessage());
+            model.addAttribute("error", "Could not store the upload");
+            return loadResourcesWithError(model, accessor, request);
+        }
     }
 
     private String uploadVideo(String resourceId, MultipartFile file, String originalFilename,
@@ -865,6 +931,7 @@ public class ResourceAdapter implements ResourceDesk {
     }
 
     private void fillResourcesPage(Model model, AccountEntity accessor, String errorCode, String groupId) {
+        model.addAttribute("uploadParallelism", ResourceUploadLimits.from(settings).parallelism());
         ResourceGroupDisplayDTO emptyHome = new ResourceGroupDisplayDTO();
         emptyHome.setHumanReadableId(ResourceGroupTree.DEFAULT_NAME);
         emptyHome.setPathLabel(ResourceGroupTree.DEFAULT_NAME);
