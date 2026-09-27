@@ -36,10 +36,25 @@ public final class PlaylistTracks {
 
     public static String trackNumber(PlaylistTrack track, ResourceEntity resource, int index) {
         String fromMeta = metadata(resource, "trackNumber");
-        if (fromMeta != null) {
-            return fromMeta;
+        String raw = fromMeta != null ? fromMeta : String.valueOf(index + 1);
+        return twoDigits(raw);
+    }
+
+    private static String twoDigits(String raw) {
+        String value = raw == null ? "" : raw.trim();
+        int slash = value.indexOf('/');
+        if (slash > 0) {
+            value = value.substring(0, slash).trim();
         }
-        return String.valueOf(index + 1);
+        try {
+            int number = Integer.parseInt(value);
+            if (number < 0) {
+                return raw.trim();
+            }
+            return String.format("%02d", number);
+        } catch (NumberFormatException e) {
+            return raw == null ? "" : raw.trim();
+        }
     }
 
     public static String durationLabel(PlaylistTrack track, ResourceEntity resource) {

@@ -113,9 +113,13 @@
 }
 
 .cse-track-number {
-  min-width: 1.5rem;
-  color: var(--muted, #6a6560);
-  font-size: 0.85rem;
+  min-width: 2.4rem;
+  opacity: 10%;
+  color: var(--accent);
+  font-family: var(--font);
+  font-size: calc(1.8rem * var(--main-fs, 1));
+  font-weight: 600;
+  letter-spacing: 0.08em;
 }
 
 .cse-track-title {
