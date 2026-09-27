@@ -1,6 +1,5 @@
 package com.ravenherz.build.utils
 
-import groovy.json.JsonSlurper
 import org.gradle.api.Project
 
 class CargoContextResolver {
@@ -9,30 +8,35 @@ class CargoContextResolver {
         def orDefault(Object defaultValue)
     }
 
-    private Boolean isRemoteDeploy
-    private String whereToDeploy
-    private Object cargoDataContainer
-
+    private final boolean remote
+    private final String whereToDeploy
+    private final Map resolved
 
     CargoContextResolver(Boolean isRemoteDeploy = true, Project projectLocal, String deployOverride) {
-        this.isRemoteDeploy = isRemoteDeploy
-        this.whereToDeploy = {
+        this(isRemoteDeploy, projectLocal, deployOverride, 'cse-optideployer')
+    }
 
-        }
-
+    CargoContextResolver(Boolean isRemoteDeploy, Project projectLocal, String deployOverride, String application) {
+        this.remote = isRemoteDeploy
         if (deployOverride != null && !deployOverride.trim().isEmpty()) {
-            this.whereToDeploy = deployOverride
+            this.whereToDeploy = deployOverride.trim()
+        } else if (GitHelper.gitBranch == 'main') {
+            this.whereToDeploy = 'production'
+        } else if (GitHelper.gitBranch == 'stage') {
+            this.whereToDeploy = 'stage'
         } else {
-            if (GitHelper.gitBranch == 'main') this.whereToDeploy = "production"
-            else if (GitHelper.gitBranch == 'stage') this.whereToDeploy = "staging"
-            else this.whereToDeploy = "dev"
+            this.whereToDeploy = 'dev'
         }
-
-        this.cargoDataContainer = new JsonSlurper().parseText(projectLocal.file('./build-info/cargo-remote.json').text)
+        if (remote) {
+            def file = projectLocal.rootProject.file('.cse-deployment.json')
+            this.resolved = new DeploymentLayout(file).resolve(whereToDeploy, application)
+        } else {
+            this.resolved = null
+        }
     }
 
     private static class ResolveNullToDefault implements Resolver {
-        private Object value;
+        private Object value
 
         ResolveNullToDefault(Object value) {
             this.value = value
@@ -51,11 +55,11 @@ class CargoContextResolver {
         }
     }
 
-    public def Resolver getByKey(String key) {
-        return isRemoteDeploy ? new ResolveNullToDefault(cargoDataContainer[whereToDeploy][key]) : new FakeResolver()
+    Resolver getByKey(String key) {
+        return remote ? new ResolveNullToDefault(resolved[key]) : new FakeResolver()
     }
 
-    public def String getWhereToDeploy() {
+    String getWhereToDeploy() {
         return whereToDeploy
     }
 }

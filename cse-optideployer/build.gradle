@@ -1,0 +1,65 @@
+import com.ravenherz.build.utils.DeploymentLayout
+
+plugins {
+    id 'java'
+    id 'war'
+    id 'org.springframework.boot' version '3.5.8'
+    id 'io.spring.dependency-management' version '1.1.7'
+}
+
+description = 'cse-optideployer'
+
+java {
+    sourceCompatibility = JavaVersion.VERSION_17
+    targetCompatibility = JavaVersion.VERSION_17
+}
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    implementation 'org.springframework.boot:spring-boot-starter-web'
+    providedRuntime 'org.springframework.boot:spring-boot-starter-tomcat'
+    testImplementation 'org.springframework.boot:spring-boot-starter-test'
+    testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+}
+
+tasks.named('test') {
+    useJUnitPlatform()
+}
+
+def deploymentFile = rootProject.file('.cse-deployment.json')
+def cseInstance = rootProject.cseInstance.toString()
+
+tasks.named('bootWar') {
+    archiveFileName.set('cse-optideployer.war')
+    doFirst {
+        if (deploymentFile.isFile()) {
+            new DeploymentLayout(deploymentFile).serverJson(cseInstance)
+        }
+        def packed = layout.buildDirectory.file('resources/main/optideploy.json').get().asFile
+        if (!packed.exists()) {
+            throw new GradleException('optideploy.json was not generated. .cse-deployment.json needs secret for cse-optideployer and warPath for cse.')
+        }
+    }
+}
+
+tasks.named('processResources', Copy) {
+    inputs.file(deploymentFile).optional()
+    inputs.property('cseInstance', cseInstance)
+    doLast {
+        if (!deploymentFile.isFile()) {
+            return
+        }
+        def layoutFile = new DeploymentLayout(deploymentFile)
+        def opti = layoutFile.resolve(cseInstance, 'cse-optideployer')
+        def cse = layoutFile.resolve(cseInstance, 'cse')
+        if (!opti.secret || !cse.warPath) {
+            return
+        }
+        def out = layout.buildDirectory.file('resources/main/optideploy.json').get().asFile
+        out.parentFile.mkdirs()
+        out.text = layoutFile.serverJson(cseInstance)
+    }
+}

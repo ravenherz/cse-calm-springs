@@ -1,0 +1,9 @@
+{
+  "secret": "00000000-0000-0000-0000-000000000000",
+  "uploadUrl": "http://127.0.0.1:8080/optideployer/upload-and-deploy/",
+  "warPath": "D:/var/cse/staging/cse.war",
+  "context": "/rhz-we",
+  "managerUrl": "http://127.0.0.1:8080/manager/text",
+  "username": "admin",
+  "password": "change-me"
+}
