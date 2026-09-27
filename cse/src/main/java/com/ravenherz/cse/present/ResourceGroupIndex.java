@@ -639,7 +639,7 @@ public class ResourceGroupIndex implements ResourceGroupRebuild {
         return out;
     }
 
-    private static List<ResourceTreeFile> playlistLeaves(List<PlaylistEntity> playlists) {
+    private List<ResourceTreeFile> playlistLeaves(List<PlaylistEntity> playlists) {
         List<ResourceTreeFile> out = new ArrayList<>();
         if (playlists == null) {
             return out;
@@ -653,12 +653,33 @@ public class ResourceGroupIndex implements ResourceGroupRebuild {
                     ? data.getTitle().trim()
                     : (playlist.getPlaylistId() == null ? playlist.getId().toString()
                             : playlist.getPlaylistId());
-            out.add(new ResourceTreeFile(EditorTree.playlistLeafId(playlist), name,
+            ResourceTreeFile file = new ResourceTreeFile(EditorTree.playlistLeafId(playlist), name,
                     "/editor/playlist/edit?id=" + playlist.getId(), ResourceTreeFile.Mark.PLAYLIST)
                     .withKey(playlist.getId().toString())
-                    .withEmbedId(playlist.getPlaylistId()));
+                    .withEmbedId(playlist.getPlaylistId());
+            String cover = coverPublicPath(data);
+            if (cover != null) {
+                file = file.withPreviewPath(cover);
+            }
+            out.add(file);
         }
         return out;
+    }
+
+    private String coverPublicPath(PlaylistData data) {
+        if (data == null || data.getRefImageId() == null) {
+            return null;
+        }
+        ResourceGroupTreeView.Assembled tree = snapshot.get();
+        if (tree == null) {
+            return null;
+        }
+        String id = data.getRefImageId().toString();
+        String path = pathInGroups(tree.roots(), id);
+        if (path != null) {
+            return path;
+        }
+        return tree.ungrouped() == null ? null : pathInFiles(tree.ungrouped().getTreeFiles(), id);
     }
 
     private static List<ResourceTreeFile> urlTemplateLeaves(List<UrlTemplateEntity> templates) {

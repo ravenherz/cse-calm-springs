@@ -14,6 +14,8 @@ public final class AdminSection {
     private final AdminPresentation presentation;
     private final String runsHref;
     private final String runHref;
+    private final String createHref;
+    private final String editHref;
 
     public AdminSection(String id, String title, List<AdminField> fields) {
         this(id, title, fields, null, null, null);
@@ -25,6 +27,11 @@ public final class AdminSection {
 
     public AdminSection(String id, String title, List<AdminField> fields, AdminPresentation presentation,
             String runsHref, String runHref) {
+        this(id, title, fields, presentation, runsHref, runHref, null, null);
+    }
+
+    public AdminSection(String id, String title, List<AdminField> fields, AdminPresentation presentation,
+            String runsHref, String runHref, String createHref, String editHref) {
         if (id == null || id.isBlank()) {
             throw new IllegalArgumentException("section id is required");
         }
@@ -41,6 +48,8 @@ public final class AdminSection {
                 ? new AdminPresentation("", TreeGlyph.FILE) : presentation;
         this.runsHref = blank(runsHref);
         this.runHref = blank(runHref);
+        this.createHref = blank(createHref);
+        this.editHref = blank(editHref);
     }
 
     public String id() {
@@ -65,6 +74,17 @@ public final class AdminSection {
 
     public String runHref() {
         return runHref;
+    }
+
+    public String createHref() {
+        return createHref;
+    }
+
+    public String editHref(String id) {
+        if (editHref == null || id == null || id.isBlank()) {
+            return null;
+        }
+        return editHref.replace("{id}", id.trim());
     }
 
     private static String blank(String value) {

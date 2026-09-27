@@ -35,15 +35,25 @@ public class AdminSectionController {
     }
 
     @GetMapping("/{sectionId}/create")
-    public String createForm(@PathVariable("sectionId") String sectionId, HttpServletResponse response, Model model)
-            throws IOException {
-        return show(catalog.createForm(sectionId), response, model);
+    public String createForm(@PathVariable("sectionId") String sectionId, HttpServletRequest request,
+            HttpServletResponse response, Model model) throws IOException {
+        AdminSectionPage page = catalog.createForm(sectionId);
+        if (!page.notFound() && page.section().createHref() != null) {
+            response.sendRedirect(context(request) + page.section().createHref());
+            return null;
+        }
+        return show(page, response, model);
     }
 
     @GetMapping("/{sectionId}/edit/{id}")
     public String editForm(@PathVariable("sectionId") String sectionId, @PathVariable("id") String id,
-            HttpServletResponse response, Model model) throws IOException {
-        return show(catalog.editForm(sectionId, id), response, model);
+            HttpServletRequest request, HttpServletResponse response, Model model) throws IOException {
+        AdminSectionPage page = catalog.editForm(sectionId, id);
+        if (!page.notFound() && page.section().editHref(id) != null) {
+            response.sendRedirect(context(request) + page.section().editHref(id));
+            return null;
+        }
+        return show(page, response, model);
     }
 
     @PostMapping("/{sectionId}/create")
