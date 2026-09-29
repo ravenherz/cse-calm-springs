@@ -10,6 +10,8 @@ public final class ResourceUploadLimits {
     public static final int DEFAULT_VIDEO_MB = 200;
     public static final int DEFAULT_AUDIO_MB = 50;
     public static final int DEFAULT_BINARY_MB = 50;
+    public static final int DEFAULT_PARALLELISM = 1;
+    public static final int MAX_PARALLELISM = 6;
     public static final int MAX_MB = -1;
     private static final int MIN_MB = 1;
 
@@ -28,16 +30,19 @@ public final class ResourceUploadLimits {
     private final int videoMb;
     private final int audioMb;
     private final int binaryMb;
+    private final int parallelism;
 
-    private ResourceUploadLimits(int imageMb, int videoMb, int audioMb, int binaryMb) {
+    private ResourceUploadLimits(int imageMb, int videoMb, int audioMb, int binaryMb, int parallelism) {
         this.imageMb = imageMb;
         this.videoMb = videoMb;
         this.audioMb = audioMb;
         this.binaryMb = binaryMb;
+        this.parallelism = parallelism;
     }
 
     public static ResourceUploadLimits defaults() {
-        return new ResourceUploadLimits(DEFAULT_IMAGE_MB, DEFAULT_VIDEO_MB, DEFAULT_AUDIO_MB, DEFAULT_BINARY_MB);
+        return new ResourceUploadLimits(DEFAULT_IMAGE_MB, DEFAULT_VIDEO_MB, DEFAULT_AUDIO_MB, DEFAULT_BINARY_MB,
+                DEFAULT_PARALLELISM);
     }
 
     public static ResourceUploadLimits from(ConfigSource settings) {
@@ -52,7 +57,9 @@ public final class ResourceUploadLimits {
                 parseMb(settings.getValue(SettingKeys.CONTEXT_DATASOURCE_UPLOAD_LIMITS,
                         SettingKeys.KEY_AUDIO_UPLOAD_MAX_MB), DEFAULT_AUDIO_MB),
                 parseMb(settings.getValue(SettingKeys.CONTEXT_DATASOURCE_UPLOAD_LIMITS,
-                        SettingKeys.KEY_BINARY_UPLOAD_MAX_MB), DEFAULT_BINARY_MB));
+                        SettingKeys.KEY_BINARY_UPLOAD_MAX_MB), DEFAULT_BINARY_MB),
+                parseParallelism(settings.getValue(SettingKeys.CONTEXT_DATASOURCE_UPLOAD_LIMITS,
+                        SettingKeys.KEY_UPLOAD_PARALLELISM)));
     }
 
     public int maxMb(ResourceType type) {
@@ -92,6 +99,10 @@ public final class ResourceUploadLimits {
         return binaryMb;
     }
 
+    public int parallelism() {
+        return parallelism;
+    }
+
     private static int parseMb(String raw, int fallback) {
         if (raw == null || raw.isBlank()) {
             return fallback;
@@ -107,6 +118,21 @@ public final class ResourceUploadLimits {
             return value;
         } catch (NumberFormatException e) {
             return fallback;
+        }
+    }
+
+    private static int parseParallelism(String raw) {
+        if (raw == null || raw.isBlank()) {
+            return DEFAULT_PARALLELISM;
+        }
+        try {
+            int value = Integer.parseInt(raw.trim());
+            if (value < 1) {
+                return 1;
+            }
+            return Math.min(value, MAX_PARALLELISM);
+        } catch (NumberFormatException e) {
+            return DEFAULT_PARALLELISM;
         }
     }
 }

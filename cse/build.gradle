@@ -1,31 +1,16 @@
-import com.ravenherz.build.utils.CargoContextResolver
+import com.ravenherz.build.utils.DeploymentLayout
 import com.ravenherz.build.utils.GitHelper
+import com.ravenherz.build.utils.OptiDeployUploader
 import groovy.json.JsonBuilder
 import groovy.json.JsonSlurper
-
-buildscript {
-    repositories {
-        //maven {
-        //    url "https://plugins.gradle.org/m2/"
-        //}
-        gradlePluginPortal()
-        mavenCentral()
-    }
-
-    dependencies {
-        classpath 'com.bmuschko:gradle-cargo-plugin:2.9'
-    }
-}
+import org.springframework.boot.gradle.tasks.bundling.BootWar
 
 plugins {
     id 'java'
     id 'war'
     id 'org.springframework.boot' version '3.5.8'
     id 'io.spring.dependency-management' version '1.1.7'
-    id("com.bmuschko.cargo") version "2.9.0"
 }
-
-// apply plugin: 'com.bmuschko.cargo'
 
 
 group = 'com.ravenherz'
@@ -43,7 +28,6 @@ dependencies {
 
     implementation 'org.jetbrains:annotations:24.0.0'
     LinkedHashMap<String, String> versions = [
-            'cargo':'1.10.25',
             'spring':'6.2.11',
             'thymeleaf':'3.1.5',
     ]
@@ -86,8 +70,6 @@ dependencies {
     implementation group: 'com.fasterxml.jackson.core', name: 'jackson-databind', version: '2.19.2'
     //implementation group: 'org.apache.tomcat', name: 'tomcat-jsp-api', version:'10.1.43'
     implementation 'jakarta.servlet:jakarta.servlet-api:6.0.0'
-    cargo "org.codehaus.cargo:cargo-core-uberjar:${versions['cargo']}",
-            "org.codehaus.cargo:cargo-ant:${versions['cargo']}"
 }
 
 tasks.named('test') {
@@ -97,7 +79,7 @@ tasks.named('test') {
 // FFmpeg and JavaCPP jars come from :cse-codec-video. Boot still nests them in this WAR.
 // Keep requiresUnpack while FfmpegBinaries reads classpath*:org/bytedeco/ffmpeg/.
 // Do not drop it when cleaning dependencies.
-tasks.withType(org.springframework.boot.gradle.tasks.bundling.BootWar).configureEach {
+tasks.withType(BootWar).configureEach {
     requiresUnpack '**/ffmpeg-*.jar'
     requiresUnpack '**/javacpp-*.jar'
 }
@@ -164,25 +146,16 @@ tasks.named('processResources', Copy) {
     }
 }
 
-cargo {
-    Boolean deployRemote = true
-    String deployOverride = "production"
-    var cargoParamResolver = new CargoContextResolver(deployRemote, project, deployOverride)
-    System.out.println("deploying to '${cargoParamResolver.getWhereToDeploy()}'")
-
-    containerId = cargoParamResolver.getByKey('containerId').orDefault("tomcat10x")
-    port = cargoParamResolver.getByKey('port').orDefault(8080) as Integer
-
-    deployable {
-        def buildInfo = new JsonSlurper().parseText(file('./build-info/build-info.json').text)
-        file = project.file("./build/libs/${buildInfo.artifact.latest.name}")
-        context  = cargoParamResolver.getByKey('context').orDefault('rhz-we')
-    }
-    remote {
-        hostname = cargoParamResolver.getByKey('hostname').orDefault('127.0.0.1')
-        protocol = cargoParamResolver.getByKey('protocol').orDefault('http')
-        username = cargoParamResolver.getByKey('username').orDefault('admin')
-        password = cargoParamResolver.getByKey('password').orDefault('admin')
+tasks.register('optiDeploy') {
+    group = 'distribution'
+    description = 'Upload the built WAR in 8 parts through cse-optideployer and deploy it. Not part of build.'
+    dependsOn tasks.named('bootWar')
+    doLast {
+        def instance = rootProject.cseInstance.toString()
+        def layout = new DeploymentLayout(rootProject.file('.cse-deployment.yml'))
+        def cfg = layout.serverConfig(instance)
+        def war = tasks.named('bootWar', BootWar).get().archiveFile.get().asFile
+        OptiDeployUploader.upload(cfg.uploadUrl.toString(), cfg.secret.toString(), war)
     }
 }
 

@@ -26,6 +26,16 @@ class AdminSectionTest {
     }
 
     @Test
+    void editHrefKeepsTheDedicatedEditor() {
+        AdminSection section = new AdminSection("playlists", "Playlists", List.of(
+                new AdminField("title", "Title", FieldType.TEXT, true, List.of())),
+                null, null, null, "/editor/playlist/create", "/editor/playlist/edit?id={id}");
+
+        assertEquals("/editor/playlist/create", section.createHref());
+        assertEquals("/editor/playlist/edit?id=abc", section.editHref("abc"));
+    }
+
+    @Test
     void sourceReturnsItsSection() {
         AdminSection section = new AdminSection("redirects", "Redirects", List.of(
                 new AdminField("fromPath", "From", FieldType.PATH, true, List.of())));

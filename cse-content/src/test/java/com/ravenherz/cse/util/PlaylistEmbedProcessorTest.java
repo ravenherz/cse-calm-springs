@@ -27,6 +27,7 @@ class PlaylistEmbedProcessorTest {
         assertTrue(html.contains("data-src=\"./content-protected/user/res/audio/tide.mp3\""));
         assertTrue(html.contains("data-title=\"Tide\""));
         assertTrue(html.contains("data-artist=\"Ravenherz\""));
+        assertTrue(html.contains("class=\"cse-track-number\">03</span>"));
         assertTrue(html.contains("class=\"cse-enqueue\""));
         assertTrue(html.contains("class=\"cse-enqueue-all\""));
         assertTrue(html.contains("cse-track-waveform"));

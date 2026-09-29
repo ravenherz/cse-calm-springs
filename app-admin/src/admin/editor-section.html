@@ -29,7 +29,8 @@
             <ul class="item-list tile-grid">
               <li class="resource-plus-tile">
                 <a class="resource-plus-form"
-                   th:href="@{/editor/sections/{id}/create(id=${adminSection.section().id()})}">
+                   th:with="custom=${adminSection.section().createHref()}"
+                   th:href="${custom != null} ? @{${custom}} : @{/editor/sections/{id}/create(id=${adminSection.section().id()})}">
                   <span class="resource-plus-drop">
                     <span class="group-toggle resource-plus-mark" aria-hidden="true"></span>
                     <span class="visually-hidden">New</span>
@@ -47,7 +48,8 @@
                     </form>
                   </div>
                   <a class="item-thumb-link"
-                     th:href="@{/editor/sections/{section}/edit/{id}(section=${adminSection.section().id()},id=${row.get('id')})}">
+                     th:with="custom=${adminSection.section().editHref(row.get('id'))}"
+                     th:href="${custom != null} ? @{${custom}} : @{/editor/sections/{section}/edit/{id}(section=${adminSection.section().id()},id=${row.get('id')})}">
                     <img class="item-thumb" draggable="false" alt=""
                          th:if="${adminSection.section().cardImage(row) != null}"
                          th:src="${adminSection.section().cardImage(row)}"/>

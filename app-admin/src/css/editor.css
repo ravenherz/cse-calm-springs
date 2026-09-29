@@ -2750,6 +2750,25 @@ img.resource-tree-file-preview {
   color: var(--text-error);
 }
 
+.resource-tree-file-host.is-playlist .resource-tree-play {
+  position: absolute;
+  left: -2px;
+  bottom: -2px;
+  z-index: 2;
+  width: 12px;
+  height: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 2px;
+  background: #6a7082;
+  color: #7eb6ff;
+  font-size: 8px;
+  line-height: 1;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.65);
+  pointer-events: none;
+}
+
 .section-form {
   display: flex;
   flex-direction: column;

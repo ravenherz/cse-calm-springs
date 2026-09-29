@@ -1,5 +1,16 @@
-import org.gradle.api.tasks.compile.JavaCompile
+import com.ravenherz.build.utils.DeploymentLayout
 
+buildscript {
+    repositories {
+        gradlePluginPortal()
+        mavenCentral()
+    }
+    dependencies {
+        classpath 'com.bmuschko:gradle-cargo-plugin:2.9.0'
+    }
+}
+
+apply plugin: 'com.bmuschko.cargo'
 apply from: 'gradle/theme-shared.gradle'
 
 allprojects {
@@ -24,6 +35,58 @@ tasks.register('packFrontend') {
 
 subprojects {
 
+}
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    cargo 'org.codehaus.cargo:cargo-core-uberjar:1.10.25'
+    cargo 'org.codehaus.cargo:cargo-ant:1.10.25'
+}
+
+ext.cseInstance = 'production'
+
+def deploymentFile = file('.cse-deployment.yml')
+if (deploymentFile.isFile()) {
+    def deployment = new DeploymentLayout(deploymentFile)
+    def resolved = deployment.resolve(cseInstance, 'cse-optideployer')
+    def cargoContext = DeploymentLayout.cargoContext(resolved.context)
+    def port = DeploymentLayout.portOf(resolved)
+    def origin = DeploymentLayout.origin(resolved.protocol.toString(), resolved.hostname.toString(), port)
+    logger.lifecycle("cargo deploys cse-optideployer to '${cseInstance}' ${origin} context '${cargoContext}'")
+
+    cargo {
+        containerId = resolved.containerId ?: 'tomcat10x'
+        port = port
+
+        deployable {
+            file = file('cse-optideployer/build/libs/cse-optideployer.war')
+            context = cargoContext
+        }
+        remote {
+            hostname = resolved.hostname
+            protocol = resolved.protocol ?: 'http'
+            username = resolved.username
+            password = resolved.password
+            containerProperties {
+                property 'cargo.remote.uri', origin + '/manager'
+            }
+        }
+    }
+
+    tasks.named('cargoDeployRemote') {
+        group = 'deployment'
+        description = 'Deploy cse-optideployer to remote Tomcat. Not part of build.'
+        dependsOn ':cse-optideployer:bootWar'
+    }
+} else {
+    tasks.matching { it.name == 'cargoDeployRemote' }.configureEach {
+        doFirst {
+            throw new GradleException('Missing .cse-deployment.yml at the repository root')
+        }
+    }
 }
 
 

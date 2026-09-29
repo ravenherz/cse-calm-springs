@@ -1,0 +1,60 @@
+import com.ravenherz.build.utils.DeploymentLayout
+
+plugins {
+    id 'java'
+    id 'war'
+    id 'org.springframework.boot' version '3.5.8'
+    id 'io.spring.dependency-management' version '1.1.7'
+}
+
+description = 'cse-optideployer'
+
+java {
+    sourceCompatibility = JavaVersion.VERSION_17
+    targetCompatibility = JavaVersion.VERSION_17
+}
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    implementation 'org.springframework.boot:spring-boot-starter-web'
+    providedRuntime 'org.springframework.boot:spring-boot-starter-tomcat'
+    testImplementation 'org.springframework.boot:spring-boot-starter-test'
+    testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+}
+
+tasks.named('test') {
+    useJUnitPlatform()
+}
+
+def deploymentFile = rootProject.file('.cse-deployment.yml')
+def cseInstance = rootProject.cseInstance.toString()
+
+tasks.named('bootWar') {
+    archiveFileName.set('cse-optideployer.war')
+    doFirst {
+        def stale = layout.buildDirectory.file('resources/main/optideploy.json').get().asFile
+        if (stale.exists()) {
+            stale.delete()
+        }
+    }
+}
+
+tasks.register('serverConfig') {
+    group = 'deployment'
+    description = 'Write optideploy.json for the server. Not packed into the WAR.'
+    def out = layout.buildDirectory.file('optideploy.json')
+    outputs.file(out)
+    inputs.file(deploymentFile)
+    inputs.property('cseInstance', cseInstance)
+    doLast {
+        if (!deploymentFile.isFile()) {
+            throw new GradleException('Missing .cse-deployment.yml at the repository root')
+        }
+        def file = out.get().asFile
+        file.parentFile.mkdirs()
+        file.text = new DeploymentLayout(deploymentFile).serverJson(cseInstance)
+    }
+}

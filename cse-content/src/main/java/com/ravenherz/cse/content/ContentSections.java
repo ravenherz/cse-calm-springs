@@ -51,7 +51,10 @@ final class PlaylistAdmin implements AdminSectionSource {
                 new AdminField("title", "Title", FieldType.TEXT, true, List.of(), CardPlace.SOURCE),
                 new AdminField("description", "Description", FieldType.TEXT, false, List.of()),
                 new AdminField("refImageId", "Cover", FieldType.ENTITY_ID, false, List.of())),
-                new AdminPresentation("{title}", TreeGlyph.FILE));
+                new AdminPresentation("{title}", TreeGlyph.FILE),
+                null, null,
+                "/editor/playlist/create",
+                "/editor/playlist/edit?id={id}");
     }
 }
 

@@ -2,12 +2,16 @@ A simple personal website engine (see https://www.ravenherz.com/)
 
 I'll put some more info later, and probably will apply some refactoring. There's lot of not-so-great code written by me when I was a Junior Java Developer. Let's see what I can fix now :)
 
-Product pitch lives in [docs/pitch.md](docs/pitch.md).
-
 # To cut a long story short:
 
 ### Plans:
 - Dockerized deployment
+
+### 0.8.X
+#### Repo-wise rework
+- Split monolith to sub-modules (for parrallel builds and ease of maintainment)
+- Parallel multi-threaded deployer App for faster deploys (see cse-optideployer module)
+- Minor UI fixes at admin panel
 
 ### 0.7.X
 #### Admin-wise rework

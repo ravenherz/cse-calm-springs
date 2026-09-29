@@ -21,6 +21,10 @@ public interface ResourceDesk {
     String upload(String resourceId, MultipartFile file, String metadataJson, String imageDescription, String groupId,
             Model model, HttpServletRequest request, HttpServletResponse response) throws IOException;
 
+    String uploadPart(String resourceId, Integer partIndex, Integer partCount, Long totalSize, String fileName,
+            MultipartFile file, String metadataJson, String groupId, boolean cancel, Model model,
+            HttpServletRequest request, HttpServletResponse response) throws IOException;
+
     void download(String pathPublic, HttpServletRequest request, HttpServletResponse response) throws IOException;
 
     void treePreview(String id, HttpServletRequest request, HttpServletResponse response) throws IOException;

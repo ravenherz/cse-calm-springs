@@ -159,6 +159,74 @@
         load.setAttribute('aria-busy', 'false');
     }
 
+    var COOKIE_CONSENT_KEY = 'cse-cookie-consent';
+
+    function consentStored() {
+        try {
+            return window.localStorage.getItem(COOKIE_CONSENT_KEY) === 'accepted';
+        } catch (e) {
+            return false;
+        }
+    }
+
+    function showCookieConsent() {
+        var bar = document.getElementById('cookie-consent');
+        if (!bar) {
+            return;
+        }
+        var layout = document.querySelector('.editor-layout');
+        var load = document.getElementById('panel-load');
+        if (consentStored()) {
+            bar.hidden = true;
+            if (layout) {
+                layout.inert = false;
+            }
+            if (load) {
+                load.inert = false;
+            }
+            document.documentElement.style.overflow = '';
+            return;
+        }
+        bar.hidden = false;
+        if (layout) {
+            layout.inert = true;
+        }
+        if (load) {
+            load.inert = true;
+        }
+        document.documentElement.style.overflow = 'hidden';
+        var accept = document.getElementById('cookie-accept');
+        if (accept) {
+            accept.focus();
+        }
+    }
+
+    var cookieAccept = document.getElementById('cookie-accept');
+    if (cookieAccept) {
+        cookieAccept.addEventListener('click', function () {
+            try {
+                window.localStorage.setItem(COOKIE_CONSENT_KEY, 'accepted');
+            } catch (e) {
+                /* private mode still dismisses for this view */
+            }
+            var bar = document.getElementById('cookie-consent');
+            if (bar) {
+                bar.hidden = true;
+            }
+            var layout = document.querySelector('.editor-layout');
+            var load = document.getElementById('panel-load');
+            if (layout) {
+                layout.inert = false;
+            }
+            if (load) {
+                load.inert = false;
+            }
+            document.documentElement.style.overflow = '';
+        });
+    }
+
+    showCookieConsent();
+
     async function readJson(res) {
         var text = await res.text();
         if (!text) {
@@ -646,6 +714,7 @@
     loadSite().then(function (site) {
         if (!site) {
             hideLoad();
+            showCookieConsent();
             return;
         }
         var ready = Promise.resolve();
@@ -658,9 +727,11 @@
         }
         return ready.then(function () {
             render(site);
+            showCookieConsent();
         });
     }).catch(function () {
         hideLoad();
+        showCookieConsent();
         showError('Could not load site status');
     });
 })();

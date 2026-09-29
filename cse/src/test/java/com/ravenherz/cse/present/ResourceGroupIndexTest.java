@@ -4,6 +4,9 @@ import com.ravenherz.cse.dal.EntityId;
 import com.ravenherz.cse.dal.StoredIds;
 
 import com.ravenherz.cse.dal.dao.AppService;
+import com.ravenherz.cse.dal.dao.PlaylistService;
+import com.ravenherz.cse.dal.dto.PlaylistEntity;
+import com.ravenherz.cse.dal.dto.basic.PlaylistData;
 import com.ravenherz.cse.dal.dao.CategoryService;
 import com.ravenherz.cse.dal.dao.ItemService;
 import com.ravenherz.cse.dal.dao.ResourceGroupService;
@@ -207,6 +210,37 @@ class ResourceGroupIndexTest {
         assertNotNull(index.treePreview(EditorTree.pageLeafId(page)));
         ResourceGroupDisplayDTO cats = index.editorRoots().get(0).getChildren().get(1);
         assertTrue(cats.getChildren().get(0).getTreeFiles().get(0).preview());
+    }
+
+    @Test
+    void playlistLeafShowsTheSelectedCover() {
+        ResourceGroupEntity pictures = group("Pictures");
+        ObjectId coverId = new ObjectId();
+        PlaylistEntity playlist = new PlaylistEntity("ocean-blue", new PlaylistData(), null);
+        playlist.setId(EntityId.generate());
+        playlist.getPlaylistData().setTitle("Ocean Blue");
+        playlist.getPlaylistData().setRefImageId(EntityId.of(coverId.toHexString()));
+
+        ResourceGroupService groups = mock(ResourceGroupService.class);
+        ResourceService resources = mock(ResourceService.class);
+        CategoryService categories = mock(CategoryService.class);
+        ItemService items = mock(ItemService.class);
+        PlaylistService playlists = mock(PlaylistService.class);
+        when(groups.getAllGroups()).thenReturn(List.of(pictures));
+        when(resources.listSizeHints()).thenReturn(List.of(
+                new ResourceSizeHint(coverId, StoredIds.objectId(pictures.getId()), "/u/res/image/cover.jpg", 50)));
+        when(categories.getAllCategories()).thenReturn(List.of());
+        when(items.getAll()).thenReturn(List.of());
+        when(playlists.getAllPlaylists()).thenReturn(List.of(playlist));
+        ResourceGroupIndex index = new ResourceGroupIndex(groups, resources, categories, items, null, playlists, null);
+
+        index.editorRoots();
+        ResourceGroupDisplayDTO folder = index.contentView().getChildren().stream()
+                .filter(child -> EditorTree.PLAYLISTS_ID.equals(child.getId()))
+                .findFirst()
+                .orElseThrow();
+        ResourceTreeFile leaf = folder.getTreeFiles().get(0);
+        assertEquals("/u/res/image/cover.jpg", leaf.previewPath());
     }
 
     @Test
