@@ -10,7 +10,6 @@ import java.security.MessageDigest;
 
 public record OptiConfig(
         String secret,
-        String uploadUrl,
         String warPath,
         String context,
         String managerUrl,
@@ -31,7 +30,6 @@ public record OptiConfig(
         }
         return new OptiConfig(
                 text(node, "secret"),
-                text(node, "uploadUrl"),
                 text(node, "warPath"),
                 context,
                 managerUrl,

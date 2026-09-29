@@ -28,7 +28,7 @@ class CargoContextResolver {
             this.whereToDeploy = 'dev'
         }
         if (remote) {
-            def file = projectLocal.rootProject.file('.cse-deployment.json')
+            def file = projectLocal.rootProject.file('.cse-deployment.yml')
             this.resolved = new DeploymentLayout(file).resolve(whereToDeploy, application)
         } else {
             this.resolved = null

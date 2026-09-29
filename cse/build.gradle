@@ -152,7 +152,7 @@ tasks.register('optiDeploy') {
     dependsOn tasks.named('bootWar')
     doLast {
         def instance = rootProject.cseInstance.toString()
-        def layout = new DeploymentLayout(rootProject.file('.cse-deployment.json'))
+        def layout = new DeploymentLayout(rootProject.file('.cse-deployment.yml'))
         def cfg = layout.serverConfig(instance)
         def war = tasks.named('bootWar', BootWar).get().archiveFile.get().asFile
         OptiDeployUploader.upload(cfg.uploadUrl.toString(), cfg.secret.toString(), war)

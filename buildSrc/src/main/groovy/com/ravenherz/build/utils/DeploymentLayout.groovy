@@ -1,10 +1,10 @@
 package com.ravenherz.build.utils
 
 import groovy.json.JsonBuilder
-import groovy.json.JsonSlurper
+import org.yaml.snakeyaml.Yaml
 
 /**
- * Reads {@code .cse-deployment.json}.
+ * Reads {@code .cse-deployment.yml}.
  * Merge order: shared, then instancesOverride[instance], then scalar defaults on the
  * application, then applicationsOverride[application][instance].
  */
@@ -14,9 +14,12 @@ class DeploymentLayout {
 
     DeploymentLayout(File file) {
         if (file == null || !file.isFile()) {
-            throw new IllegalStateException('Missing .cse-deployment.json at the repository root')
+            throw new IllegalStateException('Missing .cse-deployment.yml at the repository root')
         }
-        this.root = new JsonSlurper().parse(file)
+        this.root = new Yaml().load(file.newReader('UTF-8'))
+        if (!(this.root instanceof Map)) {
+            throw new IllegalStateException('Expected an object in .cse-deployment.yml')
+        }
     }
 
     Map resolve(String instance, String application) {
@@ -56,7 +59,7 @@ class DeploymentLayout {
         require(opti, ['protocol', 'hostname', 'port', 'username', 'password', 'context'], "cse-optideployer/${instance}")
         require(cse, ['context', 'warPath'], "cse/${instance}")
         if (opti.secret == null || opti.secret.toString().trim().isEmpty()) {
-            throw new IllegalStateException(".cse-deployment.json is missing secret for cse-optideployer/${instance}. Add it on that application.")
+            throw new IllegalStateException(".cse-deployment.yml is missing secret for cse-optideployer/${instance}. Add it on that application.")
         }
         String origin = origin(opti.protocol.toString(), opti.hostname.toString(), portOf(opti))
         String prefix = webPath(opti.context as String)
@@ -78,7 +81,7 @@ class DeploymentLayout {
 
     static int portOf(Map resolved) {
         if (resolved.port == null || resolved.port.toString().trim().isEmpty()) {
-            throw new IllegalStateException('.cse-deployment.json is missing port')
+            throw new IllegalStateException('.cse-deployment.yml is missing port')
         }
         return Integer.parseInt(resolved.port.toString())
     }
@@ -113,7 +116,7 @@ class DeploymentLayout {
     private static void require(Map map, List keys, String who) {
         for (String key : keys) {
             if (map[key] == null || map[key].toString().trim().isEmpty()) {
-                throw new IllegalStateException(".cse-deployment.json resolved ${who} is missing ${key}. Add it on that application or instance.")
+                throw new IllegalStateException(".cse-deployment.yml resolved ${who} is missing ${key}. Add it on that application or instance.")
             }
         }
     }
@@ -123,7 +126,7 @@ class DeploymentLayout {
             return new LinkedHashMap()
         }
         if (!(value instanceof Map)) {
-            throw new IllegalStateException('Expected an object in .cse-deployment.json')
+            throw new IllegalStateException('Expected an object in .cse-deployment.yml')
         }
         return (Map) value
     }
@@ -137,43 +140,50 @@ class DeploymentLayout {
     }
 
     static void selfCheck() {
-        File file = File.createTempFile('cse-deployment', '.json')
+        File file = File.createTempFile('cse-deployment', '.yml')
         file.deleteOnExit()
         file.text = '''
-        {
-          "shared": {
-            "hostname": "shared.example",
-            "containerId": "tomcat10x",
-            "port": 443,
-            "protocol": "https",
-            "username": "mgr",
-            "password": "pw",
-            "context": "cse"
-          },
-          "instancesOverride": {
-            "production": { "hostname": "nl3.example" },
-            "nl": { "hostname": "nl.example" },
-            "stage": { "hostname": "stage.example" },
-            "dev": { "hostname": "dev.example" }
-          },
-          "applicationsOverride": {
-            "cse-optideployer": {
-              "secret": "top-secret",
-              "production": { "context": "cse-optideployer" },
-              "nl": { "context": "cse-optideployer" },
-              "stage": { "context": "cse-optideployer", "secret": "stage-secret" },
-              "dev": { "context": "cse-optideployer" }
-            },
-            "cse": {
-              "warPath": "/var/cse/app.war",
-              "production": { "context": "ROOT" },
-              "nl": { "context": "ROOT" },
-              "stage": { "context": "rhz-we", "warPath": "/var/cse/stage.war" },
-              "dev": { "context": "rhz-we" }
-            }
-          }
-        }
-        '''
+shared:
+  hostname: shared.example
+  containerId: tomcat10x
+  port: 443
+  protocol: https
+  username: mgr
+  password: pw
+  context: cse
+instancesOverride:
+  production:
+    hostname: nl3.example
+  nl:
+    hostname: nl.example
+  stage:
+    hostname: stage.example
+  dev:
+    hostname: dev.example
+applicationsOverride:
+  cse-optideployer:
+    secret: top-secret
+    production:
+      context: cse-optideployer
+    nl:
+      context: cse-optideployer
+    stage:
+      context: cse-optideployer
+      secret: stage-secret
+    dev:
+      context: cse-optideployer
+  cse:
+    warPath: /var/cse/app.war
+    production:
+      context: ROOT
+    nl:
+      context: ROOT
+    stage:
+      context: rhz-we
+      warPath: /var/cse/stage.war
+    dev:
+      context: rhz-we
+'''
         DeploymentLayout layout = new DeploymentLayout(file)
         Map prodOpti = layout.resolve('production', 'cse-optideployer')
         assert prodOpti.hostname == 'nl3.example'
@@ -224,6 +234,9 @@ class DeploymentLayout {
         assert stageServer.uploadUrl == 'https://stage.example/cse-optideployer/upload-and-deploy/'
 
         assert origin('http', '127.0.0.1', 8080) == 'http://127.0.0.1:8080'
+        assert origin('http', 'example.com', 80) == 'http://example.com'
+        assert origin('https', 'example.com', 443) == 'https://example.com'
+        assert origin('https', 'example.com', 4443) == 'https://example.com:4443'
         boolean threw = false
         try {
             layout.resolve('missing', 'cse')

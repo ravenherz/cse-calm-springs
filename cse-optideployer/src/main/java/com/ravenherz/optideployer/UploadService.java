@@ -17,7 +17,7 @@ import java.util.stream.Stream;
 public final class UploadService {
 
     private static final Logger log = LoggerFactory.getLogger(UploadService.class);
-    private static final Pattern UPLOAD_ID = Pattern.compile("[A-Za-z0-9._-]{1,64}");
+    private static final Pattern UPLOAD_ID = Pattern.compile("[A-Za-z0-9][A-Za-z0-9_-]{0,63}");
 
     private final OptiConfig config;
     private final ManagerClient manager;
@@ -36,7 +36,7 @@ public final class UploadService {
         if (!config.matches(secret)) {
             return UploadResult.denied();
         }
-        if (uploadId == null || !UPLOAD_ID.matcher(uploadId).matches()) {
+        if (!validUploadId(uploadId, partIndex)) {
             return UploadResult.bad("uploadId");
         }
         if (partIndex < 0 || partIndex >= PartPlan.STREAMS) {
@@ -173,8 +173,25 @@ public final class UploadService {
         return parent.resolve(war.getFileName().toString() + ".parts");
     }
 
+    private boolean validUploadId(String uploadId, int partIndex) {
+        if (uploadId == null || !UPLOAD_ID.matcher(uploadId).matches()) {
+            return false;
+        }
+        if (partIndex < 0 || partIndex >= PartPlan.STREAMS) {
+            return true;
+        }
+        Path root = partsRoot().toAbsolutePath().normalize();
+        Path dest = root.resolve(uploadId).resolve(partIndex + ".part").normalize();
+        return dest.startsWith(root);
+    }
+
     private Path partFile(String uploadId, int index) {
-        return partsRoot().resolve(uploadId).resolve(index + ".part");
+        Path root = partsRoot().toAbsolutePath().normalize();
+        Path dest = root.resolve(uploadId).resolve(index + ".part").normalize();
+        if (!dest.startsWith(root)) {
+            throw new IllegalArgumentException("uploadId");
+        }
+        return dest;
     }
 
     private void deleteParts() throws IOException {

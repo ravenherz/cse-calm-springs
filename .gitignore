@@ -55,4 +55,4 @@ out/
 /cse/src/main/resources/static/content-private/configuration/after/
 
 .cursor
-.cse-deployment.json
+.cse-deployment.yml

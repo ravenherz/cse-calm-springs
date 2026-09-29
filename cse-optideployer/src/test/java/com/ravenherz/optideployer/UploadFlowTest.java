@@ -81,6 +81,13 @@ class UploadFlowTest {
     }
 
     @Test
+    void loopbackManagerHostSkipsThePublicName() {
+        assertTrue(TomcatManager.loopback("127.0.0.1"));
+        assertTrue(TomcatManager.loopback("localhost"));
+        assertFalse(TomcatManager.loopback("ravenherz.com"));
+    }
+
+    @Test
     void eightPartsAssembleInOrderAndDeployOnce() throws Exception {
         Path dir = Files.createTempDirectory("opti");
         Path war = dir.resolve("app.war");
@@ -168,12 +175,26 @@ class UploadFlowTest {
     }
 
     @Test
-    void filterRejectsAWrongQuerySecretBeforeTheBody() throws Exception {
+    void filterRejectsAWrongHeaderSecretBeforeTheBody() throws Exception {
         SecretFilter filter = new SecretFilter(config(Path.of("unused.war")));
         MockHttpServletRequest request = new MockHttpServletRequest("POST", "/optideployer/upload-and-deploy/");
-        request.setQueryString("secret-uuid=nope");
+        request.setSecure(true);
+        request.addHeader(SecretFilter.HEADER, "nope");
         MockHttpServletResponse response = new MockHttpServletResponse();
         FilterChain chain = mock(FilterChain.class);
+        filter.doFilter(request, response, chain);
+        assertEquals(403, response.getStatus());
+        verify(chain, never()).doFilter(any(), any());
+    }
+
+    @Test
+    void filterRejectsAnInsecureRequest() throws Exception {
+        OptiConfig config = config(Path.of("unused.war"));
+        SecretFilter filter = new SecretFilter(config);
+        MockHttpServletRequest request = new MockHttpServletRequest("POST", "/optideployer/upload-and-deploy/");
+        request.addHeader(SecretFilter.HEADER, config.secret());
+        FilterChain chain = mock(FilterChain.class);
+        MockHttpServletResponse response = new MockHttpServletResponse();
         filter.doFilter(request, response, chain);
         assertEquals(403, response.getStatus());
         verify(chain, never()).doFilter(any(), any());
@@ -184,25 +205,43 @@ class UploadFlowTest {
         OptiConfig config = config(Path.of("unused.war"));
         SecretFilter filter = new SecretFilter(config);
         MockHttpServletRequest request = new MockHttpServletRequest("POST", "/optideployer/upload-and-deploy/");
-        request.setQueryString("secret-uuid=" + config.secret());
+        request.setSecure(true);
+        request.addHeader(SecretFilter.HEADER, config.secret());
         FilterChain chain = mock(FilterChain.class);
         filter.doFilter(request, new MockHttpServletResponse(), chain);
         verify(chain).doFilter(any(), any());
     }
 
     @Test
-    void uploadEndpointReadsTheQuerySecretAndThePart() throws Exception {
+    void uploadEndpointReadsTheHeaderSecretAndThePart() throws Exception {
         UploadService service = mock(UploadService.class);
         when(service.accept(eq("uuid"), eq("up"), eq(3), eq(9L), any())).thenReturn(UploadResult.stored());
         MockMvc mvc = MockMvcBuilders.standaloneSetup(new UploadController(service)).build();
         mvc.perform(multipart("/upload-and-deploy/")
                         .file(new MockMultipartFile("file", "cse.war", "application/octet-stream", new byte[]{1}))
-                        .queryParam("secret-uuid", "uuid")
+                        .header(SecretFilter.HEADER, "uuid")
                         .param("uploadId", "up")
                         .param("partIndex", "3")
                         .param("totalSize", "9"))
                 .andExpect(status().isNoContent());
         verify(service).accept(eq("uuid"), eq("up"), eq(3), eq(9L), any());
+    }
+
+    @Test
+    void dottedUploadIdDoesNotEscapeThePartsDirectory() throws Exception {
+        Path dir = Files.createTempDirectory("opti");
+        Path war = dir.resolve("app.war");
+        AtomicInteger calls = new AtomicInteger();
+        UploadService service = new UploadService(config(war), path -> {
+            calls.incrementAndGet();
+            return "OK";
+        });
+        UploadResult result = service.accept("secret", "..", 0, 1, new ByteArrayInputStream(new byte[]{1}));
+        assertEquals(400, result.status());
+        assertEquals(0, calls.get());
+        assertFalse(Files.exists(war));
+        assertFalse(Files.exists(dir.resolve("0.part")));
+        assertFalse(Files.exists(dir.resolve("app.war.parts")));
     }
 
     private static List<UploadResult> send(UploadService service, String secret, String uploadId, byte[] payload)
@@ -223,7 +262,6 @@ class UploadFlowTest {
     private static OptiConfig config(Path war) {
         return new OptiConfig(
                 "secret",
-                "http://127.0.0.1:8080/optideployer/upload-and-deploy/",
                 war.toString(),
                 "/rhz-we",
                 "http://127.0.0.1:8080/manager/text",

@@ -17,10 +17,10 @@ class OptiDeployUploader {
             throw new IllegalStateException('WAR not found: ' + warFile)
         }
         if (!secret) {
-            throw new IllegalStateException('.cse-deployment.json is missing secret for cse-optideployer')
+            throw new IllegalStateException('.cse-deployment.yml is missing secret for cse-optideployer')
         }
         if (!uploadUrl) {
-            throw new IllegalStateException('.cse-deployment.json did not produce an upload URL')
+            throw new IllegalStateException('.cse-deployment.yml did not produce an upload URL')
         }
         String base = uploadUrl
         if (base.endsWith('?')) {
@@ -29,7 +29,7 @@ class OptiDeployUploader {
         if (!base.endsWith('/')) {
             base = base + '/'
         }
-        URL url = URI.create(base + '?secret-uuid=' + URLEncoder.encode(secret, 'UTF-8')).toURL()
+        URL url = URI.create(base).toURL()
         long size = warFile.length()
         long[] lens = lengths(size)
         String uploadId = UUID.randomUUID().toString()
@@ -48,7 +48,7 @@ class OptiDeployUploader {
                 futures.add(pool.submit(new Callable<PartResult>() {
                     @Override
                     PartResult call() {
-                        return post(url, uploadId, index, size, warFile, partOffset, partLength)
+                        return post(url, secret, uploadId, index, size, warFile, partOffset, partLength)
                     }
                 }))
             }
@@ -87,7 +87,7 @@ class OptiDeployUploader {
         return lens
     }
 
-    private static PartResult post(URL url, String uploadId, int index, long totalSize, File war, long offset, long length) {
+    private static PartResult post(URL url, String secret, String uploadId, int index, long totalSize, File war, long offset, long length) {
         String boundary = '----opti' + UUID.randomUUID().toString().replace('-', '')
         HttpURLConnection conn = (HttpURLConnection) url.openConnection()
         conn.setRequestMethod('POST')
@@ -98,6 +98,7 @@ class OptiDeployUploader {
         conn.setConnectTimeout(30000)
         conn.setReadTimeout(15 * 60 * 1000)
         conn.setRequestProperty('Connection', 'close')
+        conn.setRequestProperty('X-Cse-Deploy-Secret', secret)
         conn.setRequestProperty('Content-Type', 'multipart/form-data; boundary=' + boundary)
         OutputStream out = conn.getOutputStream()
         try {

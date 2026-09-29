@@ -29,37 +29,32 @@ tasks.named('test') {
     useJUnitPlatform()
 }
 
-def deploymentFile = rootProject.file('.cse-deployment.json')
+def deploymentFile = rootProject.file('.cse-deployment.yml')
 def cseInstance = rootProject.cseInstance.toString()
 
 tasks.named('bootWar') {
     archiveFileName.set('cse-optideployer.war')
     doFirst {
-        if (deploymentFile.isFile()) {
-            new DeploymentLayout(deploymentFile).serverJson(cseInstance)
-        }
-        def packed = layout.buildDirectory.file('resources/main/optideploy.json').get().asFile
-        if (!packed.exists()) {
-            throw new GradleException('optideploy.json was not generated. .cse-deployment.json needs secret for cse-optideployer and warPath for cse.')
+        def stale = layout.buildDirectory.file('resources/main/optideploy.json').get().asFile
+        if (stale.exists()) {
+            stale.delete()
         }
     }
 }
 
-tasks.named('processResources', Copy) {
-    inputs.file(deploymentFile).optional()
+tasks.register('serverConfig') {
+    group = 'deployment'
+    description = 'Write optideploy.json for the server. Not packed into the WAR.'
+    def out = layout.buildDirectory.file('optideploy.json')
+    outputs.file(out)
+    inputs.file(deploymentFile)
     inputs.property('cseInstance', cseInstance)
     doLast {
         if (!deploymentFile.isFile()) {
-            return
+            throw new GradleException('Missing .cse-deployment.yml at the repository root')
         }
-        def layoutFile = new DeploymentLayout(deploymentFile)
-        def opti = layoutFile.resolve(cseInstance, 'cse-optideployer')
-        def cse = layoutFile.resolve(cseInstance, 'cse')
-        if (!opti.secret || !cse.warPath) {
-            return
-        }
-        def out = layout.buildDirectory.file('resources/main/optideploy.json').get().asFile
-        out.parentFile.mkdirs()
-        out.text = layoutFile.serverJson(cseInstance)
+        def file = out.get().asFile
+        file.parentFile.mkdirs()
+        file.text = new DeploymentLayout(deploymentFile).serverJson(cseInstance)
     }
 }

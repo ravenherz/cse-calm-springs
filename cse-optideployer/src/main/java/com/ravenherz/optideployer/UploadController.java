@@ -3,6 +3,7 @@ package com.ravenherz.optideployer;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RequestPart;
 import org.springframework.web.bind.annotation.RestController;
@@ -22,7 +23,7 @@ public final class UploadController {
 
     @PostMapping(value = {"/upload-and-deploy", "/upload-and-deploy/"}, consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<String> upload(
-            @RequestParam("secret-uuid") String secret,
+            @RequestHeader(SecretFilter.HEADER) String secret,
             @RequestParam("uploadId") String uploadId,
             @RequestParam("partIndex") int partIndex,
             @RequestParam("totalSize") long totalSize,

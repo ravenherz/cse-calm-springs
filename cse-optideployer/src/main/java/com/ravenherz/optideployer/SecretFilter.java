@@ -10,12 +10,12 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
-import java.net.URLDecoder;
-import java.nio.charset.StandardCharsets;
 
 @Component
 @Order(Ordered.HIGHEST_PRECEDENCE)
 public final class SecretFilter extends OncePerRequestFilter {
+
+    static final String HEADER = "X-Cse-Deploy-Secret";
 
     private final OptiConfig config;
 
@@ -33,27 +33,12 @@ public final class SecretFilter extends OncePerRequestFilter {
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain chain)
             throws ServletException, IOException {
-        String secret = queryParam(request.getQueryString(), "secret-uuid");
-        if (!config.matches(secret)) {
+        if (!request.isSecure() || !config.matches(request.getHeader(HEADER))) {
             response.setStatus(403);
             response.setContentType("text/plain;charset=UTF-8");
             response.getWriter().write("forbidden");
             return;
         }
         chain.doFilter(request, response);
-    }
-
-    static String queryParam(String query, String name) {
-        if (query == null || query.isEmpty()) {
-            return "";
-        }
-        for (String pair : query.split("&")) {
-            int eq = pair.indexOf('=');
-            String key = URLDecoder.decode(eq < 0 ? pair : pair.substring(0, eq), StandardCharsets.UTF_8);
-            if (name.equals(key)) {
-                return URLDecoder.decode(eq < 0 ? "" : pair.substring(eq + 1), StandardCharsets.UTF_8);
-            }
-        }
-        return "";
     }
 }
